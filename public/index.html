@@ -60,24 +60,24 @@
     <!-- Custom Script for dynamic content change -->
     <script>
         let chosenFileName = ''; // Variable to store the chosen file name
-
+    
         document.getElementById('fileUpload').addEventListener('change', function() {
             chosenFileName = this.files[0].name; // Update the variable with the file name
             document.getElementById('file-chosen').textContent = chosenFileName; // Update the text on the page
         });
-
+    
         document.getElementById('uploadForm').addEventListener('submit', function(event) {
             event.preventDefault(); // Prevent the form from submitting normally
             goToProcessingState(); // Call the function to change the page content
         });
-
+    
         function goToProcessingState() {
             // Update the instructions text
             document.querySelector('.card-text').textContent = 'Your file is being processed. Please wait.';
-
+    
             // Hide the file input and Harvest button
             document.querySelector('form').style.display = 'none';
-
+    
             // Create the progress bar and file processing status elements
             var processingDiv = document.createElement('div');
             processingDiv.innerHTML = `
@@ -92,11 +92,41 @@
                     </div>
                 </div>
             `;
-
+    
             // Append the new content to the container
             var container = document.querySelector('.container');
             container.appendChild(processingDiv);
+    
+            // Simulate processing completion after a delay
+            setTimeout(goToDownloadState, 5000); // 5000 milliseconds = 5 seconds
+        }
+    
+        function goToDownloadState() {
+            // Clear the processing view
+            var container = document.querySelector('.container');
+            container.innerHTML = ''; // Clear existing content
+    
+            // Create the download view
+            var downloadDiv = document.createElement('div');
+            downloadDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-12 col-md-8 offset-md-2 text-center">
+                        <h3>Processing Complete!</h3>
+                        <p>Your file is ready for download.</p>
+                        <button id="downloadBtn" class="btn btn-success">Download CSV</button>
+                    </div>
+                </div>
+            `;
+    
+            // Append the new content to the container
+            container.appendChild(downloadDiv);
+    
+            // Placeholder for download functionality
+            document.getElementById('downloadBtn').addEventListener('click', function() {
+                alert('The backend is not yet implemented. This button will eventually download your file.');
+            });
         }
     </script>
+    
 </body>
 </html>
