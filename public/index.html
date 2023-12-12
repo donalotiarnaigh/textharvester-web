@@ -40,7 +40,7 @@
         <!-- File Upload Section -->
         <div class="row">
             <div class="col-12 col-md-8 offset-md-2">
-                <form>
+                <form id="uploadForm">
                     <div class="form-group">
                         <label for="fileUpload" class="btn btn-primary btn-block">Choose file</label>
                         <input type="file" id="fileUpload" class="form-control-file" hidden>
@@ -56,13 +56,45 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <!-- Custom Script -->
+
+    <!-- Custom Script for dynamic content change -->
     <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the form from submitting normally
+            goToProcessingState(); // Call the function to change the page content
+        });
+
+        function goToProcessingState() {
+            // Update the instructions text
+            document.querySelector('.card-text').textContent = 'Your file is being processed. Please wait.';
+
+            // Hide the file input and Harvest button
+            document.querySelector('form').style.display = 'none';
+
+            // Create the progress bar and file processing status elements
+            var processingDiv = document.createElement('div');
+            processingDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-12 col-md-8 offset-md-2 text-center">
+                        <p id="fileName">chosenFile.pdf</p>
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: 30%;" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100">30%</div>
+                        </div>
+                        <p id="fileProgress">4/12</p>
+                        <p id="timeRemaining">4 - 5 mins remaining...</p>
+                    </div>
+                </div>
+            `;
+
+            // Append the new content to the container
+            var container = document.querySelector('.container');
+            container.appendChild(processingDiv);
+        }
+
+        // Function to update file chosen text
         document.getElementById('fileUpload').addEventListener('change', function() {
-            // Get the file name
-            var fileName = this.files[0].name;
-            // Replace the "No file chosen" label
-            document.getElementById('file-chosen').textContent = fileName;
+            var fileName = this.files[0].name; // Get the file name
+            document.getElementById('file-chosen').textContent = fileName; // Replace the "No file chosen" label
         });
     </script>
 </body>
