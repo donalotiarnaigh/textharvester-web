@@ -31,25 +31,31 @@
                 <div class="card instructions">
                     <div class="card-body">
                         <h5 class="card-title">Instructions</h5>
-                        <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc maximus, nulla ut commodo sagittis, sapien dui mattis dui, non pulvinar lorem felis nec erat</p>
+                        <p class="card-text">This box will contain text on how to use the tool, what files are acccpted etc. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc maximus, nulla ut commodo sagittis, sapien dui mattis dui, non pulvinar lorem felis nec erat</p>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- File Upload Section -->
-        <div class="row">
-            <div class="col-12 col-md-8 offset-md-2">
-                <form id="uploadForm">
-                    <div class="form-group">
-                        <label for="fileUpload" class="btn btn-primary btn-block">Choose file</label>
-                        <input type="file" id="fileUpload" class="form-control-file" hidden>
-                        <small id="file-chosen" class="form-text text-muted">No file chosen</small>
-                    </div>
-                    <button type="submit" class="btn btn-success btn-block">Harvest</button>
-                </form>
+<!-- File Upload Section -->
+<div class="row">
+    <div class="col-12 col-md-8 offset-md-2">
+        <!-- Update your form tag as follows -->
+        <form id="uploadForm" method="POST" action="/upload" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="fileUpload" class="btn btn-primary btn-block">Choose JPG file</label>
+                <!-- Add the name attribute here -->
+                <input type="file" id="fileUpload" name="file" class="form-control-file" accept=".jpg, .jpeg" hidden>
+                <small id="file-chosen" class="form-text text-muted">No file chosen</small>
             </div>
-        </div>
+            <button type="submit" class="btn btn-success btn-block">Harvest</button>
+        </form>
+    </div>
+</div>
+
+
+<!-- ... (rest of the content) ... -->
+
     </div>
     
     <!-- Bootstrap and jQuery Scripts -->
@@ -102,30 +108,36 @@
         }
     
         function goToDownloadState() {
-            // Clear the processing view
-            var container = document.querySelector('.container');
-            container.innerHTML = ''; // Clear existing content
-    
-            // Create the download view
-            var downloadDiv = document.createElement('div');
-            downloadDiv.innerHTML = `
-                <div class="row">
-                    <div class="col-12 col-md-8 offset-md-2 text-center">
-                        <h3>Processing Complete!</h3>
-                        <p>Your file is ready for download.</p>
-                        <button id="downloadBtn" class="btn btn-success">Download CSV</button>
-                    </div>
+        // Clear the processing view
+        var container = document.querySelector('.container');
+        container.innerHTML = ''; // Clear existing content
+
+        // Define mock JSON data for demonstration purposes
+        const mockJsonData = {
+            message: "Processing complete",
+            data: { /* example data */ }
+        };
+
+        // Create the download view with JSON data
+        var jsonDataDiv = document.createElement('div');
+        jsonDataDiv.innerHTML = `
+            <div class="row">
+                <div class="col-12 col-md-8 offset-md-2">
+                    <h4>Processed Data</h4>
+                    <pre id="jsonData">${JSON.stringify(mockJsonData, null, 2)}</pre>
+                    <button id="downloadBtn" class="btn btn-success">Download CSV</button>
                 </div>
-            `;
-    
-            // Append the new content to the container
-            container.appendChild(downloadDiv);
-    
-            // Placeholder for download functionality
-            document.getElementById('downloadBtn').addEventListener('click', function() {
-                alert('The backend is not yet implemented. This button will eventually download your file.');
-            });
-        }
+            </div>
+        `;
+
+        // Append the new content to the container
+        container.appendChild(jsonDataDiv);
+
+        // Placeholder event listener for the download button
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            alert('The backend is not yet implemented. This button will eventually enable file download.');
+        });
+    }
     </script>
     
 </body>
