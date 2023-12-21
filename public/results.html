@@ -69,6 +69,7 @@
             >
             <!-- Button for downloading results -->
             <button
+              id="downloadButton"
               class="btn btn-primary"
               style="margin-top: 20px"
               onclick="downloadResults()"
@@ -155,29 +156,28 @@
       }
     </script>
     <!-- JavaScript for downloading results -->
+    <!-- JavaScript for downloading results -->
     <script>
-      // Event listener for the "Download Results" button click
-      document
-        .getElementById("downloadButton")
-        .addEventListener("click", function () {
-          // Create a link element for downloading the file
-          const downloadLink = document.createElement("a");
+      // Function to trigger download
+      function downloadResults() {
+        // Create a link element for downloading the file
+        const downloadLink = document.createElement("a");
 
-          // Set the file path to the actual location of the results.json file on your server
-          downloadLink.href =
-            "/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/results.json"; // Replace with the correct path
+        // Set the file path to the actual location of the results.json file on your server
+        downloadLink.href = "/data/results.json";
 
-          // Set the download attribute to specify the file name
-          downloadLink.download = "results.json";
+        // Set the download attribute to specify the file name
+        downloadLink.download = "results.json";
 
-          // Trigger a click event to initiate the download
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
+        // Trigger a click event to initiate the download
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
 
-          // Remove the link element from the DOM
-          document.body.removeChild(downloadLink);
-        });
+        // Remove the link element from the DOM
+        document.body.removeChild(downloadLink);
+      }
     </script>
+
     <!-- function to trigger download -->
     <script>
       function downloadResults() {
