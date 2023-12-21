@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historic Graves Text Harvester</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Custom CSS (if needed) -->
+    <style>
+        .container {
+            padding-top: 20px;
+        }
+        .instructions {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="text-center">Historic Graves Text Harvester</h1>
+            </div>
+        </div>
+        
+        <!-- Instructions Box -->
+        <div class="row">
+            <div class="col-12 col-md-8 offset-md-2">
+                <div class="card instructions">
+                    <div class="card-body">
+                        <h5 class="card-title">Instructions</h5>
+                        <p class="card-text">This box will contain text on how to use the tool, what files are acccpted etc. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc maximus, nulla ut commodo sagittis, sapien dui mattis dui, non pulvinar lorem felis nec erat</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+<!-- File Upload Section -->
+<div class="row">
+    <div class="col-12 col-md-8 offset-md-2">
+        <!-- Update your form tag as follows -->
+        <form id="uploadForm" method="POST" action="/upload" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="fileUpload" class="btn btn-primary btn-block">Choose JPG file</label>
+                <!-- Add the name attribute here -->
+                <input type="file" id="fileUpload" name="file" class="form-control-file" accept=".jpg, .jpeg" hidden>
+                <small id="file-chosen" class="form-text text-muted">No file chosen</small>
+            </div>
+            <button type="submit" class="btn btn-success btn-block">Harvest</button>
+        </form>
+    </div>
+</div>
+
+
+<!-- ... (rest of the content) ... -->
+
+    </div>
+    
+    <!-- Bootstrap and jQuery Scripts -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    Custom Script for dynamic content change
+    <script>
+        let chosenFileName = ''; // Variable to store the chosen file name
+    
+        document.getElementById('fileUpload').addEventListener('change', function() {
+            chosenFileName = this.files[0].name; // Update the variable with the file name
+            document.getElementById('file-chosen').textContent = chosenFileName; // Update the text on the page
+        });
+    
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the form from submitting normally
+            goToProcessingState(); // Call the function to change the page content
+        });
+    
+        function goToProcessingState() {
+            // Update the instructions text
+            document.querySelector('.card-text').textContent = 'Your file is being processed. Please wait.';
+    
+            // Hide the file input and Harvest button
+            document.querySelector('form').style.display = 'none';
+    
+            // Create the progress bar and file processing status elements
+            var processingDiv = document.createElement('div');
+            processingDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-12 col-md-8 offset-md-2 text-center">
+                        <p id="fileName">${chosenFileName}</p> <!-- Display the actual file name -->
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: 30%;" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100">30%</div>
+                        </div>
+                        <p id="fileProgress">4/12</p>
+                        <p id="timeRemaining">4 - 5 mins remaining...</p>
+                    </div>
+                </div>
+            `;
+    
+            // Append the new content to the container
+            var container = document.querySelector('.container');
+            container.appendChild(processingDiv);
+    
+            // Simulate processing completion after a delay
+            setTimeout(goToDownloadState, 5000); // 5000 milliseconds = 5 seconds
+        }
+    
+        function goToDownloadState() {
+        // Clear the processing view
+        var container = document.querySelector('.container');
+        container.innerHTML = ''; // Clear existing content
+
+        // Define mock JSON data for demonstration purposes
+        const mockJsonData = {
+            message: "Processing complete",
+            data: { /* example data */ }
+        };
+
+        // Create the download view with JSON data
+        var jsonDataDiv = document.createElement('div');
+        jsonDataDiv.innerHTML = `
+            <div class="row">
+                <div class="col-12 col-md-8 offset-md-2">
+                    <h4>Processed Data</h4>
+                    <pre id="jsonData">${JSON.stringify(mockJsonData, null, 2)}</pre>
+                    <button id="downloadBtn" class="btn btn-success">Download CSV</button>
+                </div>
+            </div>
+        `;
+
+        // Append the new content to the container
+        container.appendChild(jsonDataDiv);
+
+        // Placeholder event listener for the download button
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            alert('The backend is not yet implemented. This button will eventually enable file download.');
+        });
+    }
+    </script>
+    
+</body>
+</html>
