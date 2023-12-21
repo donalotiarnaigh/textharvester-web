@@ -1,8 +1,14 @@
-{
-  "message": {
-    "role": "assistant",
-    "content": "```json\n[\n    {\n        \"memorial_number\": 299,\n        \"inscription\": \"Erected by Patrick Quinlan of Ballywire in memory of his son Liam Quinlan (sic) Sept 16 1853 aged 12 James Quinlan 20 Jun 1844 aged 10\"\n    },\n    {\n        \"memorial_number\": 300,\n        \"inscription\": \"Michael O'Dwyer Knockcarron Jan 3rd 1922 John O'Dwyer July 12 1955\"\n    },\n    {\n        \"memorial_number\": 311,\n        \"inscription\": \"Johanna Ryan Morabbey 31 Mar 1935 husband John 10 Sep 1940 daughter Mary 27 May 1918 son William 3 Feb 1937\"\n    }\n]\n```"
+[
+  {
+    "memorial_number": 196,
+    "inscription": "Erected by John Frainer of Patrick in memory of Denis Frainer 20th April 1842 - 73yrs John Frainer junr. 10th Jan 1840 - 30yrs"
   },
-  "finish_reason": "stop",
-  "index": 0
-}
+  {
+    "memorial_number": 197,
+    "inscription": "In memory of his mother."
+  },
+  {
+    "memorial_number": 198,
+    "inscription": "Erected by Mr. Daly Ballydurdel in memory of his son Mr. Daly July 4th 1858 aged 23 yrs."
+  }
+]

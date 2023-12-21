@@ -1,65 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Results - Historic Graves Text Harvester</title>
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Include Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <!-- Include Font Awesome CSS for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+    />
+
+    <!-- Custom CSS styling -->
     <style>
-        .container {
-            padding-top: 50px;
-        }
-        .results-section {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .code-block {
-            text-align: left;
-            background-color: #f8f9fa;
-            border: 1px solid #ddd;
-            padding: 20px;
-            border-radius: 5px;
-            margin-top: 20px;
-            overflow-x: auto;
-        }
+      .container {
+        padding-top: 50px;
+      }
+      .results-section {
+        text-align: center;
+        margin-top: 20px;
+      }
+      .code-block {
+        text-align: left;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 5px;
+        margin-top: 20px;
+        overflow-x: auto;
+        position: relative; /* Position relative for button placement */
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="row">
-            <div class="col-12">
-                <div class="results-section">
-                    <h2>Processing Complete</h2>
-                    <p>Here is your harvested text:</p>
-                    <div class="code-block">
-                        <pre><code id="jsonData"></code></pre>
-                    </div>
-                    <a href="/"><button class="btn btn-primary" style="margin-top: 20px;">Back to Home</button></a>
-                    <button class="btn btn-primary" style="margin-top: 20px;">Download Results</button>
-                </div>
+      <div class="row">
+        <div class="col-12">
+          <div class="results-section">
+            <h2>Processing Complete</h2>
+            <p>Here is your harvested text:</p>
+            <div class="code-block">
+              <!-- Button for copying to clipboard -->
+              <button
+                id="copyButton"
+                class="btn btn-secondary btn-sm"
+                style="position: absolute; bottom: 5px; right: 5px"
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Copy to Clipboard"
+              >
+                <i class="fas fa-clipboard"></i> <!-- Clipboard icon -->
+              </button>
+
+              <pre><code id="jsonData"></code></pre>
+              <!-- Empty element for the copy success message -->
+              <div id="copyMessage"></div>
             </div>
+            <!-- Button to navigate back to home -->
+            <a href="/"><button class="btn btn-primary" style="margin-top: 20px">
+                Back to Home
+              </button></a
+            >
+            <!-- Button for downloading results -->
+            <button class="btn btn-primary" style="margin-top: 20px">
+              Download Results
+            </button>
+          </div>
         </div>
+      </div>
     </div>
-    
-    <!-- Bootstrap and jQuery Scripts -->
+
+    <!-- Include JavaScript libraries -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Include Clipboard.js library for copying to clipboard -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
 
-    <!-- Custom Script to Fetch and Display Results -->
+    <!-- JavaScript for fetching and displaying results -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            fetch('/results-data')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('jsonData').textContent = JSON.stringify(data, null, 2);
-                })
-                .catch(error => {
-                    console.error('Error fetching results:', error);
-                    document.getElementById('jsonData').textContent = 'Error loading results.';
-                });
-        });
+      // Event listener for page load
+      document.addEventListener("DOMContentLoaded", function () {
+        // Fetch results data from the server
+        fetch("/results-data")
+          .then((response) => response.json())
+          .then((data) => {
+            // Display results data in the code block
+            const jsonDataElement = document.getElementById("jsonData");
+            jsonDataElement.textContent = JSON.stringify(data, null, 2);
+          })
+          .catch((error) => {
+            console.error("Error fetching results:", error);
+            document.getElementById("jsonData").textContent =
+              "Error loading results.";
+          });
+      });
     </script>
-</body>
+
+    <!-- JavaScript for copying to clipboard -->
+    <script>
+      // Event listener for page load
+      document.addEventListener("DOMContentLoaded", function () {
+        // Fetch results data from the server
+        fetch("/results-data")
+          .then((response) => response.json())
+          .then((data) => {
+            // Display results data in the code block
+            const jsonDataElement = document.getElementById("jsonData");
+            jsonDataElement.textContent = JSON.stringify(data, null, 2);
+
+            // Initialize Clipboard.js for copying to clipboard
+            const copyButton = document.getElementById("copyButton");
+            const clipboard = new ClipboardJS(copyButton, {
+              text: function () {
+                return jsonDataElement.textContent;
+              },
+            });
+
+            // Event handler for successful copy
+            clipboard.on("success", function (e) {
+              showCopySuccess();
+            });
+          })
+          .catch((error) => {
+            console.error("Error fetching results:", error);
+            document.getElementById("jsonData").textContent =
+              "Error loading results.";
+          });
+      });
+
+      // Function to display copy success message
+      function showCopySuccess() {
+        const messageElement = document.getElementById("copyMessage");
+        messageElement.textContent = "Copied to Clipboard!";
+        messageElement.style.color = "green"; // Customize the message style
+
+        // Clear the message after a brief delay
+        setTimeout(function () {
+          messageElement.textContent = "";
+        }, 1500); // Adjust the duration as needed
+      }
+    </script>
+  </body>
 </html>
