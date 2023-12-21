@@ -53,7 +53,8 @@
                 data-placement="top"
                 title="Copy to Clipboard"
               >
-                <i class="fas fa-clipboard"></i> <!-- Clipboard icon -->
+                <i class="fas fa-clipboard"></i>
+                <!-- Clipboard icon -->
               </button>
 
               <pre><code id="jsonData"></code></pre>
@@ -61,13 +62,21 @@
               <div id="copyMessage"></div>
             </div>
             <!-- Button to navigate back to home -->
-            <a href="/"><button class="btn btn-primary" style="margin-top: 20px">
+            <a href="/"
+              ><button class="btn btn-primary" style="margin-top: 20px">
                 Back to Home
               </button></a
             >
             <!-- Button for downloading results -->
-            <button class="btn btn-primary" style="margin-top: 20px">
-              Download Results
+            <button
+              class="btn btn-primary"
+              style="margin-top: 20px"
+              onclick="downloadResults()"
+              data-toggle="tooltip"
+              data-placement="top"
+              title="Download Results (JSON)"
+            >
+              <i class="fas fa-download"></i> Download Results
             </button>
           </div>
         </div>
@@ -143,6 +152,36 @@
         setTimeout(function () {
           messageElement.textContent = "";
         }, 1500); // Adjust the duration as needed
+      }
+    </script>
+    <!-- JavaScript for downloading results -->
+    <script>
+      // Event listener for the "Download Results" button click
+      document
+        .getElementById("downloadButton")
+        .addEventListener("click", function () {
+          // Create a link element for downloading the file
+          const downloadLink = document.createElement("a");
+
+          // Set the file path to the actual location of the results.json file on your server
+          downloadLink.href =
+            "/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/results.json"; // Replace with the correct path
+
+          // Set the download attribute to specify the file name
+          downloadLink.download = "results.json";
+
+          // Trigger a click event to initiate the download
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+
+          // Remove the link element from the DOM
+          document.body.removeChild(downloadLink);
+        });
+    </script>
+    <!-- function to trigger download -->
+    <script>
+      function downloadResults() {
+        window.location.href = "/download-results";
       }
     </script>
   </body>

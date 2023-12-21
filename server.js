@@ -174,6 +174,23 @@ app.get("/results-data", (req, res) => {
   }
 });
 
+app.get("/download-results", (req, res) => {
+  const resultsPath =
+    "/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/results.json";
+  try {
+    // Set the appropriate headers for downloading the file
+    res.setHeader("Content-Disposition", "attachment; filename=results.json");
+    res.setHeader("Content-Type", "application/json");
+    
+    // Send the file as a response
+    res.sendFile(resultsPath);
+  } catch (err) {
+    console.error("Error reading results file:", err);
+    res.status(500).send("Unable to retrieve results.");
+  }
+});
+
+
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
