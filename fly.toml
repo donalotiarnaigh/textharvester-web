@@ -1,16 +1,15 @@
-# fly.toml app configuration file generated for hg-textharvest-v2-polished-frost-6072 on 2023-12-21T13:31:57Z
+# fly.toml app configuration file generated for hg-textharvest-v2 on 2023-12-21T18:11:18Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "hg-textharvest-v2-polished-frost-6072"
-primary_region = "lhr"
+app = "hg-textharvest-v2"
+primary_region = "ams"
 
 [build]
-  image = "flyio/hellofly:latest"
 
 [http_service]
-  internal_port = 8080
+  internal_port = 3000
   force_https = true
   auto_stop_machines = true
   auto_start_machines = true
