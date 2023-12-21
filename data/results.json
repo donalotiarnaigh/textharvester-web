@@ -1,0 +1,8 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"memorial_number\": 212,\n    \"inscription\": \"James Quirke Died June 1930 his wife Elizabeth Quirke (nee Fahey) Died May 1931 William (Bill) Quirke died 6th April 1975\"\n  },\n  {\n    \"memorial_number\": 213,\n    \"inscription\": \"Jeremiah Kiely who died 12th October 1936 Margaret Hennessy nee Kiely Died 1919\"\n  },\n  {\n    \"memorial_number\": 214,\n    \"inscription\": \"In memory of Philip O'Neill his wife Margaret their sons Arthur, John & Patrick their daughters Molly & Annie\"\n  }\n]\n```"
+  },
+  "finish_reason": "stop",
+  "index": 0
+}
