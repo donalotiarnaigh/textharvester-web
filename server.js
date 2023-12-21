@@ -6,8 +6,8 @@ const OpenAI = require('openai');
 
 const app = express();
 const port = process.env.PORT || 3000;
+const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
-// Configuration for Multer (File Uploading)
 const storage = multer.diskStorage({
     destination: function(req, file, cb) {
         cb(null, '/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/uploads/');
@@ -18,31 +18,35 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage: storage });
-const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
-// Serve static files from the 'public' directory
 app.use(express.static('public'));
 
-// File upload route
 app.post('/upload', upload.single('file'), (req, res) => {
     if (req.file) {
-        console.log('Received file:', req.file.originalname);
-        
-        // Redirect to the processing page immediately
+        console.log(`Received file: ${req.file.originalname}`);
+        clearResultsFile();
         res.redirect('/processing.html');
-
-        // Start processing the file asynchronously
         processFile(req.file.path);
     } else {
+        console.log('No file uploaded.');
         res.status(400).send('No file uploaded.');
     }
 });
 
-// Asynchronous file processing function
+function clearResultsFile() {
+    const resultsPath = '/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/results.json';
+    try {
+        fs.writeFileSync(resultsPath, JSON.stringify({}));
+        console.log('Cleared results.json file.');
+    } catch (err) {
+        console.error('Error clearing results.json file:', err);
+    }
+}
+
 async function processFile(filePath) {
     const base64Image = fs.readFileSync(filePath, { encoding: 'base64' });
-
     try {
+        console.log(`Processing file: ${filePath}`);
         const response = await openai.chat.completions.create({
             model: "gpt-4-vision-preview",
             messages: [
@@ -61,56 +65,81 @@ async function processFile(filePath) {
             ],
             max_tokens: 1000
         });
+ // Check if the response contains an error
+ if (response.error) {
+    console.error(`Error from OpenAI API for file ${filePath}:`, response.error);
+    // Handle the error appropriately (e.g., log it, notify admin, etc.)
+    // Consider whether you want to delete the uploaded file in case of an API error
+} else {
+    console.log(`Received response from OpenAI for file: ${filePath}`);
+    storeResults(response.choices[0]);
+}
+} catch (error) {
+console.error(`Error in processing file ${filePath}:`, error);
+} finally {
+fs.unlink(filePath, (err) => {
+    if (err) {
+        console.error(`Error deleting file ${filePath}:`, err);
+    } else {
+        console.log(`Successfully deleted file ${filePath}`);
+    }
+});
+}
+}
 
-        // Store the results
-        storeResults(response.choices[0]);
-    } catch (error) {
-        console.error('Error in processing file:', error);
-        // Handle error (e.g., write to a log, notify admin, etc.)
+function storeResults(data) {
+    const resultsPath = '/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/results.json';
+    const flagPath = '/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/processing_complete.flag';
+    
+    try {
+        // Store the results in results.json
+        fs.writeFileSync(resultsPath, JSON.stringify(data, null, 2), 'utf8');
+        console.log('Stored results in results.json.');
+
+        // Set a flag to indicate processing is complete
+        fs.writeFileSync(flagPath, 'complete');
+        console.log('Set processing completion flag.');
+    } catch (err) {
+        console.error('Error in storeResults function:', err);
     }
 }
 
-// Function to store results in a file
-function storeResults(data) {
-    const resultsPath = '/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/results.json'; // Define the path to your results file
-    fs.writeFileSync(resultsPath, JSON.stringify(data, null, 2), 'utf8');
-}
 
 app.get('/processing-status', (req, res) => {
-    const resultsPath = '/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/results.json';
+    const flagPath = '/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/processing_complete.flag';
 
-    if (fs.existsSync(resultsPath)) {
-        const fileContent = fs.readFileSync(resultsPath, 'utf-8');
-        if (fileContent.length > 0) {
+    try {
+        // Check if the flag file exists
+        if (fs.existsSync(flagPath)) {
+            console.log('Processing complete, data available.');
             res.json({ status: 'complete' });
+
+            // Optionally, delete the flag file after checking
+            fs.unlinkSync(flagPath);
+            console.log('Processing completion flag cleared.');
         } else {
-            res.json({ status: 'empty' });
+            console.log('Processing ongoing.');
+            res.json({ status: 'processing' });
         }
-    } else {
-        res.json({ status: 'processing' });
+    } catch (err) {
+        console.error('Error checking processing status:', err);
+        res.status(500).send('Error checking processing status.');
     }
 });
 
 
 app.get('/results-data', (req, res) => {
     const resultsPath = '/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/results.json';
-
-    fs.readFile(resultsPath, 'utf8', (err, data) => {
-        if (err) {
-            console.error('Error reading results file:', err);
-            return res.status(500).send('Unable to retrieve results.');
-        }
+    try {
+        const data = fs.readFileSync(resultsPath, 'utf8');
+        console.log('Sending results data.');
         res.json(JSON.parse(data));
-    });
+    } catch (err) {
+        console.error('Error reading results file:', err);
+        res.status(500).send('Unable to retrieve results.');
+    }
 });
 
-
-// Home route (can be removed if all UI is served from 'public')
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'mockup.html'));
-});
-
-// Starting the server
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
