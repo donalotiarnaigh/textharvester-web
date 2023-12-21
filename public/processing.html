@@ -18,6 +18,37 @@
         text-align: center;
         margin-top: 20px;
       }
+      .loading-container {
+        text-align: center;
+        padding: 40px 0;
+      }
+      .loading {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        border: 3px solid rgba(195, 195, 195, 0.6);
+        border-radius: 50%;
+        border-top-color: #636767;
+        animation: spin 1s ease-in-out infinite;
+        -webkit-animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to {
+          -webkit-transform: rotate(360deg);
+        }
+      }
+      @-webkit-keyframes spin {
+        to {
+          -webkit-transform: rotate(360deg);
+        }
+      }
+
+      #loading-text {
+        margin-top: 10px;
+        font-size: 18px;
+        color: #636767;
+      }
     </style>
   </head>
   <body>
@@ -31,6 +62,10 @@
           </div>
         </div>
       </div>
+    </div>
+    <div class="loading-container">
+      <div class="loading"></div>
+      <div id="loading-text">Processing...</div>
     </div>
 
     <!-- Include Bootstrap and jQuery Scripts -->

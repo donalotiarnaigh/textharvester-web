@@ -3,7 +3,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const OpenAI = require("openai");
-require('dotenv').config(); // Load environment variables from .env file
+require("dotenv").config(); // Load environment variables from .env file
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -11,10 +11,7 @@ const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(
-      null,
-      "/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/uploads/"
-    );
+    cb(null, "./uploads/");
   },
   filename: function (req, file, cb) {
     cb(
@@ -41,8 +38,7 @@ app.post("/upload", upload.single("file"), (req, res) => {
 });
 
 function clearResultsFile() {
-  const resultsPath =
-    "/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/results.json";
+  const resultsPath = "./data/results.json";
   try {
     fs.writeFileSync(resultsPath, JSON.stringify({}));
     console.log("Cleared results.json file.");
@@ -63,7 +59,7 @@ async function processFile(filePath) {
           content: [
             {
               type: "text",
-              text: "You're an expert in OCR and are working in a heritage/genealogy context assisting in data processing post graveyard survey.Examine these images and extract the handwritten text from the inscription field for each memorial number-no other fields..Respond in JSON format only.e.g {memorial_number: 69, inscription: SACRED HEART OF JESUS HAVE MERCY ON THE SOUL OF THOMAS RUANE LISNAGROOBE WHO DIED APRIL 16th 1923 AGED 74 YRS AND OF HIS WIFE MARGARET RUANE DIED JULY 26th 1929 AGED 78 YEARS R. I. P .ERECTED BY THEIR FOND SON THOMAS RUANE PHILADELPHIA USA}. If no memorial number or inscription is visible in an image,return a json with NULL in each field",
+              text: "ou're an expert in OCR and are working in a heritage/genealogy context assisting in data processing post graveyard survey.Examine these images and extract the handwritten text from the inscription field for each memorial number-no other fields..Respond in JSON format only.e.g {memorial_number: 69, inscription: SACRED HEART OF JESUS HAVE MERCY ON THE SOUL OF THOMAS RUANE LISNAGROOBE WHO DIED APRIL 16th 1923 AGED 74 YRS AND OF HIS WIFE MARGARET RUANE DIED JULY 26th 1929 AGED 78 YEARS R. I. P .ERECTED BY THEIR FOND SON THOMAS RUANE PHILADELPHIA USA}. If no memorial number or inscription is visible in an image,return a json with NULL in each field",
             },
             {
               type: "image_url",
@@ -76,14 +72,12 @@ async function processFile(filePath) {
       ],
       max_tokens: 1000,
     });
-    // Check if the response contains an error
+
     if (response.error) {
       console.error(
         `Error from OpenAI API for file ${filePath}:`,
         response.error
       );
-      // Handle the error appropriately (e.g., log it, notify admin, etc.)
-      // Consider whether you want to delete the uploaded file in case of an API error
     } else {
       console.log(`Received response from OpenAI for file: ${filePath}`);
       storeResults(response.choices[0]);
@@ -102,22 +96,32 @@ async function processFile(filePath) {
 }
 
 function storeResults(data) {
-  const resultsPath =
-    "/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/results.json";
-  const flagPath =
-    "/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/processing_complete.flag";
+  const resultsPath = "./data/results.json";
+  const flagPath = "./data/processing_complete.flag";
 
   try {
-    // Extract the JSON string from the content field
+    // Log the raw data for debugging
+    console.log("Raw data from OpenAI:", JSON.stringify(data));
+
+    // Check if data.message and data.message.content exist
+    if (!data.message || !data.message.content) {
+      console.error("Invalid data format: missing message or content field");
+      return;
+    }
+
+    // Extract and clean the JSON string from the content field
     const rawJsonString = data.message.content
       .replace("```json\n", "")
       .replace("\n```", "")
       .trim();
 
+    // Log the extracted string for debugging
+    console.log("Extracted JSON string:", rawJsonString);
+
     // Parse the JSON string
     const parsedData = JSON.parse(rawJsonString);
 
-    // Format the data to only include memorial_number and inscription
+    // Map over the parsed data to create a new array containing only the required fields
     const formattedData = parsedData.map((item) => ({
       memorial_number: item.memorial_number,
       inscription: item.inscription,
@@ -140,16 +144,12 @@ function storeResults(data) {
 }
 
 app.get("/processing-status", (req, res) => {
-  const flagPath =
-    "/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/processing_complete.flag";
+  const flagPath = "./data/processing_complete.flag";
 
   try {
-    // Check if the flag file exists
     if (fs.existsSync(flagPath)) {
       console.log("Processing complete, data available.");
       res.json({ status: "complete" });
-
-      // Optionally, delete the flag file after checking
       fs.unlinkSync(flagPath);
       console.log("Processing completion flag cleared.");
     } else {
@@ -163,8 +163,8 @@ app.get("/processing-status", (req, res) => {
 });
 
 app.get("/results-data", (req, res) => {
-  const resultsPath =
-    "/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/results.json";
+  const resultsPath = "./data/results.json";
+
   try {
     const data = fs.readFileSync(resultsPath, "utf8");
     console.log("Sending results data.");
@@ -176,21 +176,17 @@ app.get("/results-data", (req, res) => {
 });
 
 app.get("/download-results", (req, res) => {
-  const resultsPath =
-    "/Users/danieltierney/Desktop/Dev/AI:ML/openai-playground/HG_TextHarvest_v2/data/results.json";
+  const resultsPath = "./data/results.json";
+
   try {
-    // Set the appropriate headers for downloading the file
     res.setHeader("Content-Disposition", "attachment; filename=results.json");
     res.setHeader("Content-Type", "application/json");
-    
-    // Send the file as a response
-    res.sendFile(resultsPath);
+    res.sendFile(path.join(__dirname, resultsPath));
   } catch (err) {
     console.error("Error reading results file:", err);
     res.status(500).send("Unable to retrieve results.");
   }
 });
-
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
