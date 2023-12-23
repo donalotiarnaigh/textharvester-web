@@ -76,8 +76,10 @@
                 name="file"
                 class="form-control-file"
                 accept=".jpg, .jpeg"
+                multiple
                 hidden
               />
+
               <small id="file-chosen" class="form-text text-muted"
                 >No file chosen</small
               >
@@ -98,13 +100,15 @@
 
     <!-- Custom Script for File Selection -->
     <script>
-      // Add an event listener to update the selected file name
       document
         .getElementById("fileUpload")
         .addEventListener("change", function () {
-          // Update the text to show the selected file name
+          let fileNames = [];
+          for (let i = 0; i < this.files.length; i++) {
+            fileNames.push(this.files[i].name);
+          }
           document.getElementById("file-chosen").textContent =
-            this.files[0].name;
+            fileNames.join(", ");
         });
     </script>
   </body>

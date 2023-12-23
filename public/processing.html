@@ -67,6 +67,19 @@
     <div class="loading-container">
       <div class="loading"></div>
       <div id="loading-text">Processing...</div>
+      <div class="progress">
+        <div
+          id="progressBar"
+          class="progress-bar"
+          role="progressbar"
+          style="width: 0%"
+          aria-valuenow="0"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        >
+          0%
+        </div>
+      </div>
     </div>
 
     <!-- Include Bootstrap and jQuery Scripts -->
@@ -76,6 +89,14 @@
 
     <!-- JavaScript for checking processing status -->
     <script>
+      // Function to update progress bar
+      function updateProgressBar(percentage) {
+        const progressBar = document.getElementById("progressBar");
+        progressBar.style.width = percentage + "%";
+        progressBar.setAttribute("aria-valuenow", percentage);
+        progressBar.textContent = percentage + "%";
+      }
+
       // Function to check processing status
       function checkProcessingStatus() {
         fetch("/processing-status")
@@ -87,9 +108,21 @@
           })
           .then((data) => {
             if (data.status === "complete") {
-              window.location.href = "/results.html"; // Redirect to results page
+              updateProgressBar(100); // Set progress to 100% on completion
+              // Wait for 1 second before redirecting
+              setTimeout(function () {
+                window.location.href = "/results.html"; // Redirect to results page
+              }, 1000); // 1000 milliseconds = 1 second
             } else {
               console.log("Still processing...");
+              // Incremental update logic remains the same
+              const currentProgress = parseInt(
+                document
+                  .getElementById("progressBar")
+                  .getAttribute("aria-valuenow")
+              );
+              const newProgress = Math.min(currentProgress + 10, 100);
+              updateProgressBar(newProgress);
             }
           })
           .catch((error) => console.error("Error:", error));
