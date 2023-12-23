@@ -119,7 +119,12 @@ function storeResults(data) {
     console.log("Extracted JSON string:", rawJsonString);
 
     // Parse the JSON string
-    const parsedData = JSON.parse(rawJsonString);
+    let parsedData = JSON.parse(rawJsonString);
+
+    // Check if parsedData is an array; if not, make it an array
+    if (!Array.isArray(parsedData)) {
+      parsedData = [parsedData]; // Convert to an array with a single element
+    }
 
     // Map over the parsed data to create a new array containing only the required fields
     const formattedData = parsedData.map((item) => ({
