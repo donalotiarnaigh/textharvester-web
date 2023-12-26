@@ -99,26 +99,16 @@
 
       function checkProcessingStatus() {
         fetch("/processing-status")
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.json();
-          })
+          .then((response) => response.json())
           .then((data) => {
-            console.log("Processing status:", data); // Log for debugging
+            // Update the progress bar based on the returned percentage
+            updateProgressBar(data.progress);
 
-            // Update progress bar only if status is not complete
-            if (data.status !== "complete") {
-              updateProgressBar(data.progress || 0);
-            }
-
-            // Redirect only when the status is "complete"
+            // Redirect when the server indicates processing is complete
             if (data.status === "complete") {
-              // Ensure there's a slight delay before redirecting to allow the user to see the progress complete
               setTimeout(() => {
                 window.location.href = "/results.html";
-              }, 1000); // Adjust the delay as needed
+              }, 1000); // Short delay to ensure user sees the progress complete
             }
           })
           .catch((error) => {
@@ -127,7 +117,7 @@
           });
       }
 
-      // Poll the server for processing status immediately and then every 5 seconds
+      // Start checking processing status immediately and then every 5 seconds
       checkProcessingStatus();
       setInterval(checkProcessingStatus, 5000);
     </script>

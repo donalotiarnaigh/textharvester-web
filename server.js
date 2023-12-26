@@ -45,6 +45,10 @@ app.post("/upload", (req, res) => {
     // Clear any existing processing completion flag
     clearProcessingCompleteFlag();
 
+    // Update totalFiles with the number of files uploaded
+    totalFiles = req.files.length;
+    processedFiles = 0; // Reset the processedFiles count for the new batch
+
     // Clear results.json before processing new files
     clearResultsFile();
 
@@ -103,7 +107,7 @@ function clearResultsFile() {
   }
 }
 
-function processFile(filePath) {
+async function processFile(filePath, totalFiles) {
   return new Promise((resolve, reject) => {
     // Read the file and encode it to base64
     fs.readFile(filePath, { encoding: "base64" }, async (err, base64Image) => {
@@ -139,6 +143,19 @@ function processFile(filePath) {
 
         // Assuming storeResults is a function to handle storing the OpenAI response
         storeResults(response.choices[0]);
+
+        // Increment the count of processed files
+        processedFiles++;
+
+        // Check if all files have been processed and set the flag
+        if (processedFiles === totalFiles) {
+          setProcessingCompleteFlag();
+        } else {
+          console.log(
+            `Processed ${processedFiles} out of ${totalFiles} files. Flag not set yet.`
+          );
+        }
+
         resolve(response); // Resolve the promise with the response or some success indicator
       } catch (error) {
         console.error(`Error in processing file ${filePath}:`, error);
@@ -203,32 +220,14 @@ function setProcessingCompleteFlag() {
 }
 
 app.get("/processing-status", (req, res) => {
-  const flagPath = "./data/processing_complete.flag";
-  const filesPath = "./uploads";
+  let progress = totalFiles > 0 ? (processedFiles / totalFiles) * 100 : 0; // Calculate progress percentage
 
-  try {
-    if (fs.existsSync(flagPath)) {
-      console.log("Processing complete, data available.");
-      const processedFiles = fs.readdirSync(filesPath).length;
-      const totalFiles = req.files ? req.files.length : 0;
-      const progressPercentage = (processedFiles / totalFiles) * 100;
-
-      if (progressPercentage === 100) {
-        req.files.forEach((file) => {
-          fs.unlinkSync(file.path);
-        });
-      }
-
-      res.json({ status: "complete", progress: progressPercentage });
-      fs.unlinkSync(flagPath);
-      console.log("Processing completion flag cleared.");
-    } else {
-      console.log("Processing ongoing.");
-      res.json({ status: "processing", progress: 0 });
-    }
-  } catch (err) {
-    console.error("Error checking processing status:", err);
-    res.status(500).send("Error checking processing status.");
+  if (processedFiles >= totalFiles) {
+    // When all files are processed, report completion
+    res.json({ status: "complete", progress: 100 });
+  } else {
+    // While processing is ongoing, report the current progress
+    res.json({ status: "processing", progress: progress.toFixed(2) });
   }
 });
 
