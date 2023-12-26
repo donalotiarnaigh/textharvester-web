@@ -88,17 +88,16 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <!-- JavaScript for checking processing status -->
+    <
     <script>
-      // Function to update progress bar
       function updateProgressBar(percentage) {
         const progressBar = document.getElementById("progressBar");
         progressBar.style.width = percentage + "%";
         progressBar.setAttribute("aria-valuenow", percentage);
-        progressBar.textContent = percentage + "%";
+        progressBar.textContent = `${percentage}% Complete`;
       }
 
-      // Function to check processing status and redirect after a timeout
-      function checkProcessingStatusAndRedirect() {
+      function checkProcessingStatus() {
         fetch("/processing-status")
           .then((response) => {
             if (!response.ok) {
@@ -107,31 +106,30 @@
             return response.json();
           })
           .then((data) => {
+            console.log("Processing status:", data); // Log for debugging
+
+            // Update progress bar only if status is not complete
+            if (data.status !== "complete") {
+              updateProgressBar(data.progress || 0);
+            }
+
+            // Redirect only when the status is "complete"
             if (data.status === "complete") {
-              updateProgressBar(100); // Set progress to 100% on completion
-              // Redirect to results page
-              window.location.href = "/results.html";
-            } else {
-              console.log("Still processing...");
-              // Incremental update logic remains the same
-              const currentProgress = parseInt(
-                document
-                  .getElementById("progressBar")
-                  .getAttribute("aria-valuenow")
-              );
-              const newProgress = Math.min(currentProgress + 10, 100);
-              updateProgressBar(newProgress);
-              // Check after 60 seconds and redirect if not complete
+              // Ensure there's a slight delay before redirecting to allow the user to see the progress complete
               setTimeout(() => {
                 window.location.href = "/results.html";
-              }, 6000); // Redirect after 60 seconds
+              }, 1000); // Adjust the delay as needed
             }
           })
-          .catch((error) => console.error("Error:", error));
+          .catch((error) => {
+            console.error("Error fetching processing status:", error);
+            // Optionally update the UI to inform the user of the error
+          });
       }
 
-      // Check processing status and potential redirect periodically
-      setInterval(checkProcessingStatusAndRedirect, 5000); // Check every 5 seconds
+      // Poll the server for processing status immediately and then every 5 seconds
+      checkProcessingStatus();
+      setInterval(checkProcessingStatus, 5000);
     </script>
   </body>
 </html>

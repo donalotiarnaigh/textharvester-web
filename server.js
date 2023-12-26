@@ -37,42 +37,61 @@ app.post("/upload", (req, res) => {
       return res.status(500).send("Unknown upload error.");
     }
 
-    // Check if files are uploaded
     if (!req.files || req.files.length === 0) {
       console.log("No files uploaded.");
       return res.status(400).send("No files uploaded.");
     }
 
+    // Clear any existing processing completion flag
+    clearProcessingCompleteFlag();
+
     // Clear results.json before processing new files
     clearResultsFile();
 
-    // Map each file to a promise using the processFile function
-    let processingPromises = req.files.map((file) => processFile(file.path));
+    // Start processing files asynchronously
+    startAsyncFileProcessing(req.files);
 
-    // Use Promise.allSettled to wait for all promises to settle (either resolved or rejected)
-    Promise.allSettled(processingPromises).then((results) => {
-      // All files are now processed
-      results.forEach((result, index) => {
-        if (result.status === "fulfilled") {
-          console.log(
-            `File ${req.files[index].originalname} processed successfully.`
-          );
-        } else {
-          console.error(
-            `File ${req.files[index].originalname} failed to process:`,
-            result.reason
-          );
-        }
-      });
-
-      // Set a flag or update the status here
-      setProcessingCompleteFlag(); // Implement this function as needed
-
-      // Redirect or inform the client that processing is complete
-      res.redirect("/processing.html"); // Redirect to a "processing complete" page or trigger a client-side update
-    });
+    // Immediately redirect to processing.html to monitor the progress
+    res.redirect("/processing.html");
   });
 });
+
+function clearProcessingCompleteFlag() {
+  const flagPath = "./data/processing_complete.flag";
+  try {
+    if (fs.existsSync(flagPath)) {
+      fs.unlinkSync(flagPath);
+      console.log("Cleared existing processing completion flag.");
+    }
+  } catch (err) {
+    console.error("Error clearing processing completion flag:", err);
+  }
+}
+
+function startAsyncFileProcessing(files) {
+  // Map each file to a promise using the processFile function
+  let processingPromises = files.map((file) => processFile(file.path));
+
+  // Use Promise.allSettled to wait for all promises to settle (either resolved or rejected)
+  Promise.allSettled(processingPromises).then((results) => {
+    // All files are now processed
+    results.forEach((result, index) => {
+      if (result.status === "fulfilled") {
+        console.log(
+          `File ${files[index].originalname} processed successfully.`
+        );
+      } else {
+        console.error(
+          `File ${files[index].originalname} failed to process:`,
+          result.reason
+        );
+      }
+    });
+
+    // Set a flag or update the status here
+    setProcessingCompleteFlag(); // Implement this function as needed
+  });
+}
 
 function clearResultsFile() {
   const resultsPath = "./data/results.json";
