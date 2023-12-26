@@ -26,32 +26,51 @@ const upload = multer({ storage: storage }).array("file", 10); // Set a limit fo
 app.use(express.static("public"));
 
 app.post("/upload", (req, res) => {
-  upload(req, res, async (err) => {
-    if (err) {
-      console.error("Error uploading files:", err);
-      return res.status(500).send("Error uploading files.");
+  upload(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      // A Multer error occurred when uploading.
+      console.error("Multer upload error:", err);
+      return res.status(500).send("Multer upload error.");
+    } else if (err) {
+      // An unknown error occurred when uploading.
+      console.error("Unknown upload error:", err);
+      return res.status(500).send("Unknown upload error.");
     }
 
-    if (req.files && req.files.length > 0) {
-      const totalFiles = req.files.length;
-      console.log(`Received ${totalFiles} files.`);
-      clearResultsFile(); // Clear results.json before processing new files
-
-      try {
-        for (const file of req.files) {
-          console.log(`Processing file: ${file.originalname}`);
-          await processFile(file.path, totalFiles);
-        }
-
-        res.redirect("/processing.html");
-      } catch (error) {
-        console.error("Error processing files:", error);
-        res.status(500).send("Error processing files.");
-      }
-    } else {
+    // Check if files are uploaded
+    if (!req.files || req.files.length === 0) {
       console.log("No files uploaded.");
-      res.status(400).send("No files uploaded.");
+      return res.status(400).send("No files uploaded.");
     }
+
+    // Clear results.json before processing new files
+    clearResultsFile();
+
+    // Map each file to a promise using the processFile function
+    let processingPromises = req.files.map((file) => processFile(file.path));
+
+    // Use Promise.allSettled to wait for all promises to settle (either resolved or rejected)
+    Promise.allSettled(processingPromises).then((results) => {
+      // All files are now processed
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          console.log(
+            `File ${req.files[index].originalname} processed successfully.`
+          );
+        } else {
+          console.error(
+            `File ${req.files[index].originalname} failed to process:`,
+            result.reason
+          );
+        }
+      });
+
+      // Set a flag or update the status here
+      setProcessingCompleteFlag(); // Implement this function as needed
+
+      // Redirect or inform the client that processing is complete
+      res.redirect("/processing.html"); // Redirect to a "processing complete" page or trigger a client-side update
+    });
   });
 });
 
@@ -65,52 +84,58 @@ function clearResultsFile() {
   }
 }
 
-async function processFile(filePath, totalFiles) {
-  const base64Image = fs.readFileSync(filePath, { encoding: "base64" });
-  try {
-    console.log(`Processing file: ${filePath}`);
-    const response = await openai.chat.completions.create({
-      model: "gpt-4-vision-preview",
-      messages: [
-        {
-          role: "user",
-          content: [
+function processFile(filePath) {
+  return new Promise((resolve, reject) => {
+    // Read the file and encode it to base64
+    fs.readFile(filePath, { encoding: "base64" }, async (err, base64Image) => {
+      if (err) {
+        console.error(`Error reading file ${filePath}:`, err);
+        reject(`Error reading file ${filePath}`);
+        return;
+      }
+
+      try {
+        // Processing the file with OpenAI
+        const response = await openai.chat.completions.create({
+          model: "gpt-4-vision-preview",
+          messages: [
             {
-              type: "text",
-              text: "You're an expert in OCR and are working in a heritage/genealogy context assisting in data processing post graveyard survey. Examine these images and extract the handwritten text from the inscription field for each memorial number - no other fields. Respond in JSON format only. e.g., {memorial_number: 69, inscription: SACRED HEART OF JESUS HAVE MERCY ON THE SOUL OF THOMAS RUANE LISNAGROOBE WHO DIED APRIL 16th 1923 AGED 74 YRS AND OF HIS WIFE MARGARET RUANE DIED JULY 26th 1929 AGED 78 YEARS R. I. P. ERECTED BY THEIR FOND SON THOMAS RUANE PHILADELPHIA USA}. If no memorial number or inscription is visible in an image, return a JSON with NULL in each field",
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:image/jpeg;base64,${base64Image}`,
-              },
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: "You're an expert in OCR and are working in a heritage/genealogy context assisting in data processing post graveyard survey. Examine these images and extract the handwritten text from the inscription field for each memorial number - no other fields. Respond in JSON format only. e.g., {memorial_number: 69, inscription: SACRED HEART OF JESUS HAVE MERCY ON THE SOUL OF THOMAS RUANE LISNAGROOBE WHO DIED APRIL 16th 1923 AGED 74 YRS AND OF HIS WIFE MARGARET RUANE DIED JULY 26th 1929 AGED 78 YEARS R. I. P. ERECTED BY THEIR FOND SON THOMAS RUANE PHILADELPHIA USA}. If no memorial number or inscription is visible in an image, return a JSON with NULL in each field",
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:image/jpeg;base64,${base64Image}`,
+                  },
+                },
+              ],
             },
           ],
-        },
-      ],
-      max_tokens: 1000,
-    });
+          max_tokens: 1000,
+        });
 
-    if (response.error) {
-      console.error(
-        `Error from OpenAI API for file ${filePath}:`,
-        response.error
-      );
-    } else {
-      console.log(`Received response from OpenAI for file: ${filePath}`);
-      storeResults(response.choices[0]);
-    }
-  } catch (error) {
-    console.error(`Error in processing file ${filePath}:`, error);
-  } finally {
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.error(`Error deleting file ${filePath}:`, err);
-      } else {
-        console.log(`Successfully deleted file ${filePath}`);
+        // Assuming storeResults is a function to handle storing the OpenAI response
+        storeResults(response.choices[0]);
+        resolve(response); // Resolve the promise with the response or some success indicator
+      } catch (error) {
+        console.error(`Error in processing file ${filePath}:`, error);
+        reject(error); // Reject the promise with the error
+      } finally {
+        // Cleanup: delete the processed file regardless of success or failure
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.error(`Error deleting file ${filePath}:`, err);
+          } else {
+            console.log(`Successfully deleted file ${filePath}`);
+          }
+        });
       }
     });
-  }
+  });
 }
 
 function storeResults(data) {
@@ -147,6 +172,17 @@ function storeResults(data) {
   }
 }
 
+function setProcessingCompleteFlag() {
+  const flagPath = "./data/processing_complete.flag";
+  try {
+    // Write an empty file or some content to indicate completion
+    fs.writeFileSync(flagPath, "complete");
+    console.log("Processing completion flag set.");
+  } catch (err) {
+    console.error("Error setting processing completion flag:", err);
+  }
+}
+
 app.get("/processing-status", (req, res) => {
   const flagPath = "./data/processing_complete.flag";
   const filesPath = "./uploads";
@@ -155,6 +191,7 @@ app.get("/processing-status", (req, res) => {
     if (fs.existsSync(flagPath)) {
       console.log("Processing complete, data available.");
       const processedFiles = fs.readdirSync(filesPath).length;
+      const totalFiles = req.files ? req.files.length : 0;
       const progressPercentage = (processedFiles / totalFiles) * 100;
 
       if (progressPercentage === 100) {

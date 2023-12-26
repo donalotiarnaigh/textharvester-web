@@ -97,8 +97,8 @@
         progressBar.textContent = percentage + "%";
       }
 
-      // Function to check processing status
-      function checkProcessingStatus() {
+      // Function to check processing status and redirect after a timeout
+      function checkProcessingStatusAndRedirect() {
         fetch("/processing-status")
           .then((response) => {
             if (!response.ok) {
@@ -109,10 +109,8 @@
           .then((data) => {
             if (data.status === "complete") {
               updateProgressBar(100); // Set progress to 100% on completion
-              // Wait for 1 second before redirecting
-              setTimeout(function () {
-                window.location.href = "/results.html"; // Redirect to results page
-              }, 1000); // 1000 milliseconds = 1 second
+              // Redirect to results page
+              window.location.href = "/results.html";
             } else {
               console.log("Still processing...");
               // Incremental update logic remains the same
@@ -123,13 +121,17 @@
               );
               const newProgress = Math.min(currentProgress + 10, 100);
               updateProgressBar(newProgress);
+              // Check after 60 seconds and redirect if not complete
+              setTimeout(() => {
+                window.location.href = "/results.html";
+              }, 6000); // Redirect after 60 seconds
             }
           })
           .catch((error) => console.error("Error:", error));
       }
 
-      // Check processing status periodically
-      setInterval(checkProcessingStatus, 5000); // Check every 5 seconds
+      // Check processing status and potential redirect periodically
+      setInterval(checkProcessingStatusAndRedirect, 5000); // Check every 5 seconds
     </script>
   </body>
 </html>
