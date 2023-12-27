@@ -21,149 +21,213 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage: storage }).array("file", 10); // Set a limit for the number of files (e.g., 10)
 
 app.use(express.static("public"));
 
-app.post("/upload", upload.single("file"), (req, res) => {
-  if (req.file) {
-    console.log(`Received file: ${req.file.originalname}`);
+app.post("/upload", (req, res) => {
+  upload(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      // A Multer error occurred when uploading.
+      console.error("Multer upload error:", err);
+      return res.status(500).send("Multer upload error.");
+    } else if (err) {
+      // An unknown error occurred when uploading.
+      console.error("Unknown upload error:", err);
+      return res.status(500).send("Unknown upload error.");
+    }
+
+    if (!req.files || req.files.length === 0) {
+      console.log("No files uploaded.");
+      return res.status(400).send("No files uploaded.");
+    }
+
+    // Clear any existing processing completion flag
+    clearProcessingCompleteFlag();
+
+    // Update totalFiles with the number of files uploaded
+    totalFiles = req.files.length;
+    processedFiles = 0; // Reset the processedFiles count for the new batch
+
+    // Clear results.json before processing new files
     clearResultsFile();
+
+    // Start processing files asynchronously
+    startAsyncFileProcessing(req.files);
+
+    // Immediately redirect to processing.html to monitor the progress
     res.redirect("/processing.html");
-    processFile(req.file.path);
-  } else {
-    console.log("No file uploaded.");
-    res.status(400).send("No file uploaded.");
-  }
+  });
 });
+
+function clearProcessingCompleteFlag() {
+  const flagPath = "./data/processing_complete.flag";
+  try {
+    if (fs.existsSync(flagPath)) {
+      fs.unlinkSync(flagPath);
+      console.log("Cleared existing processing completion flag.");
+    }
+  } catch (err) {
+    console.error("Error clearing processing completion flag:", err);
+  }
+}
+
+function startAsyncFileProcessing(files) {
+  // Map each file to a promise using the processFile function
+  let processingPromises = files.map((file) => processFile(file.path));
+
+  // Use Promise.allSettled to wait for all promises to settle (either resolved or rejected)
+  Promise.allSettled(processingPromises).then((results) => {
+    // All files are now processed
+    results.forEach((result, index) => {
+      if (result.status === "fulfilled") {
+        console.log(
+          `File ${files[index].originalname} processed successfully.`
+        );
+      } else {
+        console.error(
+          `File ${files[index].originalname} failed to process:`,
+          result.reason
+        );
+      }
+    });
+
+    // Set a flag or update the status here
+    setProcessingCompleteFlag(); // Implement this function as needed
+  });
+}
 
 function clearResultsFile() {
   const resultsPath = "./data/results.json";
   try {
-    fs.writeFileSync(resultsPath, JSON.stringify({}));
+    fs.writeFileSync(resultsPath, JSON.stringify([]));
     console.log("Cleared results.json file.");
   } catch (err) {
     console.error("Error clearing results.json file:", err);
   }
 }
 
-async function processFile(filePath) {
-  const base64Image = fs.readFileSync(filePath, { encoding: "base64" });
-  try {
-    console.log(`Processing file: ${filePath}`);
-    const response = await openai.chat.completions.create({
-      model: "gpt-4-vision-preview",
-      messages: [
-        {
-          role: "user",
-          content: [
+async function processFile(filePath, totalFiles) {
+  return new Promise((resolve, reject) => {
+    // Read the file and encode it to base64
+    fs.readFile(filePath, { encoding: "base64" }, async (err, base64Image) => {
+      if (err) {
+        console.error(`Error reading file ${filePath}:`, err);
+        reject(`Error reading file ${filePath}`);
+        return;
+      }
+
+      try {
+        // Processing the file with OpenAI
+        const response = await openai.chat.completions.create({
+          model: "gpt-4-vision-preview",
+          messages: [
             {
-              type: "text",
-              text: "ou're an expert in OCR and are working in a heritage/genealogy context assisting in data processing post graveyard survey.Examine these images and extract the handwritten text from the inscription field for each memorial number-no other fields..Respond in JSON format only.e.g {memorial_number: 69, inscription: SACRED HEART OF JESUS HAVE MERCY ON THE SOUL OF THOMAS RUANE LISNAGROOBE WHO DIED APRIL 16th 1923 AGED 74 YRS AND OF HIS WIFE MARGARET RUANE DIED JULY 26th 1929 AGED 78 YEARS R. I. P .ERECTED BY THEIR FOND SON THOMAS RUANE PHILADELPHIA USA}. If no memorial number or inscription is visible in an image,return a json with NULL in each field",
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:image/jpeg;base64,${base64Image}`,
-              },
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: "You're an expert in OCR and are working in a heritage/genealogy context assisting in data processing post graveyard survey. Examine these images and extract the handwritten text from the inscription field for each memorial number - no other fields. Respond in JSON format only. e.g., {memorial_number: 69, inscription: SACRED HEART OF JESUS HAVE MERCY ON THE SOUL OF THOMAS RUANE LISNAGROOBE WHO DIED APRIL 16th 1923 AGED 74 YRS AND OF HIS WIFE MARGARET RUANE DIED JULY 26th 1929 AGED 78 YEARS R. I. P. ERECTED BY THEIR FOND SON THOMAS RUANE PHILADELPHIA USA}. If no memorial number or inscription is visible in an image, return a JSON with NULL in each field",
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:image/jpeg;base64,${base64Image}`,
+                  },
+                },
+              ],
             },
           ],
-        },
-      ],
-      max_tokens: 1000,
-    });
+          max_tokens: 1000,
+        });
 
-    if (response.error) {
-      console.error(
-        `Error from OpenAI API for file ${filePath}:`,
-        response.error
-      );
-    } else {
-      console.log(`Received response from OpenAI for file: ${filePath}`);
-      storeResults(response.choices[0]);
-    }
-  } catch (error) {
-    console.error(`Error in processing file ${filePath}:`, error);
-  } finally {
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.error(`Error deleting file ${filePath}:`, err);
-      } else {
-        console.log(`Successfully deleted file ${filePath}`);
+        // Assuming storeResults is a function to handle storing the OpenAI response
+        storeResults(response.choices[0]);
+
+        // Increment the count of processed files
+        processedFiles++;
+
+        // Check if all files have been processed and set the flag
+        if (processedFiles === totalFiles) {
+          setProcessingCompleteFlag();
+        } else {
+          console.log(
+            `Processed ${processedFiles} out of ${totalFiles} files. Flag not set yet.`
+          );
+        }
+
+        resolve(response); // Resolve the promise with the response or some success indicator
+      } catch (error) {
+        console.error(`Error in processing file ${filePath}:`, error);
+        reject(error); // Reject the promise with the error
+      } finally {
+        // Cleanup: delete the processed file regardless of success or failure
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.error(`Error deleting file ${filePath}:`, err);
+          } else {
+            console.log(`Successfully deleted file ${filePath}`);
+          }
+        });
       }
     });
-  }
+  });
 }
 
 function storeResults(data) {
   const resultsPath = "./data/results.json";
-  const flagPath = "./data/processing_complete.flag";
-
   try {
-    // Log the raw data for debugging
-    console.log("Raw data from OpenAI:", JSON.stringify(data));
-
-    // Check if data.message and data.message.content exist
-    if (!data.message || !data.message.content) {
-      console.error("Invalid data format: missing message or content field");
-      return;
+    let existingResults = [];
+    if (fs.existsSync(resultsPath)) {
+      const data = fs.readFileSync(resultsPath, "utf8");
+      existingResults = JSON.parse(data);
     }
 
-    // Extract and clean the JSON string from the content field
     const rawJsonString = data.message.content
       .replace("```json\n", "")
       .replace("\n```", "")
       .trim();
 
-    // Log the extracted string for debugging
-    console.log("Extracted JSON string:", rawJsonString);
-
-    // Parse the JSON string
     let parsedData = JSON.parse(rawJsonString);
 
-    // Check if parsedData is an array; if not, make it an array
     if (!Array.isArray(parsedData)) {
-      parsedData = [parsedData]; // Convert to an array with a single element
+      parsedData = [parsedData];
     }
 
-    // Map over the parsed data to create a new array containing only the required fields
     const formattedData = parsedData.map((item) => ({
       memorial_number: item.memorial_number,
       inscription: item.inscription,
     }));
 
-    // Write the formatted data to results.json
-    fs.writeFileSync(
-      resultsPath,
-      JSON.stringify(formattedData, null, 2),
-      "utf8"
-    );
-    console.log("Stored formatted results in results.json.");
+    const allResults = existingResults.concat(formattedData);
 
-    // Set a flag to indicate processing is complete
-    fs.writeFileSync(flagPath, "complete");
-    console.log("Set processing completion flag.");
+    fs.writeFileSync(resultsPath, JSON.stringify(allResults, null, 2), "utf8");
+    console.log("Stored formatted results in results.json.");
   } catch (err) {
     console.error("Error in storeResults function:", err);
   }
 }
 
-app.get("/processing-status", (req, res) => {
+function setProcessingCompleteFlag() {
   const flagPath = "./data/processing_complete.flag";
-
   try {
-    if (fs.existsSync(flagPath)) {
-      console.log("Processing complete, data available.");
-      res.json({ status: "complete" });
-      fs.unlinkSync(flagPath);
-      console.log("Processing completion flag cleared.");
-    } else {
-      console.log("Processing ongoing.");
-      res.json({ status: "processing" });
-    }
+    // Write an empty file or some content to indicate completion
+    fs.writeFileSync(flagPath, "complete");
+    console.log("Processing completion flag set.");
   } catch (err) {
-    console.error("Error checking processing status:", err);
-    res.status(500).send("Error checking processing status.");
+    console.error("Error setting processing completion flag:", err);
+  }
+}
+
+app.get("/processing-status", (req, res) => {
+  let progress = totalFiles > 0 ? (processedFiles / totalFiles) * 100 : 0; // Calculate progress percentage
+
+  if (processedFiles >= totalFiles) {
+    // When all files are processed, report completion
+    res.json({ status: "complete", progress: 100 });
+  } else {
+    // While processing is ongoing, report the current progress
+    res.json({ status: "processing", progress: progress.toFixed(2) });
   }
 });
 

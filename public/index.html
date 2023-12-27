@@ -37,18 +37,20 @@
               <h5 class="card-title">Instructions</h5>
               <p class="card-text">
                 <strong>How to Use Historic Graves TextHarvester:</strong><br />
-                1. <b>Select and Upload Your Image:</b> Click "Choose JPG file"
-                to select a JPEG image with grave inscription text. Click
-                "Harvest" to upload and process the image.<br />
+                1. <b>Select and Upload Your Image(s):</b> Click "Choose JPG
+                file" to select a JPEG image with memorial inscription text.
+                Click "Harvest" to upload and process the image.<br />
                 2. <b>Wait for Processing:</b> You'll be redirected to a
-                processing page. Wait here until processing completes.<br />
+                processing page where you can monitor progress. Feel free to
+                leave it running in the background.<br />
                 3. <b>View Results:</b> Once processed, you'll automatically go
                 to the results page. Here, you'll see extracted text, focusing
                 on 'Memorial Number' and 'Inscription'. Use "Download Results"
-                to get the data in JSON format.<br />
+                to get the data in JSON format or click the copy icon to copy
+                the output text to your clipboard.<br />
                 <i
-                  >Tip: For best results, use clear, legible images in good
-                  lighting.</i
+                  >Tip: For best results, use high-contrast images with
+                  block/non-cursive handwriting.</i
                 >
               </p>
             </div>
@@ -76,14 +78,16 @@
                 name="file"
                 class="form-control-file"
                 accept=".jpg, .jpeg"
+                multiple
                 hidden
               />
+
               <small id="file-chosen" class="form-text text-muted"
                 >No file chosen</small
               >
             </div>
             <!-- Upload button -->
-            <button type="submit" class="btn btn-success btn-block">
+            <button id="uploadButton" class="btn btn-success btn-block">
               Harvest
             </button>
           </form>
@@ -98,13 +102,15 @@
 
     <!-- Custom Script for File Selection -->
     <script>
-      // Add an event listener to update the selected file name
       document
         .getElementById("fileUpload")
         .addEventListener("change", function () {
-          // Update the text to show the selected file name
+          let fileNames = [];
+          for (let i = 0; i < this.files.length; i++) {
+            fileNames.push(this.files[i].name);
+          }
           document.getElementById("file-chosen").textContent =
-            this.files[0].name;
+            fileNames.join(", ");
         });
     </script>
   </body>
