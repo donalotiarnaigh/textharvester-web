@@ -23,24 +23,60 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage }).array("file", 10); // Set a limit for the number of files (e.g., 10)
 
+// Define a global queue to hold file paths
+let fileQueue = [];
+
+/**
+Adds uploaded files to the queue.
+ * @param {Array} files - Array of file objects as provided by multer.
+ */
+function enqueueFiles(files) {
+  files.forEach((file) => {
+    fileQueue.push(file.path);
+  });
+  console.log(
+    `Enqueued ${files.length} files. Queue length is now: ${fileQueue.length}`
+  );
+}
+
+/**
+ * Removes and returns the next file from the queue.
+ * @returns {string|null} The path of the next file to process, or null if the queue is empty.
+ */
+function dequeueFile() {
+  if (fileQueue.length > 0) {
+    const nextFilePath = fileQueue.shift(); // Removes the first element from the queue
+    console.log(`Dequeued file for processing: ${nextFilePath}`);
+    return nextFilePath;
+  } else {
+    console.log("No files in queue to dequeue.");
+    return null;
+  }
+}
+
 app.use(express.static("public"));
 
+// The /upload route handler
 app.post("/upload", (req, res) => {
   upload(req, res, (err) => {
     if (err instanceof multer.MulterError) {
-      // A Multer error occurred when uploading.
+      // Handle multer-specific upload error
       console.error("Multer upload error:", err);
       return res.status(500).send("Multer upload error.");
     } else if (err) {
-      // An unknown error occurred when uploading.
+      // Handle unknown upload error
       console.error("Unknown upload error:", err);
       return res.status(500).send("Unknown upload error.");
     }
 
     if (!req.files || req.files.length === 0) {
+      // Handle no file uploaded
       console.log("No files uploaded.");
       return res.status(400).send("No files uploaded.");
     }
+
+    // Enqueue files for processing
+    enqueueFiles(req.files);
 
     // Clear any existing processing completion flag
     clearProcessingCompleteFlag();
@@ -53,6 +89,7 @@ app.post("/upload", (req, res) => {
     clearResultsFile();
 
     // Start processing files asynchronously
+    // (You may need to modify this part based on your new queue system)
     startAsyncFileProcessing(req.files);
 
     // Immediately redirect to processing.html to monitor the progress
