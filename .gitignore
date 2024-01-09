@@ -38,6 +38,7 @@ _site
 .env.development.local
 .env.test.local
 .env.production.local
+.zshrc
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
