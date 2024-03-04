@@ -120,6 +120,11 @@
       // Start checking processing status immediately and then every 5 seconds
       checkProcessingStatus();
       setInterval(checkProcessingStatus, 5000);
+
+      // Add this line to redirect to results.html after 4 minutes
+      setTimeout(() => {
+        window.location.href = "/results.html";
+      }, 240000); // 4 minutes in milliseconds
     </script>
   </body>
 </html>
