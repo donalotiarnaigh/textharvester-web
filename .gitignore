@@ -3,7 +3,6 @@ node_modules/
 
 # Environment configuration files
 .env
-.zshrc
 
 # Logs
 logs
@@ -39,6 +38,8 @@ _site
 .env.development.local
 .env.test.local
 .env.production.local
+.zshrc
+
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
