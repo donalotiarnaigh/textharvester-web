@@ -3,6 +3,7 @@ node_modules/
 
 # Environment configuration files
 .env
+.zshrc
 
 # Logs
 logs
