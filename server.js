@@ -21,7 +21,7 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage }).array("file", 10); // Set a limit for the number of files (e.g., 10)
+const upload = multer({ storage: storage }).array("file", 100); // Set a limit for the number of files (e.g., 10)
 
 // Define a global queue to hold file paths
 let fileQueue = [];
