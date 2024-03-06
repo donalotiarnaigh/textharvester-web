@@ -68,7 +68,7 @@
             enctype="multipart/form-data"
           >
             <div class="form-group">
-              <!-- File selection button -->
+              <!-- For individual file uploads -->
               <label for="fileUpload" class="btn btn-primary btn-block"
                 >Choose JPG file</label
               >
@@ -84,6 +84,25 @@
 
               <small id="file-chosen" class="form-text text-muted"
                 >No file chosen</small
+              >
+
+              <!-- For folder uploads -->
+              <label for="folderUpload" class="btn btn-secondary btn-block"
+                >Choose Folder</label
+              >
+              <input
+                type="file"
+                id="folderUpload"
+                name="folder"
+                class="form-control-file"
+                accept=".jpg, .jpeg"
+                webkitdirectory
+                multiple
+                hidden
+              />
+
+              <small id="folder-chosen" class="form-text text-muted"
+                >No folder chosen</small
               >
             </div>
             <!-- Upload button -->
@@ -111,6 +130,21 @@
           }
           document.getElementById("file-chosen").textContent =
             fileNames.join(", ");
+        });
+
+      document
+        .getElementById("folderUpload")
+        .addEventListener("change", function () {
+          if (this.files.length) {
+            // Assuming all files are from the same folder and the folder name is part of the file's webkitRelativePath
+            const folderPath = this.files[0].webkitRelativePath;
+            const folderName = folderPath.split("/")[0]; // Extracts the folder name from the path
+            document.getElementById("folder-chosen").textContent =
+              "Folder selected: " + folderName;
+          } else {
+            document.getElementById("folder-chosen").textContent =
+              "No folder chosen";
+          }
         });
     </script>
   </body>

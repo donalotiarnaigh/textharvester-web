@@ -129,6 +129,11 @@ app.use(express.static("public"));
 // The /upload route handler
 app.post("/upload", (req, res) => {
   console.log("Received an upload request.");
+  const upload = multer({ storage: storage }).fields([
+    { name: "file", maxCount: 100 }, // For individual files
+    { name: "folder", maxCount: 1000 }, // For folder uploads
+  ]);
+
   upload(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       // Handle multer-specific upload error
@@ -140,28 +145,31 @@ app.post("/upload", (req, res) => {
       return res.status(500).send("Unknown upload error.");
     }
 
-    if (!req.files || req.files.length === 0) {
+    // Combine files from both 'file' and 'folder' inputs
+    const files = [...(req.files.file || []), ...(req.files.folder || [])];
+
+    if (files.length === 0) {
       // Handle no file uploaded
       console.log("No files uploaded.");
       return res.status(400).send("No files uploaded.");
     }
 
-    console.log(`Received upload request with ${req.files.length} files.`);
-    req.files.forEach((file, index) =>
+    console.log(`Received upload request with ${files.length} files.`);
+    files.forEach((file, index) =>
       console.log(`File ${index + 1}: ${file.originalname}`)
     );
 
     // Enqueue files for processing
-    enqueueFiles(req.files);
+    enqueueFiles(files);
 
     // Log file enqueueing
-    console.log(`Enqueued ${req.files.length} file(s) for processing.`);
+    console.log(`Enqueued ${files.length} file(s) for processing.`);
 
     // Clear any existing processing completion flag
     clearProcessingCompleteFlag();
 
     // Update totalFiles with the number of files uploaded
-    totalFiles = req.files.length;
+    totalFiles = files.length;
     processedFiles = 0; // Reset the processedFiles count for the new batch
     console.log(`Processing ${totalFiles} files.`);
 
@@ -169,7 +177,7 @@ app.post("/upload", (req, res) => {
     clearResultsFile();
 
     // Start processing files asynchronously
-    startAsyncFileProcessing(req.files);
+    startAsyncFileProcessing(files);
 
     console.log("Started processing files asynchronously.");
 
