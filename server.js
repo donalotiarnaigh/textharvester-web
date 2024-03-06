@@ -235,7 +235,7 @@ async function processFile(filePath) {
             content: [
               {
                 type: "text",
-                text: "You're an expert in OCR and are working in a heritage/genealogy context assisting in data processing post graveyard survey. Examine this image and extract the handwritten text from the inscription field for each memorial number - no other fields. Respond in JSON format only.",
+                text: "You're an expert in OCR and are working in a heritage/genealogy context assisting in data processing post graveyard survey. Examine these images and extract the handwritten text from the inscription field for each memorial number - no other fields. Respond in JSON format only. e.g., {memorial_number: 69, inscription: SACRED HEART OF JESUS HAVE MERCY ON THE SOUL OF THOMAS RUANE LISNAGROOBE WHO DIED APRIL 16th 1923 AGED 74 YRS AND OF HIS WIFE MARGARET RUANE DIED JULY 26th 1929 AGED 78 YEARS R. I. P. ERECTED BY THEIR FOND SON THOMAS RUANE PHILADELPHIA USA}. If no memorial number or inscription is visible in an image, return a JSON with NULL in each field",
               },
               {
                 type: "image_url",
