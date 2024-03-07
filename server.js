@@ -3,6 +3,8 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const OpenAI = require("openai");
+const moment = require("moment");
+
 require("dotenv").config(); // Load environment variables from .env file
 
 const app = express();
@@ -359,6 +361,24 @@ function storeResults(ocrText) {
   }
 }
 
+function jsonToCsv(jsonData) {
+  // Define CSV columns
+  const columns = ["number", "memorial_number", "inscription"];
+  // Create the header row
+  let csvString = columns.join(",") + "\n";
+
+  // Iterate through JSON data to build CSV rows
+  jsonData.forEach((item, index) => {
+    let row = `${index + 1},${item.memorial_number},"${item.inscription.replace(
+      /"/g,
+      '""'
+    )}"\n`;
+    csvString += row;
+  });
+
+  return csvString;
+}
+
 function setProcessingCompleteFlag() {
   const flagPath = "./data/processing_complete.flag";
   try {
@@ -413,7 +433,7 @@ app.get("/results-data", (req, res) => {
   }
 });
 
-app.get("/download-results", (req, res) => {
+app.get("/download-json", (req, res) => {
   const resultsPath = "./data/results.json";
 
   try {
@@ -424,6 +444,18 @@ app.get("/download-results", (req, res) => {
     console.error("Error reading results file:", err);
     res.status(500).send("Unable to retrieve results.");
   }
+});
+
+app.get("/download-csv", (req, res) => {
+  const dateStr = moment().format("YYYYMMDD_HHmmss");
+  const filename = `hgth_${dateStr}.csv`;
+
+  // Assuming 'jsonData' contains your JSON data to be converted to CSV
+  const csvData = jsonToCsv(jsonData); // Convert your JSON data to CSV format
+
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+  res.send(csvData);
 });
 
 app.listen(port, () => {
