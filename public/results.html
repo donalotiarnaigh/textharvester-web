@@ -73,12 +73,21 @@
               id="downloadButton"
               class="btn btn-primary"
               style="margin-top: 20px"
-              onclick="downloadResults()"
+              onclick="downloadJsonResults()"
               data-toggle="tooltip"
               data-placement="top"
               title="Download Results (JSON)"
             >
-              <i class="fas fa-download"></i> Download Results
+              <i class="fas fa-download"></i> Download JSON
+            </button>
+            <button
+              id="downloadCsvButton"
+              class="btn btn-primary"
+              style="margin-top: 20px"
+              onclick="downloadCsvResults()"
+              title="Download Results (CSV)"
+            >
+              <i class="fas fa-download"></i> Download CSV
             </button>
           </div>
         </div>
@@ -160,7 +169,7 @@
     <!-- JavaScript for downloading results -->
     <script>
       // Function to trigger download
-      function downloadResults() {
+      function downloadJsonResults() {
         // Create a link element for downloading the file
         const downloadLink = document.createElement("a");
 
@@ -181,8 +190,11 @@
 
     <!-- function to trigger download -->
     <script>
-      function downloadResults() {
+      function downloadJsonResults() {
         window.location.href = "/download-results";
+      }
+      function downloadCsvResults() {
+        window.location.href = "/download-csv";
       }
     </script>
   </body>

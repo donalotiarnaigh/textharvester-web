@@ -447,11 +447,11 @@ app.get("/download-json", (req, res) => {
 });
 
 app.get("/download-csv", (req, res) => {
+  // Assuming 'jsonData' is your JSON data that needs to be converted to CSV
+  const csvData = jsonToCsv(jsonData); // Convert your JSON data to CSV format
+
   const dateStr = moment().format("YYYYMMDD_HHmmss");
   const filename = `hgth_${dateStr}.csv`;
-
-  // Assuming 'jsonData' contains your JSON data to be converted to CSV
-  const csvData = jsonToCsv(jsonData); // Convert your JSON data to CSV format
 
   res.setHeader("Content-Type", "text/csv");
   res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
