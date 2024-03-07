@@ -369,10 +369,10 @@ function jsonToCsv(jsonData) {
 
   // Iterate through JSON data to build CSV rows
   jsonData.forEach((item, index) => {
-    let row = `${index + 1},${item.memorial_number},"${item.inscription.replace(
-      /"/g,
-      '""'
-    )}"\n`;
+    let row = `${index + 1},${item.memorial_number},"${
+      item.inscription ? item.inscription.replace(/"/g, '""') : ""
+    }"\n`;
+
     csvString += row;
   });
 
@@ -447,15 +447,24 @@ app.get("/download-json", (req, res) => {
 });
 
 app.get("/download-csv", (req, res) => {
-  // Assuming 'jsonData' is your JSON data that needs to be converted to CSV
-  const csvData = jsonToCsv(jsonData); // Convert your JSON data to CSV format
+  const resultsPath = "./data/results.json";
 
-  const dateStr = moment().format("YYYYMMDD_HHmmss");
-  const filename = `hgth_${dateStr}.csv`;
+  fs.readFile(path.join(__dirname, resultsPath), "utf8", (err, data) => {
+    if (err) {
+      console.error("Error reading results file:", err);
+      return res.status(500).send("Unable to retrieve results.");
+    }
 
-  res.setHeader("Content-Type", "text/csv");
-  res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
-  res.send(csvData);
+    const jsonData = JSON.parse(data);
+    const csvData = jsonToCsv(jsonData); // Convert JSON to CSV
+
+    const dateStr = moment().format("YYYYMMDD_HHmmss");
+    const filename = `hgth_${dateStr}.csv`;
+
+    res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+    res.setHeader("Content-Type", "text/csv");
+    res.send(csvData);
+  });
 });
 
 app.listen(port, () => {
