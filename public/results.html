@@ -44,24 +44,6 @@
           <div class="results-section">
             <h2>Processing Complete</h2>
             <p>Here is your harvested text:</p>
-            <div class="code-block">
-              <!-- Button for copying to clipboard -->
-              <button
-                id="copyButton"
-                class="btn btn-secondary btn-sm"
-                style="position: absolute; bottom: 5px; right: 5px"
-                data-toggle="tooltip"
-                data-placement="top"
-                title="Copy to Clipboard"
-              >
-                <i class="fas fa-clipboard"></i>
-                <!-- Clipboard icon -->
-              </button>
-
-              <pre><code id="jsonData"></code></pre>
-              <!-- Empty element for the copy success message -->
-              <div id="copyMessage"></div>
-            </div>
             <!-- Button to navigate back to home -->
             <a href="/"
               ><button class="btn btn-primary" style="margin-top: 20px">
@@ -89,6 +71,24 @@
             >
               <i class="fas fa-download"></i> Download CSV
             </button>
+            <div class="code-block">
+              <!-- Button for copying to clipboard -->
+              <button
+                id="copyButton"
+                class="btn btn-secondary btn-sm"
+                style="position: absolute; bottom: 5px; right: 5px"
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Copy to Clipboard"
+              >
+                <i class="fas fa-clipboard"></i>
+                <!-- Clipboard icon -->
+              </button>
+
+              <pre><code id="jsonData"></code></pre>
+              <!-- Empty element for the copy success message -->
+              <div id="copyMessage"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -165,7 +165,6 @@
         }, 1500); // Adjust the duration as needed
       }
     </script>
-    <!-- JavaScript for downloading results -->
     <!-- JavaScript for downloading results -->
     <script>
       // Function to trigger download
