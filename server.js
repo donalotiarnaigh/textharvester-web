@@ -145,13 +145,42 @@ app.post("/upload", (req, res) => {
       return res.status(500).send("Unknown upload error.");
     }
 
-    // Combine files from both 'file' and 'folder' inputs
-    const files = [...(req.files.file || []), ...(req.files.folder || [])];
+    // Combine files from both 'file' and 'folder' inputs, filtering out .DS_Store
+    const files = [
+      ...(req.files.file || []),
+      ...(req.files.folder || []),
+    ].filter((file) => file.originalname !== ".DS_Store");
 
     if (files.length === 0) {
       // Handle no file uploaded
       console.log("No files uploaded.");
-      return res.status(400).send("No files uploaded.");
+      return res
+        .status(400)
+        .send(
+          "No files uploaded, use your browser's back button and try again."
+        );
+    }
+
+    // Define supported file types
+    const supportedFileTypes = ["image/jpeg", "image/jpg"];
+    // Validate each file's MIME type, excluding .DS_Store from causing validation errors
+    const invalidFiles = files.filter(
+      (file) =>
+        !supportedFileTypes.includes(file.mimetype) &&
+        file.originalname !== ".DS_Store"
+    );
+
+    if (invalidFiles.length > 0) {
+      // Respond with an error if unsupported file types were found
+      const invalidFileNames = invalidFiles
+        .map((file) => file.originalname)
+        .join(", ");
+      console.log(`Unsupported file types detected: ${invalidFileNames}`);
+      return res
+        .status(400)
+        .send(
+          `Unsupported file types detected: ${invalidFileNames}, use your brower's back button and try again`
+        );
     }
 
     console.log(`Received upload request with ${files.length} files.`);
@@ -159,29 +188,16 @@ app.post("/upload", (req, res) => {
       console.log(`File ${index + 1}: ${file.originalname}`)
     );
 
-    // Enqueue files for processing
+    // Proceed with existing logic if all files are valid
     enqueueFiles(files);
-
-    // Log file enqueueing
     console.log(`Enqueued ${files.length} file(s) for processing.`);
-
-    // Clear any existing processing completion flag
     clearProcessingCompleteFlag();
-
-    // Update totalFiles with the number of files uploaded
     totalFiles = files.length;
     processedFiles = 0; // Reset the processedFiles count for the new batch
     console.log(`Processing ${totalFiles} files.`);
-
-    // Clear results.json before processing new files
     clearResultsFile();
-
-    // Start processing files asynchronously
     startAsyncFileProcessing(files);
-
     console.log("Started processing files asynchronously.");
-
-    // Immediately redirect to processing.html to monitor the progress
     res.redirect("/processing.html");
   });
 });
