@@ -4,12 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Processing - Historic Graves Text Harvester</title>
-    <!-- Include Bootstrap CSS -->
     <link
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
     />
-    <!-- Custom CSS styling -->
     <style>
       html,
       body {
@@ -17,30 +15,21 @@
         margin: 0;
       }
       .content-wrap {
-        min-height: calc(100vh - 70px); /* Adjust based on the footer height */
-        padding-bottom: 20px; /* Footer height */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: calc(100vh - 70px);
       }
       .footer {
-        background-color: #f8f9fa; /* Light grey */
+        background-color: #f8f9fa;
         color: black;
         text-align: center;
-        padding: 30px 0; /* Increased padding */
-        font-size: 0.9em; /* Adjust font size if necessary */
-        position: relative;
-        height: auto; /* Set height to auto to accommodate content */
-        clear: both;
+        padding: 30px 0;
+        font-size: 0.9em;
       }
-
-      .container {
-        padding-top: 50px;
-      }
+      .loading-container,
       .processing-message {
         text-align: center;
-        margin-top: 20px;
-      }
-      .loading-container {
-        text-align: center;
-        padding: 40px 0;
       }
       .loading {
         display: inline-block;
@@ -50,55 +39,54 @@
         border-radius: 50%;
         border-top-color: #636767;
         animation: spin 1s ease-in-out infinite;
-        -webkit-animation: spin 1s ease-in-out infinite;
       }
-
+      .progress-container {
+        text-align: center;
+        position: relative;
+        width: 100%;
+      }
+      .progress {
+        width: 800px;
+        background-color: #eee;
+      }
+      .progress-bar {
+        width: 0%;
+        background-color: #007bff;
+        transition: width 0.6s ease;
+      }
+      #loading-text {
+        display: block;
+        margin-top: 20px;
+        margin-bottom: 20px;
+      }
       @keyframes spin {
         to {
-          -webkit-transform: rotate(360deg);
+          transform: rotate(360deg);
         }
-      }
-      @-webkit-keyframes spin {
-        to {
-          -webkit-transform: rotate(360deg);
-        }
-      }
-
-      #loading-text {
-        margin-top: 10px;
-        font-size: 18px;
-        color: #636767;
       }
     </style>
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
   </head>
   <body>
     <div class="content-wrap">
-      <div class="container">
-        <div class="row">
-          <div class="col-12">
-            <div class="processing-message">
-              <h2>Processing...</h2>
-              <p>Please wait, currently processing your file(s).</p>
-              <!-- Optionally, add a spinner or animation here -->
-            </div>
-          </div>
+      <div>
+        <div class="processing-message">
+          <h2>Processing...</h2>
+          <p>Please wait, currently processing your file(s).</p>
+          <div class="loading"></div>
+          <div id="loading-text">Processing...</div>
         </div>
-      </div>
-      <div class="loading-container">
-        <div class="loading"></div>
-        <div id="loading-text">Processing...</div>
-        <div class="progress">
-          <div
-            id="progressBar"
-            class="progress-bar"
-            role="progressbar"
-            style="width: 0%"
-            aria-valuenow="0"
-            aria-valuemin="0"
-            aria-valuemax="100"
-          >
-            0%
+        <div class="progress-container">
+          <div class="progress">
+            <div
+              id="progressBar"
+              class="progress-bar"
+              role="progressbar"
+              style="width: 0%"
+              aria-valuenow="0"
+              aria-valuemin="0"
+              aria-valuemax="100"
+            ></div>
           </div>
         </div>
       </div>
@@ -112,50 +100,35 @@
       >
       website.
     </footer>
-
-    <!-- Include Bootstrap and jQuery Scripts -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
-    <!-- JavaScript for checking processing status -->
-
     <script>
       function updateProgressBar(percentage) {
         const progressBar = document.getElementById("progressBar");
         progressBar.style.width = percentage + "%";
-        progressBar.setAttribute("aria-valuenow", percentage);
         progressBar.textContent = `${percentage}% Complete`;
       }
-
       function checkProcessingStatus() {
         fetch("/processing-status")
           .then((response) => response.json())
           .then((data) => {
-            // Update the progress bar based on the returned percentage
             updateProgressBar(data.progress);
-
-            // Redirect when the server indicates processing is complete
             if (data.status === "complete") {
               setTimeout(() => {
                 window.location.href = "/results.html";
-              }, 1000); // Short delay to ensure user sees the progress complete
+              }, 1000);
             }
           })
           .catch((error) => {
             console.error("Error fetching processing status:", error);
-            // Optionally update the UI to inform the user of the error
           });
       }
-
-      // Start checking processing status immediately and then every 2 seconds
       checkProcessingStatus();
       setInterval(checkProcessingStatus, 2000);
-
-      // Add this line to redirect to results.html after 4 minutes
       setTimeout(() => {
         window.location.href = "/results.html";
-      }, 240000); // 4 minutes in milliseconds
+      }, 240000);
     </script>
   </body>
 </html>
