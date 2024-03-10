@@ -11,6 +11,26 @@
     />
     <!-- Custom CSS (if needed) -->
     <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      .content-wrap {
+        min-height: calc(100vh - 70px); /* Adjust based on the footer height */
+        padding-bottom: 20px; /* Footer height */
+      }
+      .footer {
+        background-color: #f8f9fa; /* Light grey */
+        color: black;
+        text-align: center;
+        padding: 30px 0; /* Increased padding */
+        font-size: 0.9em; /* Adjust font size if necessary */
+        position: relative;
+        height: auto; /* Set height to auto to accommodate content */
+        clear: both;
+      }
+
       .container {
         padding-top: 20px;
       }
@@ -21,110 +41,123 @@
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
   </head>
   <body>
-    <div class="container">
-      <!-- Header -->
-      <div class="row mb-4">
-        <div class="col">
-          <h1 class="text-center">Historic Graves Text Harvester</h1>
+    <div class="content-wrap">
+      <div class="container">
+        <!-- Header -->
+        <div class="row mb-4">
+          <div class="col">
+            <h1 class="text-center">Historic Graves Text Harvester</h1>
+          </div>
         </div>
-      </div>
 
-      <!-- Instructions Box -->
-      <div class="row">
-        <div class="col-12 col-md-8 offset-md-2">
-          <div class="card instructions">
-            <div class="card-body">
-              <h5 class="card-title">Instructions</h5>
-              <p class="card-text">
-                <strong>How to Use Historic Graves TextHarvester:</strong><br />
-                1. <b>Select and Upload Your Image(s) or Entire Folder:</b> Use
-                the "Choose JPG file" button to select one or more JPEG images
-                with memorial inscription text, or use the "Choose Folder"
-                button to select an entire folder containing your images. After
-                selecting your files or folder, click "Harvest" to upload and
-                process your selection.<br />
-                2. <b>Wait for Processing:</b> You'll be redirected to a
-                processing page where you can monitor the progress of the upload
-                and OCR processing. Feel free to leave it running in the
-                background; the page will update automatically.<br />
-                3. <b>View Results:</b> Once processing is complete, you'll
-                automatically be directed to the results page. Here, you'll see
-                the extracted text, including details such as 'Memorial Number'
-                and 'Inscription'. You can use the "Download Results" button to
-                save the data in JSON format or use the copy icon to copy the
-                output text to your clipboard.<br />
-                <i
-                  >Tip: For best results, use high-contrast images with
-                  block/non-cursive handwriting. When uploading a folder, ensure
-                  that all images within are relevant to your search to optimize
-                  processing efficiency.</i
-                >
-              </p>
+        <!-- Instructions Box -->
+        <div class="row">
+          <div class="col-12 col-md-8 offset-md-2">
+            <div class="card instructions">
+              <div class="card-body">
+                <h5 class="card-title">Instructions</h5>
+                <p class="card-text">
+                  <strong>How to Use Historic Graves TextHarvester:</strong
+                  ><br />
+                  1.
+                  <b>Select and Upload Your Image(s) or Entire Folder:</b> Use
+                  the "Choose JPG file" button to select one or more JPEG images
+                  with memorial inscription text, or use the "Choose Folder"
+                  button to select an entire folder containing your images.
+                  After selecting your files or folder, click "Harvest" to
+                  upload and process your selection.<br />
+                  2. <b>Wait for Processing:</b> You'll be redirected to a
+                  processing page where you can monitor the progress of the
+                  upload and OCR processing. Feel free to leave it running in
+                  the background; the page will update automatically.<br />
+                  3. <b>View Results:</b> Once processing is complete, you'll
+                  automatically be directed to the results page. Here, you'll
+                  see the extracted text, including details such as 'Memorial
+                  Number' and 'Inscription'. You can use the "Download Results"
+                  button to save the data in JSON format or use the copy icon to
+                  copy the output text to your clipboard.<br />
+                  <i
+                    >Tip: For best results, use high-contrast images with
+                    block/non-cursive handwriting. When uploading a folder,
+                    ensure that all images within are relevant to your search to
+                    optimize processing efficiency.</i
+                  >
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- File Upload Section -->
-      <div class="row">
-        <div class="col-12 col-md-8 offset-md-2">
-          <form
-            id="uploadForm"
-            method="POST"
-            action="/upload"
-            enctype="multipart/form-data"
-          >
-            <div class="row">
-              <!-- File Upload Button -->
-              <div class="col">
-                <div class="form-group">
-                  <label for="fileUpload" class="btn btn-primary btn-block"
-                    >Choose JPG file(s)</label
-                  >
-                  <input
-                    type="file"
-                    id="fileUpload"
-                    name="file"
-                    class="form-control-file"
-                    accept=".jpg, .jpeg"
-                    multiple
-                    hidden
-                  />
-                  <small id="file-chosen" class="form-text text-muted"
-                    >No file chosen</small
-                  >
+        <!-- File Upload Section -->
+        <div class="row">
+          <div class="col-12 col-md-8 offset-md-2">
+            <form
+              id="uploadForm"
+              method="POST"
+              action="/upload"
+              enctype="multipart/form-data"
+            >
+              <div class="row">
+                <!-- File Upload Button -->
+                <div class="col">
+                  <div class="form-group">
+                    <label for="fileUpload" class="btn btn-primary btn-block"
+                      >Choose JPG file(s)</label
+                    >
+                    <input
+                      type="file"
+                      id="fileUpload"
+                      name="file"
+                      class="form-control-file"
+                      accept=".jpg, .jpeg"
+                      multiple
+                      hidden
+                    />
+                    <small id="file-chosen" class="form-text text-muted"
+                      >No file chosen</small
+                    >
+                  </div>
+                </div>
+
+                <!-- Folder Upload Button -->
+                <div class="col">
+                  <div class="form-group">
+                    <label for="folderUpload" class="btn btn-primary btn-block"
+                      >Choose a Folder</label
+                    >
+                    <input
+                      type="file"
+                      id="folderUpload"
+                      name="folder"
+                      class="form-control-file"
+                      webkitdirectory
+                      multiple
+                      hidden
+                    />
+                    <small id="folder-chosen" class="form-text text-muted"
+                      >No folder chosen</small
+                    >
+                  </div>
                 </div>
               </div>
-
-              <!-- Folder Upload Button -->
-              <div class="col">
-                <div class="form-group">
-                  <label for="folderUpload" class="btn btn-primary btn-block"
-                    >Choose a Folder</label
-                  >
-                  <input
-                    type="file"
-                    id="folderUpload"
-                    name="folder"
-                    class="form-control-file"
-                    webkitdirectory
-                    multiple
-                    hidden
-                  />
-                  <small id="folder-chosen" class="form-text text-muted"
-                    >No folder chosen</small
-                  >
-                </div>
-              </div>
-            </div>
-            <!-- Upload button -->
-            <button id="uploadButton" class="btn btn-success btn-block">
-              Harvest
-            </button>
-          </form>
+              <!-- Upload button -->
+              <button id="uploadButton" class="btn btn-success btn-block">
+                Harvest
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
+    <footer class="footer">
+      © 2024 Historic Graves Project. All rights reserved. For more info,
+      contact me at
+      <a href="mailto:me@danieltierney.ie">me@danieltierney.ie</a> or visit the
+      <a href="https://www.historicgraves.ie" target="_blank"
+        >Historic Graves</a
+      >
+      website.
+    </footer>
 
     <!-- Include Bootstrap and jQuery Scripts -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>

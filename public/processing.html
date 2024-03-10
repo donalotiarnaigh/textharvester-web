@@ -11,6 +11,26 @@
     />
     <!-- Custom CSS styling -->
     <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      .content-wrap {
+        min-height: calc(100vh - 70px); /* Adjust based on the footer height */
+        padding-bottom: 20px; /* Footer height */
+      }
+      .footer {
+        background-color: #f8f9fa; /* Light grey */
+        color: black;
+        text-align: center;
+        padding: 30px 0; /* Increased padding */
+        font-size: 0.9em; /* Adjust font size if necessary */
+        position: relative;
+        height: auto; /* Set height to auto to accommodate content */
+        clear: both;
+      }
+
       .container {
         padding-top: 50px;
       }
@@ -53,34 +73,45 @@
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
   </head>
   <body>
-    <div class="container">
-      <div class="row">
-        <div class="col-12">
-          <div class="processing-message">
-            <h2>Processing...</h2>
-            <p>Please wait, currently processing your file(s).</p>
-            <!-- Optionally, add a spinner or animation here -->
+    <div class="content-wrap">
+      <div class="container">
+        <div class="row">
+          <div class="col-12">
+            <div class="processing-message">
+              <h2>Processing...</h2>
+              <p>Please wait, currently processing your file(s).</p>
+              <!-- Optionally, add a spinner or animation here -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="loading-container">
+        <div class="loading"></div>
+        <div id="loading-text">Processing...</div>
+        <div class="progress">
+          <div
+            id="progressBar"
+            class="progress-bar"
+            role="progressbar"
+            style="width: 0%"
+            aria-valuenow="0"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          >
+            0%
           </div>
         </div>
       </div>
     </div>
-    <div class="loading-container">
-      <div class="loading"></div>
-      <div id="loading-text">Processing...</div>
-      <div class="progress">
-        <div
-          id="progressBar"
-          class="progress-bar"
-          role="progressbar"
-          style="width: 0%"
-          aria-valuenow="0"
-          aria-valuemin="0"
-          aria-valuemax="100"
-        >
-          0%
-        </div>
-      </div>
-    </div>
+    <footer class="footer">
+      © 2024 Historic Graves Project. All rights reserved. For more info,
+      contact me at
+      <a href="mailto:me@danieltierney.ie">me@danieltierney.ie</a> or visit the
+      <a href="https://www.historicgraves.ie" target="_blank"
+        >Historic Graves</a
+      >
+      website.
+    </footer>
 
     <!-- Include Bootstrap and jQuery Scripts -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>

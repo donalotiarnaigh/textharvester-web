@@ -17,6 +17,26 @@
 
     <!-- Custom CSS styling -->
     <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      .content-wrap {
+        min-height: calc(100vh - 70px); /* Adjust based on the footer height */
+        padding-bottom: 20px; /* Footer height */
+      }
+      .footer {
+        background-color: #f8f9fa; /* Light grey */
+        color: black;
+        text-align: center;
+        padding: 30px 0; /* Increased padding */
+        font-size: 0.9em; /* Adjust font size if necessary */
+        position: relative;
+        height: auto; /* Set height to auto to accommodate content */
+        clear: both;
+      }
+
       .container {
         padding-top: 50px;
       }
@@ -38,61 +58,72 @@
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
   </head>
   <body>
-    <div class="container">
-      <div class="row">
-        <div class="col-12">
-          <div class="results-section">
-            <h2>Processing Complete</h2>
-            <p>Here is your harvested text:</p>
-            <!-- Button to navigate back to home -->
-            <a href="/"
-              ><button class="btn btn-primary" style="margin-top: 20px">
-                Back to Home
-              </button></a
-            >
-            <!-- Button for downloading results -->
-            <button
-              id="downloadButton"
-              class="btn btn-primary"
-              style="margin-top: 20px"
-              onclick="downloadJsonResults()"
-              data-toggle="tooltip"
-              data-placement="top"
-              title="Download Results (JSON)"
-            >
-              <i class="fas fa-download"></i> Download JSON
-            </button>
-            <button
-              id="downloadCsvButton"
-              class="btn btn-primary"
-              style="margin-top: 20px"
-              onclick="downloadCsvResults()"
-              title="Download Results (CSV)"
-            >
-              <i class="fas fa-download"></i> Download CSV
-            </button>
-            <div class="code-block">
-              <!-- Button for copying to clipboard -->
+    <div class="content-wrap">
+      <div class="container">
+        <div class="row">
+          <div class="col-12">
+            <div class="results-section">
+              <h2>Processing Complete</h2>
+              <p>Here is your harvested text:</p>
+              <!-- Button to navigate back to home -->
+              <a href="/"
+                ><button class="btn btn-primary" style="margin-top: 20px">
+                  Back to Home
+                </button></a
+              >
+              <!-- Button for downloading results -->
               <button
-                id="copyButton"
-                class="btn btn-secondary btn-sm"
-                style="position: absolute; top: 5px; right: 5px"
+                id="downloadButton"
+                class="btn btn-primary"
+                style="margin-top: 20px"
+                onclick="downloadJsonResults()"
                 data-toggle="tooltip"
                 data-placement="top"
-                title="Copy to Clipboard"
+                title="Download Results (JSON)"
               >
-                <i class="fas fa-clipboard"></i>
-                <!-- Clipboard icon -->
+                <i class="fas fa-download"></i> Download JSON
               </button>
+              <button
+                id="downloadCsvButton"
+                class="btn btn-primary"
+                style="margin-top: 20px"
+                onclick="downloadCsvResults()"
+                title="Download Results (CSV)"
+              >
+                <i class="fas fa-download"></i> Download CSV
+              </button>
+              <div class="code-block">
+                <!-- Button for copying to clipboard -->
+                <button
+                  id="copyButton"
+                  class="btn btn-secondary btn-sm"
+                  style="position: absolute; top: 5px; right: 5px"
+                  data-toggle="tooltip"
+                  data-placement="top"
+                  title="Copy to Clipboard"
+                >
+                  <i class="fas fa-clipboard"></i>
+                  <!-- Clipboard icon -->
+                </button>
 
-              <pre><code id="jsonData"></code></pre>
-              <!-- Empty element for the copy success message -->
-              <div id="copyMessage"></div>
+                <pre><code id="jsonData"></code></pre>
+                <!-- Empty element for the copy success message -->
+                <div id="copyMessage"></div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+    <footer class="footer">
+      © 2024 Historic Graves Project. All rights reserved. For more info,
+      contact me at
+      <a href="mailto:me@danieltierney.ie">me@danieltierney.ie</a> or visit the
+      <a href="https://www.historicgraves.ie" target="_blank"
+        >Historic Graves</a
+      >
+      website.
+    </footer>
 
     <!-- Include JavaScript libraries -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
