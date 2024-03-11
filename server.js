@@ -7,6 +7,35 @@ const moment = require("moment");
 
 require("dotenv").config(); // Load environment variables from .env file
 
+// Import winston for logging
+const winston = require("winston");
+
+// Configure winston logging
+const logger = winston.createLogger({
+  level: "info", // This will log messages of level 'info' and higher severity ('warn' and 'error')
+  format: winston.format.combine(
+    winston.format.timestamp({
+      format: "YYYY-MM-DD HH:mm:ss",
+    }),
+    winston.format.printf(
+      (info) => `${info.timestamp} ${info.level}: ${info.message}`
+    ),
+    winston.format.errors({ stack: true }) // To log stack traces for errors
+  ),
+  transports: [
+    new winston.transports.File({ filename: "error.log", level: "error" }),
+    new winston.transports.File({ filename: "combined.log" }),
+  ],
+});
+
+if (process.env.NODE_ENV === "production") {
+  logger.add(
+    new winston.transports.Console({
+      format: winston.format.simple(),
+    })
+  );
+}
+
 const app = express();
 const port = process.env.PORT || 3000;
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
@@ -35,16 +64,16 @@ let processedFiles = 0;
  * @param {Array} files - Array of file objects as provided by multer.
  */
 function enqueueFiles(files) {
-  console.log("Starting to enqueue files...");
+  logger.info("Starting to enqueue files...");
   files.forEach((file, index) => {
     fileQueue.push(file.path);
-    console.log(
+    logger.info(
       `File ${index + 1} [${file.originalname}] enqueued successfully. Path: ${
         file.path
       }`
     );
   });
-  console.log(
+  logger.info(
     `Total of ${files.length} file(s) enqueued. Queue length is now: ${fileQueue.length}`
   );
 }
@@ -52,55 +81,55 @@ function enqueueFiles(files) {
 let isProcessing = false; // Flag to prevent concurrent processing
 
 function checkAndProcessNextFile() {
-  console.log("Checking for next file to process...");
+  logger.info("Checking for next file to process...");
   if (isProcessing) {
-    console.log("Processing is already underway. Exiting check.");
+    logger.info("Processing is already underway. Exiting check.");
     return;
   }
   if (fileQueue.length === 0) {
     if (!isProcessing) {
       // Call setProcessingCompleteFlag only if processing is complete and no files are in the queue
       setProcessingCompleteFlag();
-      console.log("All files processed. Processing complete flag set.");
+      logger.info("All files processed. Processing complete flag set.");
     }
-    console.log("No files in the queue to process. Exiting check.");
+    logger.info("No files in the queue to process. Exiting check.");
     return;
   }
 
   isProcessing = true; // Set the flag to indicate processing is underway
-  console.log("Processing flag set. Attempting to dequeue next file.");
+  logger.info("Processing flag set. Attempting to dequeue next file.");
   const filePath = dequeueFile(); // Dequeue the next file
 
   if (filePath) {
-    console.log(
+    logger.info(
       `Dequeued file for processing: ${filePath}. Initiating processing.`
     );
     processFile(filePath)
       .then(() => {
-        console.log(`File processing completed: ${filePath}.`);
+        logger.info(`File processing completed: ${filePath}.`);
         processedFiles++;
         isProcessing = false; // Reset the flag after successful processing
-        console.log("Processing flag reset. Checking for next file.");
+        logger.info("Processing flag reset. Checking for next file.");
         checkAndProcessNextFile(); // Immediately try to process the next file
       })
       .catch((error) => {
-        console.error(`Error processing file ${filePath}: ${error}`);
+        logger.error(`Error processing file ${filePath}: ${error}`);
         isProcessing = false; // Reset the flag on error
-        console.log(
+        logger.info(
           "Processing flag reset due to error. Will retry processing after delay."
         );
         setTimeout(() => {
-          console.log("Retrying file processing after delay.");
+          logger.info("Retrying file processing after delay.");
           checkAndProcessNextFile(); // Retry after a 10-second delay
         }, 1000 * 10);
       });
   } else {
     isProcessing = false; // Reset the flag if no file was dequeued
-    console.log("No file was dequeued. Processing flag reset.");
+    logger.info("No file was dequeued. Processing flag reset.");
     // If after attempting to dequeue we find the queue empty, set the processing completion flag
     if (fileQueue.length === 0 && !isProcessing) {
       setProcessingCompleteFlag();
-      console.log("All files processed. Processing complete flag set.");
+      logger.info("All files processed. Processing complete flag set.");
     }
   }
 }
@@ -111,17 +140,17 @@ function checkAndProcessNextFile() {
  * @returns {string|null} The path of the next file to process, or null if the queue is empty.
  */
 function dequeueFile() {
-  console.log(
+  logger.info(
     `Attempting to dequeue a file. Current queue length: ${fileQueue.length}.`
   );
   if (fileQueue.length > 0) {
     const nextFilePath = fileQueue.shift(); // Removes the first element from the queue
-    console.log(
+    logger.info(
       `Dequeued file for processing: ${nextFilePath}. Remaining queue length: ${fileQueue.length}.`
     );
     return nextFilePath;
   } else {
-    console.log("Queue is empty. No files to dequeue.");
+    logger.info("Queue is empty. No files to dequeue.");
     return null;
   }
 }
@@ -130,7 +159,7 @@ app.use(express.static("public"));
 
 // The /upload route handler
 app.post("/upload", (req, res) => {
-  console.log("Received an upload request.");
+  logger.info("Received an upload request.");
   const upload = multer({ storage: storage }).fields([
     { name: "file", maxCount: 100 }, // For individual files
     { name: "folder", maxCount: 1000 }, // For folder uploads
@@ -139,11 +168,11 @@ app.post("/upload", (req, res) => {
   upload(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       // Handle multer-specific upload error
-      console.error("Multer upload error:", err);
+      logger.error("Multer upload error:", err);
       return res.status(500).send("Multer upload error.");
     } else if (err) {
       // Handle unknown upload error
-      console.error("Unknown upload error:", err);
+      logger.error("Unknown upload error:", err);
       return res.status(500).send("Unknown upload error.");
     }
 
@@ -155,7 +184,7 @@ app.post("/upload", (req, res) => {
 
     if (files.length === 0) {
       // Handle no file uploaded
-      console.log("No files uploaded.");
+      logger.info("No files uploaded.");
       return res
         .status(400)
         .send(
@@ -177,29 +206,29 @@ app.post("/upload", (req, res) => {
       const invalidFileNames = invalidFiles
         .map((file) => file.originalname)
         .join(", ");
-      console.log(`Unsupported file types detected: ${invalidFileNames}`);
+      logger.info(`Unsupported file types detected: ${invalidFileNames}`);
       return res
         .status(400)
         .send(
-          `Unsupported file types detected: ${invalidFileNames}, use your brower's back button and try again`
+          `Unsupported file types detected: ${invalidFileNames}, use your browser's back button and try again`
         );
     }
 
-    console.log(`Received upload request with ${files.length} files.`);
+    logger.info(`Received upload request with ${files.length} files.`);
     files.forEach((file, index) =>
-      console.log(`File ${index + 1}: ${file.originalname}`)
+      logger.info(`File ${index + 1}: ${file.originalname}`)
     );
 
     // Proceed with existing logic if all files are valid
     enqueueFiles(files);
-    console.log(`Enqueued ${files.length} file(s) for processing.`);
+    logger.info(`Enqueued ${files.length} file(s) for processing.`);
     clearProcessingCompleteFlag();
     totalFiles = files.length;
     processedFiles = 0; // Reset the processedFiles count for the new batch
-    console.log(`Processing ${totalFiles} files.`);
+    logger.info(`Processing ${totalFiles} files.`);
     clearResultsFile();
     startAsyncFileProcessing(files);
-    console.log("Started processing files asynchronously.");
+    logger.info("Started processing files asynchronously.");
     res.redirect("/processing.html");
   });
 });
@@ -209,10 +238,10 @@ function clearProcessingCompleteFlag() {
   try {
     if (fs.existsSync(flagPath)) {
       fs.unlinkSync(flagPath);
-      console.log("Cleared existing processing completion flag.");
+      logger.info("Cleared existing processing completion flag.");
     }
   } catch (err) {
-    console.error("Error clearing processing completion flag:", err);
+    logger.error("Error clearing processing completion flag:", err);
   }
 }
 
@@ -225,9 +254,9 @@ function clearResultsFile() {
   const resultsPath = "./data/results.json";
   try {
     fs.writeFileSync(resultsPath, JSON.stringify([]));
-    console.log("Cleared results.json file.");
+    logger.info("Cleared results.json file.");
   } catch (err) {
-    console.error("Error clearing results.json file:", err);
+    logger.error("Error clearing results.json file:", err);
   }
 }
 
@@ -238,21 +267,20 @@ function clearResultsFile() {
  * @returns {Promise} A promise that resolves with the API response or rejects with an error.
  */
 async function processFile(filePath) {
-  console.log(`Starting to process file: ${filePath}`);
+  logger.info(`Starting to process file: ${filePath}`);
   return new Promise((resolve, reject) => {
     fs.readFile(filePath, { encoding: "base64" }, async (err, base64Image) => {
       if (err) {
-        console.error(`Error reading file ${filePath}:`, err);
+        logger.error(`Error reading file ${filePath}:`, err);
         reject(`Error reading file ${filePath}`);
         cleanupFile(filePath);
         return;
       }
 
-      console.log(
+      logger.info(
         `File ${filePath} read successfully. Proceeding with OCR processing.`
       );
 
-      // Corrected request payload structure and method call
       const requestPayload = {
         model: "gpt-4-vision-preview",
         messages: [
@@ -280,19 +308,19 @@ async function processFile(filePath) {
 
         if (response && response.choices && response.choices.length > 0) {
           const ocrText = response.choices[0].message.content;
-          console.log(`OCR text for ${filePath}: ${ocrText}`);
-          storeResults(ocrText); // Call storeResults with the OCR text
-          resolve(ocrText); // Resolving with the OCR text if present
+          logger.info(`OCR text for ${filePath}: ${ocrText}`);
+          storeResults(ocrText);
+          resolve(ocrText);
         } else {
-          console.log(`No OCR data received for ${filePath}.`);
-          reject(new Error(`No OCR data received for ${filePath}.`)); // Rejecting the promise if no data received
+          logger.info(`No OCR data received for ${filePath}.`);
+          reject(new Error(`No OCR data received for ${filePath}.`));
         }
       } catch (error) {
-        console.error(`Error in processing file ${filePath}:`, error);
-        reject(error); // Rejecting the promise on error
+        logger.error(`Error in processing file ${filePath}:`, error);
+        reject(error);
       } finally {
-        cleanupFile(filePath); // Ensuring cleanup in every scenario
-        console.log(`Cleanup completed for file ${filePath}.`);
+        cleanupFile(filePath);
+        logger.info(`Cleanup completed for file ${filePath}.`);
       }
     });
   });
@@ -301,9 +329,9 @@ async function processFile(filePath) {
 function cleanupFile(filePath) {
   fs.unlink(filePath, (err) => {
     if (err) {
-      console.error(`Error deleting file ${filePath}:`, err);
+      logger.error(`Error deleting file ${filePath}:`, err);
     } else {
-      console.log(`Successfully deleted file ${filePath}`);
+      logger.info(`Successfully deleted file ${filePath}`);
     }
   });
 }
@@ -311,7 +339,7 @@ function cleanupFile(filePath) {
 function handleProcessingError(error, filePath) {
   // Implement logic to handle different types of errors
   // For example, if error is due to rate limiting, you might retry after a delay
-  console.error(`Processing error for file ${filePath}:`, error.message);
+  logger.error(`Processing error for file ${filePath}:`, error.message);
   // Add retry logic or other error handling here as needed
 }
 
@@ -322,18 +350,18 @@ function handleProcessingError(error, filePath) {
 function storeResults(ocrText) {
   const resultsPath = "./data/results.json";
 
-  console.log("Starting to store OCR results...");
+  logger.info("Starting to store OCR results...");
 
   try {
     let existingResults = [];
 
     // Check if the results file exists and load existing results
     if (fs.existsSync(resultsPath)) {
-      console.log("Loading existing results from results.json...");
+      logger.info("Loading existing results from results.json...");
       const resultsData = fs.readFileSync(resultsPath, "utf8");
       existingResults = JSON.parse(resultsData);
     } else {
-      console.log("No existing results found. Creating new results file.");
+      logger.info("No existing results found. Creating new results file.");
     }
 
     // The OCR text already includes the JSON format, but it's as a string
@@ -355,9 +383,9 @@ function storeResults(ocrText) {
       JSON.stringify(combinedResults, null, 2),
       "utf8"
     );
-    console.log(`Successfully stored new result(s) in results.json.`);
+    logger.info(`Successfully stored new result(s) in results.json.`);
   } catch (err) {
-    console.error("Error while storing OCR results:", err);
+    logger.error("Error while storing OCR results:", err);
   }
 }
 
@@ -384,9 +412,9 @@ function setProcessingCompleteFlag() {
   try {
     // Write an empty file or some content to indicate completion
     fs.writeFileSync(flagPath, "complete");
-    console.log("Processing completion flag set.");
+    logger.info("Processing completion flag set.");
   } catch (err) {
-    console.error("Error setting processing completion flag:", err);
+    logger.error("Error setting processing completion flag:", err);
   }
 }
 
@@ -425,10 +453,10 @@ app.get("/results-data", (req, res) => {
 
   try {
     const data = fs.readFileSync(resultsPath, "utf8");
-    console.log("Sending results data.");
+    logger.info("Sending results data.");
     res.json(JSON.parse(data));
   } catch (err) {
-    console.error("Error reading results file:", err);
+    logger.error("Error reading results file:", err);
     res.status(500).send("Unable to retrieve results.");
   }
 });
@@ -441,7 +469,7 @@ app.get("/download-json", (req, res) => {
     res.setHeader("Content-Type", "application/json");
     res.sendFile(path.join(__dirname, resultsPath));
   } catch (err) {
-    console.error("Error reading results file:", err);
+    logger.error("Error reading results file:", err);
     res.status(500).send("Unable to retrieve results.");
   }
 });
@@ -451,7 +479,7 @@ app.get("/download-csv", (req, res) => {
 
   fs.readFile(path.join(__dirname, resultsPath), "utf8", (err, data) => {
     if (err) {
-      console.error("Error reading results file:", err);
+      logger.error("Error reading results file:", err);
       return res.status(500).send("Unable to retrieve results.");
     }
 
@@ -468,5 +496,5 @@ app.get("/download-csv", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  logger.info(`Server is running on http://localhost:${port}`);
 });

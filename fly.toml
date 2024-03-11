@@ -6,6 +6,9 @@
 app = "hg-textharvest-v2"
 primary_region = "ams"
 
+[build.args]
+NODE_ENV = "production"
+
 [build]
 
 [http_service]
