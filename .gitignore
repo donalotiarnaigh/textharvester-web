@@ -70,3 +70,6 @@ dist/
 .vscode/
 *.swp
 *.swo
+
+# Custom ignore
+data/results.json
