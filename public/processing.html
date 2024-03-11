@@ -14,25 +14,34 @@
     <style>
       html,
       body {
-        height: 100%;
         margin: 0;
+        padding: 0;
+        height: 100%;
       }
       .content-wrap {
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
-        height: calc(100vh - 70px);
+        height: calc(
+          100vh - 100px
+        ); /* Adjusted to ensure content fits without overflow, considering navbar and footer */
+        padding: 0 15px; /* Add padding to ensure content does not touch the edges on small screens */
       }
       .footer {
         background-color: #f8f9fa;
         color: black;
         text-align: center;
-        padding: 30px 0;
-        font-size: 0.9em;
+        padding: 20px 0; /* Slightly reduced for smaller screens */
+        font-size: 0.85em; /* Adjusted for better readability on small devices */
+        width: 100%;
+        position: absolute;
+        bottom: 0; /* Ensure footer sticks to the bottom */
       }
       .loading-container,
       .processing-message {
         text-align: center;
+        padding: 0 10px; /* Padding to prevent text from touching the screen edges */
       }
       .loading {
         display: inline-block;
@@ -45,12 +54,14 @@
       }
       .progress-container {
         text-align: center;
-        position: relative;
         width: 100%;
+        padding: 0 10px; /* Padding for small screens to prevent overflow */
       }
       .progress {
-        width: 800px;
+        width: 100%; /* Full width to adapt to parent's padding */
+        max-width: 800px; /* Max width limit */
         background-color: #eee;
+        margin: auto; /* Centering if width is less than max-width */
       }
       .progress-bar {
         width: 0%;
@@ -58,7 +69,6 @@
         transition: width 0.6s ease;
       }
       #loading-text {
-        display: block;
         margin-top: 20px;
         margin-bottom: 20px;
       }
@@ -69,10 +79,21 @@
       }
       @media (max-width: 991px) {
         .navbar-nav {
-          text-align: center;
+          text-align: center; /* Center navigation links on smaller screens */
+        }
+        .footer {
+          font-size: 0.8em; /* Further reduce font size for very small screens */
+        }
+        .content-wrap {
+          height: auto; /* Allow content wrap to grow as needed */
+          min-height: calc(
+            100vh - 100px
+          ); /* Ensure it takes at least the viewport height minus footer */
+          padding-bottom: 60px; /* Give some space for the footer */
         }
       }
     </style>
+
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
   </head>
   <body>

@@ -22,31 +22,60 @@
       }
       .content-wrap {
         min-height: calc(100vh - 70px); /* Adjust based on the footer height */
-        padding-bottom: 20px; /* Footer height */
+        padding-bottom: 20px; /* Ensures there's space above the footer */
       }
       .footer {
         background-color: #f8f9fa; /* Light grey */
         color: black;
         text-align: center;
-        padding: 30px 0; /* Increased padding */
-        font-size: 0.9em; /* Adjust font size if necessary */
+        padding: 30px 0; /* Provides ample padding for readability */
+        font-size: 0.9em; /* Suitable font size for footer content */
         position: relative;
-        height: auto; /* Set height to auto to accommodate content */
-        clear: both;
+        height: auto; /* Adjusts height based on content */
+        clear: both; /* Ensures footer is clear of any floated elements above */
       }
 
       .container {
-        padding-top: 20px;
+        padding-top: 20px; /* Space between nav and container content */
       }
       .instructions {
-        margin-bottom: 20px;
+        margin-bottom: 20px; /* Space below instructions card */
       }
+      /* Improve button visibility and usability on small devices */
+      .btn-block {
+        display: block;
+        width: 100%; /* Ensures buttons extend full width of their container */
+        margin-bottom: 10px; /* Adds space between buttons when stacked */
+      }
+
       @media (max-width: 991px) {
         .navbar-nav {
-          text-align: center;
+          text-align: center; /* Centers navbar items on smaller screens */
+        }
+        /* Adjust text size and padding for smaller screens to enhance readability and touch interaction */
+        .card-body p,
+        .card-title {
+          font-size: 1em; /* Ensures text is legible on small devices */
+        }
+        .card {
+          margin-bottom: 20px; /* Adds space between cards and any content below */
+        }
+      }
+      /* Further refine layout and spacing on very small screens */
+      @media (max-width: 576px) {
+        .footer {
+          padding: 20px 10px; /* Reduces padding in the footer for more screen space */
+          font-size: 0.8em; /* Slightly reduces font size to fit small screens */
+        }
+        .container,
+        .navbar-brand,
+        .nav-link {
+          padding-left: 10px; /* Reduces left padding/margin to increase usable space */
+          padding-right: 10px; /* Reduces right padding/margin to increase usable space */
         }
       }
     </style>
+
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
   </head>
   <body>
