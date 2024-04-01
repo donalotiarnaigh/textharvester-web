@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const OpenAI = require("openai");
 const moment = require("moment");
+const config = require("./config.json");
 
 require("dotenv").config(); // Load environment variables from .env file
 
@@ -12,7 +13,7 @@ const winston = require("winston");
 
 // Configure winston logging
 const logger = winston.createLogger({
-  level: "info", // This will log messages of level 'info' and higher severity ('warn' and 'error')
+  level: config.logging.level, // Dynamically set from the config
   format: winston.format.combine(
     winston.format.timestamp({
       format: "YYYY-MM-DD HH:mm:ss",
@@ -23,26 +24,35 @@ const logger = winston.createLogger({
     winston.format.errors({ stack: true }) // To log stack traces for errors
   ),
   transports: [
-    new winston.transports.File({ filename: "error.log", level: "error" }),
-    new winston.transports.File({ filename: "combined.log" }),
+    // Error log file dynamically set from the config
+    new winston.transports.File({
+      filename: config.logging.errorLogFile,
+      level: "error",
+    }),
+    // Combined log file dynamically set from the config
+    new winston.transports.File({ filename: config.logging.combinedLogFile }),
   ],
 });
 
-if (process.env.NODE_ENV === "production") {
+// Adjust to log to console if in 'development' as per config.environment
+if (config.environment === "development") {
   logger.add(
     new winston.transports.Console({
-      format: winston.format.simple(),
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      ),
     })
   );
 }
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || config.port;
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "./uploads/");
+    cb(null, config.uploadPath);
   },
   filename: function (req, file, cb) {
     cb(
@@ -193,7 +203,7 @@ app.post("/upload", (req, res) => {
     }
 
     // Define supported file types
-    const supportedFileTypes = ["image/jpeg", "image/jpg"];
+    const supportedFileTypes = config.supportedFileTypes;
     // Validate each file's MIME type, excluding .DS_Store from causing validation errors
     const invalidFiles = files.filter(
       (file) =>
@@ -234,7 +244,7 @@ app.post("/upload", (req, res) => {
 });
 
 function clearProcessingCompleteFlag() {
-  const flagPath = "./data/processing_complete.flag";
+  const flagPath = config.processingCompleteFlagPath;
   try {
     if (fs.existsSync(flagPath)) {
       fs.unlinkSync(flagPath);
@@ -251,7 +261,7 @@ function startAsyncFileProcessing() {
 }
 
 function clearResultsFile() {
-  const resultsPath = "./data/results.json";
+  const resultsPath = config.resultsPath;
   try {
     fs.writeFileSync(resultsPath, JSON.stringify([]));
     logger.info("Cleared results.json file.");
@@ -348,7 +358,7 @@ function handleProcessingError(error, filePath) {
  * @param {Object} ocrData - The OCR data to be stored.
  */
 function storeResults(ocrText) {
-  const resultsPath = "./data/results.json";
+  const resultsPath = config.resultsPath;
 
   logger.info("Starting to store OCR results...");
 
@@ -408,7 +418,7 @@ function jsonToCsv(jsonData) {
 }
 
 function setProcessingCompleteFlag() {
-  const flagPath = "./data/processing_complete.flag";
+  const flagPath = config.processingCompleteFlagPath;
   try {
     // Write an empty file or some content to indicate completion
     fs.writeFileSync(flagPath, "complete");
@@ -449,7 +459,7 @@ app.get("/processing-status", (req, res) => {
 });
 
 app.get("/results-data", (req, res) => {
-  const resultsPath = "./data/results.json";
+  const resultsPath = config.resultsPath;
 
   try {
     const data = fs.readFileSync(resultsPath, "utf8");
@@ -462,7 +472,7 @@ app.get("/results-data", (req, res) => {
 });
 
 app.get("/download-json", (req, res) => {
-  const resultsPath = "./data/results.json";
+  const resultsPath = config.resultsPath;
 
   try {
     res.setHeader("Content-Disposition", "attachment; filename=results.json");
@@ -475,7 +485,7 @@ app.get("/download-json", (req, res) => {
 });
 
 app.get("/download-csv", (req, res) => {
-  const resultsPath = "./data/results.json";
+  const resultsPath = config.resultsPath;
 
   fs.readFile(path.join(__dirname, resultsPath), "utf8", (err, data) => {
     if (err) {
