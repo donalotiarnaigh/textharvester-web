@@ -14,7 +14,8 @@
       "maxTokens": 3000
     },
     "upload": {
-      "maxFileCount": 100
+      "maxFileCount": 100,
+      "retryDelaySeconds": 3
     },
     "environment": "development"
   }

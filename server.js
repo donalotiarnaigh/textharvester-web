@@ -62,8 +62,6 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage }).array("file", 100); // Set a limit for the number of files (e.g., 10)
-
 // Define a global queue to hold file paths
 let fileQueue = [];
 let totalFiles = 0;
@@ -131,7 +129,7 @@ function checkAndProcessNextFile() {
         setTimeout(() => {
           logger.info("Retrying file processing after delay.");
           checkAndProcessNextFile(); // Retry after a 10-second delay
-        }, 1000 * 10);
+        }, 1000 * config.upload.retryDelaySeconds);
       });
   } else {
     isProcessing = false; // Reset the flag if no file was dequeued
@@ -171,15 +169,14 @@ app.use(express.static("public"));
 app.post("/upload", (req, res) => {
   logger.info("Received an upload request.");
   const upload = multer({ storage: storage }).fields([
-    { name: "file", maxCount: 100 }, // For individual files
-    { name: "folder", maxCount: 1000 }, // For folder uploads
+    { name: "file", maxCount: config.upload.maxFileCount }, // Respect config limit
+    { name: "folder", maxCount: config.upload.maxFileCount }, // Adjust accordingly if different logic for folders
   ]);
 
   upload(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       // Handle multer-specific upload error
       logger.error("Multer upload error:", err);
-      return res.status(500).send("Multer upload error.");
     } else if (err) {
       // Handle unknown upload error
       logger.error("Unknown upload error:", err);
