@@ -6,6 +6,7 @@ const config = require("../../config.json");
 let fileQueue = [];
 let isProcessing = false;
 let processedFiles = 0;
+let totalFiles = 0;
 
 function clearResultsFile() {
   const resultsPath = config.resultsPath;
@@ -27,10 +28,18 @@ function enqueueFiles(files) {
       }`
     );
   });
+  totalFiles += files.length; // Increase totalFiles by the number of new files
   logger.info(
-    `Total of ${files.length} file(s) enqueued. Queue length is now: ${fileQueue.length}`
+    `Total of ${files.length} file(s) enqueued. Queue length is now: ${fileQueue.length}. Total files to process: ${totalFiles}`
   );
   checkAndProcessNextFile();
+}
+
+// Add functionality to reset `totalFiles` and `processedFiles` when needed
+function resetFileProcessingState() {
+  processedFiles = 0;
+  totalFiles = fileQueue.length; // Reset totalFiles to current queue length
+  logger.info("File processing state reset.");
 }
 
 function dequeueFile() {
@@ -114,9 +123,20 @@ function setProcessingCompleteFlag() {
   }
 }
 
+function getTotalFiles() {
+  return totalFiles;
+}
+
+function getProcessedFiles() {
+  return processedFiles;
+}
+
 module.exports = {
   clearResultsFile,
   enqueueFiles,
   dequeueFile,
   checkAndProcessNextFile,
-}; // Add any other exports as necessary
+  resetFileProcessingState, // If you implemented this function
+  getTotalFiles,
+  getProcessedFiles,
+};
