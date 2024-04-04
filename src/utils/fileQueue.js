@@ -7,6 +7,16 @@ let fileQueue = [];
 let isProcessing = false;
 let processedFiles = 0;
 
+function clearResultsFile() {
+  const resultsPath = config.resultsPath;
+  try {
+    fs.writeFileSync(resultsPath, JSON.stringify([]));
+    logger.info("Cleared results.json file.");
+  } catch (err) {
+    logger.error("Error clearing results.json file:", err);
+  }
+}
+
 function enqueueFiles(files) {
   logger.info("Starting to enqueue files...");
   files.forEach((file, index) => {
@@ -20,6 +30,7 @@ function enqueueFiles(files) {
   logger.info(
     `Total of ${files.length} file(s) enqueued. Queue length is now: ${fileQueue.length}`
   );
+  checkAndProcessNextFile();
 }
 
 function dequeueFile() {
@@ -103,4 +114,9 @@ function setProcessingCompleteFlag() {
   }
 }
 
-module.exports = { enqueueFiles, dequeueFile, checkAndProcessNextFile }; // Add any other exports as necessary
+module.exports = {
+  clearResultsFile,
+  enqueueFiles,
+  dequeueFile,
+  checkAndProcessNextFile,
+}; // Add any other exports as necessary

@@ -4,11 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const moment = require("moment");
 const config = require("./config.json");
-const {
-  enqueueFiles,
-  dequeueFile,
-  checkAndProcessNextFile,
-} = require("./src/utils/fileQueue"); // Adjust path as needed
+const { handleFileUpload } = require("./src/controllers/uploadHandler");
 const logger = require("./src/utils/logger.js");
 const { jsonToCsv } = require("./src/utils/dataConversion");
 
@@ -36,107 +32,7 @@ let processedFiles = 0;
 
 app.use(express.static("public"));
 
-// The /upload route handler
-app.post("/upload", (req, res) => {
-  logger.info("Received an upload request.");
-  const upload = multer({ storage: storage }).fields([
-    { name: "file", maxCount: config.upload.maxFileCount }, // Respect config limit
-    { name: "folder", maxCount: config.upload.maxFileCount }, // Adjust accordingly if different logic for folders
-  ]);
-
-  upload(req, res, (err) => {
-    if (err instanceof multer.MulterError) {
-      // Handle multer-specific upload error
-      logger.error("Multer upload error:", err);
-    } else if (err) {
-      // Handle unknown upload error
-      logger.error("Unknown upload error:", err);
-      return res.status(500).send("Unknown upload error.");
-    }
-
-    // Combine files from both 'file' and 'folder' inputs, filtering out .DS_Store
-    const files = [
-      ...(req.files.file || []),
-      ...(req.files.folder || []),
-    ].filter((file) => file.originalname !== ".DS_Store");
-
-    if (files.length === 0) {
-      // Handle no file uploaded
-      logger.info("No files uploaded.");
-      return res
-        .status(400)
-        .send(
-          "No files uploaded, use your browser's back button and try again."
-        );
-    }
-
-    // Define supported file types
-    const supportedFileTypes = config.supportedFileTypes;
-    // Validate each file's MIME type, excluding .DS_Store from causing validation errors
-    const invalidFiles = files.filter(
-      (file) =>
-        !supportedFileTypes.includes(file.mimetype) &&
-        file.originalname !== ".DS_Store"
-    );
-
-    if (invalidFiles.length > 0) {
-      // Respond with an error if unsupported file types were found
-      const invalidFileNames = invalidFiles
-        .map((file) => file.originalname)
-        .join(", ");
-      logger.info(`Unsupported file types detected: ${invalidFileNames}`);
-      return res
-        .status(400)
-        .send(
-          `Unsupported file types detected: ${invalidFileNames}, use your browser's back button and try again`
-        );
-    }
-
-    logger.info(`Received upload request with ${files.length} files.`);
-    files.forEach((file, index) =>
-      logger.info(`File ${index + 1}: ${file.originalname}`)
-    );
-
-    // Proceed with existing logic if all files are valid
-    enqueueFiles(files);
-    logger.info(`Enqueued ${files.length} file(s) for processing.`);
-    clearProcessingCompleteFlag();
-    totalFiles = files.length;
-    processedFiles = 0; // Reset the processedFiles count for the new batch
-    logger.info(`Processing ${totalFiles} files.`);
-    clearResultsFile();
-    startAsyncFileProcessing(files);
-    logger.info("Started processing files asynchronously.");
-    res.redirect("/processing.html");
-  });
-});
-
-function clearProcessingCompleteFlag() {
-  const flagPath = config.processingCompleteFlagPath;
-  try {
-    if (fs.existsSync(flagPath)) {
-      fs.unlinkSync(flagPath);
-      logger.info("Cleared existing processing completion flag.");
-    }
-  } catch (err) {
-    logger.error("Error clearing processing completion flag:", err);
-  }
-}
-
-function startAsyncFileProcessing() {
-  // Initially check and process the next file in the queue
-  checkAndProcessNextFile();
-}
-
-function clearResultsFile() {
-  const resultsPath = config.resultsPath;
-  try {
-    fs.writeFileSync(resultsPath, JSON.stringify([]));
-    logger.info("Cleared results.json file.");
-  } catch (err) {
-    logger.error("Error clearing results.json file:", err);
-  }
-}
+app.post("/upload", handleFileUpload);
 
 app.get("/processing-status", (req, res) => {
   const flagPath = path.join(__dirname, "data", "processing_complete.flag");
