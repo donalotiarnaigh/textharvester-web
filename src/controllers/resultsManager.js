@@ -9,7 +9,7 @@ const { getTotalFiles, getProcessedFiles } = require("../utils/fileQueue.js"); /
 function getProcessingStatus(req, res) {
   const flagPath = path.join(
     __dirname,
-    "../data", // Adjust path as necessary
+    "../../data", // This moves up two levels from src/controllers
     "processing_complete.flag"
   );
 
