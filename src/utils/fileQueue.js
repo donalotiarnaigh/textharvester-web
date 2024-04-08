@@ -19,27 +19,41 @@ function clearResultsFile() {
 }
 
 function enqueueFiles(files) {
-  logger.info("Starting to enqueue files...");
+  logger.info(`Enqueue operation started at ${new Date().toISOString()}`);
+
+  // If no files are being processed, this is a new session, so reset the counters
+  if (fileQueue.length === 0 && !isProcessing) {
+    resetFileProcessingState();
+  }
+
   files.forEach((file, index) => {
     fileQueue.push(file.path);
     logger.info(
-      `File ${index + 1} [${file.originalname}] enqueued successfully. Path: ${
-        file.path
-      }`
+      `File ${index + 1} [${file.originalname}] enqueued. Path: ${file.path}`
     );
   });
-  totalFiles += files.length; // Increase totalFiles by the number of new files
+
+  // Update totalFiles with the number of new files only after ensuring it's a new session
+  totalFiles += files.length;
   logger.info(
-    `Total of ${files.length} file(s) enqueued. Queue length is now: ${fileQueue.length}. Total files to process: ${totalFiles}`
+    `Enqueued ${files.length} new file(s). Queue length is now: ${fileQueue.length}. Total files to process: ${totalFiles}`
   );
+
   checkAndProcessNextFile();
+}
+
+// Reset the file processing state at the beginning of a new session
+function resetFileProcessingState() {
+  processedFiles = 0;
+  totalFiles = 0;
+  logger.info("File processing state reset for a new session.");
 }
 
 // Add functionality to reset `totalFiles` and `processedFiles` when needed
 function resetFileProcessingState() {
   processedFiles = 0;
-  totalFiles = fileQueue.length; // Reset totalFiles to current queue length
-  logger.info("File processing state reset.");
+  totalFiles = 0; // Ensure totalFiles is also reset to 0
+  logger.info("File processing state has been reset for a new session.");
 }
 
 function dequeueFile() {

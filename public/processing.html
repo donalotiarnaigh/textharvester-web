@@ -53,21 +53,33 @@
         animation: spin 1s ease-in-out infinite;
       }
       .progress-container {
-        text-align: center;
-        width: 100%;
-        padding: 0 10px; /* Padding for small screens to prevent overflow */
+        display: flex; /* Use flexbox for the container */
+        justify-content: center; /* Center the progress bar horizontally */
+        width: 80%; /* Adjust this percentage to your preference */
+        max-width: 1200px; /* Maximum width can be set to a fixed pixel value */
+        margin: auto; /* Auto margins for centering */
       }
+
       .progress {
-        width: 100%; /* Full width to adapt to parent's padding */
-        max-width: 800px; /* Max width limit */
+        flex: 1; /* Flex property to take available space */
         background-color: #eee;
-        margin: auto; /* Centering if width is less than max-width */
+        margin-top: 20px; /* Spacing above the progress bar */
+        height: 20px; /* Set a fixed height for the progress bar */
+        border-radius: 5px; /* Optional rounded corners */
       }
+
       .progress-bar {
-        width: 0%;
-        background-color: #007bff;
-        transition: width 0.6s ease;
+        display: flex; /* Make the progress bar a flex container */
+        align-items: center; /* Vertically center the flex items (the text) */
+        justify-content: center; /* Horizontally center the flex items (the text) */
+        width: 0%; /* Initial width */
+        background-color: #007bff; /* Background color of the progress bar */
+        transition: width 0.6s ease; /* Smooth transition for the width */
+        color: #fff; /* Text color */
+        font-weight: bold; /* Optional: make the text bold */
+        border-radius: 5px; /* Match the parent's border-radius */
       }
+
       #loading-text {
         margin-top: 20px;
         margin-bottom: 20px;
@@ -90,6 +102,13 @@
             100vh - 100px
           ); /* Ensure it takes at least the viewport height minus footer */
           padding-bottom: 60px; /* Give some space for the footer */
+        }
+      }
+      /* Close the previous media query block before starting a new one */
+      @media (min-width: 992px) {
+        .progress {
+          width: 60vw; /* You can adjust the width as needed */
+          /* max-width: none; You can remove this if you set a specific width */
         }
       }
     </style>
@@ -130,11 +149,13 @@
               id="progressBar"
               class="progress-bar"
               role="progressbar"
-              style="width: 0%"
               aria-valuenow="0"
               aria-valuemin="0"
               aria-valuemax="100"
-            ></div>
+            >
+              <span>0% Complete</span>
+              <!-- Text centered inside the progress bar -->
+            </div>
           </div>
         </div>
       </div>
