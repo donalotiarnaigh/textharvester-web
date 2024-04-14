@@ -49,13 +49,6 @@ function resetFileProcessingState() {
   logger.info("File processing state reset for a new session.");
 }
 
-// Add functionality to reset `totalFiles` and `processedFiles` when needed
-function resetFileProcessingState() {
-  processedFiles = 0;
-  totalFiles = 0; // Ensure totalFiles is also reset to 0
-  logger.info("File processing state has been reset for a new session.");
-}
-
 function dequeueFile() {
   logger.info(
     `Attempting to dequeue a file. Current queue length: ${fileQueue.length}.`
