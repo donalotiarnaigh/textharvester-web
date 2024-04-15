@@ -81,19 +81,12 @@ function cleanupFile(filePath) {
   });
 }
 
-/**
- * Stores OCR results into a JSON file.
- * @param {Object} ocrData - The OCR data to be stored.
- */
 function storeResults(ocrText) {
   const resultsPath = config.resultsPath;
-
   logger.info("Starting to store OCR results...");
 
   try {
     let existingResults = [];
-
-    // Check if the results file exists and load existing results
     if (fs.existsSync(resultsPath)) {
       logger.info("Loading existing results from results.json...");
       const resultsData = fs.readFileSync(resultsPath, "utf8");
@@ -102,20 +95,24 @@ function storeResults(ocrText) {
       logger.info("No existing results found. Creating new results file.");
     }
 
-    // The OCR text already includes the JSON format, but it's as a string
-    // First, remove the ```json and ``` that might be wrapping the actual JSON string
-    const cleanedOcrText = ocrText.replace(/```json\n|\n```/g, "").trim();
+    // Remove Markdown code block syntax if present and handle NULL values
+    const cleanedOcrText = ocrText
+      .replace(/```json|```/g, "")
+      .replace(/NULL/g, "null")
+      .trim();
 
-    // Parse the cleaned OCR text to an actual JSON object
-    const parsedData = JSON.parse(cleanedOcrText);
+    let newData = JSON.parse(cleanedOcrText);
 
-    // Since existingResults is an array, ensure parsedData is also in array format
-    const newData = Array.isArray(parsedData) ? parsedData : [parsedData];
+    const formattedData = Array.isArray(newData) ? newData : [newData];
+    formattedData.forEach((item) => {
+      item.memorial_number = item.memorial_number || null;
+      item.first_name = item.first_name || null;
+      item.last_name = item.last_name || null;
+      item.year_of_death = item.year_of_death || null;
+      item.inscription = item.inscription || null;
+    });
 
-    // Combine existing results with the new data
-    const combinedResults = existingResults.concat(newData);
-
-    // Save the combined results back to the file
+    const combinedResults = existingResults.concat(formattedData);
     fs.writeFileSync(
       resultsPath,
       JSON.stringify(combinedResults, null, 2),
