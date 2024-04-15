@@ -74,4 +74,45 @@ describe("storeResults function", () => {
       "Loading existing results from results.json..."
     );
   });
+
+  it("should handle entries with null values correctly", () => {
+    const partialData = JSON.stringify([
+      {
+        memorial_number: "004",
+        first_name: "Tom",
+        last_name: null, // Intentionally missing last name
+        year_of_death: "1985",
+        inscription: null, // Intentionally missing inscription
+      },
+    ]);
+
+    const existingData = [
+      {
+        memorial_number: "005",
+        first_name: "Lisa",
+        last_name: "White",
+        year_of_death: "1991",
+        inscription: "Beloved",
+      },
+    ];
+
+    fs.existsSync.mockReturnValue(true);
+    fs.readFileSync.mockReturnValue(JSON.stringify(existingData));
+    fs.writeFileSync.mockImplementation(() => {});
+
+    storeResults(partialData);
+
+    // Retrieve the actual JSON written to the file
+    const writtenContent = JSON.parse(fs.writeFileSync.mock.calls[2][1]); // As it's the third call
+
+    // Check if the data with null values is being written correctly
+    expect(
+      writtenContent.some(
+        (entry) => entry.last_name === null && entry.inscription === null
+      )
+    ).toBeTruthy();
+    expect(logger.info).toHaveBeenCalledWith(
+      "Loading existing results from results.json..."
+    );
+  });
 });
