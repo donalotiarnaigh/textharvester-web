@@ -113,6 +113,16 @@ function storeResults(ocrText) {
     });
 
     const combinedResults = existingResults.concat(formattedData);
+
+    // Sort combined results by memorial_number, treating null as Infinity
+    combinedResults.sort((a, b) => {
+      const numA =
+        a.memorial_number === null ? Infinity : parseInt(a.memorial_number, 10);
+      const numB =
+        b.memorial_number === null ? Infinity : parseInt(b.memorial_number, 10);
+      return numA - numB;
+    });
+
     fs.writeFileSync(
       resultsPath,
       JSON.stringify(combinedResults, null, 2),
