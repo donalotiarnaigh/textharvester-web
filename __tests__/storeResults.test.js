@@ -183,4 +183,47 @@ describe("storeResults function", () => {
       "Loading existing results from results.json..."
     );
   });
+
+  it("should correctly sort results with numeric, null, and non-numeric memorial numbers", () => {
+    const mixedData = JSON.stringify([
+      { memorial_number: "105", first_name: "Bridget" },
+      { memorial_number: "null", first_name: "Invalid" }, // Non-numeric string treated as invalid
+      { memorial_number: "20", first_name: "Patrick" },
+      { memorial_number: null, first_name: "Unknown" }, // Null value
+      { memorial_number: "3", first_name: "William" },
+      { memorial_number: "two", first_name: "Error" }, // Non-numeric string should be treated as invalid
+    ]);
+
+    const existingData = [{ memorial_number: "2", first_name: "Catherine" }];
+
+    fs.existsSync.mockReturnValue(true);
+    fs.readFileSync.mockReturnValue(JSON.stringify(existingData));
+    fs.writeFileSync.mockImplementation(() => {});
+
+    storeResults(mixedData);
+
+    // Retrieve the actual JSON written to the file
+    const writtenContent = JSON.parse(fs.writeFileSync.mock.calls[0][1]);
+
+    // Check if the array has the expected length and order
+    expect(writtenContent.length).toBe(7); // Including the existing data
+
+    // Check numeric values are at the beginning and sorted correctly
+    const numericValues = writtenContent
+      .slice(0, 4)
+      .map((item) => item.memorial_number);
+    expect(numericValues).toEqual(["2", "3", "20", "105"]);
+
+    // Check non-numeric values are at the end
+    const nonNumericValues = writtenContent
+      .slice(-3)
+      .map((item) => item.memorial_number);
+    expect(nonNumericValues).toContain(null);
+    expect(nonNumericValues).toContain("null");
+    expect(nonNumericValues).toContain("two");
+
+    expect(logger.info).toHaveBeenCalledWith(
+      "Loading existing results from results.json..."
+    );
+  });
 });

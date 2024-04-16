@@ -114,14 +114,32 @@ function storeResults(ocrText) {
 
     const combinedResults = existingResults.concat(formattedData);
 
+    logger.info(
+      "Before sorting:",
+      combinedResults.map(
+        (item) => `${item.memorial_number}: ${item.first_name}`
+      )
+    );
+
     // Sort combined results by memorial_number, treating null as Infinity
     combinedResults.sort((a, b) => {
       const numA =
-        a.memorial_number === null ? Infinity : parseInt(a.memorial_number, 10);
+        isNaN(parseInt(a.memorial_number, 10)) || a.memorial_number === "null"
+          ? Infinity
+          : parseInt(a.memorial_number, 10);
       const numB =
-        b.memorial_number === null ? Infinity : parseInt(b.memorial_number, 10);
+        isNaN(parseInt(b.memorial_number, 10)) || b.memorial_number === "null"
+          ? Infinity
+          : parseInt(b.memorial_number, 10);
       return numA - numB;
     });
+
+    logger.info(
+      "After sorting:",
+      combinedResults.map(
+        (item) => `${item.memorial_number}: ${item.first_name}`
+      )
+    );
 
     fs.writeFileSync(
       resultsPath,
