@@ -27,8 +27,12 @@ async function processFile(filePath) {
       );
 
       const requestPayload = {
-        model: "gpt-4-vision-preview",
+        model: "gpt-4-turbo",
         messages: [
+          {
+            role: "system",
+            content: "Return a JSON object with the extracted text details.",
+          },
           {
             role: "user",
             content: [
@@ -45,6 +49,7 @@ async function processFile(filePath) {
             ],
           },
         ],
+        response_format: { type: "json_object" }, // Ensures output is JSON formatted
         max_tokens: 3000,
       };
 
