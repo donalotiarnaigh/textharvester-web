@@ -72,4 +72,5 @@ dist/
 *.swo
 
 # Custom ignore
+data/
 data/results.json
