@@ -115,39 +115,54 @@
             <div class="results-section">
               <h2>Processing Complete</h2>
               <p>Here is your extracted text:</p>
-              <!-- Button to navigate back to home -->
-              <a href="/"
-                ><button class="btn btn-primary" style="margin-top: 20px">
-                  Back to Home
-                </button></a
-              >
-              <!-- Button for downloading results -->
-              <button
-                id="downloadButton"
-                class="btn btn-primary"
-                style="margin-top: 20px"
-                onclick="downloadJsonResults()"
-                data-toggle="tooltip"
-                data-placement="top"
-                title="Download Results (JSON)"
-              >
-                <i class="fas fa-download"></i> Download JSON
-              </button>
-              <button
-                id="downloadCsvButton"
-                class="btn btn-primary"
-                style="margin-top: 20px"
-                onclick="downloadCsvResults()"
-                title="Download Results (CSV)"
-              >
-                <i class="fas fa-download"></i> Download CSV
-              </button>
+
+              <!-- Filename input field -->
+              <div class="form-group mt-4">
+                <label for="filenameInput"
+                  >Enter a filename for your download (e.g your site
+                  name):</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="filenameInput"
+                  placeholder="Enter filename"
+                  aria-describedby="filenameHelp"
+                />
+                <small id="filenameHelp" class="form-text text-muted">
+                  Filenames should contain only alphanumeric characters,
+                  underscores, or hyphens.
+                </small>
+              </div>
+
+              <!-- Buttons to navigate back to home or download results -->
+              <div class="mt-4">
+                <a href="/"
+                  ><button class="btn btn-primary">Back to Home</button></a
+                >
+                <button
+                  id="downloadButton"
+                  class="btn btn-primary"
+                  onclick="downloadJsonResults()"
+                  disabled
+                >
+                  <i class="fas fa-download"></i> Download JSON
+                </button>
+                <button
+                  id="downloadCsvButton"
+                  class="btn btn-primary"
+                  onclick="downloadCsvResults()"
+                  disabled
+                >
+                  <i class="fas fa-download"></i> Download CSV
+                </button>
+              </div>
+
               <div class="code-block">
                 <!-- Button for copying to clipboard -->
                 <button
                   id="copyButton"
                   class="btn btn-secondary btn-sm"
-                  style="position: absolute; top: 5px; right: 5px"
                   data-toggle="tooltip"
                   data-placement="top"
                   title="Copy to Clipboard"
@@ -155,7 +170,6 @@
                   <i class="fas fa-clipboard"></i>
                   <!-- Clipboard icon -->
                 </button>
-
                 <pre><code id="jsonData"></code></pre>
                 <!-- Empty element for the copy success message -->
                 <div id="copyMessage"></div>
@@ -182,58 +196,8 @@
     <!-- Include Clipboard.js library for copying to clipboard -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
 
-    <!-- JavaScript for fetching and displaying results -->
+    <!-- Combined JavaScript for results page -->
     <script>
-      // Event listener for page load
-      document.addEventListener("DOMContentLoaded", function () {
-        // Fetch results data from the server
-        fetch("/results-data")
-          .then((response) => response.json())
-          .then((data) => {
-            // Display results data in the code block
-            const jsonDataElement = document.getElementById("jsonData");
-            jsonDataElement.textContent = JSON.stringify(data, null, 2);
-          })
-          .catch((error) => {
-            console.error("Error fetching results:", error);
-            document.getElementById("jsonData").textContent =
-              "Error loading results.";
-          });
-      });
-    </script>
-
-    <!-- JavaScript for copying to clipboard -->
-    <script>
-      // Event listener for page load
-      document.addEventListener("DOMContentLoaded", function () {
-        // Fetch results data from the server
-        fetch("/results-data")
-          .then((response) => response.json())
-          .then((data) => {
-            // Display results data in the code block
-            const jsonDataElement = document.getElementById("jsonData");
-            jsonDataElement.textContent = JSON.stringify(data, null, 2);
-
-            // Initialize Clipboard.js for copying to clipboard
-            const copyButton = document.getElementById("copyButton");
-            const clipboard = new ClipboardJS(copyButton, {
-              text: function () {
-                return jsonDataElement.textContent;
-              },
-            });
-
-            // Event handler for successful copy
-            clipboard.on("success", function (e) {
-              showCopySuccess();
-            });
-          })
-          .catch((error) => {
-            console.error("Error fetching results:", error);
-            document.getElementById("jsonData").textContent =
-              "Error loading results.";
-          });
-      });
-
       // Function to display copy success message
       function showCopySuccess() {
         const messageElement = document.getElementById("copyMessage");
@@ -245,37 +209,70 @@
           messageElement.textContent = "";
         }, 1500); // Adjust the duration as needed
       }
-    </script>
-    <!-- JavaScript for downloading results -->
-    <script>
-      // Function to trigger download
-      function downloadJsonResults() {
-        // Create a link element for downloading the file
+
+      // Function to trigger downloads with dynamic filenames
+      function triggerDownload(href, filename) {
         const downloadLink = document.createElement("a");
-
-        // Set the file path to the actual location of the results.json file on your server
-        downloadLink.href = "/data/results.json";
-
-        // Set the download attribute to specify the file name
-        downloadLink.download = "results.json";
-
-        // Trigger a click event to initiate the download
+        downloadLink.href = href;
+        downloadLink.download = filename;
         document.body.appendChild(downloadLink);
         downloadLink.click();
-
-        // Remove the link element from the DOM
         document.body.removeChild(downloadLink);
       }
-    </script>
 
-    <!-- function to trigger download -->
-    <script>
-      function downloadJsonResults() {
-        window.location.href = "/download-json";
-      }
-      function downloadCsvResults() {
-        window.location.href = "/download-csv";
-      }
+      // Event listener for page load
+      document.addEventListener("DOMContentLoaded", function () {
+        // Fetch results data from the server
+        fetch("/results-data")
+          .then((response) => response.json())
+          .then((data) => {
+            // Display results data in the code block
+            const jsonDataElement = document.getElementById("jsonData");
+            jsonDataElement.textContent = JSON.stringify(data, null, 2);
+            // Initialize Clipboard.js for copying to clipboard
+            const clipboard = new ClipboardJS("#copyButton", {
+              text: function () {
+                return jsonDataElement.textContent;
+              },
+            });
+            // Event handler for successful copy
+            clipboard.on("success", showCopySuccess);
+          })
+          .catch((error) => {
+            console.error("Error fetching results:", error);
+            document.getElementById("jsonData").textContent =
+              "Error loading results.";
+          });
+
+        // Filename input real-time validation
+        const filenameInput = document.getElementById("filenameInput");
+        filenameInput.addEventListener("input", function () {
+          const isValidFilename = /^[a-zA-Z0-9_-]*$/.test(this.value);
+          document.getElementById("downloadButton").disabled =
+            !isValidFilename || !this.value;
+          document.getElementById("downloadCsvButton").disabled =
+            !isValidFilename || !this.value;
+          // Provide visual feedback
+          if (isValidFilename || this.value === "") {
+            this.classList.remove("is-invalid");
+            this.classList.add("is-valid");
+          } else {
+            this.classList.remove("is-valid");
+            this.classList.add("is-invalid");
+          }
+        });
+
+        // Modify download functions to include the dynamic filename
+        window.downloadJsonResults = function () {
+          const filename = filenameInput.value || "results";
+          triggerDownload("/download-json", filename + ".json");
+        };
+
+        window.downloadCsvResults = function () {
+          const filename = filenameInput.value || "results";
+          triggerDownload("/download-csv", filename + ".csv");
+        };
+      });
     </script>
   </body>
 </html>
