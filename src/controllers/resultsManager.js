@@ -58,14 +58,31 @@ function getResultsData(req, res) {
 function downloadResultsJSON(req, res) {
   const resultsPath = path.join(__dirname, "../../", config.resultsPath);
 
+  // Extract filename from query parameters or use a default
+  const defaultFilename = "results.json";
+  const requestedFilename = req.query.filename
+    ? `${req.query.filename}.json`
+    : defaultFilename;
+
+  // Optional: Sanitize the filename to avoid security issues
+  const safeFilename = sanitizeFilename(requestedFilename);
+
   try {
-    res.setHeader("Content-Disposition", "attachment; filename=results.json");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${safeFilename}"`
+    );
     res.setHeader("Content-Type", "application/json");
     res.sendFile(resultsPath);
   } catch (err) {
     logger.error("Error sending results file:", err);
     res.status(500).send("Unable to download results.");
   }
+}
+
+// Utility function to sanitize filenames (basic example)
+function sanitizeFilename(filename) {
+  return filename.replace(/[^a-zA-Z0-9_.-]/g, "_");
 }
 
 function downloadResultsCSV(req, res) {
