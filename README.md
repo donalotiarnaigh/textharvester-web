@@ -6,7 +6,7 @@ Welcome to the Historic Graves Text Harvester, a community-driven web applicatio
 
 - **File and Folder Upload:** Securely upload individual images or an entire folder containing up to 10 images simultaneously for processing.
 - **Progress Monitoring:** Real-time updates on the processing status of your uploads.
-- **Results Retrieval:** Access and download the extracted text data in a convenient JSON format.
+- **Results Retrieval with Custom Filenames:** Access and download the extracted text data in convenient JSON or CSV formats, with the option to specify a custom filename for each download.
 
 ## How It Works
 
@@ -20,9 +20,9 @@ Welcome to the Historic Graves Text Harvester, a community-driven web applicatio
    - Stay on the page as we process your files or folder. The application will update you on the progress.
    - You can leave the page running in the background if needed.
 
-3. **Access Results:**
+3. **Access Results and Download with Custom Filenames:**
    - Once processing is complete, view the extracted text on the results page.
-   - Download the results as a JSON file for your convenience and further analysis.
+   - Download the results as JSON or CSV files with custom filenames of your choosing.
 
 ## Getting Started
 
