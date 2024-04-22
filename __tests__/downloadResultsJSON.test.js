@@ -24,10 +24,7 @@ describe("downloadResultsJSON", () => {
     // Call the function with the mock request and response
     downloadResultsJSON(req, res);
 
-    const expectedResultsPath = path.join(
-      __dirname,
-      "../../HG_TextHarvest_v2/data/results.json"
-    );
+    const expectedResultsPath = path.join(__dirname, "../data/results.json");
 
     // Assert that the Content-Disposition header is set with the correct filename
     expect(res.getHeader("Content-Disposition")).toEqual(
