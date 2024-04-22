@@ -4,18 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Historic Graves Text Harvester</title>
+
     <!-- Include Bootstrap CSS -->
     <link
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
     />
+
+    <!-- Include Dropzone.js -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css"
+    />
+
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
 
     <!-- Custom CSS -->
     <style>
-      /* Existing styles... */
       html,
       body {
         height: 100%;
@@ -35,56 +43,17 @@
         height: auto;
         clear: both;
       }
-      .container {
-        padding-top: 20px;
+      .dropzone {
+        border: 2px dashed #007bff;
+        padding: 20px;
+        text-align: center;
+        background-color: #f8f9fa;
       }
-      .instructions {
-        margin-bottom: 20px;
-      }
-      .btn-block {
-        display: block;
-        width: 100%;
-        margin-bottom: 10px;
-      }
-
-      /* New styles for logo */
-      .navbar-brand img {
-        height: 50px; /* Or any size that fits the design */
-        width: auto; /* To maintain aspect ratio */
-        margin-right: 10px; /* Space between the logo and brand text */
-      }
-
-      /* Responsive adjustments... */
-      @media (max-width: 991px) {
-        /* Existing responsive styles... */
-        .navbar-nav {
-          text-align: center;
-        }
-        .card-body p,
-        .card-title {
-          font-size: 1em;
-        }
-        .card {
-          margin-bottom: 20px;
-        }
-      }
-      @media (max-width: 576px) {
-        /* Existing responsive styles... */
-        .footer {
-          padding: 20px 10px;
-          font-size: 0.8em;
-        }
-        .container,
-        .navbar-brand,
-        .nav-link {
-          padding-left: 10px;
-          padding-right: 10px;
-        }
+      .dropzone.active {
+        border-color: #0056b3;
+        background-color: #e9ecef;
       }
     </style>
-
-    <!-- Keep the existing favicon -->
-    <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
   </head>
 
   <body>
@@ -108,115 +77,36 @@
 
     <div class="content-wrap">
       <div class="container">
-        <!-- Header -->
-        <div class="row mb-4">
-          <div class="col">
-            <h1 class="text-center">Historic Graves Text Harvester</h1>
-          </div>
-        </div>
-
         <!-- Instructions Box -->
         <div class="row">
           <div class="col-12 col-md-8 offset-md-2">
             <div class="card instructions">
               <div class="card-body">
-                <h5 class="card-title">Instructions</h5>
+                <h5 class="card-title">How to Use the Text Harvester</h5>
                 <p class="card-text">
-                  <strong>How to Use Historic Graves TextHarvester:</strong
-                  ><br />
-                  1.
-                  <b>Select and Upload Your Image(s) or Entire Folder:</b> Use
-                  the "Choose JPG file" button to select one or more JPEG images
-                  with memorial inscription text, or use the "Choose Folder"
-                  button to select an entire folder containing your images.
-                  After selecting your files or folder, click "Harvest" to
-                  upload and process your selection.<br />
-                  2. <b>Wait for Processing:</b> You'll be redirected to a
-                  processing page where you can monitor the progress of the
-                  upload and OCR processing. Feel free to leave it running in
-                  the background; the page will update automatically.<br />
-                  3. <b>View Results:</b> Once processing is complete, you'll
-                  automatically be directed to the results page. Here, you'll
-                  see the extracted text, including details such as 'Memorial
-                  Number' and 'Inscription'. You can use the "Download Results"
-                  button to save the data in JSON format or use the copy icon to
-                  copy the output text to your clipboard.<br />
-                  <i
-                    >Tip: For best results, use high-contrast images with
-                    block/non-cursive handwriting. When uploading a folder,
-                    ensure that all images within are relevant to your search to
-                    optimize processing efficiency.</i
-                  >
+                  To upload files, drag and drop your JPEG images into the drop
+                  zone below, or click to select files from your device. Once
+                  uploaded, your files will be processed for text extraction.
+                  You can track the progress on the processing page. When
+                  processing is complete, you'll be redirected to the results
+                  page to view and download the extracted data.
                 </p>
+                <small>
+                  Supported file types: .jpeg, .jpg. Maximum 1,000 files can be
+                  uploaded at once.
+                </small>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- File Upload Section -->
-        <div class="row">
-          <div class="col-12 col-md-8 offset-md-2">
-            <form
-              id="uploadForm"
-              method="POST"
-              action="/upload"
-              enctype="multipart/form-data"
-            >
-              <div class="row">
-                <!-- File Upload Button -->
-                <div class="col-12 col-sm-6 mb-3">
-                  <!-- Add mb-3 for some margin-bottom space -->
-                  <div class="form-group">
-                    <label for="fileUpload" class="btn btn-primary btn-block"
-                      >Choose JPG file(s)</label
-                    >
-                    <input
-                      type="file"
-                      id="fileUpload"
-                      name="file"
-                      class="form-control-file"
-                      accept=".jpg, .jpeg"
-                      multiple
-                      hidden
-                    />
-                    <small id="file-chosen" class="form-text text-muted"
-                      >No file chosen</small
-                    >
-                  </div>
-                </div>
-
-                <!-- Folder Upload Button -->
-                <div class="col-12 col-sm-6 mb-3">
-                  <!-- Add mb-3 for some margin-bottom space -->
-                  <div class="form-group">
-                    <label for="folderUpload" class="btn btn-primary btn-block"
-                      >Choose a Folder</label
-                    >
-                    <input
-                      type="file"
-                      id="folderUpload"
-                      name="folder"
-                      class="form-control-file"
-                      webkitdirectory
-                      multiple
-                      hidden
-                    />
-                    <small id="folder-chosen" class="form-text text-muted"
-                      >No folder chosen</small
-                    >
-                  </div>
-                </div>
-              </div>
-
-              <!-- Upload button -->
-              <button id="uploadButton" class="btn btn-success btn-block">
-                Harvest
-              </button>
-            </form>
-          </div>
-        </div>
+        <!-- Drop Zone for File Upload -->
+        <form action="/upload" class="dropzone" id="uploadForm">
+          <div class="dz-message">Drop files here or click to upload.</div>
+        </form>
       </div>
     </div>
+
     <footer class="footer">
       © 2024 Historic Graves Project. All rights reserved. For more info,
       contact me at
@@ -227,37 +117,14 @@
       website.
     </footer>
 
-    <!-- Include Bootstrap and jQuery Scripts -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
-    <!-- Custom Script for File Selection -->
+    <!-- Dropzone Configuration -->
     <script>
-      document
-        .getElementById("fileUpload")
-        .addEventListener("change", function () {
-          let fileNames = [];
-          for (let i = 0; i < this.files.length; i++) {
-            fileNames.push(this.files[i].name);
-          }
-          document.getElementById("file-chosen").textContent =
-            fileNames.join(", ");
-        });
-
-      document
-        .getElementById("folderUpload")
-        .addEventListener("change", function () {
-          if (this.files.length) {
-            const folderPath = this.files[0].webkitRelativePath;
-            const folderName = folderPath.split("/")[0]; // Extracts the folder name from the path
-            document.getElementById("folder-chosen").textContent =
-              "Folder selected: " + folderName;
-          } else {
-            document.getElementById("folder-chosen").textContent =
-              "No folder chosen";
-          }
-        });
+      Dropzone.options.uploadForm = {
+        acceptedFiles: ".jpg,.jpeg",
+        maxFiles: 1000,
+        dictInvalidFileType: "Only .jpeg and .jpg files are allowed.",
+        dictMaxFilesExceeded: "Maximum of 1,000 files allowed.",
+      };
     </script>
   </body>
 </html>
