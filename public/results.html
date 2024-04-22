@@ -204,7 +204,6 @@
         messageElement.textContent = "Copied to Clipboard!";
         messageElement.style.color = "green"; // Customize the message style
 
-        // Clear the message after a brief delay
         setTimeout(function () {
           messageElement.textContent = "";
         }, 1500); // Adjust the duration as needed
@@ -212,6 +211,12 @@
 
       // Function to trigger downloads with dynamic filenames
       function triggerDownload(href, filename) {
+        console.log(
+          "Triggering download with URL:",
+          href,
+          "and filename:",
+          filename
+        ); // Log the URL and filename
         const downloadLink = document.createElement("a");
         downloadLink.href = href;
         downloadLink.download = filename;
@@ -226,16 +231,16 @@
         fetch("/results-data")
           .then((response) => response.json())
           .then((data) => {
-            // Display results data in the code block
             const jsonDataElement = document.getElementById("jsonData");
             jsonDataElement.textContent = JSON.stringify(data, null, 2);
+
             // Initialize Clipboard.js for copying to clipboard
             const clipboard = new ClipboardJS("#copyButton", {
               text: function () {
                 return jsonDataElement.textContent;
               },
             });
-            // Event handler for successful copy
+
             clipboard.on("success", showCopySuccess);
           })
           .catch((error) => {
@@ -246,13 +251,16 @@
 
         // Filename input real-time validation
         const filenameInput = document.getElementById("filenameInput");
+        // console.log("Initial filename input value:", filenameInput.value); // Log initial value
+
         filenameInput.addEventListener("input", function () {
+          // console.log("Filename input changed:", this.value); // Log value on input change
           const isValidFilename = /^[a-zA-Z0-9_-]*$/.test(this.value);
           document.getElementById("downloadButton").disabled =
             !isValidFilename || !this.value;
           document.getElementById("downloadCsvButton").disabled =
             !isValidFilename || !this.value;
-          // Provide visual feedback
+
           if (isValidFilename || this.value === "") {
             this.classList.remove("is-invalid");
             this.classList.add("is-valid");
@@ -264,13 +272,21 @@
 
         // Modify download functions to include the dynamic filename
         window.downloadJsonResults = function () {
+          console.log("Downloading JSON with filename:", filenameInput.value); // Log download action
           const filename = filenameInput.value || "results";
-          triggerDownload("/download-json", filename + ".json");
+          triggerDownload(
+            "/download-json?filename=" + filename,
+            filename + ".json"
+          );
         };
 
         window.downloadCsvResults = function () {
+          console.log("Downloading CSV with filename:", filenameInput.value); // Log download action
           const filename = filenameInput.value || "results";
-          triggerDownload("/download-csv", filename + ".csv");
+          triggerDownload(
+            "/download-csv?filename=" + filename,
+            filename + ".csv"
+          );
         };
       });
     </script>
