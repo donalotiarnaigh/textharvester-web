@@ -92,6 +92,10 @@ function sanitizeFilename(filename) {
 function downloadResultsCSV(req, res) {
   const resultsPath = path.join(__dirname, "../../", config.resultsPath);
 
+  const requestedFilename = req.query.filename
+    ? `${sanitizeFilename(req.query.filename)}.csv`
+    : `hgth_results_${moment().format("YYYYMMDD_HHmmss")}.csv`;
+
   fs.readFile(resultsPath, "utf8", (err, data) => {
     if (err) {
       logger.error("Error reading results file:", err);
@@ -101,10 +105,10 @@ function downloadResultsCSV(req, res) {
     const jsonData = JSON.parse(data);
     const csvData = jsonToCsv(jsonData);
 
-    const dateStr = moment().format("YYYYMMDD_HHmmss");
-    const filename = `hgth_results_${dateStr}.csv`;
-
-    res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${requestedFilename}"`
+    );
     res.setHeader("Content-Type", "text/csv");
     res.send(csvData);
   });

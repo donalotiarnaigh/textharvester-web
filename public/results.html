@@ -281,7 +281,7 @@
         };
 
         window.downloadCsvResults = function () {
-          console.log("Downloading CSV with filename:", filename); // Log the filename for CSV download
+          console.log("Downloading CSV with filename:", filenameInput.value); // Log download action
           const filename =
             document.getElementById("filenameInput").value || "results"; // Default filename
           const downloadUrl = `/download-csv?filename=${filename}`;
