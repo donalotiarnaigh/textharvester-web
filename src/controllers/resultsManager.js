@@ -82,6 +82,10 @@ function downloadResultsJSON(req, res) {
 
 // Utility function to sanitize filenames (basic example)
 function sanitizeFilename(filename) {
+  if (!filename) {
+    return "_"; // Default value for null or undefined input
+  }
+
   return filename.replace(/[^a-zA-Z0-9_.-]/g, "_");
 }
 
@@ -111,4 +115,5 @@ module.exports = {
   getResultsData,
   downloadResultsJSON,
   downloadResultsCSV,
+  sanitizeFilename,
 };
