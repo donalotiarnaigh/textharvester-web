@@ -160,10 +160,19 @@
             console.log("File upload complete:", file.name); // Log when a file upload is complete
           });
 
-          dropzoneInstance.on("queueComplete", function () {
-            console.log("All files have been uploaded."); // Log when all files in the queue are processed
-            // window.location.href = "/processing.html"; // Redirect after completion
-          });
+          // Handle manual file submission
+          document.getElementById("submitFiles").onclick = function () {
+            console.log("Manual file submission triggered."); // Log when submission is triggered
+            dropzoneInstance.processQueue(); // Start processing the files
+
+            // Delay redirection by 2 seconds
+            setTimeout(function () {
+              console.log(
+                "Redirecting to processing.html after 2-second delay."
+              );
+              window.location.href = "/processing.html"; // Redirect after a 2-second delay
+            }, 1500); // 2000 milliseconds = 2 seconds
+          };
 
           // Error handling with detailed logging
           dropzoneInstance.on("error", function (file, errorMessage) {
