@@ -17,12 +17,14 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css"
     />
 
+    <!-- Include jQuery and Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
 
     <!-- Custom CSS -->
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
     <style>
       html,
       body {
@@ -30,40 +32,51 @@
         margin: 0;
       }
       .content-wrap {
-        min-height: calc(100vh - 70px);
-        padding-bottom: 20px;
+        display: flex;
+        flex-direction: column; /* Ensures elements are stacked vertically */
+        justify-content: flex-start; /* Aligns content at the top */
+        align-items: center; /* Centers content horizontally */
+        min-height: calc(
+          100vh - 70px
+        ); /* Adjust to allow content to be higher up */
+        padding-top: 20px; /* Optional padding to position content higher */
+        padding-bottom: 20px; /* Ensures enough space for the footer */
       }
       .footer {
         background-color: #f8f9fa;
-        color: black;
         text-align: center;
         padding: 30px 0;
         font-size: 0.9em;
-        position: relative;
-        height: auto;
         clear: both;
+        position: sticky; /* Makes the footer stick to the bottom of the viewport */
+        bottom: 0; /* Ensures it stays at the bottom */
+        width: 100%; /* Ensures the footer takes the full width of the container */
+        z-index: 10; /* Keeps it above other elements if necessary */
       }
       .dropzone {
         border: 2px dashed #007bff;
         padding: 20px;
         text-align: center;
         background-color: #f8f9fa;
+        display: flex; /* Enables centering with flexbox */
+        justify-content: center; /* Centers content horizontally */
+        align-items: center; /* Centers content vertically */
+        min-height: 200px; /* Ensures the drop zone has a minimum height */
+        margin: auto; /* Centers the drop zone within its container */
       }
       .dropzone.active {
         border-color: #0056b3;
         background-color: #e9ecef;
       }
     </style>
-    <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
   </head>
-
   <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <a class="navbar-brand" href="index.html">
         <img
           src="/images/logo.png"
           alt="Historic Graves Logo"
-          style="height: 50px; width: auto; margin-right: 10px"
+          style="height: 50px; margin-right: 10px"
         />
         Historic Graves Text Harvester
       </a>
@@ -79,25 +92,20 @@
     <div class="content-wrap">
       <div class="container">
         <!-- Instructions Box -->
-        <div class="row">
-          <div class="col-12 col-md-8 offset-md-2">
-            <div class="card instructions">
-              <div class="card-body">
-                <h5 class="card-title">How to Use the Text Harvester</h5>
-                <p class="card-text">
-                  To upload files, drag and drop your JPEG images into the drop
-                  zone below, or click to select files from your device. Once
-                  uploaded, your files will be processed for text extraction.
-                  You can track the progress on the processing page. When
-                  processing is complete, you'll be redirected to the results
-                  page to view and download the extracted data.
-                </p>
-                <small>
-                  Supported file types: .jpeg, .jpg. Maximum 1,000 files can be
-                  uploaded at once.
-                </small>
-              </div>
-            </div>
+        <div class="card instructions">
+          <div class="card-body">
+            <h5 class="card-title">How to Use the Text Harvester</h5>
+            <p class="card-text">
+              To upload files, drag and drop your JPEG images into the drop zone
+              or click to select files. Once uploaded, your files will be
+              processed for text extraction. You can track progress on the
+              processing page. When processing is complete, you'll be redirected
+              to the results page.
+            </p>
+            <small>
+              Supported file types: .jpeg, .jpg. Maximum 1,000 files can be
+              uploaded at once.
+            </small>
           </div>
         </div>
 
@@ -105,16 +113,16 @@
         <form action="/upload" class="dropzone" id="uploadForm">
           <div class="dz-message">Drop files here or click to upload.</div>
         </form>
+
+        <!-- Submit Button -->
+        <button id="submitFiles" class="btn btn-success btn-block">
+          Submit Files
+        </button>
       </div>
-      <!-- Submit Button -->
-      <button id="submitFiles" class="btn btn-success btn-block">
-        Submit Files
-      </button>
     </div>
 
     <footer class="footer">
-      © 2024 Historic Graves Project. All rights reserved. For more info,
-      contact me at
+      © 2024 Historic Graves Project. For more info, contact
       <a href="mailto:me@danieltierney.ie">me@danieltierney.ie</a> or visit the
       <a href="https://www.historicgraves.ie" target="_blank"
         >Historic Graves</a
@@ -128,20 +136,16 @@
         acceptedFiles: ".jpg, .jpeg",
         maxFiles: 1000,
         autoProcessQueue: false, // Manual processing
-        parallelUploads: 1000, // Allow submitting all files at once
-        // uploadMultiple: true, // Submit multiple files in one request
+        parallelUploads: 1000, // Handle large uploads
         dictInvalidFileType: "Only .jpeg and .jpg files are allowed.",
         dictMaxFilesExceeded: "Maximum of 1,000 files allowed.",
 
         init: function () {
           var dropzoneInstance = this;
 
-          console.log("Dropzone initialized");
-
           // Handle manual file submission
           document.getElementById("submitFiles").onclick = function () {
-            console.log("Manual file submission triggered.");
-            dropzoneInstance.processQueue(); // Submit all files at once
+            dropzoneInstance.processQueue(); // Manually trigger file submission
             window.location.href = "/processing.html"; // Redirect on completion
           };
 
