@@ -1,5 +1,3 @@
-// uploadHandler.js
-
 const multer = require("multer");
 const path = require("path");
 const config = require("../../config.json");
@@ -10,14 +8,17 @@ const { clearProcessingCompleteFlag } = require("../utils/processingFlag");
 // Multer storage configuration
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
+    logger.info(`Setting upload destination for file: ${file.originalname}`); // Log destination setting
     cb(null, config.uploadPath); // Directory for storing uploads
   },
   filename: function (req, file, cb) {
-    // Unique file naming using field name and timestamp
-    cb(
-      null,
-      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
-    );
+    const uniqueName = `${file.fieldname}-${Date.now()}${path.extname(
+      file.originalname
+    )}`;
+    logger.info(
+      `Setting filename for file: ${file.originalname} as ${uniqueName}`
+    ); // Log filename setting
+    cb(null, uniqueName);
   },
 });
 
@@ -29,6 +30,8 @@ const upload = multer({ storage: storage }).array(
 
 // Function to handle the file upload
 const handleFileUpload = (req, res) => {
+  logger.info("Handling file upload request"); // Log when the function is called
+
   upload(req, res, function (err) {
     if (err instanceof multer.MulterError) {
       // Handle Multer-specific errors
@@ -42,6 +45,7 @@ const handleFileUpload = (req, res) => {
 
     // Get uploaded files
     const files = req.files || [];
+    logger.info(`Number of files received: ${files.length}`); // Log the number of files received
 
     // If no files are uploaded
     if (files.length === 0) {
@@ -59,7 +63,7 @@ const handleFileUpload = (req, res) => {
       const invalidFileNames = invalidFiles
         .map((file) => file.originalname)
         .join(", ");
-      logger.info(`Unsupported file types detected: ${invalidFileNames}`);
+      logger.info(`Unsupported file types detected: ${invalidFileNames}`); // Log unsupported file types
       return res
         .status(400)
         .send("Unsupported file types were uploaded. Please try again.");
@@ -67,7 +71,7 @@ const handleFileUpload = (req, res) => {
 
     // Log received files and add them to the processing queue
     files.forEach((file, index) => {
-      logger.info(`File ${index + 1}: ${file.originalname}`);
+      logger.info(`File ${index + 1}: ${file.originalname}`); // Log each received file
     });
 
     clearResultsFile(); // Clear previous results
@@ -75,6 +79,7 @@ const handleFileUpload = (req, res) => {
     clearProcessingCompleteFlag(); // Reset the processing flag
 
     // Redirect to the processing page on successful upload
+    logger.info("Redirecting to processing page"); // Log redirection
     res.redirect("/processing.html");
   });
 };

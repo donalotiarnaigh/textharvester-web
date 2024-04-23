@@ -131,7 +131,6 @@
       website.
     </footer>
 
-    <!-- Dropzone Configuration -->
     <script>
       Dropzone.options.uploadForm = {
         acceptedFiles: ".jpg, .jpeg",
@@ -144,13 +143,29 @@
         init: function () {
           var dropzoneInstance = this;
 
+          console.log("Dropzone initialized"); // Log initialization
+
           // Handle manual file submission
           document.getElementById("submitFiles").onclick = function () {
+            console.log("Manual file submission triggered."); // Log when submission is triggered
             dropzoneInstance.processQueue(); // Manually trigger file submission
-            window.location.href = "/processing.html"; // Redirect on completion
           };
 
-          // Optional: Error handling and queue monitoring
+          // Queue monitoring and completion logging
+          dropzoneInstance.on("addedfile", function (file) {
+            console.log("File added:", file.name); // Log when a file is added to the queue
+          });
+
+          dropzoneInstance.on("complete", function (file) {
+            console.log("File upload complete:", file.name); // Log when a file upload is complete
+          });
+
+          dropzoneInstance.on("queueComplete", function () {
+            console.log("All files have been uploaded."); // Log when all files in the queue are processed
+            // window.location.href = "/processing.html"; // Redirect after completion
+          });
+
+          // Error handling with detailed logging
           dropzoneInstance.on("error", function (file, errorMessage) {
             console.error(
               "Error during file upload:",
