@@ -54,6 +54,7 @@
         background-color: #e9ecef;
       }
     </style>
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
   </head>
 
   <body>
@@ -105,6 +106,10 @@
           <div class="dz-message">Drop files here or click to upload.</div>
         </form>
       </div>
+      <!-- Submit Button -->
+      <button id="submitFiles" class="btn btn-success btn-block">
+        Submit Files
+      </button>
     </div>
 
     <footer class="footer">
@@ -120,10 +125,36 @@
     <!-- Dropzone Configuration -->
     <script>
       Dropzone.options.uploadForm = {
-        acceptedFiles: ".jpg,.jpeg",
+        acceptedFiles: ".jpg, .jpeg",
         maxFiles: 1000,
+        autoProcessQueue: false, // Manual processing
+        parallelUploads: 1000, // Allow submitting all files at once
+        // uploadMultiple: true, // Submit multiple files in one request
         dictInvalidFileType: "Only .jpeg and .jpg files are allowed.",
         dictMaxFilesExceeded: "Maximum of 1,000 files allowed.",
+
+        init: function () {
+          var dropzoneInstance = this;
+
+          console.log("Dropzone initialized");
+
+          // Handle manual file submission
+          document.getElementById("submitFiles").onclick = function () {
+            console.log("Manual file submission triggered.");
+            dropzoneInstance.processQueue(); // Submit all files at once
+            window.location.href = "/processing.html"; // Redirect on completion
+          };
+
+          // Optional: Error handling and queue monitoring
+          dropzoneInstance.on("error", function (file, errorMessage) {
+            console.error(
+              "Error during file upload:",
+              file.name,
+              "Error:",
+              errorMessage
+            );
+          });
+        },
       };
     </script>
   </body>
