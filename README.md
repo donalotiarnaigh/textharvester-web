@@ -1,52 +1,71 @@
 # Historic Graves Text Harvester
 
-Welcome to the Historic Graves Text Harvester, a community-driven web application designed to process and analyze images of historic graves. Utilizing advanced Optical Character Recognition (OCR) technology, our app is adept at extracting inscriptions from images of gravestones, making historical data more accessible and preservable.
+Welcome to the Historic Graves Text Harvester, a community-driven web application designed to process and analyze images of historic graves. Utilizing advanced Optical Character Recognition (OCR) technology, the app extracts inscriptions from gravestones, making historical data more accessible and preserving valuable information for future generations.
 
 ## Features
 
-- **File and Folder Upload:** Securely upload individual images or an entire folder containing up to 10 images simultaneously for processing.
-- **Progress Monitoring:** Real-time updates on the processing status of your uploads.
-- **Results Retrieval with Custom Filenames:** Access and download the extracted text data in convenient JSON or CSV formats, with the option to specify a custom filename for each download.
+- **Drag-and-Drop File Upload**: Drag and drop JPEG images into the drop zone for processing, or click to select individual files or entire folders.
+- **Progress Monitoring**: Real-time updates on the status of your uploads and OCR processing.
+- **Results Retrieval with Custom Filenames**: Download the extracted text data in JSON or CSV formats with custom filenames.
 
 ## How It Works
 
-1. **Upload Your Images or Folders:**
+1. **Upload Your Images**:
 
-   - Navigate to the upload section on the homepage.
-   - Select JPEG images of grave inscriptions or choose an entire folder for upload.
+   - Drag and drop JPEG images into the drop zone or click to select files from your device.
+   - You can upload an entire folder.
+   - Each upload allows for up to 1,000 files to be processed simultaneously.
 
-2. **Monitor Processing:**
+2. **Monitor Processing**:
 
-   - Stay on the page as we process your files or folder. The application will update you on the progress.
-   - You can leave the page running in the background if needed.
+   - After submitting your files, you'll be redirected to a processing page to track the progress.
+   - Processing occurs in the background, allowing you to continue using the app or return later.
 
-3. **Access Results and Download with Custom Filenames:**
+3. **View and Download Results**:
    - Once processing is complete, view the extracted text on the results page.
-   - Download the results as JSON or CSV files with custom filenames of your choosing.
+   - Download results in JSON or CSV format with custom filenames.
 
-## Getting Started
+## Running the App Locally
 
-1. **Prepare Your Images:**
-   Ensure your images are clear and in JPEG format. For folder uploads, make sure all images within are relevant to optimize processing efficiency. The better the quality, the more accurate the text extraction will be.
+To run the Historic Graves Text Harvester locally, follow these steps:
 
-2. **Visit the Web Application:**
-   Access the application through your preferred web browser. The interface is intuitive and user-friendly.
+1. **Clone the Repository**:
 
-3. **Follow the Instructions:**
-   On the homepage, you'll find step-by-step instructions on how to upload individual images or an entire folder and process your images.
+   - Clone the repository from GitHub using the following command:
+     ```
+     git clone https://github.com/dtcurragh/HG_TextHarvester_v2.git
+     ```
+
+2. **Install Dependencies**:
+
+   - Navigate to the cloned repository's directory:
+     ```
+     cd HG_TextHarvester_v2
+     ```
+   - Install the required dependencies with npm:
+     ```
+     npm install
+     ```
+
+3. **Run the App**:
+   - Start the app using `node` or `nodemon`:
+     ```
+     npm start
+     ```
+   - The app will run on `localhost:3000`.
 
 ## Technology
 
-- **Express.js:** A robust web application framework.
-- **Multer:** A middleware for handling `multipart/form-data`, supporting both files and folder uploads.
-- **OpenAI API:** Leveraging the latest in OCR and AI technology for text extraction.
+- **Express.js**: A robust web framework.
+- **Multer**: Middleware for handling `multipart/form-data`.
+- **OpenAI API**: Advanced AI and OCR technology for text extraction.
 
 ## Data Privacy
 
-We are committed to ensuring the privacy and security of your data. Images and folders are processed and then promptly deleted after use. Results are stored temporarily for retrieval and are not used for any other purposes.
+Uploaded images are processed and deleted promptly after use. The extracted text data is stored temporarily for retrieval and is not used for any other purposes.
 
 ## Support
 
-For support, queries, or feedback, please contact us at [dev@danieltierney.ie](mailto:dev@danieltierney.ie). Your input is valuable, and we strive to improve the application continuously.
+For support, questions, or feedback, contact us at [dev@danieltierney.ie](mailto:dev@danieltierney.ie). Your input is valuable, and we strive to improve the application continuously.
 
 Thank you for using the Historic Graves Text Harvester!
