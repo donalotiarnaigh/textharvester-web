@@ -5,6 +5,17 @@ const { enqueueFiles, clearResultsFile } = require("../utils/fileQueue");
 const logger = require("../utils/logger");
 const { clearProcessingCompleteFlag } = require("../utils/processingFlag");
 
+// Function to create a unique name with original filename base and timestamp
+function createUniqueName(file) {
+  const originalName = path.basename(
+    file.originalname,
+    path.extname(file.originalname)
+  ); // Get base filename without extension
+  const safeOriginalName = originalName.replace(/[^\w.-]/g, "_"); // Replace special characters with underscores
+  const timestamp = Date.now(); // Get current timestamp
+  return `${safeOriginalName}_${timestamp}${path.extname(file.originalname)}`; // Combine original base, timestamp, and extension
+}
+
 // Multer storage configuration
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -12,13 +23,11 @@ const storage = multer.diskStorage({
     cb(null, config.uploadPath); // Directory for storing uploads
   },
   filename: function (req, file, cb) {
-    const uniqueName = `${file.fieldname}-${Date.now()}${path.extname(
-      file.originalname
-    )}`;
+    const uniqueName = createUniqueName(file); // Generate unique name
     logger.info(
-      `Setting filename for file: ${file.originalname} as ${uniqueName}`
-    ); // Log filename setting
-    cb(null, uniqueName);
+      `Setting filename for file: ${file.originalname} as ${uniqueName}` // Log unique name generation
+    );
+    cb(null, uniqueName); // Pass unique name to Multer
   },
 });
 
