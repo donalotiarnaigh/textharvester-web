@@ -40,6 +40,12 @@
         position: relative;
         clear: both;
       }
+      .info-message {
+        background-color: #e9f7f8; /* Light blue background */
+        color: #007bff; /* Blue text */
+        padding: 10px; /* Padding for better spacing */
+        border-radius: 5px; /* Slight border radius for aesthetics */
+      }
       .container {
         padding-top: 20px;
       }
@@ -115,6 +121,12 @@
             <div class="results-section">
               <h2>Processing Complete</h2>
               <p>Here is your extracted text:</p>
+
+              <!-- Information message about JSON and CSV data -->
+              <div class="info-message">
+                Please note that the source filename is included in the JSON
+                results for reference, but is not included in the CSV file.
+              </div>
 
               <!-- Filename input field -->
               <div class="form-group mt-4">
