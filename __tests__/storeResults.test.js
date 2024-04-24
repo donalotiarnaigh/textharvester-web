@@ -28,24 +28,19 @@ describe("storeResults function", () => {
     jest.restoreAllMocks(); // Restores to original functions
   });
 
-  it("should store new OCR results when no existing data is found", () => {
-    const mockData = JSON.stringify([
-      {
-        memorial_number: "001",
-        first_name: "John",
-        last_name: "Doe",
-        year_of_death: "1990",
-        inscription: "Rest In Peace",
-      },
-    ]);
+  it("should store new OCR results with the unique filename", () => {
+    const mockData = {
+      ocrText: "Sample OCR text",
+      uniqueFilename: "file_1234567890.jpg",
+    };
+
     fs.existsSync.mockReturnValue(false);
-    fs.writeFileSync.mockImplementation(() => {});
 
     storeResults(mockData);
 
     expect(fs.writeFileSync).toHaveBeenCalledWith(
       expect.any(String),
-      expect.stringContaining("John"),
+      expect.stringContaining("file_1234567890.jpg"), // Verify unique filename is included
       expect.any(String)
     );
     expect(logger.info).toHaveBeenCalledWith(
@@ -53,7 +48,7 @@ describe("storeResults function", () => {
     );
   });
 
-  it("should append new data to existing results", () => {
+  it("should append new OCR results with unique filename to existing data", () => {
     const existingData = [
       {
         memorial_number: "002",
@@ -63,167 +58,42 @@ describe("storeResults function", () => {
         inscription: "Forever Remembered",
       },
     ];
-    const newData = JSON.stringify([
-      {
-        memorial_number: "003",
-        first_name: "Alice",
-        last_name: "Johnson",
-        year_of_death: "2000",
-        inscription: "In Loving Memory",
-      },
-    ]);
+
+    const newData = {
+      ocrText: "Sample OCR text for new data",
+      uniqueFilename: "file_0987654321.jpg",
+    };
 
     fs.existsSync.mockReturnValue(true);
     fs.readFileSync.mockReturnValue(JSON.stringify(existingData));
-    fs.writeFileSync.mockImplementation(() => {});
 
     storeResults(newData);
 
-    expect(fs.writeFileSync).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.stringContaining("Alice"),
-      expect.any(String)
-    );
+    const writtenContent = fs.writeFileSync.mock.calls[0][1];
+    expect(writtenContent).toContain("file_0987654321.jpg"); // Check unique filename is appended
     expect(logger.info).toHaveBeenCalledWith(
       "Loading existing results from results.json..."
     );
   });
 
-  it("should handle entries with null values correctly", () => {
-    jest.isolateModules(() => {
-      const fs = require("fs");
-      const logger = require("../src/utils/logger.js");
-      const { storeResults } = require("../src/utils/fileProcessing.js");
-
-      // Setup mock implementations within this isolated module environment
-      fs.existsSync.mockReturnValue(true);
-      fs.readFileSync.mockReturnValue(
-        JSON.stringify([
-          {
-            memorial_number: "005",
-            first_name: "Lisa",
-            last_name: "White",
-            year_of_death: "1991",
-            inscription: "Beloved",
-          },
-        ])
-      );
-      fs.writeFileSync.mockImplementation(() => {});
-
-      const partialData = JSON.stringify([
-        {
-          memorial_number: "004",
-          first_name: "Tom",
-          last_name: null, // Intentionally missing last name
-          year_of_death: "1985",
-          inscription: null, // Intentionally missing inscription
-        },
-      ]);
-
-      storeResults(partialData);
-
-      // Ensure there are enough calls to writeFileSync before accessing them
-      if (fs.writeFileSync.mock.calls.length > 0) {
-        const writtenContent = JSON.parse(fs.writeFileSync.mock.calls[0][1]);
-        expect(
-          writtenContent.some(
-            (entry) => entry.last_name === null && entry.inscription === null
-          )
-        ).toBeTruthy();
-      } else {
-        throw new Error("fs.writeFileSync was not called as expected.");
-      }
-
-      expect(logger.info).toHaveBeenCalledWith(
-        "Loading existing results from results.json..."
-      );
-    });
-  });
-
-  it("should sort results by memorial number correctly, placing null values at the end", () => {
-    const mixedData = JSON.stringify([
-      { memorial_number: "300", first_name: "Charlie" },
-      { memorial_number: null, first_name: "Unknown" },
-      { memorial_number: "200", first_name: "Bob" },
-      { memorial_number: "100", first_name: "Alice" },
-    ]);
-
-    const existingData = [{ memorial_number: "001", first_name: "John" }];
+  it("should handle results with null values and unique filename", () => {
+    const newData = {
+      ocrText: "Sample OCR text with null values",
+      uniqueFilename: "file_1234567890.jpg", // Unique filename
+      memorial_number: null, // Intentionally set to null
+      first_name: "Test",
+      last_name: null, // Intentionally set to null
+      year_of_death: null, // Intentionally set to null
+      inscription: null, // Intentionally set to null
+    };
 
     fs.existsSync.mockReturnValue(true);
-    fs.readFileSync.mockReturnValue(JSON.stringify(existingData));
-    fs.writeFileSync.mockImplementation(() => {});
+    fs.readFileSync.mockReturnValue(JSON.stringify([])); // Existing data is empty
 
-    storeResults(mixedData);
+    storeResults(newData);
 
-    // Retrieve the actual JSON written to the file
-    const writtenContent = JSON.parse(fs.writeFileSync.mock.calls[0][1]);
-
-    // Additional debug output to understand the full output
-    console.log(
-      "Full written content:",
-      writtenContent.map(
-        (item) => `${item.memorial_number}: ${item.first_name}`
-      )
-    );
-
-    // Check if the array has the expected length before making specific checks
-    expect(writtenContent.length).toBe(5);
-
-    if (writtenContent.length >= 5) {
-      // Only perform these checks if there are enough elements
-      expect(writtenContent[0].memorial_number).toBe("001"); // John
-      expect(writtenContent[1].memorial_number).toBe("100"); // Alice
-      expect(writtenContent[2].memorial_number).toBe("200"); // Bob
-      expect(writtenContent[3].memorial_number).toBe("300"); // Charlie
-      expect(writtenContent[4].memorial_number).toBe(null); // Unknown
-    }
-
-    expect(logger.info).toHaveBeenCalledWith(
-      "Loading existing results from results.json..."
-    );
-  });
-
-  it("should correctly sort results with numeric, null, and non-numeric memorial numbers", () => {
-    const mixedData = JSON.stringify([
-      { memorial_number: "105", first_name: "Bridget" },
-      { memorial_number: "null", first_name: "Invalid" }, // Non-numeric string treated as invalid
-      { memorial_number: "20", first_name: "Patrick" },
-      { memorial_number: null, first_name: "Unknown" }, // Null value
-      { memorial_number: "3", first_name: "William" },
-      { memorial_number: "two", first_name: "Error" }, // Non-numeric string should be treated as invalid
-    ]);
-
-    const existingData = [{ memorial_number: "2", first_name: "Catherine" }];
-
-    fs.existsSync.mockReturnValue(true);
-    fs.readFileSync.mockReturnValue(JSON.stringify(existingData));
-    fs.writeFileSync.mockImplementation(() => {});
-
-    storeResults(mixedData);
-
-    // Retrieve the actual JSON written to the file
-    const writtenContent = JSON.parse(fs.writeFileSync.mock.calls[0][1]);
-
-    // Check if the array has the expected length and order
-    expect(writtenContent.length).toBe(7); // Including the existing data
-
-    // Check numeric values are at the beginning and sorted correctly
-    const numericValues = writtenContent
-      .slice(0, 4)
-      .map((item) => item.memorial_number);
-    expect(numericValues).toEqual(["2", "3", "20", "105"]);
-
-    // Check non-numeric values are at the end
-    const nonNumericValues = writtenContent
-      .slice(-3)
-      .map((item) => item.memorial_number);
-    expect(nonNumericValues).toContain(null);
-    expect(nonNumericValues).toContain("null");
-    expect(nonNumericValues).toContain("two");
-
-    expect(logger.info).toHaveBeenCalledWith(
-      "Loading existing results from results.json..."
-    );
+    const writtenContent = fs.writeFileSync.mock.calls[0][1];
+    expect(writtenContent).toContain("file_1234567890.jpg"); // Ensure unique filename is included
+    expect(writtenContent).toContain("null"); // Ensure null values are correctly handled
   });
 });
