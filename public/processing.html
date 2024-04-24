@@ -152,7 +152,7 @@
               aria-valuemin="0"
               aria-valuemax="100"
             >
-              <span>0% Complete</span>
+              <span>0%</span>
               <!-- Text centered inside the progress bar -->
             </div>
           </div>
@@ -172,7 +172,7 @@
       function updateProgressBar(percentage) {
         const progressBar = document.getElementById("progressBar");
         progressBar.style.width = percentage + "%";
-        progressBar.textContent = `${percentage}% Complete`;
+        progressBar.textContent = `${percentage}%`;
       }
       function checkProcessingStatus() {
         fetch("/processing-status")

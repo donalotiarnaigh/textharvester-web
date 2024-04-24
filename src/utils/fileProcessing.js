@@ -106,7 +106,7 @@ function storeResults(resultsData) {
     const parsedData = JSON.parse(resultsData.ocrText);
 
     const newResult = {
-      uniqueFilename: resultsData.uniqueFilename || "Unknown", // Include unique filename
+      filename: resultsData.uniqueFilename || "Unknown", // Include unique filename
       memorial_number: parsedData.memorial_number || null, // Extract from parsed data
       first_name: parsedData.first_name || null, // Extract from parsed data
       last_name: parsedData.last_name || null, // Extract from parsed data
