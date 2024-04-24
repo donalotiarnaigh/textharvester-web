@@ -95,4 +95,5 @@ const handleFileUpload = (req, res) => {
 
 module.exports = {
   handleFileUpload,
+  createUniqueName,
 };
