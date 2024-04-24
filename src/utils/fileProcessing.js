@@ -94,42 +94,34 @@ function cleanupFile(filePath) {
 
 function storeResults(resultsData) {
   const resultsPath = config.resultsPath;
-  logger.info("Starting to store OCR results...");
 
   try {
     let existingResults = [];
     if (fs.existsSync(resultsPath)) {
-      logger.info("Loading existing results from results.json...");
-      const resultsData = fs.readFileSync(resultsPath, "utf8");
-      existingResults = JSON.parse(resultsData);
-    } else {
-      logger.info("No existing results found. Creating new results file.");
+      const existingData = fs.readFileSync(resultsPath, "utf8");
+      existingResults = JSON.parse(existingData);
     }
 
-    // Ensure the new data contains the unique filename
-    const formattedData = Array.isArray(resultsData)
-      ? resultsData
-      : [resultsData];
-    formattedData.forEach((item) => {
-      item.uniqueFilename = item.uniqueFilename || "Unknown"; // Include the unique filename
-      item.memorial_number = item.memorial_number || null;
-      item.first_name = item.first_name || null;
-      item.last_name = item.last_name || null;
-      item.year_of_death = item.year_of_death || null;
-      item.inscription = item.inscription || null;
-    });
+    // Parse OCR text and extract required fields
+    const parsedData = JSON.parse(resultsData.ocrText);
 
-    const combinedResults = existingResults.concat(formattedData);
+    const newResult = {
+      uniqueFilename: resultsData.uniqueFilename || "Unknown", // Include unique filename
+      memorial_number: parsedData.memorial_number || null, // Extract from parsed data
+      first_name: parsedData.first_name || null, // Extract from parsed data
+      last_name: parsedData.last_name || null, // Extract from parsed data
+      year_of_death: parsedData.year_of_death || null, // Extract from parsed data
+      inscription: parsedData.inscription || null, // Extract from parsed data
+    };
 
+    const combinedResults = existingResults.concat(newResult);
+
+    // Sort by memorial number with nulls at the end
     combinedResults.sort((a, b) => {
       const numA =
-        isNaN(parseInt(a.memorial_number, 10)) || a.memorial_number === "null"
-          ? Infinity
-          : parseInt(a.memorial_number, 10);
+        a.memorial_number === null ? Infinity : parseInt(a.memorial_number, 10);
       const numB =
-        isNaN(parseInt(b.memorial_number, 10)) || b.memorial_number === "null"
-          ? Infinity
-          : parseInt(b.memorial_number, 10);
+        b.memorial_number === null ? Infinity : parseInt(b.memorial_number, 10);
       return numA - numB;
     });
 
@@ -138,9 +130,9 @@ function storeResults(resultsData) {
       JSON.stringify(combinedResults, null, 2),
       "utf8"
     );
-    logger.info(`Successfully stored new result(s) in results.json.`);
+    logger.info("Results successfully stored in results.json.");
   } catch (err) {
-    logger.error("Error while storing OCR results:", err);
+    logger.error("Error storing OCR results:", err);
   }
 }
 
