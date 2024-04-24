@@ -59,10 +59,16 @@ async function processFile(filePath) {
         if (response && response.choices && response.choices.length > 0) {
           const ocrText = response.choices[0].message.content;
           logger.info(`OCR text for ${filePath}: ${ocrText}`);
-          storeResults(ocrText);
+
+          // Include unique filename in the results data
+          const resultsData = {
+            ocrText,
+            uniqueFilename: filePath, // Pass the unique filename
+          };
+
+          storeResults(resultsData); // Store the results with the unique filename
           resolve(ocrText);
         } else {
-          logger.info(`No OCR data received for ${filePath}.`);
           reject(new Error(`No OCR data received for ${filePath}.`));
         }
       } catch (error) {
@@ -86,7 +92,7 @@ function cleanupFile(filePath) {
   });
 }
 
-function storeResults(ocrText) {
+function storeResults(resultsData) {
   const resultsPath = config.resultsPath;
   logger.info("Starting to store OCR results...");
 
@@ -100,16 +106,12 @@ function storeResults(ocrText) {
       logger.info("No existing results found. Creating new results file.");
     }
 
-    // Remove Markdown code block syntax if present and handle NULL values
-    const cleanedOcrText = ocrText
-      .replace(/```json|```/g, "")
-      .replace(/NULL/g, "null")
-      .trim();
-
-    let newData = JSON.parse(cleanedOcrText);
-
-    const formattedData = Array.isArray(newData) ? newData : [newData];
+    // Ensure the new data contains the unique filename
+    const formattedData = Array.isArray(resultsData)
+      ? resultsData
+      : [resultsData];
     formattedData.forEach((item) => {
+      item.uniqueFilename = item.uniqueFilename || "Unknown"; // Include the unique filename
       item.memorial_number = item.memorial_number || null;
       item.first_name = item.first_name || null;
       item.last_name = item.last_name || null;
@@ -119,14 +121,6 @@ function storeResults(ocrText) {
 
     const combinedResults = existingResults.concat(formattedData);
 
-    logger.info(
-      "Before sorting:",
-      combinedResults.map(
-        (item) => `${item.memorial_number}: ${item.first_name}`
-      )
-    );
-
-    // Sort combined results by memorial_number, treating null as Infinity
     combinedResults.sort((a, b) => {
       const numA =
         isNaN(parseInt(a.memorial_number, 10)) || a.memorial_number === "null"
@@ -138,13 +132,6 @@ function storeResults(ocrText) {
           : parseInt(b.memorial_number, 10);
       return numA - numB;
     });
-
-    logger.info(
-      "After sorting:",
-      combinedResults.map(
-        (item) => `${item.memorial_number}: ${item.first_name}`
-      )
-    );
 
     fs.writeFileSync(
       resultsPath,
