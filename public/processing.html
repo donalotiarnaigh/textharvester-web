@@ -138,7 +138,9 @@
       <div>
         <div class="processing-message">
           <h2>Processing...</h2>
-          <p>Please wait, currently processing your file(s).</p>
+          <p id="statusMessage">
+            Please wait, currently processing your file(s).
+          </p>
           <div class="loading"></div>
           <div id="loading-text">Processing...</div>
         </div>
@@ -206,7 +208,6 @@
       }, 24000000);
 
       function handleCancelProcessing() {
-        // Show a confirmation dialog when the cancel button is clicked
         const userConfirmed = confirm(
           "Are you sure you want to cancel? This action will stop all processing, and you may not receive complete results."
         );
@@ -217,29 +218,38 @@
           })
             .then((response) => {
               if (response.ok) {
-                // Display the 'Processing cancelled' message
-                alert("Processing cancelled. Redirecting to results...");
-
-                // Redirect to the results page after a brief delay
+                console.log("Cancel request successful."); // Debugging output
+                updateProcessingMessage(
+                  "Processing cancelled. Redirecting to results..."
+                );
                 setTimeout(() => {
-                  window.location.href = "/results.html";
-                }, 1500); // Adjust the delay as needed (1.5 seconds here)
+                  window.location.href = "/results.html?status=cancelled";
+                }, 1500);
               } else {
-                console.error("Failed to cancel processing");
-                document.getElementById(
-                  "cancelProcessingButton"
-                ).disabled = false; // Re-enable the button on failure
+                console.error(
+                  "Failed to cancel processing - server responded with an error."
+                );
+                throw new Error("Failed to cancel processing");
               }
             })
             .catch((error) => {
               console.error("Error during cancellation:", error);
+              updateProcessingMessage(
+                "Failed to cancel processing, please try again."
+              );
               document.getElementById(
                 "cancelProcessingButton"
-              ).disabled = false; // Re-enable the button on failure
+              ).disabled = false;
             });
 
           document.getElementById("cancelProcessingButton").disabled = true;
         }
+      }
+
+      function updateProcessingMessage(message) {
+        const processingMessage = document.getElementById("statusMessage");
+        console.log("Updating processing message to:", message); // Debugging output
+        processingMessage.textContent = message;
       }
     </script>
     <script>
