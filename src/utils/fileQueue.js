@@ -28,6 +28,7 @@ function enqueueFiles(files) {
 
   files.forEach((file, index) => {
     fileQueue.push(file.path);
+    console.log(`Enqueued file path: ${file.path}`); // Log the path being added
     logger.info(
       `File ${index + 1} [${file.originalname}] enqueued. Path: ${file.path}`
     );
@@ -138,12 +139,26 @@ function getProcessedFiles() {
   return processedFiles;
 }
 
+const path = require("path");
+
 function cancelProcessing() {
-  // Check if processing is currently underway
   if (!isProcessing) {
     logger.info("No active processing to cancel.");
     return;
   }
+
+  // Delete files from the upload directory
+  fileQueue.forEach((file) => {
+    const filePath = path.join(__dirname, "..", "..", file); // Adjusted path
+    console.log("Attempting to delete file at path:", filePath);
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        logger.error(`Error deleting file ${file}: ${err}`);
+      } else {
+        logger.info(`Deleted file ${file}`);
+      }
+    });
+  });
 
   // Clear the file queue and reset processing flags
   fileQueue = [];
