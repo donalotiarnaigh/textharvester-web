@@ -138,12 +138,28 @@ function getProcessedFiles() {
   return processedFiles;
 }
 
+function cancelProcessing() {
+  // Check if processing is currently underway
+  if (!isProcessing) {
+    logger.info("No active processing to cancel.");
+    return;
+  }
+
+  // Clear the file queue and reset processing flags
+  fileQueue = [];
+  isProcessing = false;
+  processedFiles = 0;
+  totalFiles = 0;
+  logger.info("Processing has been cancelled and the queue has been cleared.");
+}
+
 module.exports = {
   clearResultsFile,
   enqueueFiles,
   dequeueFile,
   checkAndProcessNextFile,
-  resetFileProcessingState, // If you implemented this function
+  resetFileProcessingState,
   getTotalFiles,
   getProcessedFiles,
+  cancelProcessing, // Export the new function
 };
