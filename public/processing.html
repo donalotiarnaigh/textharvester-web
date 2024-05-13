@@ -208,27 +208,36 @@
       function handleCancelProcessing() {
         // Show a confirmation dialog when the cancel button is clicked
         const userConfirmed = confirm(
-          "Are you sure you want to cancel processing?"
+          "Are you sure you want to cancel? This action will stop all processing, and you may not receive complete results."
         );
 
         if (userConfirmed) {
-          // If user confirms, send a request to cancel processing
           fetch("/cancel-processing", {
             method: "POST",
           })
             .then((response) => {
               if (response.ok) {
-                // If the request is successful, redirect to the results page
-                window.location.href = "/results.html";
+                // Display the 'Processing cancelled' message
+                alert("Processing cancelled. Redirecting to results...");
+
+                // Redirect to the results page after a brief delay
+                setTimeout(() => {
+                  window.location.href = "/results.html";
+                }, 1500); // Adjust the delay as needed (1.5 seconds here)
               } else {
                 console.error("Failed to cancel processing");
+                document.getElementById(
+                  "cancelProcessingButton"
+                ).disabled = false; // Re-enable the button on failure
               }
             })
             .catch((error) => {
               console.error("Error during cancellation:", error);
+              document.getElementById(
+                "cancelProcessingButton"
+              ).disabled = false; // Re-enable the button on failure
             });
 
-          // Disable the cancel button to prevent multiple requests
           document.getElementById("cancelProcessingButton").disabled = true;
         }
       }
