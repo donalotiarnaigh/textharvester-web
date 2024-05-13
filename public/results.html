@@ -237,8 +237,23 @@
         document.body.removeChild(downloadLink);
       }
 
+      // Utility function to get URL query parameters
+      function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+      }
+
       // Event listener for page load
       document.addEventListener("DOMContentLoaded", function () {
+        // Check cancellation status and update message accordingly
+        const status = getQueryParam("status");
+        if (status === "cancelled") {
+          const infoMessageElement = document.querySelector(".info-message");
+          infoMessageElement.textContent =
+            "Note: The processing was cancelled and the results may be partial.";
+          infoMessageElement.style.backgroundColor = "#ffcccc"; // Change color to indicate a warning or cancellation
+        }
+
         // Fetch results data from the server
         fetch("/results-data")
           .then((response) => response.json())
@@ -263,10 +278,7 @@
 
         // Filename input real-time validation
         const filenameInput = document.getElementById("filenameInput");
-        // console.log("Initial filename input value:", filenameInput.value); // Log initial value
-
         filenameInput.addEventListener("input", function () {
-          // console.log("Filename input changed:", this.value); // Log value on input change
           const isValidFilename = /^[a-zA-Z0-9_-]*$/.test(this.value);
           document.getElementById("downloadButton").disabled =
             !isValidFilename || !this.value;
@@ -284,7 +296,6 @@
 
         // Modify download functions to include the dynamic filename
         window.downloadJsonResults = function () {
-          console.log("Downloading JSON with filename:", filenameInput.value); // Log download action
           const filename = filenameInput.value || "results";
           triggerDownload(
             "/download-json?filename=" + filename,
@@ -293,9 +304,7 @@
         };
 
         window.downloadCsvResults = function () {
-          console.log("Downloading CSV with filename:", filenameInput.value); // Log download action
-          const filename =
-            document.getElementById("filenameInput").value || "results"; // Default filename
+          const filename = filenameInput.value || "results";
           const downloadUrl = `/download-csv?filename=${filename}`;
           triggerDownload(downloadUrl, filename + ".csv");
         };
