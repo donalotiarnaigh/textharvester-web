@@ -1,5 +1,6 @@
 const path = require("path");
 const poppler = require("pdf-poppler");
+const fs = require("fs").promises; // Using promises version for better async handling
 const config = require("../../config.json"); // Adjust path as necessary to import config
 const logger = require("../utils/logger");
 
@@ -19,6 +20,11 @@ async function convertPdfToJpegs(pdfPath) {
   try {
     const outputFiles = await poppler.convert(pdfPath, options);
     logger.info(`PDF converted to JPEGs: ${outputFiles.join(", ")}`);
+
+    // Delete the original PDF file after successful conversion
+    await fs.unlink(pdfPath);
+    logger.info(`Successfully deleted original PDF: ${pdfPath}`);
+
     return outputFiles.map((fileName) => path.join(outputPath, fileName));
   } catch (error) {
     logger.error("Error converting PDF to JPEGs:", error);
