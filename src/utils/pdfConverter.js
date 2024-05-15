@@ -19,13 +19,20 @@ async function convertPdfToJpegs(pdfPath) {
 
   try {
     const outputFiles = await poppler.convert(pdfPath, options);
-    logger.info(`PDF converted to JPEGs: ${outputFiles.join(", ")}`);
+    const fullPaths = outputFiles.map((fileName) =>
+      path.join(outputPath, fileName)
+    );
+
+    // Log full paths of created JPEGs
+    logger.info(
+      `PDF converted to JPEGs, files created at: ${fullPaths.join(", ")}`
+    );
 
     // Delete the original PDF file after successful conversion
     await fs.unlink(pdfPath);
     logger.info(`Successfully deleted original PDF: ${pdfPath}`);
 
-    return outputFiles.map((fileName) => path.join(outputPath, fileName));
+    return fullPaths;
   } catch (error) {
     logger.error("Error converting PDF to JPEGs:", error);
     throw new Error(`Failed to convert PDF to JPEGs: ${error.message}`);
