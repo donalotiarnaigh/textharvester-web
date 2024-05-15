@@ -4,6 +4,8 @@ const fs = require("fs").promises;
 const config = require("../../config.json");
 const logger = require("../utils/logger");
 
+let conversionProgress = 0; // Global variable to track conversion progress
+
 async function convertPdfToJpegs(pdfPath) {
   logger.info(`Starting PDF conversion for: ${pdfPath}`);
   const outputPath = config.uploadPath;
@@ -31,12 +33,20 @@ async function convertPdfToJpegs(pdfPath) {
       file.startsWith(`${baseName}_page`)
     );
 
+    const totalFiles = outputFiles.length;
+    for (let i = 0; i < totalFiles; i++) {
+      // Simulate processing and update conversion progress
+      conversionProgress = Math.round(((i + 1) / totalFiles) * 100);
+      await new Promise((resolve) => setTimeout(resolve, 100)); // Simulate processing delay
+    }
+
     const fullPaths = outputFiles.map((file) => path.join(outputPath, file));
     logger.info(`JPEG files created at: ${fullPaths.join(", ")}`);
 
     await fs.unlink(pdfPath);
     logger.info(`Successfully deleted original PDF: ${pdfPath}`);
 
+    conversionProgress = 100; // Ensure progress is set to 100% after completion
     return fullPaths;
   } catch (error) {
     logger.error("Error converting PDF to JPEGs:", error);
@@ -44,4 +54,11 @@ async function convertPdfToJpegs(pdfPath) {
   }
 }
 
-module.exports = convertPdfToJpegs;
+function getConversionProgress() {
+  return conversionProgress;
+}
+
+module.exports = {
+  convertPdfToJpegs,
+  getConversionProgress,
+};

@@ -140,6 +140,11 @@ function getProcessedFiles() {
   return processedFiles;
 }
 
+function getProcessingProgress() {
+  if (totalFiles === 0) return 0; // Avoid division by zero
+  return Math.round((processedFiles / totalFiles) * 100);
+}
+
 function cancelProcessing() {
   if (!isProcessing) {
     logger.info("No active processing to cancel.");
@@ -172,5 +177,6 @@ module.exports = {
   resetFileProcessingState,
   getTotalFiles,
   getProcessedFiles,
+  getProcessingProgress,
   cancelProcessing,
 };

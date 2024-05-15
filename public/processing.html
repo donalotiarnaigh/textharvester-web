@@ -10,7 +10,6 @@
     />
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
-
     <style>
       html,
       body {
@@ -23,25 +22,23 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        height: calc(
-          100vh - 100px
-        ); /* Adjusted to ensure content fits without overflow, considering navbar and footer */
-        padding: 0 15px; /* Add padding to ensure content does not touch the edges on small screens */
+        height: calc(100vh - 100px);
+        padding: 0 15px;
       }
       .footer {
         background-color: #f8f9fa;
         color: black;
         text-align: center;
-        padding: 20px 0; /* Slightly reduced for smaller screens */
-        font-size: 0.85em; /* Adjusted for better readability on small devices */
+        padding: 20px 0;
+        font-size: 0.85em;
         width: 100%;
         position: absolute;
-        bottom: 0; /* Ensure footer sticks to the bottom */
+        bottom: 0;
       }
       .loading-container,
       .processing-message {
         text-align: center;
-        padding: 0 10px; /* Padding to prevent text from touching the screen edges */
+        padding: 0 10px;
       }
       .loading {
         display: inline-block;
@@ -53,33 +50,30 @@
         animation: spin 1s ease-in-out infinite;
       }
       .progress-container {
-        display: flex; /* Use flexbox for the container */
-        justify-content: center; /* Center the progress bar horizontally */
-        width: 80%; /* Adjust this percentage to your preference */
-        max-width: 1200px; /* Maximum width can be set to a fixed pixel value */
-        margin: auto; /* Auto margins for centering */
+        display: flex;
+        justify-content: center;
+        width: 80%;
+        max-width: 1200px;
+        margin: auto;
       }
-
       .progress {
-        flex: 1; /* Flex property to take available space */
+        flex: 1;
         background-color: #eee;
-        margin-top: 20px; /* Spacing above the progress bar */
-        height: 20px; /* Set a fixed height for the progress bar */
-        border-radius: 5px; /* Optional rounded corners */
+        margin-top: 20px;
+        height: 20px;
+        border-radius: 5px;
       }
-
       .progress-bar {
-        display: flex; /* Make the progress bar a flex container */
-        align-items: center; /* Vertically center the flex items (the text) */
-        justify-content: center; /* Horizontally center the flex items (the text) */
-        width: 0%; /* Initial width */
-        background-color: #007bff; /* Background color of the progress bar */
-        transition: width 0.6s ease; /* Smooth transition for the width */
-        color: #fff; /* Text color */
-        font-weight: bold; /* Optional: make the text bold */
-        border-radius: 5px; /* Match the parent's border-radius */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 0%;
+        background-color: #007bff;
+        transition: width 0.6s ease;
+        color: #fff;
+        font-weight: bold;
+        border-radius: 5px;
       }
-
       #loading-text {
         margin-top: 20px;
         margin-bottom: 20px;
@@ -91,28 +85,23 @@
       }
       @media (max-width: 991px) {
         .navbar-nav {
-          text-align: center; /* Center navigation links on smaller screens */
+          text-align: center;
         }
         .footer {
-          font-size: 0.8em; /* Further reduce font size for very small screens */
+          font-size: 0.8em;
         }
         .content-wrap {
-          height: auto; /* Allow content wrap to grow as needed */
-          min-height: calc(
-            100vh - 100px
-          ); /* Ensure it takes at least the viewport height minus footer */
-          padding-bottom: 60px; /* Give some space for the footer */
+          height: auto;
+          min-height: calc(100vh - 100px);
+          padding-bottom: 60px;
         }
       }
-      /* Close the previous media query block before starting a new one */
       @media (min-width: 992px) {
         .progress {
-          width: 60vw; /* You can adjust the width as needed */
-          /* max-width: none; You can remove this if you set a specific width */
+          width: 60vw;
         }
       }
     </style>
-
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
   </head>
   <body>
@@ -186,26 +175,25 @@
         progressBar.style.width = percentage + "%";
         progressBar.textContent = `${percentage}%`;
       }
-      function checkProcessingStatus() {
-        fetch("/processing-status")
+
+      function checkProgress() {
+        fetch("/progress")
           .then((response) => response.json())
           .then((data) => {
             updateProgressBar(data.progress);
-            if (data.status === "complete") {
+            if (data.progress === 100) {
               setTimeout(() => {
                 window.location.href = "/results.html";
               }, 1000);
             }
           })
           .catch((error) => {
-            console.error("Error fetching processing status:", error);
+            console.error("Error fetching progress:", error);
           });
       }
-      checkProcessingStatus();
-      setInterval(checkProcessingStatus, 2000);
-      setTimeout(() => {
-        window.location.href = "/results.html";
-      }, 24000000);
+
+      checkProgress();
+      setInterval(checkProgress, 2000);
 
       function handleCancelProcessing() {
         const userConfirmed = confirm(
@@ -218,7 +206,7 @@
           })
             .then((response) => {
               if (response.ok) {
-                console.log("Cancel request successful."); // Debugging output
+                console.log("Cancel request successful.");
                 updateProcessingMessage(
                   "Processing cancelled. Redirecting to results..."
                 );
@@ -248,7 +236,7 @@
 
       function updateProcessingMessage(message) {
         const processingMessage = document.getElementById("statusMessage");
-        console.log("Updating processing message to:", message); // Debugging output
+        console.log("Updating processing message to:", message);
         processingMessage.textContent = message;
       }
     </script>

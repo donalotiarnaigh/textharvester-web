@@ -4,7 +4,7 @@ const config = require("../../config.json");
 const { enqueueFiles, clearResultsFile } = require("../utils/fileQueue");
 const logger = require("../utils/logger");
 const { clearProcessingCompleteFlag } = require("../utils/processingFlag");
-const pdfConverter = require("../utils/pdfConverter");
+const { convertPdfToJpegs } = require("../utils/pdfConverter");
 
 function createUniqueName(file) {
   const originalName = path.basename(
@@ -73,7 +73,7 @@ const handleFileUpload = (req, res) => {
           try {
             if (file.mimetype === "application/pdf") {
               logger.info(`Processing PDF file: ${file.originalname}`);
-              const imagePaths = await pdfConverter(file.path);
+              const imagePaths = await convertPdfToJpegs(file.path);
               logger.info(`Converted PDF to images: ${imagePaths}`);
               enqueueFiles(
                 imagePaths.map((imagePath) => ({
@@ -98,12 +98,10 @@ const handleFileUpload = (req, res) => {
       );
 
       if (fileErrors.length > 0) {
-        res
-          .status(207)
-          .json({
-            message: "Some files were not processed successfully",
-            errors: fileErrors,
-          });
+        res.status(207).json({
+          message: "Some files were not processed successfully",
+          errors: fileErrors,
+        });
       } else {
         clearResultsFile();
         clearProcessingCompleteFlag();

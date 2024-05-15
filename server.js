@@ -3,7 +3,11 @@ const config = require("./config.json");
 const { handleFileUpload } = require("./src/controllers/uploadHandler");
 const logger = require("./src/utils/logger.js");
 const resultsManager = require("./src/controllers/resultsManager");
-const { cancelProcessing } = require("./src/utils/fileQueue"); // Ensure fileQueue.js exports cancelProcessing
+const {
+  cancelProcessing,
+  getProcessingProgress,
+} = require("./src/utils/fileQueue");
+const { getConversionProgress } = require("./src/utils/pdfConverter"); // Correctly import the function
 
 require("dotenv").config(); // Load environment variables from .env file
 
@@ -18,6 +22,19 @@ app.get("/processing-status", resultsManager.getProcessingStatus);
 app.get("/results-data", resultsManager.getResultsData);
 app.get("/download-json", resultsManager.downloadResultsJSON);
 app.get("/download-csv", resultsManager.downloadResultsCSV);
+
+// Add the new GET route for combined progress
+app.get("/progress", (req, res) => {
+  const conversionProgress = getConversionProgress();
+  const processingProgress = getProcessingProgress();
+
+  // Combine progress: 50% weight to each stage
+  const combinedProgress = Math.round(
+    (conversionProgress + processingProgress) / 2
+  );
+
+  res.json({ progress: combinedProgress });
+});
 
 // Add the new POST route for canceling processing
 app.post("/cancel-processing", (req, res) => {
