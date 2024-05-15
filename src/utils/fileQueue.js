@@ -27,10 +27,14 @@ function enqueueFiles(files) {
   }
 
   files.forEach((file, index) => {
-    fileQueue.push(file.path);
-    console.log(`Enqueued file path: ${file.path}`); // Log the path being added
+    const filePath = file.path ? file.path : file; // Check if the file is an object or a string
+    const originalName = file.originalname
+      ? file.originalname
+      : path.basename(file);
+
+    fileQueue.push(filePath);
     logger.info(
-      `File ${index + 1} [${file.originalname}] enqueued. Path: ${file.path}`
+      `File ${index + 1} [${originalName}] enqueued. Path: ${filePath}`
     );
   });
 
@@ -74,7 +78,6 @@ function checkAndProcessNextFile() {
   }
   if (fileQueue.length === 0) {
     if (!isProcessing) {
-      // Call setProcessingCompleteFlag only if processing is complete and no files are in the queue
       setProcessingCompleteFlag();
       logger.info("All files processed. Processing complete flag set.");
     }
@@ -95,24 +98,26 @@ function checkAndProcessNextFile() {
         logger.info(`File processing completed: ${filePath}.`);
         processedFiles++;
         isProcessing = false; // Reset the flag after successful processing
-        logger.info("Processing flag reset. Checking for next file.");
         checkAndProcessNextFile(); // Immediately try to process the next file
       })
       .catch((error) => {
         logger.error(`Error processing file ${filePath}: ${error}`);
+        // Log and manage conversion-specific errors differently if needed
+        if (filePath.endsWith(".jpeg") || filePath.endsWith(".jpg")) {
+          // Assuming conversion to JPEG
+          logger.error(
+            `Error processing converted JPEG from PDF: ${filePath}, Error: ${error.message}`
+          );
+        }
         isProcessing = false; // Reset the flag on error
-        logger.info(
-          "Processing flag reset due to error. Will retry processing after delay."
-        );
         setTimeout(() => {
           logger.info("Retrying file processing after delay.");
-          checkAndProcessNextFile(); // Retry after a 10-second delay
+          checkAndProcessNextFile(); // Retry after a delay
         }, 1000 * config.upload.retryDelaySeconds);
       });
   } else {
     isProcessing = false; // Reset the flag if no file was dequeued
     logger.info("No file was dequeued. Processing flag reset.");
-    // If after attempting to dequeue we find the queue empty, set the processing completion flag
     if (fileQueue.length === 0 && !isProcessing) {
       setProcessingCompleteFlag();
       logger.info("All files processed. Processing complete flag set.");
