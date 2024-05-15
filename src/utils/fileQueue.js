@@ -2,11 +2,13 @@ const fs = require("fs");
 const { processFile } = require("./fileProcessing");
 const logger = require("./logger");
 const config = require("../../config.json");
+const path = require("path");
 
 let fileQueue = [];
 let isProcessing = false;
 let processedFiles = 0;
 let totalFiles = 0;
+const retryLimits = {}; // Track retry attempts for each file
 
 function clearResultsFile() {
   const resultsPath = config.resultsPath;
@@ -21,33 +23,29 @@ function clearResultsFile() {
 function enqueueFiles(files) {
   logger.info(`Enqueue operation started at ${new Date().toISOString()}`);
 
-  // If no files are being processed, this is a new session, so reset the counters
   if (fileQueue.length === 0 && !isProcessing) {
     resetFileProcessingState();
   }
 
   files.forEach((file, index) => {
-    const filePath = file.path ? file.path : file; // Check if the file is an object or a string
+    const filePath = file.path ? file.path : file;
     const originalName = file.originalname
       ? file.originalname
       : path.basename(file);
-
     fileQueue.push(filePath);
+    retryLimits[filePath] = retryLimits[filePath] || 0; // Initialize retry count
     logger.info(
       `File ${index + 1} [${originalName}] enqueued. Path: ${filePath}`
     );
   });
 
-  // Update totalFiles with the number of new files only after ensuring it's a new session
   totalFiles += files.length;
   logger.info(
     `Enqueued ${files.length} new file(s). Queue length is now: ${fileQueue.length}. Total files to process: ${totalFiles}`
   );
-
   checkAndProcessNextFile();
 }
 
-// Reset the file processing state at the beginning of a new session
 function resetFileProcessingState() {
   processedFiles = 0;
   totalFiles = 0;
@@ -55,23 +53,32 @@ function resetFileProcessingState() {
 }
 
 function dequeueFile() {
-  logger.info(
-    `Attempting to dequeue a file. Current queue length: ${fileQueue.length}.`
-  );
   if (fileQueue.length > 0) {
-    const nextFilePath = fileQueue.shift(); // Removes the first element from the queue
+    const nextFilePath = fileQueue.shift();
+    retryLimits[nextFilePath] = retryLimits[nextFilePath] || 0;
     logger.info(
       `Dequeued file for processing: ${nextFilePath}. Remaining queue length: ${fileQueue.length}.`
     );
     return nextFilePath;
+  }
+  logger.info("Queue is empty. No files to dequeue.");
+  return null;
+}
+
+function enqueueFileForRetry(filePath) {
+  if (retryLimits[filePath] < config.maxRetryCount) {
+    fileQueue.push(filePath);
+    retryLimits[filePath]++;
+    logger.info(
+      `File re-enqueued for retry: ${filePath}. Retry attempt: ${retryLimits[filePath]}`
+    );
   } else {
-    logger.info("Queue is empty. No files to dequeue.");
-    return null;
+    logger.error(`File processing failed after maximum retries: ${filePath}`);
+    delete retryLimits[filePath];
   }
 }
 
 function checkAndProcessNextFile() {
-  logger.info("Checking for next file to process...");
   if (isProcessing) {
     logger.info("Processing is already underway. Exiting check.");
     return;
@@ -79,17 +86,14 @@ function checkAndProcessNextFile() {
   if (fileQueue.length === 0) {
     if (!isProcessing) {
       setProcessingCompleteFlag();
-      logger.info("All files processed. Processing complete flag set.");
     }
     logger.info("No files in the queue to process. Exiting check.");
     return;
   }
 
-  isProcessing = true; // Set the flag to indicate processing is underway
-  logger.info("Processing flag set. Attempting to dequeue next file.");
-  const filePath = dequeueFile(); // Dequeue the next file
-
+  const filePath = dequeueFile();
   if (filePath) {
+    isProcessing = true;
     logger.info(
       `Dequeued file for processing: ${filePath}. Initiating processing.`
     );
@@ -97,37 +101,34 @@ function checkAndProcessNextFile() {
       .then(() => {
         logger.info(`File processing completed: ${filePath}.`);
         processedFiles++;
-        checkForNextFile(); // Move flag reset and check to a new function
+        isProcessing = false;
+        checkAndProcessNextFile();
       })
       .catch((error) => {
         logger.error(`Error processing file ${filePath}: ${error}`);
-        checkForNextFile(); // Handle flag reset and re-check even on error
+        setTimeout(() => {
+          enqueueFileForRetry(filePath);
+          isProcessing = false;
+          checkAndProcessNextFile();
+        }, 1000 * config.upload.retryDelaySeconds);
       });
   } else {
-    logger.info("No file was dequeued. Processing flag reset.");
-    checkForNextFile(); // Handle resetting the flag if no file was dequeued
-  }
-}
-
-function checkForNextFile() {
-  isProcessing = false; // Reset the flag after processing or if there's an error
-  if (fileQueue.length > 0) {
-    logger.info("Processing flag reset. Checking for next file.");
-    checkAndProcessNextFile(); // Immediately try to process the next file
-  } else {
-    setProcessingCompleteFlag();
-    logger.info("All files processed. Processing complete flag set.");
+    isProcessing = false;
+    if (fileQueue.length === 0) {
+      setProcessingCompleteFlag();
+    }
   }
 }
 
 function setProcessingCompleteFlag() {
-  const flagPath = config.processingCompleteFlagPath;
-  try {
-    // Write an empty file or some content to indicate completion
-    fs.writeFileSync(flagPath, "complete");
-    logger.info("Processing completion flag set.");
-  } catch (err) {
-    logger.error("Error setting processing completion flag:", err);
+  if (Object.keys(retryLimits).length === 0) {
+    const flagPath = config.processingCompleteFlagPath;
+    try {
+      fs.writeFileSync(flagPath, "complete");
+      logger.info("Processing completion flag set.");
+    } catch (err) {
+      logger.error("Error setting processing completion flag:", err);
+    }
   }
 }
 
@@ -139,18 +140,14 @@ function getProcessedFiles() {
   return processedFiles;
 }
 
-const path = require("path");
-
 function cancelProcessing() {
   if (!isProcessing) {
     logger.info("No active processing to cancel.");
     return;
   }
 
-  // Delete files from the upload directory
   fileQueue.forEach((file) => {
-    const filePath = path.join(__dirname, "..", "..", file); // Adjusted path
-    console.log("Attempting to delete file at path:", filePath);
+    const filePath = path.join(__dirname, "..", "..", file);
     fs.unlink(filePath, (err) => {
       if (err) {
         logger.error(`Error deleting file ${file}: ${err}`);
@@ -160,7 +157,6 @@ function cancelProcessing() {
     });
   });
 
-  // Clear the file queue and reset processing flags
   fileQueue = [];
   isProcessing = false;
   processedFiles = 0;
@@ -176,5 +172,5 @@ module.exports = {
   resetFileProcessingState,
   getTotalFiles,
   getProcessedFiles,
-  cancelProcessing, // Export the new function
+  cancelProcessing,
 };
