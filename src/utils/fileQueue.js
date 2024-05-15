@@ -97,31 +97,26 @@ function checkAndProcessNextFile() {
       .then(() => {
         logger.info(`File processing completed: ${filePath}.`);
         processedFiles++;
-        isProcessing = false; // Reset the flag after successful processing
-        checkAndProcessNextFile(); // Immediately try to process the next file
+        checkForNextFile(); // Move flag reset and check to a new function
       })
       .catch((error) => {
         logger.error(`Error processing file ${filePath}: ${error}`);
-        // Log and manage conversion-specific errors differently if needed
-        if (filePath.endsWith(".jpeg") || filePath.endsWith(".jpg")) {
-          // Assuming conversion to JPEG
-          logger.error(
-            `Error processing converted JPEG from PDF: ${filePath}, Error: ${error.message}`
-          );
-        }
-        isProcessing = false; // Reset the flag on error
-        setTimeout(() => {
-          logger.info("Retrying file processing after delay.");
-          checkAndProcessNextFile(); // Retry after a delay
-        }, 1000 * config.upload.retryDelaySeconds);
+        checkForNextFile(); // Handle flag reset and re-check even on error
       });
   } else {
-    isProcessing = false; // Reset the flag if no file was dequeued
     logger.info("No file was dequeued. Processing flag reset.");
-    if (fileQueue.length === 0 && !isProcessing) {
-      setProcessingCompleteFlag();
-      logger.info("All files processed. Processing complete flag set.");
-    }
+    checkForNextFile(); // Handle resetting the flag if no file was dequeued
+  }
+}
+
+function checkForNextFile() {
+  isProcessing = false; // Reset the flag after processing or if there's an error
+  if (fileQueue.length > 0) {
+    logger.info("Processing flag reset. Checking for next file.");
+    checkAndProcessNextFile(); // Immediately try to process the next file
+  } else {
+    setProcessingCompleteFlag();
+    logger.info("All files processed. Processing complete flag set.");
   }
 }
 
