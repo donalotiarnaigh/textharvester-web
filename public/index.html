@@ -97,22 +97,32 @@
           <div class="card-body">
             <h5 class="card-title">How to Use the Text Harvester</h5>
             <p class="card-text">
-              To upload files, drag and drop your JPEG images into the drop zone
-              or click to select files. Once uploaded, your files will be
-              processed for text extraction. You can track progress on the
-              processing page. When processing is complete, you'll be redirected
-              to the results page.
+              To upload files, drag and drop your JPEG images or PDF documents
+              into the drop zone or click to select files. Once uploaded, your
+              files will be processed for text extraction. You can track
+              progress on the processing page. When processing is complete,
+              you'll be redirected to the results page.
             </p>
             <small>
-              Supported file types: .jpeg, .jpg. Maximum 1,000 files can be
-              uploaded at once.
+              Supported file types: .jpeg, .jpg, .pdf. Maximum file size: 100MB
+              per file.
+            </small>
+            <small>
+              Note: Each page of uploaded PDFs will be processed as a separate
+              image.
+            </small>
+            <small>
+              Ensure PDFs are not encrypted as encryption will prevent
+              successful processing.
             </small>
           </div>
         </div>
 
         <!-- Drop Zone for File Upload -->
         <form action="/upload" class="dropzone" id="uploadForm">
-          <div class="dz-message">Drop files here or click to upload.</div>
+          <div class="dz-message">
+            Drop files here or click to upload (JPEG or PDF).
+          </div>
         </form>
 
         <!-- Submit Button -->
@@ -133,11 +143,11 @@
 
     <script>
       Dropzone.options.uploadForm = {
-        acceptedFiles: ".jpg, .jpeg",
+        acceptedFiles: ".jpg, .jpeg, .pdf",
         maxFiles: 1000,
         autoProcessQueue: false, // Manual processing
         parallelUploads: 1000, // Handle large uploads
-        dictInvalidFileType: "Only .jpeg and .jpg files are allowed.",
+        dictInvalidFileType: "Only .jpeg, .jpg, and .pdf files are allowed.",
         dictMaxFilesExceeded: "Maximum of 1,000 files allowed.",
 
         init: function () {
