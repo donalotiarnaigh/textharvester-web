@@ -1,34 +1,39 @@
 const path = require("path");
-const poppler = require("pdf-poppler");
-const fs = require("fs").promises; // Using promises version for better async handling
-const config = require("../../config.json"); // Adjust path as necessary to import config
+const { exec } = require("child_process");
+const fs = require("fs").promises;
+const config = require("../../config.json");
 const logger = require("../utils/logger");
 
 async function convertPdfToJpegs(pdfPath) {
-  const outputPath = config.uploadPath; // Use uploadPath from config for output
+  logger.info(`Starting PDF conversion for: ${pdfPath}`);
+  const outputPath = config.uploadPath;
   const baseName = path.basename(pdfPath, path.extname(pdfPath));
-  const options = {
-    format: "jpeg",
-    out_dir: outputPath, // Specify output directory from config
-    out_prefix: baseName + "_page",
-    page: null, // Convert all pages
-    scale: 2048,
-    strip: true,
-    timeout: 30000,
-  };
+  const outputPrefix = path.join(outputPath, `${baseName}_page`);
+  const command = `pdftocairo -jpeg -scale-to 2048 ${pdfPath} ${outputPrefix}`;
+
+  logger.info(`Executing command: ${command}`);
 
   try {
-    const outputFiles = await poppler.convert(pdfPath, options);
-    const fullPaths = outputFiles.map((fileName) =>
-      path.join(outputPath, fileName)
+    await new Promise((resolve, reject) => {
+      exec(command, (error, stdout, stderr) => {
+        if (error) {
+          logger.error(`Error converting PDF to JPEGs: ${stderr}`);
+          reject(new Error(`Failed to convert PDF to JPEGs: ${stderr}`));
+        } else {
+          logger.info(`PDF converted to JPEGs: ${stdout}`);
+          resolve(stdout);
+        }
+      });
+    });
+
+    const files = await fs.readdir(outputPath);
+    const outputFiles = files.filter((file) =>
+      file.startsWith(`${baseName}_page`)
     );
 
-    // Log full paths of created JPEGs
-    logger.info(
-      `PDF converted to JPEGs, files created at: ${fullPaths.join(", ")}`
-    );
+    const fullPaths = outputFiles.map((file) => path.join(outputPath, file));
+    logger.info(`JPEG files created at: ${fullPaths.join(", ")}`);
 
-    // Delete the original PDF file after successful conversion
     await fs.unlink(pdfPath);
     logger.info(`Successfully deleted original PDF: ${pdfPath}`);
 

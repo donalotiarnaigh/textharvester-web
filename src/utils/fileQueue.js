@@ -8,7 +8,7 @@ let fileQueue = [];
 let isProcessing = false;
 let processedFiles = 0;
 let totalFiles = 0;
-const retryLimits = {}; // Track retry attempts for each file
+const retryLimits = {};
 
 function clearResultsFile() {
   const resultsPath = config.resultsPath;
@@ -28,12 +28,12 @@ function enqueueFiles(files) {
   }
 
   files.forEach((file, index) => {
-    const filePath = file.path ? file.path : file;
+    const filePath = typeof file === "string" ? file : file.path;
     const originalName = file.originalname
       ? file.originalname
-      : path.basename(file);
+      : path.basename(filePath);
     fileQueue.push(filePath);
-    retryLimits[filePath] = retryLimits[filePath] || 0; // Initialize retry count
+    retryLimits[filePath] = retryLimits[filePath] || 0;
     logger.info(
       `File ${index + 1} [${originalName}] enqueued. Path: ${filePath}`
     );
