@@ -127,11 +127,9 @@
       <div>
         <div class="processing-message">
           <h2>Processing...</h2>
-          <p id="statusMessage">
-            Please wait, currently processing your file(s).
-          </p>
+          <p id="statusMessage">Preparing files. Please wait...</p>
           <div class="loading"></div>
-          <div id="loading-text">Processing...</div>
+          <div id="loading-text">Preparing files...</div>
         </div>
         <div class="progress-container">
           <div class="progress">
@@ -180,6 +178,12 @@
         fetch("/progress")
           .then((response) => response.json())
           .then((data) => {
+            if (data.state === "processing") {
+              document.getElementById("statusMessage").textContent =
+                "Processing files. Please wait...";
+              document.getElementById("loading-text").textContent =
+                "Processing files...";
+            }
             updateProgressBar(data.progress);
             if (data.progress === 100) {
               setTimeout(() => {
@@ -239,11 +243,6 @@
         console.log("Updating processing message to:", message);
         processingMessage.textContent = message;
       }
-    </script>
-    <script>
-      $(document).ready(function () {
-        $('[data-toggle="tooltip"]').tooltip();
-      });
     </script>
   </body>
 </html>

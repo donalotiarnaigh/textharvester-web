@@ -7,7 +7,6 @@ const {
   cancelProcessing,
   getProcessingProgress,
 } = require("./src/utils/fileQueue");
-const { getConversionProgress } = require("./src/utils/pdfConverter"); // Correctly import the function
 
 require("dotenv").config(); // Load environment variables from .env file
 
@@ -23,17 +22,19 @@ app.get("/results-data", resultsManager.getResultsData);
 app.get("/download-json", resultsManager.downloadResultsJSON);
 app.get("/download-csv", resultsManager.downloadResultsCSV);
 
-// Add the new GET route for combined progress
+// Add the new GET route for progress
 app.get("/progress", (req, res) => {
-  const conversionProgress = getConversionProgress();
   const processingProgress = getProcessingProgress();
 
-  // Combine progress: 50% weight to each stage
-  const combinedProgress = Math.round(
-    (conversionProgress + processingProgress) / 2
-  );
+  let state = "preparing";
+  let progress = 0;
 
-  res.json({ progress: combinedProgress });
+  if (processingProgress > 0) {
+    state = "processing";
+    progress = processingProgress;
+  }
+
+  res.json({ state, progress });
 });
 
 // Add the new POST route for canceling processing
