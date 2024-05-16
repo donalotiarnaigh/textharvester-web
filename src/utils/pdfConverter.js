@@ -9,8 +9,20 @@ let conversionProgress = 0; // Global variable to track conversion progress
 async function convertPdfToJpegs(pdfPath) {
   logger.info(`Starting PDF conversion for: ${pdfPath}`);
   const outputPath = config.uploadPath;
-  const baseName = path.basename(pdfPath, path.extname(pdfPath));
-  const outputPrefix = path.join(outputPath, `${baseName}_page`);
+  const originalBaseName = path.basename(pdfPath, path.extname(pdfPath));
+
+  // Truncate the base name to 10 characters for the prefix
+  const truncatedBaseName = originalBaseName.slice(0, 10);
+
+  // Create a unique identifier to avoid filename conflicts
+  const uniqueIdentifier = Date.now();
+
+  // Generate the output prefix
+  const outputPrefix = path.join(
+    outputPath,
+    `${truncatedBaseName}_${uniqueIdentifier}_page`
+  );
+
   const command = `pdftocairo -jpeg -scale-to 2048 ${pdfPath} ${outputPrefix}`;
 
   logger.info(`Executing command: ${command}`);
@@ -30,7 +42,7 @@ async function convertPdfToJpegs(pdfPath) {
 
     const files = await fs.readdir(outputPath);
     const outputFiles = files.filter((file) =>
-      file.startsWith(`${baseName}_page`)
+      file.startsWith(`${truncatedBaseName}_${uniqueIdentifier}_page`)
     );
 
     const totalFiles = outputFiles.length;
