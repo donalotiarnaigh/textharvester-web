@@ -25,6 +25,8 @@ jobs:
         run: npm install
 
       - name: Run tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: npm test
 
   deploy-staging:
