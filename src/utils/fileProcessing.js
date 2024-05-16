@@ -1,4 +1,5 @@
 const fs = require("fs");
+const path = require("path");
 const logger = require("./logger"); // Assuming logger is modularized or its path adjusted
 const config = require("../../config.json");
 const OpenAI = require("openai");
@@ -93,7 +94,14 @@ function cleanupFile(filePath) {
 }
 
 function storeResults(resultsData) {
-  const resultsPath = config.resultsPath;
+  const resultsDir = path.resolve(__dirname, "../../data");
+  const resultsPath = path.join(resultsDir, "results.json");
+
+  // Ensure the directory exists
+  if (!fs.existsSync(resultsDir)) {
+    fs.mkdirSync(resultsDir, { recursive: true });
+    logger.info(`Created directory: ${resultsDir}`);
+  }
 
   try {
     let existingResults = [];
@@ -136,4 +144,4 @@ function storeResults(resultsData) {
   }
 }
 
-module.exports = { processFile, cleanupFile, storeResults }; // Adjust based on what's moved
+module.exports = { processFile, cleanupFile, storeResults };
