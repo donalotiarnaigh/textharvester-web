@@ -12,7 +12,6 @@ WORKDIR /app
 # Set production environment
 ENV NODE_ENV="production"
 
-
 # Throw-away build stage to reduce size of final image
 FROM base as build
 
@@ -27,12 +26,19 @@ RUN npm ci
 # Copy application code
 COPY --link . .
 
+# Install poppler-utils for PDF to JPG conversion
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y poppler-utils
 
 # Final stage for app image
 FROM base
 
 # Copy built application
 COPY --from=build /app /app
+
+# Install poppler-utils in the final image as well
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y poppler-utils
 
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
