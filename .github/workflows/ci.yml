@@ -11,7 +11,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -32,7 +31,6 @@ jobs:
   deploy-staging:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -44,32 +42,5 @@ jobs:
 
       - name: Deploy to Staging
         run: fly deploy --config fly.staging.toml
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-
-  manual-approval:
-    needs: deploy-staging
-    runs-on: ubuntu-latest
-    steps:
-      - name: Await manual approval
-        run: echo "Awaiting manual approval"
-      - name: Approve deployment
-        run: exit 1 # Use this step to pause until manual approval is given
-
-  deploy-production:
-    needs: manual-approval
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Install Fly CLI
-        run: |
-          curl -L https://fly.io/install.sh | sh
-          echo "$HOME/.fly/bin" >> $GITHUB_PATH
-
-      - name: Deploy to Production
-        run: fly deploy --config fly.toml
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
