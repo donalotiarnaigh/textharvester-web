@@ -40,7 +40,9 @@ jobs:
       - name: Install Fly CLI
         run: |
           curl -L https://fly.io/install.sh | sh
-          export PATH="$HOME/.fly/bin:$PATH"
+          echo 'export FLYCTL_INSTALL="$HOME/.fly"' >> $GITHUB_ENV
+          echo 'export PATH="$FLYCTL_INSTALL/bin:$PATH"' >> $GITHUB_ENV
+          source $HOME/.fly/bin/flyctl
 
       - name: Deploy to Staging
         run: fly deploy --config fly.staging.toml
@@ -67,7 +69,9 @@ jobs:
       - name: Install Fly CLI
         run: |
           curl -L https://fly.io/install.sh | sh
-          export PATH="$HOME/.fly/bin:$PATH"
+          echo 'export FLYCTL_INSTALL="$HOME/.fly"' >> $GITHUB_ENV
+          echo 'export PATH="$FLYCTL_INSTALL/bin:$PATH"' >> $GITHUB_ENV
+          source $HOME/.fly/bin/flyctl
 
       - name: Deploy to Production
         run: fly deploy --config fly.toml
