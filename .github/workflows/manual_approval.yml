@@ -6,6 +6,8 @@ on:
     types:
       - completed
 
+  workflow_dispatch: # Allows manual triggering of the workflow
+
 jobs:
   manual-approval:
     runs-on: ubuntu-latest
