@@ -11,6 +11,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10 # Add a timeout to the build job
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -31,9 +32,15 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: npm test
 
+      - name: Cleanup
+        run: |
+          echo "Cleaning up..."
+          pkill -9 node # Forcefully kill all Node.js processes
+
   deploy-staging:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10 # Add a timeout to the deploy job
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -47,3 +54,8 @@ jobs:
         run: fly deploy --config fly.staging.toml
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Cleanup
+        run: |
+          echo "Cleaning up..."
+          pkill -9 node # Forcefully kill all Node.js processes
