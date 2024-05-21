@@ -1,19 +1,19 @@
-const fs = require("fs");
-const logger = require("../src/utils/logger.js");
-const { clearProcessingCompleteFlag } = require("../src/utils/processingFlag");
-const config = require("../config.json");
+const fs = require('fs');
+const logger = require('../src/utils/logger.js');
+const { clearProcessingCompleteFlag } = require('../src/utils/processingFlag');
+const config = require('../config.json');
 
-jest.mock("fs");
-jest.mock("../src/utils/logger.js");
+jest.mock('fs');
+jest.mock('../src/utils/logger.js');
 
-describe("clearProcessingCompleteFlag", () => {
+describe('clearProcessingCompleteFlag', () => {
   const flagPath = config.processingCompleteFlagPath;
 
   beforeEach(() => {
     jest.resetAllMocks();
   });
 
-  it("should delete the flag file if it exists", () => {
+  it('should delete the flag file if it exists', () => {
     fs.existsSync.mockReturnValue(true);
     fs.unlinkSync.mockImplementation(() => {});
 
@@ -22,11 +22,11 @@ describe("clearProcessingCompleteFlag", () => {
     expect(fs.existsSync).toHaveBeenCalledWith(flagPath);
     expect(fs.unlinkSync).toHaveBeenCalledWith(flagPath);
     expect(logger.info).toHaveBeenCalledWith(
-      "Cleared existing processing completion flag."
+      'Cleared existing processing completion flag.'
     );
   });
 
-  it("should do nothing if the flag file does not exist", () => {
+  it('should do nothing if the flag file does not exist', () => {
     fs.existsSync.mockReturnValue(false);
 
     clearProcessingCompleteFlag();
@@ -35,8 +35,8 @@ describe("clearProcessingCompleteFlag", () => {
     expect(fs.unlinkSync).not.toHaveBeenCalled();
   });
 
-  it("should log an error if there is a problem deleting the flag file", () => {
-    const error = new Error("Failed to delete");
+  it('should log an error if there is a problem deleting the flag file', () => {
+    const error = new Error('Failed to delete');
     fs.existsSync.mockReturnValue(true);
     fs.unlinkSync.mockImplementation(() => {
       throw error;
@@ -46,7 +46,7 @@ describe("clearProcessingCompleteFlag", () => {
 
     expect(fs.unlinkSync).toHaveBeenCalledWith(flagPath);
     expect(logger.error).toHaveBeenCalledWith(
-      "Error clearing processing completion flag:",
+      'Error clearing processing completion flag:',
       error
     );
   });

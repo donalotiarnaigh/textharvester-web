@@ -1,8 +1,7 @@
-const winston = require("winston");
-const config = require("../config.json");
+const winston = require('winston');
 
 // Mock winston and config before importing the logger module
-jest.mock("winston", () => {
+jest.mock('winston', () => {
   const mLogger = {
     info: jest.fn(),
     error: jest.fn(),
@@ -26,42 +25,43 @@ jest.mock("winston", () => {
   };
 });
 
-jest.mock("../config.json", () => ({
+jest.mock('../config.json', () => ({
   logging: {
-    level: "info",
-    errorLogFile: "/logs/error.log",
-    combinedLogFile: "/logs/combined.log",
+    level: 'info',
+    errorLogFile: '/logs/error.log',
+    combinedLogFile: '/logs/combined.log',
   },
-  environment: "development",
+  environment: 'development',
 }));
 
-const logger = require("../src/utils/logger.js");
+// eslint-disable-next-line no-unused-vars
+const logger = require('../src/utils/logger.js');
 
-describe("Logger Configuration", () => {
-  it("should configure the logger with the correct level from config", () => {
+describe('Logger Configuration', () => {
+  it('should configure the logger with the correct level from config', () => {
     expect(winston.createLogger).toHaveBeenCalledWith(
       expect.objectContaining({
-        level: "info",
+        level: 'info',
       })
     );
   });
 
-  it("should setup file transports with filenames from config", () => {
+  it('should setup file transports with filenames from config', () => {
     const fileTransportCall = winston.transports.File.mock.calls;
     expect(fileTransportCall[0][0]).toEqual(
       expect.objectContaining({
-        filename: "/logs/error.log",
-        level: "error",
+        filename: '/logs/error.log',
+        level: 'error',
       })
     );
     expect(fileTransportCall[1][0]).toEqual(
       expect.objectContaining({
-        filename: "/logs/combined.log",
+        filename: '/logs/combined.log',
       })
     );
   });
 
-  it("should add console transport in development environment", () => {
+  it('should add console transport in development environment', () => {
     expect(winston.transports.Console).toHaveBeenCalled();
     expect(winston.format.colorize).toHaveBeenCalled();
     expect(winston.format.simple).toHaveBeenCalled();

@@ -1,8 +1,7 @@
-const fs = require("fs");
-const path = require("path");
-const logger = require("./logger"); // Assuming logger is modularized or its path adjusted
-const config = require("../../config.json");
-const OpenAI = require("openai");
+const fs = require('fs');
+const path = require('path');
+const logger = require('./logger'); // Assuming logger is modularized or its path adjusted
+const OpenAI = require('openai');
 
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
@@ -15,7 +14,7 @@ const openai = new OpenAI(process.env.OPENAI_API_KEY);
 async function processFile(filePath) {
   logger.info(`Starting to process file: ${filePath}`);
   return new Promise((resolve, reject) => {
-    fs.readFile(filePath, { encoding: "base64" }, async (err, base64Image) => {
+    fs.readFile(filePath, { encoding: 'base64' }, async (err, base64Image) => {
       if (err) {
         logger.error(`Error reading file ${filePath}:`, err);
         reject(`Error reading file ${filePath}`);
@@ -28,21 +27,21 @@ async function processFile(filePath) {
       );
 
       const requestPayload = {
-        model: "gpt-4o",
+        model: 'gpt-4o',
         messages: [
           {
-            role: "system",
-            content: "Return a JSON object with the extracted text details.",
+            role: 'system',
+            content: 'Return a JSON object with the extracted text details.',
           },
           {
-            role: "user",
+            role: 'user',
             content: [
               {
-                type: "text",
-                text: `You're an expert in OCR and are working in a heritage/genealogy context assisting in data processing post graveyard survey. Examine these images and extract the text as per the following details for each memorial: memorial number, first name, last name, year of death, and the inscription text. Respond in JSON format only, adhering to the order mentioned. e.g., {"memorial_number": "69", "first_name": "THOMAS", "last_name": "RUANE", "year_of_death": "1923", "inscription": "SACRED HEART OF JESUS HAVE MERCY ON THE SOUL OF THOMAS RUANE LISNAGROOBE WHO DIED APRIL 16th 1923 AGED 74 YRS AND OF HIS WIFE MARGARET RUANE DIED JULY 26th 1929 AGED 78 YEARS R. I. P. ERECTED BY THEIR FOND SON THOMAS RUANE PHILADELPHIA USA"}. If a memorial number, first name, last name, or year of death is not visible or the inscription is not present, return a JSON with NULL for the missing fields.`,
+                type: 'text',
+                text: 'You\'re an expert in OCR and are working in a heritage/genealogy context assisting in data processing post graveyard survey. Examine these images and extract the text as per the following details for each memorial: memorial number, first name, last name, year of death, and the inscription text. Respond in JSON format only, adhering to the order mentioned. e.g., {"memorial_number": "69", "first_name": "THOMAS", "last_name": "RUANE", "year_of_death": "1923", "inscription": "SACRED HEART OF JESUS HAVE MERCY ON THE SOUL OF THOMAS RUANE LISNAGROOBE WHO DIED APRIL 16th 1923 AGED 74 YRS AND OF HIS WIFE MARGARET RUANE DIED JULY 26th 1929 AGED 78 YEARS R. I. P. ERECTED BY THEIR FOND SON THOMAS RUANE PHILADELPHIA USA"}. If a memorial number, first name, last name, or year of death is not visible or the inscription is not present, return a JSON with NULL for the missing fields.',
               },
               {
-                type: "image_url",
+                type: 'image_url',
                 image_url: {
                   url: `data:image/jpeg;base64,${base64Image}`,
                 },
@@ -50,7 +49,7 @@ async function processFile(filePath) {
             ],
           },
         ],
-        response_format: { type: "json_object" }, // Ensures output is JSON formatted
+        response_format: { type: 'json_object' }, // Ensures output is JSON formatted
         max_tokens: 3000,
       };
 
@@ -94,8 +93,8 @@ function cleanupFile(filePath) {
 }
 
 function storeResults(resultsData) {
-  const resultsDir = path.resolve(__dirname, "../../data");
-  const resultsPath = path.join(resultsDir, "results.json");
+  const resultsDir = path.resolve(__dirname, '../../data');
+  const resultsPath = path.join(resultsDir, 'results.json');
 
   // Ensure the directory exists
   if (!fs.existsSync(resultsDir)) {
@@ -106,7 +105,7 @@ function storeResults(resultsData) {
   try {
     let existingResults = [];
     if (fs.existsSync(resultsPath)) {
-      const existingData = fs.readFileSync(resultsPath, "utf8");
+      const existingData = fs.readFileSync(resultsPath, 'utf8');
       existingResults = JSON.parse(existingData);
     }
 
@@ -114,7 +113,7 @@ function storeResults(resultsData) {
     const parsedData = JSON.parse(resultsData.ocrText);
 
     const newResult = {
-      filename: resultsData.uniqueFilename || "Unknown", // Include unique filename
+      filename: resultsData.uniqueFilename || 'Unknown', // Include unique filename
       memorial_number: parsedData.memorial_number || null, // Extract from parsed data
       first_name: parsedData.first_name || null, // Extract from parsed data
       last_name: parsedData.last_name || null, // Extract from parsed data
@@ -136,11 +135,11 @@ function storeResults(resultsData) {
     fs.writeFileSync(
       resultsPath,
       JSON.stringify(combinedResults, null, 2),
-      "utf8"
+      'utf8'
     );
-    logger.info("Results successfully stored in results.json.");
+    logger.info('Results successfully stored in results.json.');
   } catch (err) {
-    logger.error("Error storing OCR results:", err);
+    logger.error('Error storing OCR results:', err);
   }
 }
 

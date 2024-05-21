@@ -1,8 +1,8 @@
-const fs = require("fs");
-const { processFile } = require("./fileProcessing");
-const logger = require("./logger");
-const config = require("../../config.json");
-const path = require("path");
+const fs = require('fs');
+const { processFile } = require('./fileProcessing');
+const logger = require('./logger');
+const config = require('../../config.json');
+const path = require('path');
 
 let fileQueue = [];
 let isProcessing = false;
@@ -14,9 +14,9 @@ function clearResultsFile() {
   const resultsPath = config.resultsPath;
   try {
     fs.writeFileSync(resultsPath, JSON.stringify([]));
-    logger.info("Cleared results.json file.");
+    logger.info('Cleared results.json file.');
   } catch (err) {
-    logger.error("Error clearing results.json file:", err);
+    logger.error('Error clearing results.json file:', err);
   }
 }
 
@@ -28,7 +28,7 @@ function enqueueFiles(files) {
   }
 
   files.forEach((file, index) => {
-    const filePath = typeof file === "string" ? file : file.path;
+    const filePath = typeof file === 'string' ? file : file.path;
     const originalName = file.originalname
       ? file.originalname
       : path.basename(filePath);
@@ -49,7 +49,7 @@ function enqueueFiles(files) {
 function resetFileProcessingState() {
   processedFiles = 0;
   totalFiles = 0;
-  logger.info("File processing state reset for a new session.");
+  logger.info('File processing state reset for a new session.');
 }
 
 function dequeueFile() {
@@ -61,7 +61,7 @@ function dequeueFile() {
     );
     return nextFilePath;
   }
-  logger.info("Queue is empty. No files to dequeue.");
+  logger.info('Queue is empty. No files to dequeue.');
   return null;
 }
 
@@ -80,14 +80,14 @@ function enqueueFileForRetry(filePath) {
 
 function checkAndProcessNextFile() {
   if (isProcessing) {
-    logger.info("Processing is already underway. Exiting check.");
+    logger.info('Processing is already underway. Exiting check.');
     return;
   }
   if (fileQueue.length === 0) {
     if (!isProcessing) {
       setProcessingCompleteFlag();
     }
-    logger.info("No files in the queue to process. Exiting check.");
+    logger.info('No files in the queue to process. Exiting check.');
     return;
   }
 
@@ -124,10 +124,10 @@ function setProcessingCompleteFlag() {
   if (Object.keys(retryLimits).length === 0) {
     const flagPath = config.processingCompleteFlagPath;
     try {
-      fs.writeFileSync(flagPath, "complete");
-      logger.info("Processing completion flag set.");
+      fs.writeFileSync(flagPath, 'complete');
+      logger.info('Processing completion flag set.');
     } catch (err) {
-      logger.error("Error setting processing completion flag:", err);
+      logger.error('Error setting processing completion flag:', err);
     }
   }
 }
@@ -147,12 +147,12 @@ function getProcessingProgress() {
 
 function cancelProcessing() {
   if (!isProcessing) {
-    logger.info("No active processing to cancel.");
+    logger.info('No active processing to cancel.');
     return;
   }
 
   fileQueue.forEach((file) => {
-    const filePath = path.join(__dirname, "..", "..", file);
+    const filePath = path.join(__dirname, '..', '..', file);
     fs.unlink(filePath, (err) => {
       if (err) {
         logger.error(`Error deleting file ${file}: ${err}`);
@@ -166,7 +166,7 @@ function cancelProcessing() {
   isProcessing = false;
   processedFiles = 0;
   totalFiles = 0;
-  logger.info("Processing has been cancelled and the queue has been cleared.");
+  logger.info('Processing has been cancelled and the queue has been cleared.');
 }
 
 module.exports = {

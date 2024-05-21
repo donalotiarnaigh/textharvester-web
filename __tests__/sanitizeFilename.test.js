@@ -1,30 +1,30 @@
-const { sanitizeFilename } = require("../src/controllers/resultsManager"); // Adjust path as needed
+const { sanitizeFilename } = require('../src/controllers/resultsManager'); // Adjust path as needed
 
-describe("sanitizeFilename", () => {
-  it("should replace invalid characters with underscores", () => {
+describe('sanitizeFilename', () => {
+  it('should replace invalid characters with underscores', () => {
     // Test cases with invalid characters
     const invalidFilenames = [
-      "file/invalid",
-      "file\\invalid",
-      "file:invalid",
-      "file*invalid",
-      "file?invalid",
+      'file/invalid',
+      'file\\invalid',
+      'file:invalid',
+      'file*invalid',
+      'file?invalid',
       'file"invalid',
-      "file<invalid",
-      "file>invalid",
-      "file|invalid",
+      'file<invalid',
+      'file>invalid',
+      'file|invalid',
     ];
 
     const expectedSanitizedFilenames = [
-      "file_invalid",
-      "file_invalid",
-      "file_invalid",
-      "file_invalid",
-      "file_invalid",
-      "file_invalid",
-      "file_invalid",
-      "file_invalid",
-      "file_invalid",
+      'file_invalid',
+      'file_invalid',
+      'file_invalid',
+      'file_invalid',
+      'file_invalid',
+      'file_invalid',
+      'file_invalid',
+      'file_invalid',
+      'file_invalid',
     ];
 
     invalidFilenames.forEach((invalidFilename, index) => {
@@ -33,12 +33,12 @@ describe("sanitizeFilename", () => {
     });
   });
 
-  it("should leave valid filenames unchanged", () => {
+  it('should leave valid filenames unchanged', () => {
     const validFilenames = [
-      "file_name",
-      "file-name",
-      "filename123",
-      "file.name",
+      'file_name',
+      'file-name',
+      'filename123',
+      'file.name',
     ];
 
     validFilenames.forEach((validFilename) => {
@@ -47,13 +47,13 @@ describe("sanitizeFilename", () => {
     });
   });
 
-  describe("sanitizeFilename", () => {
-    it("should handle empty and null inputs", () => {
-      const emptyFilename = "";
+  describe('sanitizeFilename', () => {
+    it('should handle empty and null inputs', () => {
+      const emptyFilename = '';
       const nullFilename = null;
 
-      expect(sanitizeFilename(emptyFilename)).toEqual("_"); // Corrected: Empty input should return an underscore
-      expect(sanitizeFilename(nullFilename)).toEqual("_"); // Corrected: Null input should also return an underscore
+      expect(sanitizeFilename(emptyFilename)).toEqual('_'); // Corrected: Empty input should return an underscore
+      expect(sanitizeFilename(nullFilename)).toEqual('_'); // Corrected: Null input should also return an underscore
     });
   });
 });

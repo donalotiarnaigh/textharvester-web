@@ -1,8 +1,8 @@
-const path = require("path");
-const { exec } = require("child_process");
-const fs = require("fs").promises;
-const config = require("../../config.json");
-const logger = require("../utils/logger");
+const path = require('path');
+const { exec } = require('child_process');
+const fs = require('fs').promises;
+const config = require('../../config.json');
+const logger = require('../utils/logger');
 
 let conversionProgress = 0; // Global variable to track conversion progress
 
@@ -53,7 +53,7 @@ async function convertPdfToJpegs(pdfPath) {
     }
 
     const fullPaths = outputFiles.map((file) => path.join(outputPath, file));
-    logger.info(`JPEG files created at: ${fullPaths.join(", ")}`);
+    logger.info(`JPEG files created at: ${fullPaths.join(', ')}`);
 
     await fs.unlink(pdfPath);
     logger.info(`Successfully deleted original PDF: ${pdfPath}`);
@@ -61,7 +61,7 @@ async function convertPdfToJpegs(pdfPath) {
     conversionProgress = 100; // Ensure progress is set to 100% after completion
     return fullPaths;
   } catch (error) {
-    logger.error("Error converting PDF to JPEGs:", error);
+    logger.error('Error converting PDF to JPEGs:', error);
     throw new Error(`Failed to convert PDF to JPEGs: ${error.message}`);
   }
 }
