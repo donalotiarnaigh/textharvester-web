@@ -25,6 +25,9 @@
         height: calc(100vh - 100px);
         padding: 0 15px;
       }
+      .parent-container {
+        width: 50%;
+      }
       .footer {
         background-color: #f8f9fa;
         color: black;
@@ -52,7 +55,7 @@
       .progress-container {
         display: flex;
         justify-content: center;
-        width: 80%;
+        width: 100%;
         max-width: 1200px;
         margin: auto;
       }
@@ -124,7 +127,7 @@
     </nav>
 
     <div class="content-wrap">
-      <div>
+      <div class="parent-container">
         <div class="processing-message">
           <h2>Processing...</h2>
           <p id="statusMessage">Preparing files. Please wait...</p>
