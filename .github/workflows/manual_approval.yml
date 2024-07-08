@@ -1,11 +1,6 @@
 name: Manual Approval and Production Deployment
 
 on:
-  workflow_run:
-    workflows: ["CI Pipeline"]
-    types:
-      - completed
-
   workflow_dispatch: # Allows manual triggering of the workflow
 
 jobs:
