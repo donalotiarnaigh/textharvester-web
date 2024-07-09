@@ -1,0 +1,227 @@
+/* Global Styles */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Content Wrapper */
+.content-wrap {
+  display: flex;
+  flex-direction: column; /* Ensures elements are stacked vertically */
+  justify-content: flex-start; /* Aligns content at the top */
+  align-items: center; /* Centers content horizontally */
+  min-height: calc(100vh - 70px); /* Adjust to allow content to be higher up */
+  padding-top: 20px; /* Optional padding to position content higher */
+  padding-bottom: 20px; /* Ensures enough space for the footer */
+}
+
+/* Adjusted Content Wrapper for Processing Page */
+.processing-content-wrap {
+  justify-content: center;
+  height: calc(100vh - 100px);
+  padding: 0 15px;
+}
+
+/* Content Wrapper for Results Page */
+.results-content-wrap {
+  min-height: calc(100vh - 120px); /* Account for nav and footer */
+  padding: 15px; /* Improved spacing around content */
+}
+
+/* Parent Container */
+.parent-container {
+  width: 50%;
+}
+
+/* Footer */
+.footer {
+  background-color: #f8f9fa;
+  color: black;
+  text-align: center;
+  padding: 30px 0;
+  font-size: 0.85em;
+  width: 100%;
+  position: sticky; /* Makes the footer stick to the bottom of the viewport */
+  bottom: 0; /* Ensures it stays at the bottom */
+  z-index: 10; /* Keeps it above other elements if necessary */
+}
+
+/* Footer Adjustment for Processing Page */
+.processing-footer {
+  padding: 20px 0;
+  position: absolute;
+  bottom: 0;
+}
+
+/* Footer Adjustment for Results Page */
+.results-footer {
+  clear: both;
+  position: relative;
+  padding: 20px 0;
+}
+
+/* Dropzone */
+.dropzone {
+  border: 2px dashed #007bff;
+  padding: 20px;
+  text-align: center;
+  background-color: #f8f9fa;
+  display: flex; /* Enables centering with flexbox */
+  justify-content: center; /* Centers content horizontally */
+  align-items: center;
+  flex-wrap: wrap; /* Centers content vertically */
+  min-height: 200px; /* Ensures the drop zone has a minimum height */
+  margin: auto; /* Centers the drop zone within its container */
+}
+
+.dropzone.active {
+  border-color: #0056b3;
+  background-color: #e9ecef;
+}
+
+/* Loading and Processing Messages */
+.loading-container,
+.processing-message {
+  text-align: center;
+  padding: 0 10px;
+}
+
+/* Loading Animation */
+.loading {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(195, 195, 195, 0.6);
+  border-radius: 50%;
+  border-top-color: #636767;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Progress Bar */
+.progress-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.progress {
+  flex: 1;
+  background-color: #eee;
+  margin-top: 20px;
+  height: 20px;
+  border-radius: 5px;
+}
+
+.progress-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 0%;
+  background-color: #007bff;
+  transition: width 0.6s ease;
+  color: #fff;
+  font-weight: bold;
+  border-radius: 5px;
+}
+
+#loading-text {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+/* Info Message for Results Page */
+.info-message {
+  background-color: #e9f7f8; /* Light blue background */
+  color: #007bff; /* Blue text */
+  padding: 10px; /* Padding for better spacing */
+  border-radius: 5px; /* Slight border radius for aesthetics */
+}
+
+/* Container Padding for Results Page */
+.container {
+  padding-top: 20px;
+}
+
+/* Results Section for Results Page */
+.results-section {
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* Code Block for Results Page */
+.code-block {
+  text-align: left;
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  padding: 15px; /* Reduced padding for smaller screens */
+  border-radius: 5px;
+  margin-top: 20px;
+  overflow-x: auto; /* Ensure code block scrolls horizontally */
+  position: relative;
+}
+
+/* Button Spacing */
+button {
+  margin: 10px 0; /* Ensure adequate spacing around buttons */
+  padding: 10px 15px; /* Larger touch targets */
+}
+
+/* Copy Button for Results Page */
+#copyButton {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 100; /* Ensure it's clickable above other content */
+}
+
+/* Responsive Styles */
+@media (max-width: 991px) {
+  .navbar-nav {
+    text-align: center;
+  }
+  .footer {
+    font-size: 0.8em;
+  }
+  .content-wrap {
+    height: auto;
+    min-height: calc(100vh - 100px);
+    padding-bottom: 60px;
+  }
+}
+
+@media (max-width: 576px) {
+  .navbar-nav,
+  .footer {
+    text-align: center;
+  }
+  .footer {
+    padding: 15px 5px;
+    font-size: 0.8em; /* Even smaller font for very small devices */
+  }
+  .container,
+  .navbar-brand,
+  .nav-link,
+  .footer a {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+  .code-block {
+    font-size: 0.9em; /* Ensure code is readable without being too small */
+  }
+}
+
+@media (min-width: 992px) {
+  .progress {
+    width: 60vw;
+  }
+}
