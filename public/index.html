@@ -83,6 +83,21 @@
         <button id="submitFiles" class="btn btn-success btn-block">
           Submit Files
         </button>
+
+        <!-- Conversion Status -->
+        <div
+          id="conversionStatus"
+          class="alert alert-info mt-3"
+          role="alert"
+          style="display: none"
+        >
+          <span id="conversionMessage"
+            >Upload complete. Converting PDF to JPG...</span
+          >
+          <div id="spinner" class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -97,6 +112,7 @@
 
     <script type="module">
       import { initDropzone } from "/js/modules/index/dropzone.js";
+      import { showConversionStatus } from "/js/modules/index/conversionStatus.js";
       initDropzone();
     </script>
   </body>
