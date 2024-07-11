@@ -76,26 +76,18 @@
       >
       website.
     </footer>
-    <script>
+    <script type="module">
+      import {
+        updateProgressBar,
+        updateProcessingMessage,
+      } from "/js/modules/progressBar.js";
+
       // Cache DOM elements
       const progressBar = document.getElementById("progressBar");
       const statusMessage = document.getElementById("statusMessage");
       const cancelProcessingButton = document.getElementById(
         "cancelProcessingButton"
       );
-
-      // Existing utility function to update progress bar
-      function updateProgressBar(percentage) {
-        progressBar.style.width = percentage + "%";
-        progressBar.textContent = `${percentage}%`;
-        progressBar.setAttribute("aria-valuenow", percentage);
-      }
-
-      // Function to update the processing message
-      function updateProcessingMessage(message) {
-        console.log("Updating processing message to:", message);
-        statusMessage.textContent = message;
-      }
 
       // Flag to indicate if cancellation has started
       let isCancelling = false;
