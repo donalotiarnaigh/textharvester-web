@@ -66,6 +66,9 @@ const handleFileUpload = (req, res) => {
       return res.status(400).send("No files uploaded. Please try again.");
     }
 
+    // Log immediate response to the client
+    logger.info("File upload complete. Starting conversion...");
+
     // Respond immediately to the client
     res.status(200).json({
       message: "File upload complete. Starting conversion...",

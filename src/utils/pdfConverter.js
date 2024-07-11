@@ -50,6 +50,7 @@ async function convertPdfToJpegs(pdfPath) {
     await fs.unlink(pdfPath);
     logger.info(`Successfully deleted original PDF: ${pdfPath}`);
 
+    logger.info(`Completed PDF conversion for: ${pdfPath}`);
     return fullPaths;
   } catch (error) {
     logger.error("Error converting PDF to JPEGs:", error);
