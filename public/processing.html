@@ -77,13 +77,51 @@
       website.
     </footer>
     <script>
+      // Existing utility function to update progress bar
       function updateProgressBar(percentage) {
         const progressBar = document.getElementById("progressBar");
         progressBar.style.width = percentage + "%";
         progressBar.textContent = `${percentage}%`;
       }
 
+      // Function to update the processing message
+      function updateProcessingMessage(message) {
+        const processingMessage = document.getElementById("statusMessage");
+        console.log("Updating processing message to:", message);
+        processingMessage.textContent = message;
+      }
+
+      // Flag to indicate if cancellation has started
+      let isCancelling = false;
+
+      // New function to simulate progress to 100%
+      function simulateProgressTo100(currentProgress) {
+        let progress = currentProgress;
+
+        function incrementProgress() {
+          if (progress < 100) {
+            progress += 1; // Increment progress by 1%
+            updateProgressBar(progress);
+            updateProcessingMessage("Cancelling... Please wait.");
+          } else {
+            clearInterval(progressInterval); // Clear the interval once progress reaches 100%
+            updateProcessingMessage(
+              "Processing cancelled. Redirecting to results..."
+            );
+            setTimeout(() => {
+              window.location.href = "/results.html?status=cancelled";
+            }, 1000);
+          }
+        }
+
+        // Set the interval to increment progress every 10ms
+        const progressInterval = setInterval(incrementProgress, 10);
+      }
+
+      // Existing function to check progress
       function checkProgress() {
+        if (isCancelling) return; // Skip progress check if cancelling
+
         fetch("/progress")
           .then((response) => response.json())
           .then((data) => {
@@ -108,12 +146,14 @@
       checkProgress();
       setInterval(checkProgress, 2000);
 
+      // Existing function to handle cancellation
       function handleCancelProcessing() {
         const userConfirmed = confirm(
           "Are you sure you want to cancel? This action will stop all processing, and you may not receive complete results."
         );
 
         if (userConfirmed) {
+          isCancelling = true; // Set the cancelling flag
           fetch("/cancel-processing", {
             method: "POST",
           })
@@ -123,9 +163,9 @@
                 updateProcessingMessage(
                   "Processing cancelled. Redirecting to results..."
                 );
-                setTimeout(() => {
-                  window.location.href = "/results.html?status=cancelled";
-                }, 1500);
+                simulateProgressTo100(
+                  parseInt(document.getElementById("progressBar").textContent)
+                );
               } else {
                 console.error(
                   "Failed to cancel processing - server responded with an error."
@@ -141,16 +181,11 @@
               document.getElementById(
                 "cancelProcessingButton"
               ).disabled = false;
+              isCancelling = false; // Reset the cancelling flag on error
             });
 
           document.getElementById("cancelProcessingButton").disabled = true;
         }
-      }
-
-      function updateProcessingMessage(message) {
-        const processingMessage = document.getElementById("statusMessage");
-        console.log("Updating processing message to:", message);
-        processingMessage.textContent = message;
       }
     </script>
   </body>
