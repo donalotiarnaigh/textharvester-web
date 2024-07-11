@@ -77,25 +77,7 @@
       website.
     </footer>
     <script type="module">
-      import {
-        updateProgressBar,
-        updateProcessingMessage,
-      } from "/js/modules/progressBar.js";
-      import {
-        handleCancelProcessing,
-        isCancelling,
-      } from "/js/modules/cancelProcessing.js";
-      import { checkProgress } from "/js/modules/api.js";
-
-      // Cache DOM elements
-      const progressBar = document.getElementById("progressBar");
-      const statusMessage = document.getElementById("statusMessage");
-      const cancelProcessingButton = document.getElementById(
-        "cancelProcessingButton"
-      );
-
-      checkProgress();
-      setInterval(checkProgress, 2000);
+      import "/js/modules/main.js";
     </script>
   </body>
 </html>
