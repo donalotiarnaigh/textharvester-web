@@ -77,18 +77,24 @@
       website.
     </footer>
     <script>
+      // Cache DOM elements
+      const progressBar = document.getElementById("progressBar");
+      const statusMessage = document.getElementById("statusMessage");
+      const cancelProcessingButton = document.getElementById(
+        "cancelProcessingButton"
+      );
+
       // Existing utility function to update progress bar
       function updateProgressBar(percentage) {
-        const progressBar = document.getElementById("progressBar");
         progressBar.style.width = percentage + "%";
         progressBar.textContent = `${percentage}%`;
+        progressBar.setAttribute("aria-valuenow", percentage);
       }
 
       // Function to update the processing message
       function updateProcessingMessage(message) {
-        const processingMessage = document.getElementById("statusMessage");
         console.log("Updating processing message to:", message);
-        processingMessage.textContent = message;
+        statusMessage.textContent = message;
       }
 
       // Flag to indicate if cancellation has started
@@ -126,8 +132,7 @@
           .then((response) => response.json())
           .then((data) => {
             if (data.state === "processing") {
-              document.getElementById("statusMessage").textContent =
-                "Processing files. Please wait...";
+              updateProcessingMessage("Processing files. Please wait...");
               document.getElementById("loading-text").textContent =
                 "Processing files...";
             }
@@ -163,9 +168,7 @@
                 updateProcessingMessage(
                   "Processing cancelled. Redirecting to results..."
                 );
-                simulateProgressTo100(
-                  parseInt(document.getElementById("progressBar").textContent)
-                );
+                simulateProgressTo100(parseInt(progressBar.textContent));
               } else {
                 console.error(
                   "Failed to cancel processing - server responded with an error."
@@ -178,13 +181,11 @@
               updateProcessingMessage(
                 "Failed to cancel processing, please try again."
               );
-              document.getElementById(
-                "cancelProcessingButton"
-              ).disabled = false;
+              cancelProcessingButton.disabled = false;
               isCancelling = false; // Reset the cancelling flag on error
             });
 
-          document.getElementById("cancelProcessingButton").disabled = true;
+          cancelProcessingButton.disabled = true;
         }
       }
     </script>
