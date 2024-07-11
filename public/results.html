@@ -136,19 +136,15 @@
 
     <!-- Combined JavaScript for results page -->
     <script type="module">
-      import { initializeClipboard } from "/js/modules/clipboard.js";
+      import { initializeClipboard } from "/js/modules/results/clipboard.js";
       import {
         triggerDownload,
         validateFilenameInput,
         downloadJsonResults,
         downloadCsvResults,
-      } from "/js/modules/download.js";
-
-      // Utility function to get URL query parameters
-      function getQueryParam(param) {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(param);
-      }
+      } from "/js/modules/results/download.js";
+      import { getQueryParam } from "/js/modules/results/utils.js";
+      import { fetchResultsData } from "/js/modules/results/api.js";
 
       // Event listener for page load
       document.addEventListener("DOMContentLoaded", function () {
@@ -171,15 +167,7 @@
         }
 
         // Fetch results data from the server
-        fetch("/results-data")
-          .then((response) => response.json())
-          .then((data) => {
-            jsonDataElement.textContent = JSON.stringify(data, null, 2);
-          })
-          .catch((error) => {
-            console.error("Error fetching results:", error);
-            jsonDataElement.textContent = "Error loading results.";
-          });
+        fetchResultsData(jsonDataElement);
 
         // Modify download functions to include the dynamic filename
         window.downloadJsonResults = () => downloadJsonResults(filenameInput);
