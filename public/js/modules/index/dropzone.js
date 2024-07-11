@@ -4,6 +4,7 @@
 // dropzone.js
 
 import { handleFileUpload } from "./fileUpload.js";
+import { showConversionStatus } from "./conversionStatus.js"; // Import the conversion status module
 
 // Ensure Dropzone is defined globally
 const initDropzone = () => {
@@ -24,6 +25,14 @@ const initDropzone = () => {
     init: function () {
       var dropzoneInstance = this;
       handleFileUpload(dropzoneInstance);
+
+      // Handle the completion of file upload
+      this.on("complete", function (file) {
+        if (file.status === Dropzone.SUCCESS) {
+          // Show conversion status message and spinner
+          showConversionStatus("Upload complete. Converting PDF to JPG...");
+        }
+      });
     },
   };
 };
