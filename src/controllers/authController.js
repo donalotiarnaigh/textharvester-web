@@ -90,3 +90,11 @@ exports.login = async (req, res) => {
     res.status(500).send('Server error');
   }
 };
+
+exports.logout = (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+  });
+  res.json({ msg: 'Logged out successfully' });
+};

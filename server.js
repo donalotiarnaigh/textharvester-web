@@ -75,6 +75,15 @@ app.get('/protected-route', authMiddleware, (req, res) => {
   res.send('This is a protected route');
 });
 
+// Add the logout route
+app.post('/api/auth/logout', authMiddleware, (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+  });
+  res.json({ msg: 'Logged out successfully' });
+});
+
 app.listen(port, () => {
   logger.info(`Server is running on http://localhost:${port}`);
 });
