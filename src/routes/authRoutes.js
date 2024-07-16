@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { check } = require('express-validator');
 const authController = require('../controllers/authController');
+const authMiddleware = require('../middlewares/authMiddleware');
 
 router.post(
   '/register',
@@ -24,5 +25,10 @@ router.post(
 );
 
 router.post('/logout', authController.logout);
+
+// Add the new endpoint for checking login state
+router.get('/check-auth', authMiddleware, (req, res) => {
+  res.json({ loggedIn: true });
+});
 
 module.exports = router;

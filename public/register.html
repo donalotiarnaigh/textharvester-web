@@ -33,10 +33,22 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ml-auto">
           <li class="nav-item">
+            <a class="nav-link" href="results.html">View Previous Results</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="register.html">Register</a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link" href="login.html">Login</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="index.html">Home</a>
+            <button
+              id="logoutButton"
+              class="btn btn-link nav-link"
+              style="display: none"
+            >
+              Logout
+            </button>
           </li>
         </ul>
       </div>
@@ -102,5 +114,40 @@
     </footer>
 
     <script src="/js/auth.js"></script>
+    <script>
+      // Check if user is logged in
+      document.addEventListener('DOMContentLoaded', async function () {
+        try {
+          const response = await fetch('/api/auth/check-auth');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.loggedIn) {
+              document.getElementById('logoutButton').style.display = 'block';
+              console.log('Logged in, showing logout button');
+            } else {
+              console.log('Not logged in');
+            }
+          }
+        } catch (error) {
+          console.error('Auth check error:', error);
+        }
+      });
+
+      // Logout functionality
+      document
+        .getElementById('logoutButton')
+        .addEventListener('click', async function () {
+          try {
+            const response = await fetch('/api/auth/logout', {
+              method: 'POST',
+            });
+            if (response.ok) {
+              window.location.href = 'login.html';
+            }
+          } catch (error) {
+            console.error('Logout error:', error);
+          }
+        });
+    </script>
   </body>
 </html>
