@@ -24,6 +24,26 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/styles.css" />
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    <!-- Authentication Check -->
+    <script>
+      document.addEventListener('DOMContentLoaded', async function () {
+        try {
+          const response = await fetch('/api/auth/check-auth');
+          if (response.ok) {
+            const data = await response.json();
+            if (!data.loggedIn) {
+              window.location.href = 'login.html';
+            }
+          } else {
+            window.location.href = 'login.html';
+          }
+        } catch (error) {
+          console.error('Auth check error:', error);
+          window.location.href = 'login.html';
+        }
+      });
+    </script>
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">

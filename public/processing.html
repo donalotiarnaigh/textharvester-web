@@ -12,6 +12,26 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="/css/styles.css" />
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
+
+    <!-- Authentication Check -->
+    <script>
+      document.addEventListener('DOMContentLoaded', async function () {
+        try {
+          const response = await fetch('/api/auth/check-auth');
+          if (response.ok) {
+            const data = await response.json();
+            if (!data.loggedIn) {
+              window.location.href = 'login.html';
+            }
+          } else {
+            window.location.href = 'login.html';
+          }
+        } catch (error) {
+          console.error('Auth check error:', error);
+          window.location.href = 'login.html';
+        }
+      });
+    </script>
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -27,6 +47,15 @@
         <ul class="navbar-nav ml-auto">
           <li class="nav-item">
             <a class="nav-link" href="results.html">View Previous Results</a>
+          </li>
+          <li class="nav-item" id="nav-register">
+            <a class="nav-link" href="register.html">Register</a>
+          </li>
+          <li class="nav-item" id="nav-login">
+            <a class="nav-link" href="login.html">Login</a>
+          </li>
+          <li class="nav-item" id="nav-logout" style="display: none">
+            <a id="logoutButton" class="nav-link" href="#">Logout</a>
           </li>
         </ul>
       </div>
@@ -75,7 +104,45 @@
     </footer>
 
     <script type="module">
-      import "/js/modules/processing/main.js";
+      import '/js/modules/processing/main.js';
+    </script>
+    <script>
+      // Check if user is logged in
+      document.addEventListener('DOMContentLoaded', async function () {
+        try {
+          const response = await fetch('/api/auth/check-auth');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.loggedIn) {
+              document.getElementById('nav-register').style.display = 'none';
+              document.getElementById('nav-login').style.display = 'none';
+              document.getElementById('nav-logout').style.display = 'block';
+              console.log('Logged in, showing logout button');
+            } else {
+              console.log('Not logged in');
+            }
+          }
+        } catch (error) {
+          console.error('Auth check error:', error);
+        }
+      });
+
+      // Logout functionality
+      document
+        .getElementById('logoutButton')
+        .addEventListener('click', async function (e) {
+          e.preventDefault(); // Prevent default action to handle it with JavaScript
+          try {
+            const response = await fetch('/api/auth/logout', {
+              method: 'POST',
+            });
+            if (response.ok) {
+              window.location.href = 'login.html';
+            }
+          } catch (error) {
+            console.error('Logout error:', error);
+          }
+        });
     </script>
   </body>
 </html>
