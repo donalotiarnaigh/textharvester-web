@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Validate inputs
       if (email && password.length >= 6) {
         try {
-          const response = await fetch('/register', {
+          const response = await fetch('/api/auth/register', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Validate inputs
       if (email && password) {
         try {
-          const response = await fetch('/login', {
+          const response = await fetch('/api/auth/login', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
