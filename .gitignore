@@ -74,3 +74,4 @@ dist/
 # Custom ignore
 data/
 data/results.json
+.prettierrc
