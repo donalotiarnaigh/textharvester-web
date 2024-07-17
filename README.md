@@ -32,24 +32,33 @@ To run the Historic Graves Text Harvester locally, follow these steps:
 1. **Clone the Repository**:
 
    - Clone the repository from GitHub using the following command:
-     ```
+     ```sh
      git clone https://github.com/dtcurragh/HG_TextHarvester_v2.git
      ```
 
 2. **Install Dependencies**:
 
    - Navigate to the cloned repository's directory:
-     ```
+     ```sh
      cd HG_TextHarvester_v2
      ```
    - Install the required dependencies with npm:
-     ```
+     ```sh
      npm install
      ```
 
-3. **Run the App**:
-   - Start the app using `node` or `nodemon`:
+3. **Set Up Configuration**:
+
+   - Create a `.env` file in the root directory of your project if it doesn't exist.
+   - Add any necessary environment variables as per your configuration requirements. For example:
      ```
+     PORT=3000
+     OTHER_VARIABLE=value
+     ```
+
+4. **Run the App**:
+   - Start the app using `node` or `nodemon`:
+     ```sh
      npm start
      ```
    - The app will run on `localhost:3000`.
@@ -59,6 +68,7 @@ To run the Historic Graves Text Harvester locally, follow these steps:
 - **Express.js**: A robust web framework.
 - **Multer**: Middleware for handling `multipart/form-data`.
 - **OpenAI API**: Advanced AI and OCR technology for text extraction.
+- **Node.js**: JavaScript runtime for server-side programming.
 
 ## Data Privacy
 
