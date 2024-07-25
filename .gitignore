@@ -75,3 +75,4 @@ dist/
 data/
 data/results.json
 .prettierrc
+.DS_Store
