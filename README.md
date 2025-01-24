@@ -1,6 +1,6 @@
-# Historic Graves Text Harvester
+# Text Harvester
 
-Welcome to the Historic Graves Text Harvester, a community-driven web application designed to process and analyze images of historic graves. Utilizing advanced Optical Character Recognition (OCR) technology, the app extracts inscriptions from gravestones, making historical data more accessible and preserving valuable information for future generations.
+Welcome to the Text Harvester, a community-driven web application designed to process and analyse handwritten text and optimised for record sheets used in the heritage sector. Utilising advanced Optical Character Recognition (OCR) technology, the app extracts handwritten inscriptions from record sheets, making historical data more accessible and preserving valuable information for future generations.
 
 ## Features
 
@@ -76,6 +76,6 @@ Uploaded images are processed and deleted promptly after use. The extracted text
 
 ## Support
 
-For support, questions, or feedback, contact us at [dev@danieltierney.ie](mailto:dev@danieltierney.ie). Your input is valuable, and we strive to improve the application continuously.
+For support, questions, or feedback, contact us at [daniel@textharvester.ie](mailto:daniel@textharvester.ie).
 
-Thank you for using the Historic Graves Text Harvester!
+Thank you for using the Text Harvester web app!
