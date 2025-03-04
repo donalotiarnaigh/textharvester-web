@@ -2,20 +2,37 @@
   "port": 3000,
   "supportedFileTypes": ["image/jpeg", "image/jpg"],
   "uploadPath": "./uploads/",
+  "dataStorage": {
+    "resultsPath": "./data/results/",
+    "archivePath": "./data/archive/",
+    "tempPath": "./data/temp/",
+    "backupInterval": 86400000
+  },
   "resultsPath": "./data/results.json",
   "processingCompleteFlagPath": "./data/processing_complete.flag",
   "logging": {
     "level": "info",
-    "errorLogFile": "./src/logs/error.log",
-    "combinedLogFile": "./src/logs/combined.log"
+    "errorLogFile": "./logs/error.log",
+    "combinedLogFile": "./logs/combined.log",
+    "maxFiles": "14d",
+    "maxSize": "20m"
   },
   "openAI": {
-    "model": "gpt-4-vision-preview",
-    "maxTokens": 3000
+    "model": "gpt-4o",
+    "maxTokens": 3000,
+    "localCache": true,
+    "cacheExpiry": 604800000
   },
   "upload": {
     "maxFileCount": 100,
-    "retryDelaySeconds": 3
+    "retryDelaySeconds": 3,
+    "maxFileSize": "50mb"
   },
-  "environment": "development"
+  "environment": "development",
+  "local": {
+    "autoLaunchBrowser": true,
+    "defaultBrowser": "chrome",
+    "saveLastSession": true,
+    "autoBackup": true
+  }
 }

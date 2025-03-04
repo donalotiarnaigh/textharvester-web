@@ -3,6 +3,7 @@ const config = require('./config.json');
 const { handleFileUpload } = require('./src/controllers/uploadHandler');
 const logger = require('./src/utils/logger.js');
 const resultsManager = require('./src/controllers/resultsManager');
+const { launchLocalApp } = require('./src/utils/localLauncher');
 const {
   cancelProcessing,
   getProcessingProgress,
@@ -13,7 +14,14 @@ require('dotenv').config(); // Load environment variables from .env file
 const app = express();
 const port = process.env.PORT || config.port;
 
+// Enhanced middleware setup for local development
 app.use(express.static('public'));
+app.use(express.json());
+
+if (process.env.NODE_ENV === 'development') {
+  const morgan = require('morgan');
+  app.use(morgan('dev'));
+}
 
 // Use the modular functions for routes
 app.post('/upload', handleFileUpload);
@@ -44,6 +52,11 @@ app.post('/cancel-processing', (req, res) => {
   res.send({ status: 'cancelled' });
 });
 
-app.listen(port, () => {
+app.listen(port, async () => {
   logger.info(`Server is running on http://localhost:${port}`);
+  
+  if (process.env.NODE_ENV === 'development') {
+    // Launch local app in development mode
+    await launchLocalApp();
+  }
 });
