@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "./node_modules/.bin/jest",
+    "test": "NODE_ENV=test ./node_modules/.bin/jest",
     "start": "node server.js",
     "dev": "nodemon server.js",
     "local-start": "NODE_ENV=development nodemon server.js --ignore 'data/*' --ignore 'uploads/*'",
@@ -57,5 +57,12 @@
       "eslint --fix",
       "git add"
     ]
+  },
+  "jest": {
+    "setupFiles": ["<rootDir>/jest.setup.js"],
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "sqlite3": "<rootDir>/__mocks__/sqlite3.js"
+    }
   }
 }
