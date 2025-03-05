@@ -2,9 +2,10 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const logger = require('./logger');
 const fs = require('fs');
+const moment = require('moment');
 
 // Database will be stored in the data directory
-const dbDir = path.join(__dirname, '../../data');
+const dbDir = path.dirname(path.join(__dirname, '../../data', 'memorials.db'));
 const dbPath = path.join(dbDir, 'memorials.db');
 
 // Ensure data directory exists
@@ -115,6 +116,24 @@ function clearAllMemorials() {
   });
 }
 
+const backupDatabase = async () => {
+  const backupDir = path.join(__dirname, '../../backups');
+  if (!fs.existsSync(backupDir)) {
+    fs.mkdirSync(backupDir, { recursive: true });
+  }
+  const timestamp = moment().format('YYYYMMDD_HHmmss');
+  const backupPath = path.join(backupDir, `memorials_${timestamp}.db`);
+    
+  return new Promise((resolve, reject) => {
+    const backup = fs.createReadStream(dbPath).pipe(fs.createWriteStream(backupPath));
+    backup.on('finish', () => {
+      logger.info(`Database backed up to ${backupPath}`);
+      resolve();
+    });
+    backup.on('error', reject);
+  });
+};
+
 // Initialize database on module load
 initializeDatabase();
 
@@ -122,5 +141,6 @@ module.exports = {
   storeMemorial,
   getAllMemorials,
   clearAllMemorials,
+  backupDatabase,
   db // Exported for closing connection when needed
 }; 

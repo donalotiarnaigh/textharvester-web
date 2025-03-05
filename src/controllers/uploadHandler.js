@@ -2,7 +2,7 @@
 const multer = require("multer");
 const path = require("path");
 const config = require("../../config.json");
-const { enqueueFiles, clearResultsFile } = require("../utils/fileQueue");
+const { enqueueFiles } = require("../utils/fileQueue");
 const logger = require("../utils/logger");
 const { clearProcessingCompleteFlag } = require("../utils/processingFlag");
 const { convertPdfToJpegs } = require("../utils/pdfConverter");
@@ -126,7 +126,6 @@ const processFiles = async (files) => {
     if (fileErrors.length > 0) {
       logger.error("Some files were not processed successfully", fileErrors);
     } else {
-      clearResultsFile();
       clearProcessingCompleteFlag();
       logger.info("Processing complete. Redirecting to results page.");
     }

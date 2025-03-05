@@ -43,19 +43,6 @@ function getProcessingStatus(req, res) {
   });
 }
 
-function getResultsData(req, res) {
-  const resultsPath = path.join(__dirname, '../../', config.resultsPath);
-
-  try {
-    const data = fs.readFileSync(resultsPath, 'utf8');
-    logger.info('Sending results data.');
-    res.json(JSON.parse(data));
-  } catch (err) {
-    logger.error('Error reading results file:', err);
-    res.status(500).send('Unable to retrieve results.');
-  }
-}
-
 async function downloadResultsJSON(req, res) {
   try {
     // Get all records from database
@@ -124,7 +111,6 @@ async function getResults(req, res) {
 
 module.exports = {
   getProcessingStatus,
-  getResultsData,
   downloadResultsJSON,
   downloadResultsCSV,
   sanitizeFilename,
