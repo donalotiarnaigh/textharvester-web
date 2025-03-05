@@ -6,6 +6,7 @@ const { enqueueFiles, clearResultsFile } = require("../utils/fileQueue");
 const logger = require("../utils/logger");
 const { clearProcessingCompleteFlag } = require("../utils/processingFlag");
 const { convertPdfToJpegs } = require("../utils/pdfConverter");
+const { clearAllMemorials } = require('../utils/database');
 
 function createUniqueName(file) {
   const originalName = path.basename(
@@ -42,7 +43,10 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: { fileSize: 100 * 1024 * 1024 },
-}).array("file", config.upload.maxFileCount);
+}).fields([
+  { name: 'file', maxCount: config.upload.maxFileCount },
+  { name: 'replaceExisting' }
+]);
 
 const handleFileUpload = (req, res) => {
   logger.info("Handling file upload request");
@@ -58,7 +62,10 @@ const handleFileUpload = (req, res) => {
       return res.status(500).send("Unknown upload error: " + err.message);
     }
 
-    const files = req.files || [];
+    const shouldReplace = req.body.replaceExisting === 'true';
+    logger.info(`Replace existing setting: ${shouldReplace}`);
+
+    const files = req.files?.file || [];
     logger.info(`Number of files received: ${files.length}`);
 
     if (!files.length) {
@@ -66,16 +73,20 @@ const handleFileUpload = (req, res) => {
       return res.status(400).send("No files uploaded. Please try again.");
     }
 
-    // Log immediate response to the client
-    logger.info("File upload complete. Starting conversion...");
+    try {
+      if (shouldReplace) {
+        await clearAllMemorials();
+        logger.info("Cleared existing memorial records as requested");
+      }
 
-    // Respond immediately to the client
-    res.status(200).json({
-      message: "File upload complete. Starting conversion...",
-    });
+      res.status(200).json({
+        message: "File upload complete. Starting conversion...",
+      });
 
-    // Process files for conversion in the background
-    processFiles(files);
+      processFiles(files);
+    } catch (error) {
+      logger.error("Error handling file upload:", error);
+    }
   });
 };
 

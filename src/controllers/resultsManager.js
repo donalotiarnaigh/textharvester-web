@@ -5,6 +5,7 @@ const config = require('../../config.json'); // Adjust the path as needed
 const { jsonToCsv } = require('../utils/dataConversion'); // Adjust path as needed
 const moment = require('moment'); // Ensure moment is installed and imported
 const { getTotalFiles, getProcessedFiles } = require('../utils/fileQueue.js'); // Adjust the path as needed
+const { getAllMemorials } = require('../utils/database');
 
 function getProcessingStatus(req, res) {
   const flagPath = path.join(
@@ -55,28 +56,25 @@ function getResultsData(req, res) {
   }
 }
 
-function downloadResultsJSON(req, res) {
-  const resultsPath = path.join(__dirname, '../../', config.resultsPath);
-
-  // Extract filename from query parameters or use a default
-  const defaultFilename = 'results.json';
-  const requestedFilename = req.query.filename
-    ? `${req.query.filename}.json`
-    : defaultFilename;
-
-  // Optional: Sanitize the filename to avoid security issues
-  const safeFilename = sanitizeFilename(requestedFilename);
-
+async function downloadResultsJSON(req, res) {
   try {
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="${safeFilename}"`
-    );
+    // Get all records from database
+    const results = await getAllMemorials();
+        
+    // Extract filename from query parameters or use a default
+    const defaultFilename = `memorials_${moment().format('YYYYMMDD_HHmmss')}.json`;
+    const requestedFilename = req.query.filename 
+      ? `${sanitizeFilename(req.query.filename)}.json` 
+      : defaultFilename;
+
+    res.setHeader('Content-Disposition', `attachment; filename="${requestedFilename}"`);
     res.setHeader('Content-Type', 'application/json');
-    res.sendFile(resultsPath);
+    res.json(results);
+        
+    logger.info(`Downloaded JSON results as ${requestedFilename}`);
   } catch (err) {
-    logger.error('Error sending results file:', err);
-    res.status(500).send('Unable to download results.');
+    logger.error('Error downloading JSON results:', err);
+    res.status(500).send('Unable to download results');
   }
 }
 
@@ -89,29 +87,39 @@ function sanitizeFilename(filename) {
   return filename.replace(/[^a-zA-Z0-9_.-]/g, '_');
 }
 
-function downloadResultsCSV(req, res) {
-  const resultsPath = path.join(__dirname, '../../', config.resultsPath);
+async function downloadResultsCSV(req, res) {
+  try {
+    // Get all records from database
+    const results = await getAllMemorials();
+        
+    // Convert to CSV
+    const csvData = jsonToCsv(results);
+        
+    // Generate filename
+    const defaultFilename = `memorials_${moment().format('YYYYMMDD_HHmmss')}.csv`;
+    const requestedFilename = req.query.filename 
+      ? `${sanitizeFilename(req.query.filename)}.csv` 
+      : defaultFilename;
 
-  const requestedFilename = req.query.filename
-    ? `${sanitizeFilename(req.query.filename)}.csv`
-    : `hgth_results_${moment().format('YYYYMMDD_HHmmss')}.csv`;
-
-  fs.readFile(resultsPath, 'utf8', (err, data) => {
-    if (err) {
-      logger.error('Error reading results file:', err);
-      return res.status(500).send('Unable to retrieve results.');
-    }
-
-    const jsonData = JSON.parse(data);
-    const csvData = jsonToCsv(jsonData);
-
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="${requestedFilename}"`
-    );
+    res.setHeader('Content-Disposition', `attachment; filename="${requestedFilename}"`);
     res.setHeader('Content-Type', 'text/csv');
     res.send(csvData);
-  });
+        
+    logger.info(`Downloaded CSV results as ${requestedFilename}`);
+  } catch (err) {
+    logger.error('Error downloading CSV results:', err);
+    res.status(500).send('Unable to download results');
+  }
+}
+
+async function getResults(req, res) {
+  try {
+    const results = await getAllMemorials();
+    res.json(results);
+  } catch (error) {
+    logger.error('Error retrieving results:', error);
+    res.status(500).json({ error: 'Failed to retrieve results' });
+  }
 }
 
 module.exports = {
@@ -120,4 +128,5 @@ module.exports = {
   downloadResultsJSON,
   downloadResultsCSV,
   sanitizeFilename,
+  getResults,
 };

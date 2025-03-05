@@ -48,12 +48,19 @@ async function convertPdfToJpegs(pdfPath) {
     logger.info(`JPEG files created at: ${fullPaths.join(", ")}`);
 
     await fs.unlink(pdfPath);
-    logger.info(`Successfully deleted original PDF: ${pdfPath}`);
+    logger.info(`Cleaned up processed PDF: ${pdfPath}`);
 
     logger.info(`Completed PDF conversion for: ${pdfPath}`);
     return fullPaths;
   } catch (error) {
     logger.error("Error converting PDF to JPEGs:", error);
+    // Still try to clean up on error
+    try {
+      await fs.unlink(pdfPath);
+      logger.info(`Cleaned up PDF after error: ${pdfPath}`);
+    } catch (cleanupError) {
+      logger.error('Error cleaning up PDF:', cleanupError);
+    }
     throw new Error(`Failed to convert PDF to JPEGs: ${error.message}`);
   }
 }

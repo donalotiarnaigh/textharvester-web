@@ -35,4 +35,10 @@ export const handleFileUpload = (dropzoneInstance) => {
       errorMessage
     );
   });
+
+  dropzoneInstance.on("sending", function(file, xhr, formData) {
+    const replaceExisting = document.getElementById('replaceExisting').checked;
+    console.log('Replace existing checked:', replaceExisting); // Debug log
+    formData.append('replaceExisting', replaceExisting.toString()); // Convert to string
+  });
 };

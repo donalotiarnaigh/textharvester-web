@@ -34,5 +34,8 @@
     "defaultBrowser": "chrome",
     "saveLastSession": true,
     "autoBackup": true
+  },
+  "database": {
+    "path": "./data/memorials.db"
   }
 }

@@ -28,6 +28,7 @@
     "openai": "^4.24.0",
     "pdf-poppler": "^0.2.1",
     "sharp": "^0.33.0",
+    "sqlite3": "^5.1.7",
     "winston": "^3.12.0"
   },
   "devDependencies": {

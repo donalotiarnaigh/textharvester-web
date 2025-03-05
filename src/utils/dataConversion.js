@@ -5,32 +5,39 @@
  * @return {string} CSV string formatted for memorial data.
  */
 function jsonToCsv(jsonData) {
-  // Update the CSV columns to match the new order and include new fields
-  const columns = [
+  if (!jsonData || !jsonData.length) {
+    return '';
+  }
+
+  // Define headers based on our database structure
+  const headers = [
     'memorial_number',
     'first_name',
     'last_name',
     'year_of_death',
     'inscription',
+    'file_name',
+    'processed_date'
   ];
 
-  // Create the header row with the new columns
-  let csvString = columns.join(',') + '\n';
+  // Create CSV header row
+  let csv = headers.join(',') + '\n';
 
-  // Iterate through JSON data to build CSV rows matching the new structure
-  jsonData.forEach((item) => {
-    let row =
-      [
-        item.memorial_number,
-        item.first_name ? `"${item.first_name.replace(/"/g, '""')}"` : '',
-        item.last_name ? `"${item.last_name.replace(/"/g, '""')}"` : '',
-        item.year_of_death ? `"${item.year_of_death.replace(/"/g, '""')}"` : '',
-        item.inscription ? `"${item.inscription.replace(/"/g, '""')}"` : '',
-      ].join(',') + '\n';
-    csvString += row;
+  // Add data rows
+  jsonData.forEach(record => {
+    const row = headers.map(header => {
+      const value = record[header] || '';
+      // Escape quotes and wrap in quotes if contains comma or newline
+      return value.toString().includes(',') || value.toString().includes('\n') || value.toString().includes('"')
+        ? `"${value.toString().replace(/"/g, '""')}"` 
+        : value;
+    });
+    csv += row.join(',') + '\n';
   });
 
-  return csvString;
+  return csv;
 }
 
-module.exports = { jsonToCsv };
+module.exports = {
+  jsonToCsv
+};
