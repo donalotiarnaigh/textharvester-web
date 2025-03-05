@@ -98,6 +98,6 @@ To run the Historic Graves Text Harvester locally, follow these steps:
 
 ## Support
 
-For support, questions, or feedback, contact us at [daniel@textharvester.ie](mailto:daniel@textharvester.ie).
+For support, questions, or feedback, contact us at [daniel@curlew.ie](daniel@curlew.ie).
 
 Thank you for using the Text Harvester web app!
