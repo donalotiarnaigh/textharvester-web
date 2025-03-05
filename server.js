@@ -26,7 +26,7 @@ if (process.env.NODE_ENV === 'development') {
 // Use the modular functions for routes
 app.post('/upload', handleFileUpload);
 app.get('/processing-status', resultsManager.getProcessingStatus);
-app.get('/results-data', resultsManager.getResultsData);
+app.get('/results-data', resultsManager.getResults);
 app.get('/download-json', resultsManager.downloadResultsJSON);
 app.get('/download-csv', resultsManager.downloadResultsCSV);
 

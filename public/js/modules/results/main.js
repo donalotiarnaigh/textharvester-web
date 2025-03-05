@@ -31,7 +31,20 @@ function initializePage() {
   }
 
   // Fetch results data from the server
-  fetchResultsData(jsonDataElement);
+  fetch('/results-data')
+    .then(response => response.json())
+    .then(data => {
+      if (data && data.length > 0) {
+        // Display the results
+        jsonDataElement.textContent = JSON.stringify(data, null, 2);
+      } else {
+        jsonDataElement.textContent = 'No results found';
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching results:', error);
+      jsonDataElement.textContent = 'Error loading results';
+    });
 
   // Modify download functions to include the dynamic filename
   window.downloadJsonResults = () => downloadJsonResults(filenameInput);

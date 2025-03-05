@@ -33,13 +33,12 @@ export function validateFilenameInput(filenameInput) {
 
 // Function to download JSON results
 export function downloadJsonResults(filenameInput) {
-  const filename = filenameInput.value || "results";
-  triggerDownload("/download-json?filename=" + filename, filename + ".json");
+  const filename = filenameInput.value.trim() || `memorials_${new Date().toISOString().slice(0,10)}`;
+  window.location.href = `/download-json?filename=${encodeURIComponent(filename)}`;
 }
 
 // Function to download CSV results
 export function downloadCsvResults(filenameInput) {
-  const filename = filenameInput.value || "results";
-  const downloadUrl = `/download-csv?filename=${filename}`;
-  triggerDownload(downloadUrl, filename + ".csv");
+  const filename = filenameInput.value.trim() || `memorials_${new Date().toISOString().slice(0,10)}`;
+  window.location.href = `/download-csv?filename=${encodeURIComponent(filename)}`;
 }

@@ -2,7 +2,6 @@ const { jsonToCsv } = require('../src/utils/dataConversion');
 
 describe('jsonToCsv', () => {
   it('converts JSON to CSV format with the correct columns', () => {
-    // Adjust the structure for your test data to include the new fields
     const jsonData = [
       {
         memorial_number: '001',
@@ -10,6 +9,8 @@ describe('jsonToCsv', () => {
         last_name: 'Doe',
         year_of_death: '1990',
         inscription: 'Rest In Peace',
+        file_name: 'test1.jpg',
+        processed_date: '2024-03-05'
       },
       {
         memorial_number: '002',
@@ -17,17 +18,17 @@ describe('jsonToCsv', () => {
         last_name: 'Smith',
         year_of_death: '1995',
         inscription: 'Forever Remembered',
-      },
+        file_name: 'test2.jpg',
+        processed_date: '2024-03-05'
+      }
     ];
-    // Define the expected CSV output including the new fields in the correct order
-    const expectedCsv =
-      'memorial_number,first_name,last_name,year_of_death,inscription\n' +
-      '001,"John","Doe","1990","Rest In Peace"\n' +
-      '002,"Jane","Smith","1995","Forever Remembered"\n';
 
-    // Call the jsonToCsv function with the test data
+    const expectedCsv = 
+      'memorial_number,first_name,last_name,year_of_death,inscription,file_name,processed_date\n' +
+      '001,John,Doe,1990,Rest In Peace,test1.jpg,2024-03-05\n' +
+      '002,Jane,Smith,1995,Forever Remembered,test2.jpg,2024-03-05\n';
+
     const resultCsv = jsonToCsv(jsonData);
-    // Expect the result to equal the expected CSV output
     expect(resultCsv).toEqual(expectedCsv);
   });
 });

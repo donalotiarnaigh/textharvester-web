@@ -4,21 +4,17 @@ const logger = require('./logger');
 const config = require('../../config.json');
 const path = require('path');
 
+const uploadDir = config.uploadPath;
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  logger.info('Created uploads directory');
+}
+
 let fileQueue = [];
 let isProcessing = false;
 let processedFiles = 0;
 let totalFiles = 0;
 const retryLimits = {};
-
-function clearResultsFile() {
-  const resultsPath = config.resultsPath;
-  try {
-    fs.writeFileSync(resultsPath, JSON.stringify([]));
-    logger.info('Cleared results.json file.');
-  } catch (err) {
-    logger.error('Error clearing results.json file:', err);
-  }
-}
 
 function enqueueFiles(files) {
   logger.info(`Enqueue operation started at ${new Date().toISOString()}`);
@@ -170,7 +166,6 @@ function cancelProcessing() {
 }
 
 module.exports = {
-  clearResultsFile,
   enqueueFiles,
   dequeueFile,
   checkAndProcessNextFile,
