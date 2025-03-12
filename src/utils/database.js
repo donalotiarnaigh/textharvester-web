@@ -34,8 +34,7 @@ function initializeDatabase() {
             year_of_death TEXT,
             inscription TEXT,
             file_name TEXT,
-            processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-            confidence_score FLOAT
+            processed_date DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `;
 
@@ -58,9 +57,8 @@ function storeMemorial(data) {
             last_name,
             year_of_death,
             inscription,
-            file_name,
-            confidence_score
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            file_name
+        ) VALUES (?, ?, ?, ?, ?, ?)
     `;
 
   return new Promise((resolve, reject) => {
@@ -70,8 +68,7 @@ function storeMemorial(data) {
       data.last_name || null,
       data.year_of_death || null,
       data.inscription || null,
-      data.fileName || null,
-      data.confidence_score || null
+      data.fileName || null
     ], function(err) {
       if (err) {
         logger.error('Error storing memorial:', err);

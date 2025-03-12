@@ -30,8 +30,7 @@ CREATE TABLE memorials (
     year_of_death TEXT,
     inscription TEXT,
     file_name TEXT,
-    processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    confidence_score FLOAT
+    processed_date DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 ```
 
