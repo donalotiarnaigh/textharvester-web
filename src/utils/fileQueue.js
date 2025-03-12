@@ -19,9 +19,10 @@ const retryLimits = {};
 function enqueueFiles(files) {
   logger.info(`Enqueue operation started at ${new Date().toISOString()}`);
 
-  if (fileQueue.length === 0 && !isProcessing) {
-    resetFileProcessingState();
-  }
+  // Reset processing state at the start of a new batch
+  resetFileProcessingState();
+  isProcessing = false;  // Ensure processing flag is reset
+  fileQueue = [];       // Clear any existing queue
 
   files.forEach((file, index) => {
     const filePath = typeof file === 'string' ? file : file.path;
@@ -35,7 +36,9 @@ function enqueueFiles(files) {
     );
   });
 
-  totalFiles += files.length;
+  totalFiles = files.length;  // Set total files to new batch size
+  processedFiles = 0;        // Reset processed files counter
+  
   logger.info(
     `Enqueued ${files.length} new file(s). Queue length is now: ${fileQueue.length}. Total files to process: ${totalFiles}`
   );
@@ -45,6 +48,8 @@ function enqueueFiles(files) {
 function resetFileProcessingState() {
   processedFiles = 0;
   totalFiles = 0;
+  isProcessing = false;
+  fileQueue = [];
   logger.info('File processing state reset for a new session.');
 }
 
@@ -137,8 +142,31 @@ function getProcessedFiles() {
 }
 
 function getProcessingProgress() {
-  if (totalFiles === 0) return 0; // Avoid division by zero
-  return Math.round((processedFiles / totalFiles) * 100);
+  const totalFiles = getTotalFiles();
+  const processedFiles = getProcessedFiles();
+  
+  // If there are no files at all and we've processed some files previously,
+  // return 100% to trigger redirect
+  if (totalFiles === 0 && processedFiles > 0) {
+    return {
+      state: 'complete',
+      progress: 100
+    };
+  }
+  
+  // If there are no files and we haven't processed any, we're waiting
+  if (totalFiles === 0) {
+    return {
+      state: 'waiting',
+      progress: 0
+    };
+  }
+
+  const progress = Math.round((processedFiles / totalFiles) * 100);
+  return {
+    state: progress === 100 ? 'complete' : 'processing',
+    progress: progress
+  };
 }
 
 function cancelProcessing() {

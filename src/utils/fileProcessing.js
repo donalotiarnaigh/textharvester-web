@@ -50,6 +50,11 @@ async function processFile(filePath) {
     };
 
     const result = await openai.chat.completions.create(requestPayload);
+    
+    // Fix: Separate the message from the object being logged
+    logger.info('OpenAI API response for ' + filePath);
+    logger.info(JSON.stringify(result.choices[0].message.content, null, 2));
+    
     const extractedData = JSON.parse(result.choices[0].message.content);
     
     // Add filename to the extracted data

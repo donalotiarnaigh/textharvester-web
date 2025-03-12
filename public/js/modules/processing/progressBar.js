@@ -2,16 +2,26 @@
 // progressBar.js
 
 // Function to update the progress bar
-export function updateProgressBar(percentage) {
+export function updateProgressBar(progress) {
+  console.log('updateProgressBar called with progress:', progress);
   const progressBar = document.getElementById("progressBar");
-  progressBar.style.width = percentage + "%";
-  progressBar.textContent = `${percentage}%`;
-  progressBar.setAttribute("aria-valuenow", percentage);
+  if (progressBar) {
+    progressBar.style.width = `${progress}%`;
+    progressBar.textContent = `${progress}%`;
+    console.log('Progress bar updated to:', progress);
+  } else {
+    console.error('Progress bar element not found');
+  }
 }
 
 // Function to update the processing message
 export function updateProcessingMessage(message) {
+  console.log('updateProcessingMessage called with:', message);
   const statusMessage = document.getElementById("statusMessage");
-  console.log("Updating processing message to:", message);
-  statusMessage.textContent = message;
+  if (statusMessage) {
+    statusMessage.textContent = message;
+    console.log('Status message updated to:', message);
+  } else {
+    console.error('Status message element not found');
+  }
 }

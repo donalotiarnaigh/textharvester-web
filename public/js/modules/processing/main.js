@@ -12,6 +12,8 @@ const cancelProcessingButton = document.getElementById(
 // Attach event listener to the cancel button
 cancelProcessingButton.addEventListener("click", handleCancelProcessing);
 
-// Initialize progress checking
+// Start checking progress immediately
 checkProgress();
+
+// Check progress every 2 seconds
 setInterval(checkProgress, 2000);

@@ -32,17 +32,9 @@ app.get('/download-csv', resultsManager.downloadResultsCSV);
 
 // Add the new GET route for progress
 app.get('/progress', (req, res) => {
-  const processingProgress = getProcessingProgress();
-
-  let state = 'preparing';
-  let progress = 0;
-
-  if (processingProgress > 0) {
-    state = 'processing';
-    progress = processingProgress;
-  }
-
-  res.json({ state, progress });
+  const progress = getProcessingProgress();
+  logger.info('Progress request received. Current progress:', progress);
+  res.json(progress);
 });
 
 // Add the new POST route for canceling processing
