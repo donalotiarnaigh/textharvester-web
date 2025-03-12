@@ -2,7 +2,6 @@
 require('dotenv').config();
 
 const fs = require('fs').promises;
-const path = require('path');
 const { OpenAIProvider, AnthropicProvider } = require('./modelProviders');
 const logger = require('./logger');
 
