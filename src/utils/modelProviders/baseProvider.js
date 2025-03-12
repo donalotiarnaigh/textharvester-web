@@ -12,6 +12,7 @@ class BaseVisionProvider {
    * @param {string} base64Image - Base64 encoded image
    * @param {string} prompt - The prompt to send to the model
    * @returns {Promise<Object>} - Parsed JSON response
+   * @abstract This method should be implemented by subclasses
    */
   async processImage(base64Image, prompt) {
     throw new Error('Method not implemented');
