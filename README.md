@@ -6,6 +6,9 @@ Welcome to the Text Harvester, a community-driven web application designed to pr
 
 - **Drag-and-Drop File Upload**: Drag and drop JPEG images into the drop zone for processing, or click to select individual files or entire folders.
 - **Progress Monitoring**: Real-time updates on the status of your uploads and OCR processing.
+- **Multiple AI Providers**: Support for different vision AI models:
+  - OpenAI GPT-4o (default)
+  - Anthropic Claude 3.7 Sonnet
 - **Results Management**: 
   - Choose to replace existing results or add to them
   - Download extracted text data in JSON or CSV formats
@@ -71,7 +74,12 @@ To run the Historic Graves Text Harvester locally, follow these steps:
    - Add required environment variables:
      ```
      PORT=3000
-     OPENAI_API_KEY=your_api_key_here
+     # AI Provider Configuration
+     # Set AI_PROVIDER to 'openai' or 'anthropic'
+     AI_PROVIDER=openai
+     # API Keys
+     OPENAI_API_KEY=your_openai_api_key
+     ANTHROPIC_API_KEY=your_anthropic_api_key
      ```
 
 4. **Run the App**:
@@ -85,7 +93,9 @@ To run the Historic Graves Text Harvester locally, follow these steps:
 - **Express.js**: Web framework
 - **SQLite**: Persistent data storage
 - **Multer**: File upload handling
-- **OpenAI API**: AI-powered OCR
+- **AI Vision Models**: 
+  - OpenAI GPT-4o
+  - Anthropic Claude 3.7 Sonnet
 - **Node.js**: Runtime environment
 
 ## Data Management
@@ -101,3 +111,21 @@ To run the Historic Graves Text Harvester locally, follow these steps:
 For support, questions, or feedback, contact us at [daniel@curlew.ie](daniel@curlew.ie).
 
 Thank you for using the Text Harvester web app!
+
+## Testing Different AI Providers
+
+The application includes utilities to test and compare different AI providers:
+
+1. **Process a file with a specific provider**:
+   ```sh
+   node src/utils/processWithProvider.js openai path/to/image.jpg
+   # or
+   node src/utils/processWithProvider.js anthropic path/to/image.jpg
+   ```
+
+2. **Compare results from all providers**:
+   ```sh
+   node src/utils/testProviders.js path/to/image.jpg
+   ```
+
+3. **Switch the default provider** by changing the `AI_PROVIDER` environment variable in your `.env` file.
