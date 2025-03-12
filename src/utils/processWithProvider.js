@@ -1,3 +1,6 @@
+// Load environment variables from .env file
+require('dotenv').config();
+
 const { processFile } = require('./fileProcessing');
 const logger = require('./logger');
 

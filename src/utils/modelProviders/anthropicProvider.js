@@ -11,7 +11,7 @@ class AnthropicProvider extends BaseVisionProvider {
       apiKey: config.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
     });
     // Default to Claude 3.7 Sonnet which is comparable to GPT-4o
-    this.model = config.ANTHROPIC_MODEL || 'claude-3-sonnet-20240229';
+    this.model = config.ANTHROPIC_MODEL || 'claude-3-7-sonnet-20250219';
   }
 
   /**
@@ -51,8 +51,21 @@ class AnthropicProvider extends BaseVisionProvider {
         throw new Error('No text content in response');
       }
 
-      // Parse the JSON response
-      return JSON.parse(content);
+      // Parse the JSON response, handling the case where it's wrapped in a code block
+      let jsonContent = content;
+      
+      // Check if the content is wrapped in a code block (```json ... ```)
+      const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        jsonContent = codeBlockMatch[1].trim();
+      }
+      
+      try {
+        return JSON.parse(jsonContent);
+      } catch (jsonError) {
+        console.error('JSON parsing error:', jsonError, 'Content:', jsonContent);
+        throw new Error(`Failed to parse JSON response: ${jsonError.message}`);
+      }
     } catch (error) {
       console.error('Anthropic API error:', error);
       throw new Error(`Anthropic processing failed: ${error.message}`);
