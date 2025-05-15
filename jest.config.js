@@ -5,7 +5,7 @@ module.exports = {
   },
   moduleFileExtensions: ['js'],
   moduleDirectories: ['node_modules'],
-  testMatch: ['**/tests/**/*.test.js'],
+  testMatch: ['**/tests/**/*.test.js', '**/__tests__/**/*.test.js'],
   transformIgnorePatterns: [
     '/node_modules/',
   ],
