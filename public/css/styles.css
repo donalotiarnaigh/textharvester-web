@@ -115,28 +115,47 @@ body {
 }
 
 .progress {
-  flex: 1;
-  background-color: #eee;
-  margin-top: 20px;
-  height: 20px;
-  border-radius: 5px;
+  background-color: #f0f0f0;
+  border-radius: 12px;
+  height: 24px;
+  margin: 1.5rem 0;
+  width: 100%;
+  overflow: hidden;
 }
 
 .progress-bar {
+  background-color: #007bff;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 0%;
-  background-color: #007bff;
-  transition: width 0.6s ease;
-  color: #fff;
-  font-weight: bold;
-  border-radius: 5px;
+  color: white;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: width 0.5s ease;
 }
 
-#loading-text {
-  margin-top: 20px;
-  margin-bottom: 20px;
+/* Progress Text Elements */
+#modelDisplay {
+  color: #2c3e50;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+#statusMessage {
+  color: #6c757d;
+  font-size: 1.1rem;
+  margin: 1rem 0;
+  text-align: center;
+}
+
+#fileProgress {
+  color: #6c757d;
+  font-size: 0.9rem;
+  text-align: center;
+  display: block;
+  margin-top: 0.5rem;
 }
 
 /* Info Message for Results Page */
@@ -149,7 +168,10 @@ body {
 
 /* Container Padding for Results Page */
 .container {
-  padding-top: 20px;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
 }
 
 /* Results Section for Results Page */
@@ -272,9 +294,23 @@ button {
   line-height: 1.4;
 }
 
-/* Content Container */
-.container {
-  max-width: 800px;
+/* Processing Card Styles */
+.processing-card {
+  width: 100%;
+  max-width: 500px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+}
+
+.processing-card .card-body {
+  padding: 1.5rem;
+}
+
+.processing-status {
+  width: 100%;
+  padding: 0;
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
 }

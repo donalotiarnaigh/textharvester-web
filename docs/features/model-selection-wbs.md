@@ -10,10 +10,10 @@
 - [x] Test client-side functionality
 
 ### 1.2 Processing Page Updates (1 day)
-- [ ] Update processing.html to show selected model
-- [ ] Modify progress tracking display
-- [ ] Add model-specific status messages
-- [ ] Test progress display with different models
+- [x] Update processing.html to show selected model
+- [x] Modify progress tracking display
+- [x] Add model-specific status messages
+- [x] Test progress display with different models
 
 ### 1.3 Results Page Updates (1 day)
 - [ ] Add model column to results table
