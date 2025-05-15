@@ -41,9 +41,9 @@ export const handleFileUpload = (dropzoneInstance) => {
   dropzoneInstance.on("sending", function(file, xhr, formData) {
     const replaceExisting = document.getElementById('replaceExisting').checked;
     const selectedModel = getSelectedModel();
-    console.log('Replace existing checked:', replaceExisting);
-    console.log('Selected model:', selectedModel);
-    formData.append('replaceExisting', replaceExisting.toString());
+    console.log('Replace existing checked:', replaceExisting); // Debug log
+    console.log('Selected model:', selectedModel); // Debug log
+    formData.append('replaceExisting', replaceExisting.toString()); // Convert to string
     formData.append('aiProvider', selectedModel);
   });
 };

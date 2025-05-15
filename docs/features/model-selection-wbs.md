@@ -3,11 +3,11 @@
 ## 1. Frontend Implementation (4 days)
 
 ### 1.1 Upload Page Updates (2 days)
-- [ ] Add model selection dropdown to index.html
-- [ ] Create modelSelection.js module
-- [ ] Update dropzone.js to include model selection
-- [ ] Add model information tooltips
-- [ ] Test client-side functionality
+- [x] Add model selection dropdown to index.html
+- [x] Create modelSelection.js module
+- [x] Update dropzone.js to include model selection
+- [x] Add model information tooltips
+- [x] Test client-side functionality
 
 ### 1.2 Processing Page Updates (1 day)
 - [ ] Update processing.html to show selected model

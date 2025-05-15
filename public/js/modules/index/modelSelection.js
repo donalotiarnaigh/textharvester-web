@@ -15,36 +15,50 @@ const modelInfo = {
   }
 };
 
+/**
+ * Initialize the model selection UI
+ */
 export const initModelSelection = () => {
   console.log("Initializing model selection");
   
   // Create and insert the model selection HTML
   const modelSelectionHtml = `
-    <div class="form-group mb-3">
-      <label for="modelSelect">Select AI Model</label>
-      <select class="form-control" id="modelSelect">
-        <option value="openai">OpenAI GPT-4o (Faster)</option>
-        <option value="anthropic">Anthropic Claude 3.7 (More Accurate)</option>
-      </select>
-      <small class="form-text text-muted model-info"></small>
+    <div class="card model-selection-card">
+      <div class="card-body">
+        <div class="form-group mb-0">
+          <label for="modelSelect" class="card-title d-block mb-2">AI Model</label>
+          <select class="form-control" id="modelSelect">
+            <option value="openai">OpenAI GPT-4o (Faster)</option>
+            <option value="anthropic">Anthropic Claude 3.7 (More Accurate)</option>
+          </select>
+          <small class="model-info"></small>
+        </div>
+      </div>
     </div>
   `;
   
-  // Insert before the replace existing checkbox
-  const replaceExistingDiv = document.querySelector('.form-check').parentElement;
-  replaceExistingDiv.insertAdjacentHTML('beforebegin', modelSelectionHtml);
-  
-  // Initialize tooltip text
-  updateModelInfo('openai');
-  
-  // Add event listener to update info when model changes
-  document.getElementById('modelSelect').addEventListener('change', (e) => {
-    const selectedModel = e.target.value;
-    updateModelInfo(selectedModel);
-  });
+  // Insert before the replace existing checkbox card
+  const replaceExistingCard = document.querySelector('.custom-control-input').closest('.card');
+  if (replaceExistingCard) {
+    replaceExistingCard.insertAdjacentHTML('beforebegin', modelSelectionHtml);
+    
+    // Initialize tooltip text
+    updateModelInfo('openai');
+    
+    // Add event listener to update info when model changes
+    const modelSelect = document.getElementById('modelSelect');
+    if (modelSelect) {
+      modelSelect.addEventListener('change', (e) => {
+        updateModelInfo(e.target.value);
+      });
+    }
+  }
 };
 
-// Function to update the model info text
+/**
+ * Update the model info text
+ * @param {string} modelKey - The key of the model to show info for
+ */
 function updateModelInfo(modelKey) {
   const info = modelInfo[modelKey];
   const infoElement = document.querySelector('.model-info');
@@ -53,7 +67,10 @@ function updateModelInfo(modelKey) {
   }
 }
 
-// Function to get the selected model (to be used by other modules)
+/**
+ * Get the currently selected model
+ * @returns {string} The selected model key or 'openai' as default
+ */
 export const getSelectedModel = () => {
   const selectElement = document.getElementById('modelSelect');
   return selectElement ? selectElement.value : 'openai';
