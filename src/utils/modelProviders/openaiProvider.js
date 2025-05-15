@@ -1,52 +1,52 @@
-const OpenAI = require('openai');
-const BaseVisionProvider = require('./baseProvider');
+import OpenAI from 'openai';
+import logger from '../logger.js';
 
 /**
  * OpenAI-specific implementation for vision models
  */
-class OpenAIProvider extends BaseVisionProvider {
-  constructor(config) {
-    super(config);
-    this.client = new OpenAI(config.OPENAI_API_KEY || process.env.OPENAI_API_KEY);
-    this.model = config.OPENAI_MODEL || 'gpt-4o';
+export class OpenAIProvider {
+  constructor() {
+    this.client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
   }
 
   /**
    * Process an image using OpenAI's vision capabilities
    * @param {string} base64Image - Base64 encoded image
-   * @param {string} prompt - The prompt to send to the model
    * @returns {Promise<Object>} - Parsed JSON response
    */
-  async processImage(base64Image, prompt) {
-    const requestPayload = {
-      model: this.model,
-      messages: [
-        {
-          role: 'system',
-          content: 'Return a JSON object with the extracted text details.',
-        },
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:image/jpeg;base64,${base64Image}`,
-              },
-            },
-          ],
-        },
-      ],
-      response_format: { type: 'json_object' },
-      max_tokens: 3000,
-    };
-
+  async processImage(base64Image) {
     try {
-      const result = await this.client.chat.completions.create(requestPayload);
-      return JSON.parse(result.choices[0].message.content);
+      logger.info('Processing image with OpenAI');
+
+      const response = await this.client.chat.completions.create({
+        model: 'gpt-4-vision-preview',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'You\'re an expert in OCR and are working in a heritage/genealogy context assisting in data processing post graveyard survey. Examine this image and extract the text as per the following details for each memorial: memorial number, first name, last name, year of death, and the inscription text. Respond in JSON format only, adhering to the order mentioned. e.g., {"memorial_number": "69", "first_name": "THOMAS", "last_name": "RUANE", "year_of_death": "1923", "inscription": "SACRED HEART OF JESUS HAVE MERCY ON THE SOUL OF THOMAS RUANE LISNAGROOBE WHO DIED APRIL 16th 1923 AGED 74 YRS AND OF HIS WIFE MARGARET RUANE DIED JULY 26th 1929 AGED 78 YEARS R. I. P. ERECTED BY THEIR FOND SON THOMAS RUANE PHILADELPHIA USA"}. If a memorial number, first name, last name, or year of death is not visible or the inscription is not present, return a JSON with NULL for the missing fields.'
+              },
+              {
+                type: 'image',
+                image_url: {
+                  url: `data:image/jpeg;base64,${base64Image}`
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 1000
+      });
+
+      const result = JSON.parse(response.choices[0].message.content);
+      logger.info('OpenAI processing complete');
+      return result;
     } catch (error) {
-      console.error('OpenAI API error:', error);
+      logger.error('OpenAI API error:', error);
       throw new Error(`OpenAI processing failed: ${error.message}`);
     }
   }

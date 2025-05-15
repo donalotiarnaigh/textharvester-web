@@ -7,6 +7,10 @@ const logger = require("../utils/logger");
 const { clearProcessingCompleteFlag } = require("../utils/processingFlag");
 const { convertPdfToJpegs } = require("../utils/pdfConverter");
 const { clearAllMemorials } = require('../utils/database');
+const { processFile } = require('../utils/fileProcessing.js');
+const { addToQueue } = require('../utils/fileQueue.js');
+const { createUniqueName } = require('../utils/fileUtils.js');
+const fs = require('fs');
 
 function createUniqueName(file) {
   const originalName = path.basename(
@@ -48,46 +52,44 @@ const upload = multer({
   { name: 'replaceExisting' }
 ]);
 
-const handleFileUpload = (req, res) => {
-  logger.info("Handling file upload request");
-
-  upload(req, res, async function (err) {
-    if (err instanceof multer.MulterError) {
-      logger.error("Multer upload error:", err);
-      return res
-        .status(500)
-        .send("An error occurred during the file upload: " + err.message);
-    } else if (err) {
-      logger.error("Unknown upload error:", err);
-      return res.status(500).send("Unknown upload error: " + err.message);
+const handleFileUpload = async (req, res) => {
+  try {
+    if (!req.files || !req.files.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const shouldReplace = req.body.replaceExisting === 'true';
-    logger.info(`Replace existing setting: ${shouldReplace}`);
+    const file = req.files.file;
+    const replaceExisting = req.body.replaceExisting === 'true';
+    const aiProvider = req.body.aiProvider || 'openai'; // Default to OpenAI if not specified
 
-    const files = req.files?.file || [];
-    logger.info(`Number of files received: ${files.length}`);
+    logger.info(`File upload request received: ${file.name}`);
+    logger.info(`Replace existing: ${replaceExisting}`);
+    logger.info(`AI Provider: ${aiProvider}`);
 
-    if (!files.length) {
-      logger.info("No files uploaded.");
-      return res.status(400).send("No files uploaded. Please try again.");
-    }
+    // Create unique filename
+    const uniqueName = createUniqueName(file.name);
+    const uploadPath = path.join(process.cwd(), 'uploads', uniqueName);
 
-    try {
-      if (shouldReplace) {
-        await clearAllMemorials();
-        logger.info("Cleared existing memorial records as requested");
-      }
+    // Move file to uploads directory
+    await file.mv(uploadPath);
+    logger.info(`File saved to: ${uploadPath}`);
 
-      res.status(200).json({
-        message: "File upload complete. Starting conversion...",
-      });
+    // Add to processing queue
+    addToQueue({
+      filePath: uploadPath,
+      originalName: file.name,
+      replaceExisting,
+      aiProvider
+    });
 
-      processFiles(files);
-    } catch (error) {
-      logger.error("Error handling file upload:", error);
-    }
-  });
+    res.json({
+      message: 'File uploaded successfully',
+      filename: uniqueName
+    });
+  } catch (error) {
+    logger.error('Error in handleFileUpload:', error);
+    res.status(500).json({ error: 'Error uploading file' });
+  }
 };
 
 const processFiles = async (files) => {

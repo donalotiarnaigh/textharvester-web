@@ -1,6 +1,8 @@
 /* eslint-disable quotes */
 // fileUpload.js
 
+import { getSelectedModel } from "./modelSelection.js";
+
 export const handleFileUpload = (dropzoneInstance) => {
   console.log("Dropzone initialized"); // Log initialization
 
@@ -38,7 +40,10 @@ export const handleFileUpload = (dropzoneInstance) => {
 
   dropzoneInstance.on("sending", function(file, xhr, formData) {
     const replaceExisting = document.getElementById('replaceExisting').checked;
-    console.log('Replace existing checked:', replaceExisting); // Debug log
-    formData.append('replaceExisting', replaceExisting.toString()); // Convert to string
+    const selectedModel = getSelectedModel();
+    console.log('Replace existing checked:', replaceExisting);
+    console.log('Selected model:', selectedModel);
+    formData.append('replaceExisting', replaceExisting.toString());
+    formData.append('aiProvider', selectedModel);
   });
 };
