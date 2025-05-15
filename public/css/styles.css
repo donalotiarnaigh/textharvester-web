@@ -314,3 +314,102 @@ button {
   width: 3rem;
   height: 3rem;
 }
+
+/* Results Table Styles */
+#resultsTable {
+    font-size: 0.95rem;
+}
+
+#resultsTable th {
+    background-color: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Model Badge Styles */
+.badge-primary {
+    background-color: #007bff;
+}
+
+.badge-info {
+    background-color: #17a2b8;
+}
+
+.badge-secondary {
+    background-color: #6c757d;
+}
+
+/* Modal Styles */
+.modal-body p {
+    margin-bottom: 0.5rem;
+}
+
+#modalInscription {
+    white-space: pre-line;
+    font-family: inherit;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Responsive Table Container */
+.table-responsive {
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* Empty and Loading States */
+#emptyState, #loadingState {
+    padding: 3rem;
+    color: #6c757d;
+}
+
+/* View Details Button */
+.view-details {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* Info Message */
+.info-message {
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 4px;
+    background-color: #e9ecef;
+}
+
+/* Download Section */
+.form-group label {
+    font-weight: 500;
+}
+
+#downloadButton, #downloadCsvButton {
+    margin-right: 0.5rem;
+}
+
+/* Accessibility Improvements */
+.btn:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.modal-content:focus {
+    outline: none;
+}
+
+/* Table Hover Effects */
+.table-striped tbody tr:hover {
+    background-color: rgba(0,0,0,.075);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    #resultsTable {
+        font-size: 0.85rem;
+    }
+    
+    .view-details {
+        padding: 0.15rem 0.35rem;
+    }
+}

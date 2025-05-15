@@ -9,4 +9,10 @@ module.exports = {
   transformIgnorePatterns: [
     '/node_modules/',
   ],
+  setupFiles: [
+    '<rootDir>/jest.setup.js'
+  ],
+  moduleNameMapper: {
+    'sqlite3': '<rootDir>/__mocks__/sqlite3.js'
+  }
 }; 

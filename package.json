@@ -65,14 +65,5 @@
       "eslint --fix",
       "git add"
     ]
-  },
-  "jest": {
-    "setupFiles": [
-      "<rootDir>/jest.setup.js"
-    ],
-    "testEnvironment": "node",
-    "moduleNameMapper": {
-      "sqlite3": "<rootDir>/__mocks__/sqlite3.js"
-    }
   }
 }
