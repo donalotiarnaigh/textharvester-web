@@ -12,6 +12,14 @@ class OpenAIProvider extends BaseVisionProvider {
   }
 
   /**
+   * Get the current model version
+   * @returns {string} The model version
+   */
+  getModelVersion() {
+    return this.model;
+  }
+
+  /**
    * Process an image using OpenAI's vision capabilities
    * @param {string} base64Image - Base64 encoded image
    * @param {string} prompt - The prompt to send to the model

@@ -17,6 +17,15 @@ class BaseVisionProvider {
   async processImage(base64Image, prompt) {
     throw new Error('Method not implemented');
   }
+
+  /**
+   * Get the current model version
+   * @returns {string} The model version
+   * @abstract This method should be implemented by subclasses
+   */
+  getModelVersion() {
+    throw new Error('Method not implemented');
+  }
 }
 
 module.exports = BaseVisionProvider; 

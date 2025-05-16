@@ -37,13 +37,15 @@ async function processFile(filePath, options = {}) {
     logger.info(`${providerName} API response for ${filePath}`);
     logger.info(JSON.stringify(extractedData, null, 2));
     
-    // Add filename to the extracted data
+    // Add filename and model information to the extracted data
     extractedData.fileName = path.basename(filePath);
+    extractedData.ai_provider = providerName;
+    extractedData.model_version = provider.getModelVersion();
     
     // Store in database
     await storeMemorial(extractedData);
     
-    logger.info(`OCR text for ${filePath} stored in database`);
+    logger.info(`OCR text for ${filePath} stored in database with model: ${providerName}`);
     
     // Clean up the file after successful processing
     await fs.unlink(filePath);
@@ -51,14 +53,7 @@ async function processFile(filePath, options = {}) {
     
     return extractedData;
   } catch (error) {
-    logger.error(`Error in processing file with ${providerName}:`, error);
-    // Still try to clean up even if processing failed
-    try {
-      await fs.unlink(filePath);
-      logger.info(`Cleaned up file after error: ${filePath}`);
-    } catch (cleanupError) {
-      logger.error('Error cleaning up file:', cleanupError);
-    }
+    logger.error(`Error processing file ${filePath}:`, error);
     throw error;
   }
 }
