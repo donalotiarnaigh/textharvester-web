@@ -5,12 +5,12 @@
 const modelInfo = {
   "openai": {
     name: "OpenAI GPT-4o",
-    description: "Fast and accurate for most memorial inscriptions",
+    description: "GPT-4o Vision Model",
     processingTime: "~15-20 seconds per image"
   },
   "anthropic": {
     name: "Anthropic Claude 3.7 Sonnet",
-    description: "Excellent at handling complex or degraded inscriptions",
+    description: "Claude 3.7 Sonnet Vision Model",
     processingTime: "~20-25 seconds per image"
   }
 };
@@ -28,8 +28,8 @@ export const initModelSelection = () => {
         <div class="form-group mb-0">
           <label for="modelSelect" class="card-title d-block mb-2">AI Model</label>
           <select class="form-control" id="modelSelect">
-            <option value="openai">OpenAI GPT-4o (Faster)</option>
-            <option value="anthropic">Anthropic Claude 3.7 (More Accurate)</option>
+            <option value="openai">OpenAI GPT-4o</option>
+            <option value="anthropic">Anthropic Claude 3.7</option>
           </select>
           <small class="model-info"></small>
         </div>

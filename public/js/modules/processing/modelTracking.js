@@ -4,7 +4,7 @@ const modelInfo = {
     name: "OpenAI GPT-4o",
     processingTime: 15, // seconds per image
     messages: {
-      processing: "Processing with OpenAI GPT-4o - optimized for speed",
+      processing: "Processing with OpenAI GPT-4o",
       error: "Error processing with OpenAI GPT-4o - retrying",
       complete: "Processing complete with OpenAI GPT-4o"
     }
@@ -13,7 +13,7 @@ const modelInfo = {
     name: "Anthropic Claude 3.7",
     processingTime: 25, // seconds per image
     messages: {
-      processing: "Processing with Anthropic Claude - optimized for accuracy",
+      processing: "Processing with Anthropic Claude",
       error: "Error processing with Anthropic Claude - retrying",
       complete: "Processing complete with Anthropic Claude"
     }
