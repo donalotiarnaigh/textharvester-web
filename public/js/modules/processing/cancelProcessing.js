@@ -31,7 +31,7 @@ function simulateProgressTo100(currentProgress) {
 }
 
 // Function to handle cancellation
-function handleCancelProcessing() {
+export function handleCancelProcessing() {
   const userConfirmed = confirm(
     "Are you sure you want to cancel? This action will stop all processing, and you may not receive complete results."
   );
@@ -70,7 +70,4 @@ function handleCancelProcessing() {
   }
 }
 
-// Attach handleCancelProcessing to window to make it accessible globally
-window.handleCancelProcessing = handleCancelProcessing;
-
-export { handleCancelProcessing, simulateProgressTo100, isCancelling };
+export { simulateProgressTo100, isCancelling };
