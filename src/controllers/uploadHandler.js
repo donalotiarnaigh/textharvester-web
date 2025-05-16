@@ -45,7 +45,8 @@ const upload = multer({
   limits: { fileSize: 100 * 1024 * 1024 },
 }).fields([
   { name: 'file', maxCount: config.upload.maxFileCount },
-  { name: 'replaceExisting' }
+  { name: 'replaceExisting' },
+  { name: 'aiProvider' }
 ]);
 
 const handleFileUpload = (req, res) => {
@@ -63,7 +64,9 @@ const handleFileUpload = (req, res) => {
     }
 
     const shouldReplace = req.body.replaceExisting === 'true';
+    const selectedModel = req.body.aiProvider || 'openai';
     logger.info(`Replace existing setting: ${shouldReplace}`);
+    logger.info(`Selected AI model: ${selectedModel}`);
 
     const files = req.files?.file || [];
     logger.info(`Number of files received: ${files.length}`);
@@ -83,14 +86,14 @@ const handleFileUpload = (req, res) => {
         message: "File upload complete. Starting conversion...",
       });
 
-      processFiles(files);
+      processFiles(files, selectedModel);
     } catch (error) {
       logger.error("Error handling file upload:", error);
     }
   });
 };
 
-const processFiles = async (files) => {
+const processFiles = async (files, selectedModel) => {
   const fileErrors = [];
 
   try {
@@ -105,10 +108,14 @@ const processFiles = async (files) => {
               imagePaths.map((imagePath) => ({
                 path: imagePath,
                 mimetype: "image/jpeg",
+                provider: selectedModel
               }))
             );
           } else {
-            enqueueFiles([file]);
+            enqueueFiles([{
+              ...file,
+              provider: selectedModel
+            }]);
           }
         } catch (conversionError) {
           logger.error(

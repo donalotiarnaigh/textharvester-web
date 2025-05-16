@@ -66,7 +66,7 @@
     </footer>
 
     <script type="module">
-      import { initModelTracking, getStatusMessage } from '/js/modules/processing/modelTracking.js';
+      import { initModelTracking, getStatusMessage, updateModelDisplay } from '/js/modules/processing/modelTracking.js';
       import { handleCancelProcessing } from '/js/modules/processing/cancelProcessing.js';
       
       // Function to update progress UI
@@ -91,7 +91,8 @@
           const fileProgress = document.getElementById('fileProgress');
           const selectedModel = localStorage.getItem('selectedModel') || 'openai';
           
-          // Update progress bar
+          // Update model display and progress
+          updateModelDisplay(selectedModel);
           updateProgressUI(data.progress);
           
           // Update file progress text if available

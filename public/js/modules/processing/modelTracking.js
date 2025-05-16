@@ -25,15 +25,7 @@ const modelInfo = {
  */
 export function initModelTracking() {
   const selectedModel = getSelectedModel();
-  const model = modelInfo[selectedModel];
-  
-  // Update model display
-  const modelDisplay = document.getElementById('modelDisplay');
-  if (modelDisplay) {
-    modelDisplay.textContent = `Processing with ${model.name}`;
-  }
-  
-  // Initialize estimated time
+  updateModelDisplay(selectedModel);
   updateEstimatedTime(0);
 }
 
@@ -42,6 +34,20 @@ export function initModelTracking() {
  */
 export function getSelectedModel() {
   return localStorage.getItem('selectedModel') || 'openai';
+}
+
+/**
+ * Update the model display text
+ * @param {string} modelKey - The model identifier
+ */
+export function updateModelDisplay(modelKey) {
+  const model = modelInfo[modelKey];
+  if (!model) return;
+  
+  const modelDisplay = document.getElementById('modelDisplay');
+  if (modelDisplay) {
+    modelDisplay.textContent = `Processing with ${model.name}`;
+  }
 }
 
 /**
@@ -81,5 +87,9 @@ function updateEstimatedTime(percentComplete) {
  */
 export function getStatusMessage(status, modelKey) {
   const model = modelInfo[modelKey];
-  return model.messages[status] || 'Unknown status';
+  if (!model || !model.messages[status]) {
+    console.warn(`Unknown status or model: ${status}, ${modelKey}`);
+    return 'Unknown status';
+  }
+  return model.messages[status];
 } 
