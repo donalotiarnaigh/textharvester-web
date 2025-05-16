@@ -42,14 +42,20 @@ export const initModelSelection = () => {
   if (replaceExistingCard) {
     replaceExistingCard.insertAdjacentHTML('beforebegin', modelSelectionHtml);
     
-    // Initialize tooltip text
-    updateModelInfo('openai');
+    // Initialize model selection
+    const initialModel = 'openai';
+    localStorage.setItem('selectedModel', initialModel);
+    updateModelInfo(initialModel);
     
     // Add event listener to update info when model changes
     const modelSelect = document.getElementById('modelSelect');
     if (modelSelect) {
       modelSelect.addEventListener('change', (e) => {
-        updateModelInfo(e.target.value);
+        const selectedValue = e.target.value;
+        // Save selection to localStorage immediately
+        localStorage.setItem('selectedModel', selectedValue);
+        // Update the info text
+        updateModelInfo(selectedValue);
       });
     }
   }
