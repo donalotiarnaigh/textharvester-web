@@ -29,10 +29,13 @@ function enqueueFiles(files) {
     const originalName = file.originalname
       ? file.originalname
       : path.basename(filePath);
-    fileQueue.push(filePath);
+    fileQueue.push({
+      path: filePath,
+      provider: file.provider || 'openai'
+    });
     retryLimits[filePath] = retryLimits[filePath] || 0;
     logger.info(
-      `File ${index + 1} [${originalName}] enqueued. Path: ${filePath}`
+      `File ${index + 1} [${originalName}] enqueued. Path: ${filePath}, Provider: ${file.provider || 'openai'}`
     );
   });
 
@@ -55,27 +58,27 @@ function resetFileProcessingState() {
 
 function dequeueFile() {
   if (fileQueue.length > 0) {
-    const nextFilePath = fileQueue.shift();
-    retryLimits[nextFilePath] = retryLimits[nextFilePath] || 0;
+    const nextFile = fileQueue.shift();
+    retryLimits[nextFile.path] = retryLimits[nextFile.path] || 0;
     logger.info(
-      `Dequeued file for processing: ${nextFilePath}. Remaining queue length: ${fileQueue.length}.`
+      `Dequeued file for processing: ${nextFile.path} with provider: ${nextFile.provider}. Remaining queue length: ${fileQueue.length}.`
     );
-    return nextFilePath;
+    return nextFile;
   }
   logger.info('Queue is empty. No files to dequeue.');
   return null;
 }
 
-function enqueueFileForRetry(filePath) {
-  if (retryLimits[filePath] < config.maxRetryCount) {
-    fileQueue.push(filePath);
-    retryLimits[filePath]++;
+function enqueueFileForRetry(file) {
+  if (retryLimits[file.path] < config.maxRetryCount) {
+    fileQueue.push(file);
+    retryLimits[file.path]++;
     logger.info(
-      `File re-enqueued for retry: ${filePath}. Retry attempt: ${retryLimits[filePath]}`
+      `File re-enqueued for retry: ${file.path}. Retry attempt: ${retryLimits[file.path]}`
     );
   } else {
-    logger.error(`File processing failed after maximum retries: ${filePath}`);
-    delete retryLimits[filePath];
+    logger.error(`File processing failed after maximum retries: ${file.path}`);
+    delete retryLimits[file.path];
   }
 }
 
@@ -92,23 +95,23 @@ function checkAndProcessNextFile() {
     return;
   }
 
-  const filePath = dequeueFile();
-  if (filePath) {
+  const file = dequeueFile();
+  if (file) {
     isProcessing = true;
     logger.info(
-      `Dequeued file for processing: ${filePath}. Initiating processing.`
+      `Dequeued file for processing: ${file.path} with provider: ${file.provider}. Initiating processing.`
     );
-    processFile(filePath)
+    processFile(file.path, { provider: file.provider })
       .then(() => {
-        logger.info(`File processing completed: ${filePath}.`);
+        logger.info(`File processing completed: ${file.path}.`);
         processedFiles++;
         isProcessing = false;
         checkAndProcessNextFile();
       })
       .catch((error) => {
-        logger.error(`Error processing file ${filePath}: ${error}`);
+        logger.error(`Error processing file ${file.path}: ${error}`);
         setTimeout(() => {
-          enqueueFileForRetry(filePath);
+          enqueueFileForRetry(file);
           isProcessing = false;
           checkAndProcessNextFile();
         }, 1000 * config.upload.retryDelaySeconds);
@@ -176,12 +179,12 @@ function cancelProcessing() {
   }
 
   fileQueue.forEach((file) => {
-    const filePath = path.join(__dirname, '..', '..', file);
+    const filePath = path.join(__dirname, '..', '..', file.path);
     fs.unlink(filePath, (err) => {
       if (err) {
-        logger.error(`Error deleting file ${file}: ${err}`);
+        logger.error(`Error deleting file ${file.path}: ${err}`);
       } else {
-        logger.info(`Deleted file ${file}`);
+        logger.info(`Deleted file ${file.path}`);
       }
     });
   });
