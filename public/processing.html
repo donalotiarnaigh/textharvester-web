@@ -32,50 +32,101 @@
       </div>
     </nav>
 
-    <div class="content-wrap">
-      <div class="parent-container">
-        <div class="processing-message">
-          <h2>Processing...</h2>
-          <p id="statusMessage">Preparing files. Please wait...</p>
-          <div class="loading"></div>
-          <div id="loading-text">Preparing files...</div>
-        </div>
-        <div class="progress-container">
-          <div class="progress">
-            <div
-              id="progressBar"
-              class="progress-bar"
-              role="progressbar"
-              aria-valuenow="0"
-              aria-valuemin="0"
-              aria-valuemax="100"
-            >
-              <span>0%</span>
+    <div class="content-wrap processing-content-wrap">
+      <div class="container">
+        <div class="card processing-card">
+          <div class="card-body">
+            <h5 class="card-title" id="modelDisplay"></h5>
+            <div class="processing-status">
+              <div class="progress">
+                <div 
+                  class="progress-bar" 
+                  id="progressBar" 
+                  role="progressbar" 
+                  style="width: 0%"
+                  aria-valuenow="0" 
+                  aria-valuemin="0" 
+                  aria-valuemax="100">
+                  0%
+                </div>
+              </div>
+              <p class="card-text" id="statusMessage">Processing your files...</p>
+              <span id="fileProgress"></span>
             </div>
           </div>
-        </div>
-        <!-- Remove onclick attribute -->
-        <div class="text-center" style="margin-top: 20px">
-          <button id="cancelProcessingButton" class="btn btn-danger">
-            Cancel Processing
-          </button>
         </div>
       </div>
     </div>
 
-    <footer class="footer">
-      © 2025 Historic Graves Project. All rights reserved. For more info,
-      contact me at
-      <a href="mailto:daniel@curlew.ie">daniel@curlew.ie</a> or
-      visit the
-      <a href="https://www.historicgraves.ie" target="_blank"
-        >Historic Graves</a
-      >
-      website.
+    <footer class="footer processing-footer">
+      © 2025 Historic Graves Project. For more info, contact 
+      <a href="mailto:daniel@curlew.ie">daniel@curlew.ie</a> or 
+      <a href="https://www.historicgraves.ie" target="_blank">Historic Graves</a> website.
     </footer>
 
     <script type="module">
-      import "/js/modules/processing/main.js";
+      import { initModelTracking, getStatusMessage } from '/js/modules/processing/modelTracking.js';
+      
+      // Function to update progress UI
+      function updateProgressUI(progress) {
+        const progressBar = document.getElementById('progressBar');
+        
+        if (progressBar) {
+          const percentage = Math.round(progress);
+          progressBar.style.width = `${percentage}%`;
+          progressBar.setAttribute('aria-valuenow', percentage);
+          progressBar.textContent = `${percentage}%`;
+        }
+      }
+      
+      // Function to check processing progress
+      async function checkProgress() {
+        try {
+          const response = await fetch('/progress');
+          const data = await response.json();
+          
+          const statusMessage = document.getElementById('statusMessage');
+          const fileProgress = document.getElementById('fileProgress');
+          const selectedModel = localStorage.getItem('selectedModel') || 'openai';
+          
+          // Update progress bar
+          updateProgressUI(data.progress);
+          
+          // Update file progress text if available
+          if (fileProgress && data.processedFiles !== undefined && data.totalFiles !== undefined) {
+            fileProgress.textContent = `Processed ${data.processedFiles} of ${data.totalFiles} files`;
+          }
+          
+          if (data.state === 'complete') {
+            if (statusMessage) {
+              statusMessage.textContent = getStatusMessage('complete', selectedModel);
+            }
+            setTimeout(() => {
+              window.location.href = '/results.html';
+            }, 1000);
+          } else if (data.state === 'error') {
+            if (statusMessage) {
+              statusMessage.textContent = getStatusMessage('error', selectedModel);
+            }
+          }
+        } catch (error) {
+          console.error('Error checking progress:', error);
+        }
+      }
+      
+      document.addEventListener('DOMContentLoaded', () => {
+        initModelTracking();
+        
+        // Update initial status message
+        const statusMessage = document.getElementById('statusMessage');
+        const selectedModel = localStorage.getItem('selectedModel') || 'openai';
+        if (statusMessage) {
+          statusMessage.textContent = getStatusMessage('processing', selectedModel);
+        }
+        
+        // Check progress every 2 seconds
+        setInterval(checkProgress, 2000);
+      });
     </script>
   </body>
 </html>

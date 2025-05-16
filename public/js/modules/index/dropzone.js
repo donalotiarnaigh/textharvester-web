@@ -4,9 +4,13 @@
 // dropzone.js
 
 import { handleFileUpload } from "./fileUpload.js";
+import { initModelSelection } from "./modelSelection.js";
 
 // Ensure Dropzone is defined globally
 const initDropzone = () => {
+  // Initialize the model selection UI first
+  initModelSelection();
+  
   if (typeof Dropzone === "undefined") {
     console.error(
       "Dropzone is not defined. Make sure Dropzone script is included."

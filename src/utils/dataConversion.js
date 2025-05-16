@@ -1,8 +1,7 @@
 /**
- * Converts an array of memorial data objects into a CSV string.
- * Updated to reflect the new structure with first_name, last_name, and year_of_death.
- * @param {Object[]} jsonData - Array of memorial data objects.
- * @return {string} CSV string formatted for memorial data.
+ * Converts JSON data to CSV format with proper escaping of special characters
+ * @param {Array} jsonData - Array of objects to convert to CSV
+ * @returns {string} CSV formatted string
  */
 function jsonToCsv(jsonData) {
   if (!jsonData || !jsonData.length) {
@@ -17,6 +16,7 @@ function jsonToCsv(jsonData) {
     'year_of_death',
     'inscription',
     'file_name',
+    'ai_provider',
     'processed_date'
   ];
 
@@ -26,12 +26,26 @@ function jsonToCsv(jsonData) {
   // Add data rows
   jsonData.forEach(record => {
     const row = headers.map(header => {
-      const value = record[header] || '';
-      // Escape quotes and wrap in quotes if contains comma or newline
-      return value.toString().includes(',') || value.toString().includes('\n') || value.toString().includes('"')
-        ? `"${value.toString().replace(/"/g, '""')}"` 
-        : value;
+      let value = record[header] || '';
+      value = value.toString();
+      
+      // Replace actual newlines with \n
+      value = value.replace(/\n/g, '\\n');
+      
+      // Check if we need to quote this field
+      const needsQuoting = value.includes(',') || 
+                          value.includes('\\n') || 
+                          value.includes('"') ||
+                          value.includes('\r');
+      
+      if (needsQuoting) {
+        // Double up quotes and wrap in quotes
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      
+      return value;
     });
+    
     csv += row.join(',') + '\n';
   });
 

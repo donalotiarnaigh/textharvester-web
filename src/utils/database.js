@@ -51,15 +51,17 @@ function initializeDatabase() {
 function storeMemorial(data) {
   logger.info('Attempting to store memorial:', JSON.stringify(data));
   const sql = `
-        INSERT INTO memorials (
-            memorial_number,
-            first_name,
-            last_name,
-            year_of_death,
-            inscription,
-            file_name
-        ) VALUES (?, ?, ?, ?, ?, ?)
-    `;
+    INSERT INTO memorials (
+      memorial_number,
+      first_name,
+      last_name,
+      year_of_death,
+      inscription,
+      file_name,
+      ai_provider,
+      model_version
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `;
 
   return new Promise((resolve, reject) => {
     db.run(sql, [
@@ -68,7 +70,9 @@ function storeMemorial(data) {
       data.last_name || null,
       data.year_of_death || null,
       data.inscription || null,
-      data.fileName || null
+      data.fileName || null,
+      data.ai_provider || null,
+      data.model_version || null
     ], function(err) {
       if (err) {
         logger.error('Error storing memorial:', err);
