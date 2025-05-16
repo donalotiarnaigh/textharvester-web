@@ -316,6 +316,13 @@ button {
   padding: 0;
 }
 
+/* Cancel Processing Button */
+#cancelProcessingButton {
+  display: block;
+  margin: 0 auto;
+  min-width: 150px;
+}
+
 .spinner-border {
   width: 3rem;
   height: 3rem;

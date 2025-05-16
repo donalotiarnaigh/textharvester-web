@@ -52,6 +52,7 @@
               </div>
               <p class="card-text" id="statusMessage">Processing your files...</p>
               <span id="fileProgress"></span>
+              <button id="cancelProcessingButton" class="btn btn-danger mt-3">Cancel Processing</button>
             </div>
           </div>
         </div>
@@ -66,6 +67,7 @@
 
     <script type="module">
       import { initModelTracking, getStatusMessage } from '/js/modules/processing/modelTracking.js';
+      import { handleCancelProcessing } from '/js/modules/processing/cancelProcessing.js';
       
       // Function to update progress UI
       function updateProgressUI(progress) {
@@ -122,6 +124,12 @@
         const selectedModel = localStorage.getItem('selectedModel') || 'openai';
         if (statusMessage) {
           statusMessage.textContent = getStatusMessage('processing', selectedModel);
+        }
+        
+        // Attach cancel button event listener
+        const cancelButton = document.getElementById('cancelProcessingButton');
+        if (cancelButton) {
+          cancelButton.addEventListener('click', handleCancelProcessing);
         }
         
         // Check progress every 2 seconds
