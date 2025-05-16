@@ -1,3 +1,4 @@
+require('@anthropic-ai/sdk/shims/node');
 const Anthropic = require('@anthropic-ai/sdk');
 const BaseVisionProvider = require('./baseProvider');
 

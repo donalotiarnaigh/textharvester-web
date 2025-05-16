@@ -1,55 +1,47 @@
 /**
- * Converts JSON data to CSV format with proper escaping of special characters
- * @param {Array} jsonData - Array of objects to convert to CSV
+ * Convert JSON data to CSV format
+ * @param {Array} jsonData Array of objects to convert
  * @returns {string} CSV formatted string
  */
 function jsonToCsv(jsonData) {
-  if (!jsonData || !jsonData.length) {
+  if (!jsonData || !Array.isArray(jsonData) || jsonData.length === 0) {
     return '';
   }
 
-  // Define headers based on our database structure
-  const headers = [
+  // Define column order
+  const columns = [
     'memorial_number',
     'first_name',
     'last_name',
     'year_of_death',
     'inscription',
     'file_name',
+    'processed_date',
     'ai_provider',
-    'processed_date'
+    'model_version'
   ];
 
-  // Create CSV header row
-  let csv = headers.join(',') + '\n';
+  // Create header row
+  const headerRow = columns.join(',');
 
-  // Add data rows
-  jsonData.forEach(record => {
-    const row = headers.map(header => {
-      let value = record[header] || '';
-      value = value.toString();
+  // Create data rows
+  const dataRows = jsonData.map(record => {
+    return columns.map(column => {
+      let value = record[column] || '';
       
-      // Replace actual newlines with \n
-      value = value.replace(/\n/g, '\\n');
+      // Convert value to string and handle newlines
+      value = String(value).replace(/\n/g, '\\n');
       
-      // Check if we need to quote this field
-      const needsQuoting = value.includes(',') || 
-                          value.includes('\\n') || 
-                          value.includes('"') ||
-                          value.includes('\r');
-      
-      if (needsQuoting) {
-        // Double up quotes and wrap in quotes
+      // Escape special characters
+      if (value.includes(',') || value.includes('"') || value.includes('\\n')) {
         return `"${value.replace(/"/g, '""')}"`;
       }
-      
       return value;
-    });
-    
-    csv += row.join(',') + '\n';
+    }).join(',');
   });
 
-  return csv;
+  // Combine header and data rows with consistent line endings
+  return dataRows.reduce((csv, row) => csv + row + '\n', headerRow + '\n');
 }
 
 module.exports = {

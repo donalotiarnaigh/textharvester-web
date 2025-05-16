@@ -24,6 +24,15 @@ const modelInfo = {
 export function initModelTracking() {
   const selectedModel = getSelectedModel();
   updateModelDisplay(selectedModel);
+  
+  // Initialize progress bar ARIA attributes
+  const progressBar = document.getElementById('progressBar');
+  if (progressBar) {
+    progressBar.setAttribute('role', 'progressbar');
+    progressBar.setAttribute('aria-valuemin', '0');
+    progressBar.setAttribute('aria-valuemax', '100');
+    progressBar.setAttribute('aria-valuenow', '0');
+  }
 }
 
 /**
@@ -48,27 +57,49 @@ export function updateModelDisplay(modelKey) {
 }
 
 /**
- * Update progress bar
+ * Update progress bar and its ARIA attributes
  * @param {number} percentComplete - Progress percentage (0-100)
  */
 export function updateProgress(percentComplete) {
   const progressBar = document.getElementById('progressBar');
   if (progressBar) {
-    progressBar.style.width = `${percentComplete}%`;
+    const progress = Math.min(Math.max(0, percentComplete), 100);
+    progressBar.style.width = `${progress}%`;
+    progressBar.setAttribute('aria-valuenow', progress.toString());
+    
+    // Update status message based on progress
+    const statusMessage = document.getElementById('statusMessage');
+    if (statusMessage) {
+      const selectedModel = getSelectedModel();
+      const model = modelInfo[selectedModel];
+      
+      if (progress === 100) {
+        statusMessage.textContent = model.messages.complete;
+      } else if (progress > 0) {
+        statusMessage.textContent = model.messages.processing;
+      }
+    }
   }
 }
 
 /**
- * Get status message for current processing state
- * @param {string} status - Current status (processing, error, complete)
- * @param {string} modelKey - Model identifier
- * @returns {string} Status message
+ * Get the appropriate status message based on state and model
+ * @param {string} state - Current processing state
+ * @param {string} modelKey - The model identifier
+ * @returns {string} The status message
  */
-export function getStatusMessage(status, modelKey) {
+export function getStatusMessage(state, modelKey = getSelectedModel()) {
   const model = modelInfo[modelKey];
-  if (!model || !model.messages[status]) {
-    console.warn(`Unknown status or model: ${status}, ${modelKey}`);
-    return 'Unknown status';
+  if (!model) return '';
+  
+  switch (state) {
+    case 'processing':
+      return model.messages.processing;
+    case 'error':
+      return model.messages.error;
+    case 'complete':
+      return model.messages.complete;
+    default:
+      return '';
   }
-  return model.messages[status];
 } 

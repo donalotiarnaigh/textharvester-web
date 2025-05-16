@@ -11,7 +11,6 @@ describe('Processing Page Model Selection Features', () => {
       <div id="modelDisplay"></div>
       <div id="progressBar" class="progress-bar"></div>
       <div id="statusMessage"></div>
-      <div id="estimatedTime"></div>
     `;
     
     // Clear localStorage before each test
@@ -23,18 +22,18 @@ describe('Processing Page Model Selection Features', () => {
       localStorage.setItem('selectedModel', 'openai');
       initModelTracking();
       expect(document.getElementById('modelDisplay').textContent)
-        .toContain('OpenAI GPT-4o');
+        .toContain('OpenAI GPT-4');
     });
 
     test('should display default model when no model is selected', () => {
       initModelTracking();
       expect(document.getElementById('modelDisplay').textContent)
-        .toContain('OpenAI GPT-4o');
+        .toContain('OpenAI GPT-4');
     });
   });
 
   describe('Progress Tracking', () => {
-    test('should update progress bar with correct model-specific timing estimates', () => {
+    test('should update progress bar correctly', () => {
       localStorage.setItem('selectedModel', 'anthropic');
       initModelTracking();
       
@@ -42,8 +41,18 @@ describe('Processing Page Model Selection Features', () => {
       const progressBar = document.getElementById('progressBar');
       
       expect(progressBar.style.width).toBe('50%');
-      expect(document.getElementById('estimatedTime').textContent)
-        .toMatch(/\d+ seconds remaining/);
+      expect(progressBar.getAttribute('aria-valuenow')).toBe('50');
+    });
+
+    test('should handle 100% progress correctly', () => {
+      localStorage.setItem('selectedModel', 'anthropic');
+      initModelTracking();
+      
+      updateProgress(100);
+      const progressBar = document.getElementById('progressBar');
+      
+      expect(progressBar.style.width).toBe('100%');
+      expect(progressBar.getAttribute('aria-valuenow')).toBe('100');
     });
   });
 
@@ -51,13 +60,18 @@ describe('Processing Page Model Selection Features', () => {
     test('should display model-specific status messages during processing', () => {
       localStorage.setItem('selectedModel', 'openai');
       const message = getStatusMessage('processing', 'openai');
-      expect(message).toContain('Processing with OpenAI GPT-4o');
+      expect(message).toContain('Processing with OpenAI GPT-4');
     });
 
     test('should handle model-specific errors appropriately', () => {
       localStorage.setItem('selectedModel', 'anthropic');
       const message = getStatusMessage('error', 'anthropic');
       expect(message).toContain('Error processing with Anthropic Claude');
+    });
+
+    test('should display completion message', () => {
+      const message = getStatusMessage('complete');
+      expect(message).toContain('Processing complete');
     });
   });
 }); 

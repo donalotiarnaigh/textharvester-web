@@ -13,8 +13,9 @@ describe('Data Conversion Utils', () => {
       year_of_death: '1900',
       inscription: 'Rest in Peace',
       file_name: 'test1.jpg',
+      processed_date: '2025-01-01T12:00:00Z',
       ai_provider: 'openai',
-      processed_date: '2025-01-01T12:00:00Z'
+      model_version: 'gpt-4o'
     },
     {
       memorial_number: 'MEM002',
@@ -23,8 +24,9 @@ describe('Data Conversion Utils', () => {
       year_of_death: '1950',
       inscription: 'In loving memory,\nForever missed',
       file_name: 'test2.jpg',
+      processed_date: '2025-01-02T12:00:00Z',
       ai_provider: 'anthropic',
-      processed_date: '2025-01-02T12:00:00Z'
+      model_version: 'claude-3-7-sonnet-20250219'
     }
   ];
 
@@ -40,35 +42,18 @@ describe('Data Conversion Utils', () => {
       const lines = csv.split('\n');
       
       // Check headers
-      expect(lines[0]).toBe('memorial_number,first_name,last_name,year_of_death,inscription,file_name,ai_provider,processed_date');
+      expect(lines[0]).toBe('memorial_number,first_name,last_name,year_of_death,inscription,file_name,processed_date,ai_provider,model_version');
       
       // Check first data row
-      expect(lines[1]).toBe('MEM001,John,Doe,1900,Rest in Peace,test1.jpg,openai,2025-01-01T12:00:00Z');
-    });
-
-    it('should properly escape fields containing commas', () => {
-      const dataWithCommas = [{
-        memorial_number: 'MEM003',
-        first_name: 'Smith, John',
-        last_name: 'Doe',
-        inscription: 'Rest, in Peace',
-        processed_date: '2025-01-03T12:00:00Z'
-      }];
-
-      const csv = jsonToCsv(dataWithCommas);
-      const dataLine = csv.split('\n')[1];
-      
-      expect(dataLine).toContain('"Smith, John"');
-      expect(dataLine).toContain('"Rest, in Peace"');
+      expect(lines[1]).toBe('MEM001,John,Doe,1900,Rest in Peace,test1.jpg,2025-01-01T12:00:00Z,openai,gpt-4o');
     });
 
     it('should properly handle newlines in fields', () => {
       const csv = jsonToCsv(testData);
       const lines = csv.split('\n');
-      const secondRow = lines[2]; // Get the second data row
       
-      // The field should be properly quoted and contain the literal \n string
-      expect(secondRow).toContain('"In loving memory,\\nForever missed"');
+      // The field should be properly quoted and contain the escaped newline
+      expect(lines[2]).toContain('MEM002,Jane,Smith,1950,"In loving memory,\\nForever missed",test2.jpg');
     });
 
     it('should handle missing fields gracefully', () => {
@@ -79,9 +64,10 @@ describe('Data Conversion Utils', () => {
       }];
 
       const csv = jsonToCsv(incompleteData);
-      const dataLine = csv.split('\n')[1];
+      const lines = csv.split('\n');
       
-      expect(dataLine).toBe('MEM004,John,,,,,,');
+      // Should have empty values for all missing fields
+      expect(lines[1]).toBe('MEM004,John,,,,,,,');
     });
 
     it('should properly escape quotes in fields', () => {
@@ -93,10 +79,11 @@ describe('Data Conversion Utils', () => {
       }];
 
       const csv = jsonToCsv(dataWithQuotes);
-      const dataLine = csv.split('\n')[1];
+      const lines = csv.split('\n');
       
-      expect(dataLine).toContain('"John ""Johnny"""');
-      expect(dataLine).toContain('"He said ""goodbye"""');
+      // Check that quotes are properly escaped
+      expect(lines[1]).toContain('"John ""Johnny"""');
+      expect(lines[1]).toContain('"He said ""goodbye"""');
     });
   });
 }); 

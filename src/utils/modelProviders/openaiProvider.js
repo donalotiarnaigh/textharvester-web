@@ -1,3 +1,4 @@
+require('openai/shims/node');
 const OpenAI = require('openai');
 const BaseVisionProvider = require('./baseProvider');
 
