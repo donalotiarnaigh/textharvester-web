@@ -5,13 +5,11 @@
 const modelInfo = {
   "openai": {
     name: "OpenAI GPT-4o",
-    description: "GPT-4o Vision Model",
-    processingTime: "~15-20 seconds per image"
+    description: "GPT-4o Vision Model"
   },
   "anthropic": {
     name: "Anthropic Claude 3.7 Sonnet",
-    description: "Claude 3.7 Sonnet Vision Model",
-    processingTime: "~20-25 seconds per image"
+    description: "Claude 3.7 Sonnet Vision Model"
   }
 };
 
@@ -69,7 +67,7 @@ function updateModelInfo(modelKey) {
   const info = modelInfo[modelKey];
   const infoElement = document.querySelector('.model-info');
   if (info && infoElement) {
-    infoElement.textContent = `${info.description}. Average processing time: ${info.processingTime}`;
+    infoElement.textContent = info.description;
   }
 }
 

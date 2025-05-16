@@ -2,7 +2,6 @@
 const modelInfo = {
   "openai": {
     name: "OpenAI GPT-4o",
-    processingTime: 15, // seconds per image
     messages: {
       processing: "Processing with OpenAI GPT-4o",
       error: "Error processing with OpenAI GPT-4o - retrying",
@@ -11,7 +10,6 @@ const modelInfo = {
   },
   "anthropic": {
     name: "Anthropic Claude 3.7",
-    processingTime: 25, // seconds per image
     messages: {
       processing: "Processing with Anthropic Claude",
       error: "Error processing with Anthropic Claude - retrying",
@@ -26,7 +24,6 @@ const modelInfo = {
 export function initModelTracking() {
   const selectedModel = getSelectedModel();
   updateModelDisplay(selectedModel);
-  updateEstimatedTime(0);
 }
 
 /**
@@ -51,31 +48,13 @@ export function updateModelDisplay(modelKey) {
 }
 
 /**
- * Update progress bar and estimated time
+ * Update progress bar
  * @param {number} percentComplete - Progress percentage (0-100)
  */
 export function updateProgress(percentComplete) {
   const progressBar = document.getElementById('progressBar');
   if (progressBar) {
     progressBar.style.width = `${percentComplete}%`;
-  }
-  
-  updateEstimatedTime(percentComplete);
-}
-
-/**
- * Update the estimated time remaining based on progress
- * @param {number} percentComplete - Progress percentage (0-100)
- */
-function updateEstimatedTime(percentComplete) {
-  const selectedModel = getSelectedModel();
-  const model = modelInfo[selectedModel];
-  
-  const estimatedTimeElement = document.getElementById('estimatedTime');
-  if (estimatedTimeElement) {
-    const remainingPercent = 100 - percentComplete;
-    const secondsRemaining = Math.ceil((remainingPercent / 100) * model.processingTime);
-    estimatedTimeElement.textContent = `${secondsRemaining} seconds remaining`;
   }
 }
 
