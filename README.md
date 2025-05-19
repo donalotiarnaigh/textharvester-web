@@ -24,15 +24,31 @@ The application uses SQLite to store memorial records. The database file is loca
 ```sql
 CREATE TABLE memorials (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    memorial_number TEXT,
+    memorial_number INTEGER,
     first_name TEXT,
     last_name TEXT,
-    year_of_death TEXT,
+    year_of_death INTEGER,
     inscription TEXT,
-    file_name TEXT,
-    processed_date DATETIME DEFAULT CURRENT_TIMESTAMP
+    file_name TEXT NOT NULL,
+    ai_provider TEXT,
+    model_version TEXT,
+    prompt_version TEXT,
+    processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT valid_year CHECK (year_of_death > 1500 AND year_of_death < strftime('%Y', 'now', '+1 year'))
 )
+
+-- Indexes for optimized queries
+CREATE INDEX idx_memorial_number ON memorials(memorial_number);
+CREATE INDEX idx_name ON memorials(last_name, first_name);
+CREATE INDEX idx_year ON memorials(year_of_death);
 ```
+
+### Data Types and Constraints
+- `memorial_number`: Integer for consistent numeric handling
+- `year_of_death`: Integer with validation (must be between 1500 and current year + 1)
+- `file_name`: Required field (NOT NULL)
+- `prompt_version`: Tracks the version of the prompt used for extraction
+- Optimized indexes for common search patterns
 
 ## How It Works
 

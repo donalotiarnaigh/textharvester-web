@@ -19,15 +19,17 @@ db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS memorials (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      memorial_number TEXT,
+      memorial_number INTEGER,
       first_name TEXT,
       last_name TEXT,
-      year_of_death TEXT,
+      year_of_death INTEGER,
       inscription TEXT,
-      file_name TEXT,
+      file_name TEXT NOT NULL,
       ai_provider TEXT,
       model_version TEXT,
-      processed_date DATETIME DEFAULT CURRENT_TIMESTAMP
+      prompt_version TEXT,
+      processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT valid_year CHECK (year_of_death > 1500 AND year_of_death < strftime('%Y', 'now', '+1 year'))
     )
   `, (err) => {
     if (err) {
@@ -35,15 +37,35 @@ db.serialize(() => {
       process.exit(1);
     }
     logger.info('Memorials table created successfully');
-    
-    // Close database connection
-    db.close((err) => {
-      if (err) {
-        logger.error('Error closing database:', err);
-        process.exit(1);
-      }
-      logger.info('Database initialized successfully');
-      process.exit(0);
+
+    // Create indexes for common queries
+    const indexes = [
+      'CREATE INDEX idx_memorial_number ON memorials(memorial_number)',
+      'CREATE INDEX idx_name ON memorials(last_name, first_name)',
+      'CREATE INDEX idx_year ON memorials(year_of_death)'
+    ];
+
+    let completed = 0;
+    indexes.forEach((sql, index) => {
+      db.run(sql, (err) => {
+        if (err) {
+          logger.error(`Error creating index ${index + 1}:`, err);
+          process.exit(1);
+        }
+        completed++;
+        
+        // Close database connection after all indexes are created
+        if (completed === indexes.length) {
+          db.close((err) => {
+            if (err) {
+              logger.error('Error closing database:', err);
+              process.exit(1);
+            }
+            logger.info('Database initialized successfully with all indexes');
+            process.exit(0);
+          });
+        }
+      });
     });
   });
 }); 
