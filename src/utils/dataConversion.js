@@ -1,3 +1,5 @@
+const logger = require('./logger');
+
 /**
  * Convert JSON data to CSV format
  * @param {Array} jsonData Array of objects to convert
@@ -8,7 +10,7 @@ function jsonToCsv(jsonData) {
     return '';
   }
 
-  // Define column order
+  // Define column order with all fields including prompt metadata
   const columns = [
     'memorial_number',
     'first_name',
@@ -16,9 +18,10 @@ function jsonToCsv(jsonData) {
     'year_of_death',
     'inscription',
     'file_name',
-    'processed_date',
     'ai_provider',
-    'model_version'
+    'model_version',
+    'prompt_version',
+    'processed_date'
   ];
 
   // Create header row
@@ -27,23 +30,52 @@ function jsonToCsv(jsonData) {
   // Create data rows
   const dataRows = jsonData.map(record => {
     return columns.map(column => {
-      let value = record[column] || '';
+      let value = record[column];
       
-      // Convert value to string and handle newlines
-      value = String(value).replace(/\n/g, '\\n');
-      
-      // Escape special characters
-      if (value.includes(',') || value.includes('"') || value.includes('\\n')) {
-        return `"${value.replace(/"/g, '""')}"`;
+      // Handle null/undefined values
+      if (value === null || value === undefined) {
+        return '';
       }
+      
+      // Convert value to string and handle special characters
+      value = String(value);
+      
+      // Handle newlines
+      value = value.replace(/\n/g, '\\n');
+      
+      // Escape quotes and wrap in quotes if necessary
+      if (value.includes(',') || value.includes('"') || value.includes('\\n')) {
+        value = value.replace(/"/g, '""');
+        return `"${value}"`;
+      }
+      
       return value;
     }).join(',');
   });
 
-  // Combine header and data rows with consistent line endings
-  return dataRows.reduce((csv, row) => csv + row + '\n', headerRow + '\n');
+  // Combine header and data rows
+  return [headerRow, ...dataRows].join('\n') + '\n';
+}
+
+/**
+ * Format JSON data for export
+ * @param {Array} jsonData Array of objects to format
+ * @param {string} format Format option ('pretty' or 'compact')
+ * @returns {string} Formatted JSON string
+ */
+function formatJsonForExport(jsonData, format = 'compact') {
+  try {
+    if (format === 'pretty') {
+      return JSON.stringify(jsonData, null, 2);
+    }
+    return JSON.stringify(jsonData);
+  } catch (error) {
+    logger.error('Error formatting JSON data:', error);
+    return JSON.stringify(jsonData); // Default to compact format on error
+  }
 }
 
 module.exports = {
-  jsonToCsv
+  jsonToCsv,
+  formatJsonForExport
 };

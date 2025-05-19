@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const logger = require('../utils/logger'); // Adjust the path as needed
 const config = require('../../config.json'); // Adjust the path as needed
-const { jsonToCsv } = require('../utils/dataConversion'); // Adjust path as needed
+const { jsonToCsv, formatJsonForExport } = require('../utils/dataConversion'); // Adjust path as needed
 const moment = require('moment'); // Ensure moment is installed and imported
 const { getTotalFiles, getProcessedFiles } = require('../utils/fileQueue.js'); // Adjust the path as needed
 const { getAllMemorials } = require('../utils/database');
@@ -58,11 +58,15 @@ async function downloadResultsJSON(req, res) {
       ? `${sanitizeFilename(req.query.filename)}.json` 
       : defaultFilename;
 
+    // Format JSON based on query parameter
+    const format = req.query.format === 'pretty' ? 'pretty' : 'compact';
+    const jsonData = formatJsonForExport(validatedResults, format);
+
     res.setHeader('Content-Disposition', `attachment; filename="${requestedFilename}"`);
     res.setHeader('Content-Type', 'application/json');
-    res.json(validatedResults);
+    res.send(jsonData);
         
-    logger.info(`Downloaded JSON results as ${requestedFilename}`);
+    logger.info(`Downloaded JSON results as ${requestedFilename} (${format} format)`);
   } catch (err) {
     logger.error('Error downloading JSON results:', err);
     res.status(500).send('Unable to download results');

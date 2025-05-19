@@ -20,6 +20,8 @@ export function validateFilenameInput(filenameInput) {
       !isValidFilename || !this.value;
     document.getElementById("downloadCsvButton").disabled =
       !isValidFilename || !this.value;
+    document.getElementById("downloadPrettyButton").disabled =
+      !isValidFilename || !this.value;
 
     if (isValidFilename || this.value === "") {
       this.classList.remove("is-invalid");
@@ -32,9 +34,9 @@ export function validateFilenameInput(filenameInput) {
 }
 
 // Function to download JSON results
-export function downloadJsonResults(filenameInput) {
+export function downloadJsonResults(filenameInput, format = 'compact') {
   const filename = filenameInput.value.trim() || `memorials_${new Date().toISOString().slice(0,10)}`;
-  window.location.href = `/download-json?filename=${encodeURIComponent(filename)}`;
+  window.location.href = `/download-json?filename=${encodeURIComponent(filename)}&format=${format}`;
 }
 
 // Function to download CSV results
