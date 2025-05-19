@@ -3,6 +3,7 @@ const path = require('path');
 const logger = require('./logger'); // Assuming logger is modularized or its path adjusted
 const { createProvider } = require('./modelProviders');
 const { storeMemorial } = require('./database');
+const { getPrompt } = require('./prompts/templates/providerTemplates');
 
 /**
  * Enhances the processFile function with detailed logging for better tracking and debugging.
@@ -13,34 +14,39 @@ const { storeMemorial } = require('./database');
  */
 async function processFile(filePath, options = {}) {
   const providerName = options.provider || process.env.AI_PROVIDER || 'openai';
+  const promptTemplate = options.promptTemplate || 'memorialOCR';
+  const promptVersion = options.promptVersion || 'latest';
+  
   logger.info(`Starting to process file: ${filePath} with provider: ${providerName}`);
   
   try {
     const base64Image = await fs.readFile(filePath, { encoding: 'base64' });
-    
-    logger.info(
-      `File ${filePath} read successfully. Proceeding with OCR processing.`
-    );
+    logger.info(`File ${filePath} read successfully. Proceeding with OCR processing.`);
 
-    // Create the appropriate provider based on configuration
+    // Create provider instance
     const provider = createProvider({
       ...options,
       AI_PROVIDER: providerName
     });
     
-    // The prompt text for OCR processing
-    const prompt = 'You\'re an expert in OCR and are working in a heritage/genealogy context assisting in data processing post graveyard survey. Examine these images and extract the text as per the following details for each memorial: memorial number, first name, last name, year of death, and the inscription text. Respond in JSON format only, adhering to the order mentioned. e.g., {"memorial_number": "69", "first_name": "THOMAS", "last_name": "RUANE", "year_of_death": "1923", "inscription": "SACRED HEART OF JESUS HAVE MERCY ON THE SOUL OF THOMAS RUANE LISNAGROOBE WHO DIED APRIL 16th 1923 AGED 74 YRS AND OF HIS WIFE MARGARET RUANE DIED JULY 26th 1929 AGED 78 YEARS R. I. P. ERECTED BY THEIR FOND SON THOMAS RUANE PHILADELPHIA USA"}. If a memorial number, first name, last name, or year of death is not visible or the inscription is not present, return a JSON with NULL for the missing fields.';
-
+    // Get the appropriate prompt for this provider
+    const promptInstance = getPrompt(promptTemplate, promptVersion);
+    const promptText = promptInstance.getProviderPrompt(providerName);
+    
     // Process the image using the selected provider
-    const extractedData = await provider.processImage(base64Image, prompt);
+    const rawExtractedData = await provider.processImage(base64Image, promptText);
+    
+    // Validate and convert the data according to our type definitions
+    const extractedData = promptInstance.validateAndConvert(rawExtractedData);
     
     logger.info(`${providerName} API response for ${filePath}`);
     logger.info(JSON.stringify(extractedData, null, 2));
     
-    // Add filename and model information to the extracted data
+    // Add metadata to the extracted data
     extractedData.fileName = path.basename(filePath);
     extractedData.ai_provider = providerName;
     extractedData.model_version = provider.getModelVersion();
+    extractedData.prompt_version = promptInstance.version;
     
     // Store in database
     await storeMemorial(extractedData);

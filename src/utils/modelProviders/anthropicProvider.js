@@ -1,9 +1,11 @@
 require('@anthropic-ai/sdk/shims/node');
 const Anthropic = require('@anthropic-ai/sdk');
 const BaseVisionProvider = require('./baseProvider');
+const { promptManager } = require('../prompts/templates/providerTemplates');
 
 /**
  * Anthropic-specific implementation for vision models
+ * Handles integration with the prompt modularization system
  */
 class AnthropicProvider extends BaseVisionProvider {
   constructor(config) {
@@ -11,8 +13,9 @@ class AnthropicProvider extends BaseVisionProvider {
     this.client = new Anthropic({
       apiKey: config.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
     });
-    // Default to Claude 3.7 Sonnet which is comparable to GPT-4o
     this.model = config.ANTHROPIC_MODEL || 'claude-3-7-sonnet-20250219';
+    this.maxTokens = config.MAX_TOKENS || 3000;
+    this.temperature = config.TEMPERATURE || 0;
   }
 
   /**
@@ -27,19 +30,33 @@ class AnthropicProvider extends BaseVisionProvider {
    * Process an image using Anthropic Claude's vision capabilities
    * @param {string} base64Image - Base64 encoded image
    * @param {string} prompt - The prompt to send to the model
+   * @param {Object} options - Additional options for processing
+   * @param {boolean} options.raw - Whether to return raw response without JSON parsing
+   * @param {BasePrompt} options.promptTemplate - Optional prompt template to use
    * @returns {Promise<Object>} - Parsed JSON response
    */
-  async processImage(base64Image, prompt) {
+  async processImage(base64Image, prompt, options = {}) {
     try {
+      // Format prompt if template is provided
+      let systemPrompt = 'Return a JSON object with the extracted text details.';
+      let userPrompt = prompt;
+
+      if (options.promptTemplate) {
+        const formatted = promptManager.formatPrompt(options.promptTemplate, 'anthropic');
+        systemPrompt = formatted.systemPrompt;
+        userPrompt = formatted.prompt;
+      }
+
       const result = await this.client.messages.create({
         model: this.model,
-        max_tokens: 3000,
-        system: 'Return a JSON object with the extracted text details.',
+        max_tokens: this.maxTokens,
+        temperature: this.temperature,
+        system: systemPrompt,
         messages: [
           {
             role: 'user',
             content: [
-              { type: 'text', text: prompt },
+              { type: 'text', text: userPrompt },
               { 
                 type: 'image', 
                 source: { 
@@ -50,7 +67,7 @@ class AnthropicProvider extends BaseVisionProvider {
               }
             ]
           }
-        ],
+        ]
       });
 
       // Extract the text content from the response
@@ -58,6 +75,11 @@ class AnthropicProvider extends BaseVisionProvider {
       
       if (!content) {
         throw new Error('No text content in response');
+      }
+
+      // Return raw content if requested
+      if (options.raw) {
+        return content;
       }
 
       // Parse the JSON response, handling the case where it's wrapped in a code block
@@ -79,6 +101,30 @@ class AnthropicProvider extends BaseVisionProvider {
       console.error('Anthropic API error:', error);
       throw new Error(`Anthropic processing failed: ${error.message}`);
     }
+  }
+
+  /**
+   * Validate provider-specific configuration
+   * @returns {boolean} True if configuration is valid
+   * @throws {Error} If configuration is invalid
+   */
+  validateConfig() {
+    if (!this.client) {
+      throw new Error('Anthropic client not initialized. Check API key configuration.');
+    }
+    if (!this.model.includes('sonnet') && !this.model.includes('haiku')) {
+      throw new Error('Invalid model specified. Must be a vision-capable model.');
+    }
+    return true;
+  }
+
+  /**
+   * Validate a prompt template for use with this provider
+   * @param {BasePrompt} promptTemplate The prompt template to validate
+   * @returns {Object} Validation result
+   */
+  validatePromptTemplate(promptTemplate) {
+    return promptManager.validatePrompt(promptTemplate, 'anthropic');
   }
 }
 
