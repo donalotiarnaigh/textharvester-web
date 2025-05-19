@@ -6,6 +6,7 @@ const { jsonToCsv } = require('../utils/dataConversion'); // Adjust path as need
 const moment = require('moment'); // Ensure moment is installed and imported
 const { getTotalFiles, getProcessedFiles } = require('../utils/fileQueue.js'); // Adjust the path as needed
 const { getAllMemorials } = require('../utils/database');
+const { validateAndConvertRecords } = require('../utils/dataValidation');
 
 function getProcessingStatus(req, res) {
   const flagPath = path.join(
@@ -47,6 +48,9 @@ async function downloadResultsJSON(req, res) {
   try {
     // Get all records from database
     const results = await getAllMemorials();
+    
+    // Validate and convert data types
+    const validatedResults = validateAndConvertRecords(results);
         
     // Extract filename from query parameters or use a default
     const defaultFilename = `memorials_${moment().format('YYYYMMDD_HHmmss')}.json`;
@@ -56,7 +60,7 @@ async function downloadResultsJSON(req, res) {
 
     res.setHeader('Content-Disposition', `attachment; filename="${requestedFilename}"`);
     res.setHeader('Content-Type', 'application/json');
-    res.json(results);
+    res.json(validatedResults);
         
     logger.info(`Downloaded JSON results as ${requestedFilename}`);
   } catch (err) {
@@ -78,9 +82,12 @@ async function downloadResultsCSV(req, res) {
   try {
     // Get all records from database
     const results = await getAllMemorials();
+    
+    // Validate and convert data types
+    const validatedResults = validateAndConvertRecords(results);
         
     // Convert to CSV
-    const csvData = jsonToCsv(results);
+    const csvData = jsonToCsv(validatedResults);
         
     // Generate filename
     const defaultFilename = `memorials_${moment().format('YYYYMMDD_HHmmss')}.csv`;
@@ -102,7 +109,11 @@ async function downloadResultsCSV(req, res) {
 async function getResults(req, res) {
   try {
     const results = await getAllMemorials();
-    res.json(results);
+    
+    // Validate and convert data types
+    const validatedResults = validateAndConvertRecords(results);
+    
+    res.json(validatedResults);
   } catch (error) {
     logger.error('Error retrieving results:', error);
     res.status(500).json({ error: 'Failed to retrieve results' });
