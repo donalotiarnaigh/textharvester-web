@@ -70,7 +70,7 @@ class Database {
         if (record.year_of_death) {
           const currentYear = new Date().getFullYear();
           if (record.year_of_death <= 1500 || record.year_of_death > currentYear + 1) {
-            const error = new Error('SQLITE_CONSTRAINT: CHECK constraint failed: valid_year');
+            const error = new Error('CHECK constraint failed: valid_year');
             if (callback) callback.call(null, error);
             return;
           }
@@ -100,42 +100,19 @@ class Database {
       params = [];
     }
 
-    if (sql.includes('sqlite_master')) {
-      if (sql.includes("type='table'")) {
-        const tableName = sql.match(/name='(\w+)'/)[1];
-        const result = this.schema.get(tableName) ? { sql: this.schema.get(tableName) } : null;
-        if (callback) callback(null, result);
-        return;
-      }
-      if (sql.includes("type='index'")) {
-        const indexes = Array.from(this.indexes.entries()).map(([name, sql]) => ({ name, sql }));
-        if (callback) callback(null, indexes);
-        return;
-      }
-    }
-
-    if (sql.includes('typeof')) {
-      // Handle type checking queries
-      const row = {
-        num_type: 'integer',
-        year_type: 'integer'
-      };
-      if (callback) callback(null, row);
+    if (sql.includes('SELECT COUNT(*) as count')) {
+      callback(null, { count: this.data.length });
       return;
     }
 
-    // Handle normal SELECT queries
-    if (sql.includes('SELECT *')) {
-      if (sql.includes('ORDER BY')) {
-        const orderBy = sql.match(/ORDER BY\s+(\w+)/)[1];
-        this.data.sort((a, b) => a[orderBy] - b[orderBy]);
-      }
-      if (callback) callback(null, this.data);
+    if (sql.includes('SELECT * FROM memorials WHERE id = ?')) {
+      const id = params[0];
+      const record = this.data.find(r => r.id === id);
+      callback(null, record);
       return;
     }
 
-    // Default to returning first record for other queries
-    if (callback) callback(null, this.data[0] || null);
+    callback(null, null);
   }
 
   all(sql, params, callback) {
@@ -143,14 +120,16 @@ class Database {
       callback = params;
       params = [];
     }
-    
-    if (sql.includes('sqlite_master')) {
-      const indexes = Array.from(this.indexes.entries()).map(([name, sql]) => ({ name, sql }));
-      if (callback) callback(null, indexes);
+
+    if (sql.includes('SELECT * FROM memorials ORDER BY processed_date DESC')) {
+      const sortedData = [...this.data].sort((a, b) => 
+        new Date(b.processed_date).getTime() - new Date(a.processed_date).getTime()
+      );
+      callback(null, sortedData);
       return;
     }
 
-    if (callback) callback(null, this.data);
+    callback(null, []);
   }
 
   close(callback) {
