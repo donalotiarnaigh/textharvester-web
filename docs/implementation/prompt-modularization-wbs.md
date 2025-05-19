@@ -94,10 +94,47 @@
     - Added tests for environment variable handling
 
 - **4.3 API & Frontend Changes**
-  - 4.3.1 Update upload endpoint
+  - 4.3.1 Update upload endpoint ✓
+    - Add prompt template selection field ✓
+    - Add prompt version selection field ✓
+    - Update multer configuration for new fields ✓
+    - Add validation for prompt fields ✓
+    - Update file processing queue with prompt info ✓
+    - Add tests for new endpoint functionality ✓
+    - Implementation details:
+      - Added prompt template and version validation
+      - Added error handling for invalid templates/versions
+      - Updated multer configuration for test compatibility
+      - Added file queue integration with prompt info
+      - Added comprehensive test coverage
+      - Added proper error handling and responses
+  
   - 4.3.2 Modify results endpoint for typed data
+    - Update database schema for prompt metadata
+    - Add data type validation layer
+    - Add prompt version tracking
+    - Update response format with new fields
+    - Add error handling for type mismatches
+    - Add tests for data validation
+  
   - 4.3.3 Update download functionality
-  - 4.3.4 Add minimal UI changes (if needed)
+    - Update JSON export format
+    - Update CSV conversion with new fields
+    - Add prompt metadata to exports
+    - Add data type validation
+    - Add format conversion options
+    - Update download tests
+  
+  - 4.3.4 Add UI changes
+    - Add prompt template selection dropdown
+    - Add version selection component
+    - Update model info display
+    - Add prompt info to results table
+    - Update results table columns
+    - Add prompt metadata display
+    - Add validation feedback
+    - Update processing status display
+    - Add error handling for invalid selections
 
 ## 5. Testing & Validation
 - **5.1 Focused Testing**

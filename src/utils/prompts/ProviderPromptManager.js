@@ -4,6 +4,7 @@
 class ProviderPromptManager {
   constructor() {
     this.templates = new Map();
+    this.templateVersions = new Map();
   }
 
   /**
@@ -14,8 +15,9 @@ class ProviderPromptManager {
    * @param {string} template.systemPrompt System-level prompt
    * @param {string} template.formatInstructions Format-specific instructions
    * @param {Object} template.typeFormatting Type conversion mapping
+   * @param {string} [version='latest'] Template version
    */
-  registerPromptTemplate(providerName, template) {
+  registerPromptTemplate(providerName, template, version = 'latest') {
     // Validate template structure
     if (!template.systemPrompt || !template.formatInstructions || !template.typeFormatting) {
       throw new Error('Invalid template structure');
@@ -26,6 +28,16 @@ class ProviderPromptManager {
       throw new Error('Provider name mismatch');
     }
 
+    // Initialize version map for provider if it doesn't exist
+    if (!this.templateVersions.has(providerName)) {
+      this.templateVersions.set(providerName, new Map());
+    }
+
+    // Store template with version
+    const providerVersions = this.templateVersions.get(providerName);
+    providerVersions.set(version, template);
+
+    // Update latest version
     this.templates.set(providerName, template);
   }
 
@@ -36,6 +48,30 @@ class ProviderPromptManager {
    */
   getTemplate(providerName) {
     return this.templates.get(providerName);
+  }
+
+  /**
+   * Get a specific template version for a provider
+   * @param {string} providerName Name of the AI provider
+   * @param {string} templateName Name of the template
+   * @param {string} [version='latest'] Template version
+   * @returns {Object} Template configuration for the specified version
+   */
+  getPromptTemplate(providerName, templateName, version = 'latest') {
+    // For now, we only support one template type per provider
+    // In the future, this could be expanded to support multiple template types
+    if (!this.templateVersions.has(providerName)) {
+      return null;
+    }
+
+    const providerVersions = this.templateVersions.get(providerName);
+    
+    // If version is 'latest' or not found, return the latest version
+    if (version === 'latest' || !providerVersions.has(version)) {
+      return this.templates.get(providerName);
+    }
+
+    return providerVersions.get(version);
   }
 
   /**
