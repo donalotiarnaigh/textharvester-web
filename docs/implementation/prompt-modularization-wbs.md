@@ -199,17 +199,41 @@
 ## 5. Testing & Validation
 - **5.1 Prompt System Testing** ✓
   - 5.1.1 Test memorial record transcription accuracy ✓
-    - Test with various handwriting styles and qualities
-    - Verify accurate extraction of names and dates
-    - Test handling of partial or unclear text
+    - Analyze existing dataset (9 memorial pages)
+    - Compare transcription results across multiple runs
+    - Test handling of multi-line entries
+    - Document success rates per page
+    - Implementation details:
+      - Use pages 2-10 from test_inputs
+      - Compare against baseline results from 2025-05-19
+      - Focus on real-world transcription scenarios
+
   - 5.1.2 Test prompt variations for accuracy ✓
-    - Compare OpenAI vs Anthropic performance
-    - Test different prompt versions for accuracy
-    - Document best-performing configurations
+    - Compare OpenAI vs Anthropic using existing results
+    - Analyze performance across different batch sizes
+    - Document token usage and processing times
+    - Implementation details:
+      - Use results from both providers (2025-05-19)
+      - Compare single-page vs multi-page batches
+      - Analyze cost-effectiveness of each provider
+
   - 5.1.3 Test error recovery scenarios ✓
-    - Handle incomplete or corrupted images
-    - Test retry mechanisms for failed API calls
-    - Verify data preservation on errors
+    - Test recovery from partial processing runs
+    - Verify data consistency across retries
+    - Analyze system resilience using existing logs
+    - Implementation details:
+      - Use partial result sets from previous runs
+      - Compare multiple processing attempts
+      - Document recovery success patterns
+
+  - 5.1.4 Results Documentation and Analysis
+    - Create baseline performance metrics
+    - Generate provider comparison report
+    - Document optimal processing configurations
+    - Implementation details:
+      - Use existing result files as benchmark
+      - Create comprehensive comparison tables
+      - Document best practices for production use
 
 - **5.2 Data Validation & Storage**
   - 5.2.1 Test type validation for memorial records ✓

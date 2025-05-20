@@ -75,3 +75,16 @@ dist/
 data/
 data/results.json
 .prettierrc
+
+# Sample data
+sample_data/
+
+# macOS system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.DS_Store

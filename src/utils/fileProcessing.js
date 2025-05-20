@@ -46,6 +46,7 @@ async function processFile(filePath, options = {}) {
     extractedData.fileName = path.basename(filePath);
     extractedData.ai_provider = providerName;
     extractedData.model_version = provider.getModelVersion();
+    extractedData.prompt_template = promptTemplate;
     extractedData.prompt_version = promptInstance.version;
     
     // Store in database

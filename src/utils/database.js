@@ -26,17 +26,21 @@ const db = new sqlite3.Database(dbPath, (err) => {
 // Initialize database with required table
 function initializeDatabase() {
   const createTableSQL = `
-        CREATE TABLE IF NOT EXISTS memorials (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            memorial_number TEXT,
-            first_name TEXT,
-            last_name TEXT,
-            year_of_death TEXT,
-            inscription TEXT,
-            file_name TEXT,
-            processed_date DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `;
+    CREATE TABLE IF NOT EXISTS memorials (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      memorial_number TEXT,
+      first_name TEXT,
+      last_name TEXT,
+      year_of_death TEXT,
+      inscription TEXT,
+      file_name TEXT,
+      ai_provider TEXT,
+      model_version TEXT,
+      prompt_template TEXT,
+      prompt_version TEXT,
+      processed_date DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
 
   db.run(createTableSQL, (err) => {
     if (err) {
@@ -59,8 +63,10 @@ function storeMemorial(data) {
       inscription,
       file_name,
       ai_provider,
-      model_version
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      model_version,
+      prompt_template,
+      prompt_version
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   return new Promise((resolve, reject) => {
@@ -72,7 +78,9 @@ function storeMemorial(data) {
       data.inscription || null,
       data.fileName || null,
       data.ai_provider || null,
-      data.model_version || null
+      data.model_version || null,
+      data.prompt_template || null,
+      data.prompt_version || null
     ], function(err) {
       if (err) {
         logger.error('Error storing memorial:', err);

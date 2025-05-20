@@ -40,6 +40,8 @@ describe('storeMemorial Function', () => {
           file_name TEXT NOT NULL,
           ai_provider TEXT,
           model_version TEXT,
+          prompt_template TEXT,
+          prompt_version TEXT,
           processed_date DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `, (err) => {
@@ -54,7 +56,7 @@ describe('storeMemorial Function', () => {
       storeMemorial: jest.fn().mockImplementation(async (data) => {
         return new Promise((resolve, reject) => {
           mockDb.run(
-            'INSERT INTO memorials VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO memorials VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
               data.memorial_number || null,
               data.first_name || null,
@@ -64,6 +66,8 @@ describe('storeMemorial Function', () => {
               data.fileName || null,
               data.ai_provider || null,
               data.model_version || null,
+              data.prompt_template || null,
+              data.prompt_version || null,
               new Date().toISOString()
             ],
             function(err) {
@@ -87,7 +91,7 @@ describe('storeMemorial Function', () => {
     jest.resetModules();
   });
 
-  it('should store memorial with model information', async () => {
+  it('should store memorial with complete model and prompt information', async () => {
     const testData = {
       memorial_number: 'TEST001',
       first_name: 'John',
@@ -96,11 +100,30 @@ describe('storeMemorial Function', () => {
       inscription: 'Test inscription',
       fileName: 'test.jpg',
       ai_provider: 'openai',
-      model_version: 'gpt-4o'
+      model_version: 'gpt-4o',
+      prompt_template: 'memorialOCR',
+      prompt_version: '1.0'
     };
 
     const id = await storeMemorial(testData);
     expect(id).toBe(1);
+    expect(mockDb.run).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.arrayContaining([
+        'TEST001',
+        'John',
+        'Doe',
+        '1900',
+        'Test inscription',
+        'test.jpg',
+        'openai',
+        'gpt-4o',
+        'memorialOCR',
+        '1.0',
+        expect.any(String)
+      ]),
+      expect.any(Function)
+    );
   });
 
   it('should handle missing model information', async () => {
