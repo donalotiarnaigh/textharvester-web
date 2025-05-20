@@ -47,6 +47,41 @@
         <h1 class="mt-4">Processing Results</h1>
         <p class="info-message"></p>
 
+        <!-- Model Info Panel -->
+        <div class="model-info-panel card mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+              <button class="btn btn-link" data-toggle="collapse" data-target="#modelInfoContent">
+                Model & Prompt Information
+              </button>
+            </h5>
+            <button class="btn btn-sm btn-outline-secondary copy-info" data-clipboard-target="#modelInfoContent">
+              <i class="fas fa-copy"></i> Copy
+            </button>
+          </div>
+          <div id="modelInfoContent" class="collapse">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="model-details">
+                    <h6>Model Information</h6>
+                    <p><strong>Provider:</strong> <span id="infoProvider"></span></p>
+                    <p><strong>Version:</strong> <span id="infoModelVersion"></span></p>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="prompt-details">
+                    <h6>Prompt Information</h6>
+                    <p><strong>Template:</strong> <span id="infoTemplate"></span></p>
+                    <p><strong>Version:</strong> <span id="infoPromptVersion"></span></p>
+                    <p><strong>Last Updated:</strong> <span id="infoProcessedDate"></span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="table-responsive mt-4">
           <table class="table table-striped table-bordered" id="resultsTable">
             <thead class="thead-light">
@@ -55,6 +90,8 @@
                 <th>Name</th>
                 <th>Year of Death</th>
                 <th>AI Model</th>
+                <th>Prompt Template</th>
+                <th>Template Version</th>
                 <th>Processed</th>
                 <th>Actions</th>
               </tr>
@@ -121,6 +158,8 @@
                 <div class="row">
                   <div class="col-md-6">
                     <p><strong>Model:</strong> <span id="modalModel"></span></p>
+                    <p><strong>Template:</strong> <span id="modalTemplate"></span></p>
+                    <p><strong>Version:</strong> <span id="modalVersion"></span></p>
                     <p><strong>Source File:</strong> <span id="modalFileName"></span></p>
                   </div>
                   <div class="col-md-6">
@@ -156,5 +195,6 @@
 
     <!-- Combined JavaScript for results page -->
     <script type="module" src="/js/modules/results/main.js"></script>
+    <script type="module" src="/js/modules/results/modelInfoPanel.js"></script>
   </body>
 </html>

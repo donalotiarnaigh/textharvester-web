@@ -30,6 +30,25 @@ function getModelBadge(provider) {
   }
 }
 
+// Function to get tooltip text for metadata fields
+function getTooltipText(field, value) {
+  const tooltips = {
+    template: {
+      'memorial_ocr': 'Standard memorial OCR template for inscription extraction',
+      'enhanced_ocr': 'Enhanced template with additional metadata extraction',
+      default: 'Template used for text extraction'
+    },
+    version: {
+      '1.0.0': 'Initial release version',
+      '1.1.0': 'Improved accuracy and metadata handling',
+      '2.0.0': 'Major update with enhanced field detection',
+      default: 'Template version number'
+    }
+  };
+
+  return tooltips[field]?.[value] || tooltips[field]?.default || value;
+}
+
 // Function to populate the results table
 function populateResultsTable(data) {
   const tableBody = document.getElementById('resultsTableBody');
@@ -61,6 +80,12 @@ function populateResultsTable(data) {
       <td>${fullName}</td>
       <td>${record.year_of_death || 'N/A'}</td>
       <td>${getModelBadge(record.ai_provider)}</td>
+      <td data-toggle="tooltip" title="${getTooltipText('template', record.prompt_template)}">
+        ${record.prompt_template || 'N/A'}
+      </td>
+      <td data-toggle="tooltip" title="${getTooltipText('version', record.prompt_version)}">
+        ${record.prompt_version || 'N/A'}
+      </td>
       <td>${formatDate(record.processed_date)}</td>
       <td>
         <button 
@@ -79,6 +104,9 @@ function populateResultsTable(data) {
   
   // Store data for modal use
   window.resultsData = data;
+  
+  // Initialize tooltips
+  $('[data-toggle="tooltip"]').tooltip();
   
   // Initialize detail view buttons
   initializeDetailButtons();
@@ -100,6 +128,8 @@ function initializeDetailButtons() {
         document.getElementById('modalModel').textContent = record.ai_provider 
           ? (record.ai_provider === 'openai' ? 'OpenAI GPT-4o' : 'Anthropic Claude 3.7')
           : 'Unknown';
+        document.getElementById('modalTemplate').textContent = record.prompt_template || 'N/A';
+        document.getElementById('modalVersion').textContent = record.prompt_version || 'N/A';
         document.getElementById('modalFileName').textContent = record.file_name || 'Unknown';
         document.getElementById('modalProcessDate').textContent = formatDate(record.processed_date);
       }
@@ -130,11 +160,19 @@ function initializePage() {
   // Validate filename input in real-time
   validateFilenameInput(filenameInput);
 
+  // Initialize model info panel
+  initializeModelInfoPanel();
+
   // Fetch results data from the server
   fetch('/results-data')
     .then(response => response.json())
     .then(data => {
       populateResultsTable(data);
+      
+      // Update model info panel with first record's data
+      if (data && data.length > 0) {
+        updateModelInfoPanel(data[0]);
+      }
       
       // Enable download buttons
       downloadButton.disabled = false;
@@ -151,6 +189,7 @@ function initializePage() {
 window.populateResultsTable = populateResultsTable;
 window.getModelBadge = getModelBadge;
 window.formatDate = formatDate;
+window.getTooltipText = getTooltipText;
 
 // Event listener for page load
 document.addEventListener("DOMContentLoaded", initializePage);

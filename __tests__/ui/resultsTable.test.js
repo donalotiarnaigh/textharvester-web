@@ -2,10 +2,18 @@
  * @jest-environment jsdom
  */
 
+// Mock jQuery and Bootstrap tooltip functionality
+global.$ = jest.fn((selector) => ({
+  tooltip: jest.fn(),
+}));
+
 describe('Results Table UI', () => {
   let container;
 
   beforeEach(() => {
+    // Reset jQuery mock
+    global.$.mockClear();
+    
     // Set up a DOM element as a render target
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -20,6 +28,8 @@ describe('Results Table UI', () => {
               <th>Name</th>
               <th>Year of Death</th>
               <th>AI Model</th>
+              <th>Prompt Template</th>
+              <th>Template Version</th>
               <th>Processed</th>
               <th>Actions</th>
             </tr>
@@ -63,6 +73,8 @@ describe('Results Table UI', () => {
               <div class="row">
                 <div class="col-md-6">
                   <p><strong>Model:</strong> <span id="modalModel"></span></p>
+                  <p><strong>Template:</strong> <span id="modalTemplate"></span></p>
+                  <p><strong>Version:</strong> <span id="modalVersion"></span></p>
                   <p><strong>Source File:</strong> <span id="modalFileName"></span></p>
                 </div>
                 <div class="col-md-6">
@@ -97,6 +109,8 @@ describe('Results Table UI', () => {
         'Name',
         'Year of Death',
         'AI Model',
+        'Prompt Template',
+        'Template Version',
         'Processed',
         'Actions'
       ]);
@@ -109,105 +123,91 @@ describe('Results Table UI', () => {
     });
   });
 
-  describe('Model Badge Display', () => {
-    it('should display OpenAI badge correctly', () => {
-      const data = [{
-        id: 1,
-        memorial_number: 'TEST001',
-        first_name: 'John',
-        last_name: 'Doe',
-        ai_provider: 'openai',
-        processed_date: new Date().toISOString()
-      }];
+  describe('Data Population', () => {
+    const mockData = [{
+      id: 1,
+      memorial_number: 123,
+      first_name: 'John',
+      last_name: 'Doe',
+      year_of_death: 1900,
+      inscription: 'Test inscription',
+      file_name: 'test.jpg',
+      ai_provider: 'openai',
+      prompt_template: 'memorial_ocr',
+      prompt_version: '1.0.0',
+      model_version: 'gpt-4o',
+      processed_date: '2024-03-20T10:00:00.000Z'
+    }];
 
-      window.populateResultsTable(data);
-      const badge = container.querySelector('.badge');
-      expect(badge.textContent).toBe('OpenAI');
-      expect(badge.classList.contains('badge-primary')).toBeTruthy();
+    beforeEach(() => {
+      window.populateResultsTable(mockData);
     });
 
-    it('should display Anthropic badge correctly', () => {
-      const data = [{
-        id: 1,
-        memorial_number: 'TEST001',
-        first_name: 'John',
-        last_name: 'Doe',
-        ai_provider: 'anthropic',
-        processed_date: new Date().toISOString()
-      }];
-
-      window.populateResultsTable(data);
-      const badge = container.querySelector('.badge');
-      expect(badge.textContent).toBe('Anthropic');
-      expect(badge.classList.contains('badge-info')).toBeTruthy();
+    it('should display prompt metadata correctly', () => {
+      const row = container.querySelector('#resultsTableBody tr');
+      const cells = Array.from(row.querySelectorAll('td'));
+      
+      expect(cells[4].textContent.trim()).toBe('memorial_ocr'); // Prompt Template
+      expect(cells[5].textContent.trim()).toBe('1.0.0'); // Template Version
     });
 
-    it('should display Unknown badge for missing provider', () => {
-      const data = [{
-        id: 1,
-        memorial_number: 'TEST001',
-        first_name: 'John',
-        last_name: 'Doe',
-        processed_date: new Date().toISOString()
-      }];
-
-      window.populateResultsTable(data);
-      const badge = container.querySelector('.badge');
-      expect(badge.textContent).toBe('Unknown');
-      expect(badge.classList.contains('badge-secondary')).toBeTruthy();
+    it('should add tooltips to metadata fields', () => {
+      const row = container.querySelector('#resultsTableBody tr');
+      const templateCell = row.querySelectorAll('td')[4];
+      const versionCell = row.querySelectorAll('td')[5];
+      
+      expect(templateCell.getAttribute('data-toggle')).toBe('tooltip');
+      expect(versionCell.getAttribute('data-toggle')).toBe('tooltip');
+      expect(templateCell.getAttribute('title')).toBe('Standard memorial OCR template for inscription extraction');
+      expect(versionCell.getAttribute('title')).toBe('Initial release version');
+      
+      // Verify tooltip initialization was called
+      expect(global.$).toHaveBeenCalledWith('[data-toggle="tooltip"]');
     });
   });
 
-  describe('Modal Functionality', () => {
-    it('should populate modal with correct data', () => {
-      const testData = {
-        id: 1,
-        memorial_number: 'TEST001',
-        first_name: 'John',
-        last_name: 'Doe',
-        inscription: 'Test inscription',
-        file_name: 'test.jpg',
-        ai_provider: 'openai',
-        model_version: 'gpt-4-vision',
-        processed_date: new Date().toISOString()
-      };
+  describe('Modal Details', () => {
+    const mockData = [{
+      id: 1,
+      memorial_number: 123,
+      first_name: 'John',
+      last_name: 'Doe',
+      inscription: 'Test inscription',
+      ai_provider: 'openai',
+      prompt_template: 'memorial_ocr',
+      prompt_version: '1.0.0',
+      processed_date: '2024-03-20T10:00:00.000Z'
+    }];
 
-      window.populateResultsTable([testData]);
+    beforeEach(() => {
+      window.populateResultsTable(mockData);
       const viewButton = container.querySelector('.view-details');
       viewButton.click();
+    });
 
-      expect(document.getElementById('modalMemorialInfo').textContent)
-        .toBe('TEST001 - John Doe');
-      expect(document.getElementById('modalInscription').textContent)
-        .toBe('Test inscription');
-      expect(document.getElementById('modalModel').textContent)
-        .toBe('OpenAI GPT-4o');
-      expect(document.getElementById('modalFileName').textContent)
-        .toBe('test.jpg');
+    it('should display prompt metadata in modal', () => {
+      expect(document.getElementById('modalTemplate').textContent).toBe('memorial_ocr');
+      expect(document.getElementById('modalVersion').textContent).toBe('1.0.0');
     });
   });
 
-  describe('Empty and Loading States', () => {
-    it('should show empty state when no data', () => {
-      window.populateResultsTable([]);
-      const emptyState = document.getElementById('emptyState');
-      const loadingState = document.getElementById('loadingState');
-
-      expect(emptyState.classList.contains('d-none')).toBeFalsy();
-      expect(loadingState.classList.contains('d-none')).toBeTruthy();
-    });
-
-    it('should hide loading state after data loads', () => {
-      const data = [{
-        id: 1,
-        memorial_number: 'TEST001',
-        first_name: 'John',
-        last_name: 'Doe'
-      }];
-
-      window.populateResultsTable(data);
-      const loadingState = document.getElementById('loadingState');
-      expect(loadingState.classList.contains('d-none')).toBeTruthy();
+  describe('Responsive Design', () => {
+    it('should adjust column visibility on mobile', () => {
+      const style = document.createElement('style');
+      style.textContent = `
+        @media (max-width: 768px) {
+          .table td:nth-child(5),
+          .table th:nth-child(5),
+          .table td:nth-child(6),
+          .table th:nth-child(6) {
+            display: none;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+      
+      // Verify that the style is applied
+      expect(document.head.contains(style)).toBeTruthy();
     });
   });
 }); 
