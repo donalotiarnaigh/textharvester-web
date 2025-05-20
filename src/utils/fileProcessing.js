@@ -30,7 +30,7 @@ async function processFile(filePath, options = {}) {
     });
     
     // Get the appropriate prompt for this provider
-    const promptInstance = getPrompt(promptTemplate, promptVersion);
+    const promptInstance = getPrompt(providerName, promptTemplate, promptVersion);
     const promptText = promptInstance.getProviderPrompt(providerName);
     
     // Process the image using the selected provider

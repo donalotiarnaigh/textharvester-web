@@ -11,11 +11,11 @@ class AnthropicProvider extends BaseVisionProvider {
   constructor(config) {
     super(config);
     this.client = new Anthropic({
-      apiKey: config.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
+      apiKey: this.config.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
     });
-    this.model = config.ANTHROPIC_MODEL || 'claude-3-7-sonnet-20250219';
-    this.maxTokens = config.MAX_TOKENS || 3000;
-    this.temperature = config.TEMPERATURE || 0;
+    this.model = this.config.ANTHROPIC_MODEL || 'claude-3-7-sonnet-20250219';
+    this.maxTokens = this.config.MAX_TOKENS || 3000;
+    this.temperature = this.config.TEMPERATURE || 0;
   }
 
   /**

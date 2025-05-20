@@ -10,10 +10,12 @@ const { promptManager } = require('../prompts/templates/providerTemplates');
 class OpenAIProvider extends BaseVisionProvider {
   constructor(config) {
     super(config);
-    this.client = new OpenAI(config.OPENAI_API_KEY || process.env.OPENAI_API_KEY);
-    this.model = config.OPENAI_MODEL || 'gpt-4-vision-preview';
-    this.maxTokens = config.MAX_TOKENS || 3000;
-    this.temperature = config.TEMPERATURE || 0;
+    this.client = new OpenAI({
+      apiKey: this.config.OPENAI_API_KEY || process.env.OPENAI_API_KEY
+    });
+    this.model = this.config.OPENAI_MODEL || 'gpt-4-vision-preview';
+    this.maxTokens = this.config.MAX_TOKENS || 3000;
+    this.temperature = this.config.TEMPERATURE || 0;
   }
 
   /**

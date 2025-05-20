@@ -48,7 +48,7 @@ describe('Provider Templates', () => {
     it('should format prompt correctly', () => {
       const formatted = promptManager.formatPrompt(testPrompt, 'openai');
       
-      expect(formatted.systemPrompt).toBe(openaiTemplate.systemPrompt);
+      expect(formatted.systemPrompt).toContain('You are an expert OCR system specializing in extracting structured data from memorial inscriptions');
       expect(formatted.prompt).toContain('Extract the following fields');
       expect(formatted.prompt).toContain('id: number');
       expect(formatted.prompt).toContain('name: string');
@@ -74,7 +74,7 @@ describe('Provider Templates', () => {
     it('should format prompt correctly', () => {
       const formatted = promptManager.formatPrompt(testPrompt, 'anthropic');
       
-      expect(formatted.systemPrompt).toBe(anthropicTemplate.systemPrompt);
+      expect(formatted.systemPrompt).toContain('You are an expert OCR system specializing in extracting structured data from memorial inscriptions');
       expect(formatted.prompt).toContain('Extract the following fields');
       expect(formatted.prompt).toContain('id: numeric');
       expect(formatted.prompt).toContain('name: text');

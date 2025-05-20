@@ -15,7 +15,8 @@ describe('Data Conversion Utils', () => {
       file_name: 'test1.jpg',
       processed_date: '2025-01-01T12:00:00Z',
       ai_provider: 'openai',
-      model_version: 'gpt-4o'
+      model_version: 'gpt-4o',
+      prompt_version: '1.0'
     },
     {
       memorial_number: 'MEM002',
@@ -26,7 +27,8 @@ describe('Data Conversion Utils', () => {
       file_name: 'test2.jpg',
       processed_date: '2025-01-02T12:00:00Z',
       ai_provider: 'anthropic',
-      model_version: 'claude-3-7-sonnet-20250219'
+      model_version: 'claude-3-7-sonnet-20250219',
+      prompt_version: '1.0'
     }
   ];
 
@@ -42,10 +44,10 @@ describe('Data Conversion Utils', () => {
       const lines = csv.split('\n');
       
       // Check headers
-      expect(lines[0]).toBe('memorial_number,first_name,last_name,year_of_death,inscription,file_name,processed_date,ai_provider,model_version');
+      expect(lines[0]).toBe('memorial_number,first_name,last_name,year_of_death,inscription,file_name,ai_provider,model_version,prompt_version,processed_date');
       
       // Check first data row
-      expect(lines[1]).toBe('MEM001,John,Doe,1900,Rest in Peace,test1.jpg,2025-01-01T12:00:00Z,openai,gpt-4o');
+      expect(lines[1]).toBe('MEM001,John,Doe,1900,Rest in Peace,test1.jpg,openai,gpt-4o,1.0,2025-01-01T12:00:00Z');
     });
 
     it('should properly handle newlines in fields', () => {
@@ -67,7 +69,7 @@ describe('Data Conversion Utils', () => {
       const lines = csv.split('\n');
       
       // Should have empty values for all missing fields
-      expect(lines[1]).toBe('MEM004,John,,,,,,,');
+      expect(lines[1]).toBe('MEM004,John,,,,,,,,');
     });
 
     it('should properly escape quotes in fields', () => {

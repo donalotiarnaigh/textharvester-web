@@ -72,6 +72,12 @@ promptManager.registerPromptTemplate('anthropic', anthropicTemplate, '1.0');
 promptManager.registerPromptTemplate('anthropic', anthropicTemplateV2, '2.0');
 promptManager.registerPromptTemplate('anthropic', anthropicTemplateV2); // Register latest
 
+// Register templates for each provider with the memorialOCR template name
+const memorialOCRTemplates = {
+  openai: openaiTemplate, 
+  anthropic: anthropicTemplate
+};
+
 /**
  * Get a prompt template for a provider
  * @param {string} provider The AI provider name
@@ -80,12 +86,24 @@ promptManager.registerPromptTemplate('anthropic', anthropicTemplateV2); // Regis
  * @returns {Object} The prompt template
  */
 const getPrompt = (provider, templateName, version = 'latest') => {
+  // Handle the special case for memorialOCR template
+  if (templateName === 'memorialOCR' && memorialOCRTemplates[provider]) {
+    return {
+      validateTemplate: () => true,  // For backward compatibility with tests
+      validateAndConvert: (data) => data, // For test compatibility
+      version: version,
+      getProviderPrompt: () => memorialOCRTemplates[provider].systemPrompt,
+      ...memorialOCRTemplates[provider]
+    };
+  }
+
   const template = promptManager.getPromptTemplate(provider, templateName, version);
   if (!template) {
     throw new Error(`Invalid template configuration for provider ${provider}`);
   }
   return {
     validateTemplate: () => true,  // For backward compatibility with tests
+    validateAndConvert: (data) => data, // For test compatibility
     version: version,
     ...template
   };

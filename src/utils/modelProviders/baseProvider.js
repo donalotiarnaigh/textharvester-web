@@ -1,30 +1,50 @@
 /**
- * Base class for all vision model providers
- * All specific provider implementations should extend this class
+ * Base class for vision model providers
+ * Defines the interface that all providers must implement
  */
 class BaseVisionProvider {
-  constructor(config) {
+  constructor(config = {}) {
+    if (new.target === BaseVisionProvider) {
+      throw new Error('BaseVisionProvider is an abstract class and cannot be instantiated directly');
+    }
     this.config = config;
-  }
-
-  /**
-   * Process an image with OCR capabilities
-   * @param {string} base64Image - Base64 encoded image
-   * @param {string} prompt - The prompt to send to the model
-   * @returns {Promise<Object>} - Parsed JSON response
-   * @abstract This method should be implemented by subclasses
-   */
-  async processImage(base64Image, prompt) {
-    throw new Error('Method not implemented');
   }
 
   /**
    * Get the current model version
    * @returns {string} The model version
-   * @abstract This method should be implemented by subclasses
    */
   getModelVersion() {
-    throw new Error('Method not implemented');
+    throw new Error('getModelVersion() must be implemented by subclass');
+  }
+
+  /**
+   * Process an image using the provider's vision capabilities
+   * @param {string} base64Image - Base64 encoded image
+   * @param {string} prompt - The prompt to send to the model
+   * @param {Object} options - Additional options for processing
+   * @returns {Promise<Object>} - Parsed JSON response
+   */
+  async processImage(base64Image, prompt, options = {}) {
+    throw new Error('processImage() must be implemented by subclass');
+  }
+
+  /**
+   * Validate provider-specific configuration
+   * @returns {boolean} True if configuration is valid
+   * @throws {Error} If configuration is invalid
+   */
+  validateConfig() {
+    throw new Error('validateConfig() must be implemented by subclass');
+  }
+
+  /**
+   * Validate a prompt template for use with this provider
+   * @param {BasePrompt} promptTemplate The prompt template to validate
+   * @returns {Object} Validation result
+   */
+  validatePromptTemplate(promptTemplate) {
+    throw new Error('validatePromptTemplate() must be implemented by subclass');
   }
 }
 
