@@ -66,7 +66,7 @@ describe('MemorialOCRPrompt', () => {
     it('should return optimized prompt for Anthropic', () => {
       const anthropicPrompt = prompt.getProviderPrompt('anthropic');
       expect(anthropicPrompt).toContain('JSON format');
-      expect(anthropicPrompt).toContain('Ensure years are extracted as numbers');
+      expect(anthropicPrompt).toContain('All numeric values (memorial_number, year_of_death) MUST be actual integers');
     });
   });
 
@@ -83,7 +83,12 @@ describe('MemorialOCRPrompt', () => {
         first_name: 'JOHN',
         last_name: 'DOE',
         year_of_death: '1923',
-        inscription: 'REST IN PEACE'
+        inscription: 'REST IN PEACE',
+        file_name: 'test.jpg',
+        ai_provider: 'openai',
+        model_version: 'gpt-4',
+        prompt_template: 'memorialOCR',
+        prompt_version: '2.0.0'
       };
 
       const result = prompt.validateAndConvert(testData);
@@ -92,7 +97,12 @@ describe('MemorialOCRPrompt', () => {
         first_name: 'JOHN',
         last_name: 'DOE',
         year_of_death: 1923,
-        inscription: 'REST IN PEACE'
+        inscription: 'REST IN PEACE',
+        file_name: 'test.jpg',
+        ai_provider: 'openai',
+        model_version: 'gpt-4',
+        prompt_template: 'memorialOCR',
+        prompt_version: '2.0.0'
       });
     });
 
@@ -101,8 +111,8 @@ describe('MemorialOCRPrompt', () => {
         memorial_number: null,
         first_name: 'JOHN',
         last_name: 'DOE',
-        // year_of_death omitted
-        inscription: null
+        file_name: 'test.jpg',
+        ai_provider: 'anthropic'
       };
 
       const result = prompt.validateAndConvert(testData);
@@ -111,7 +121,12 @@ describe('MemorialOCRPrompt', () => {
         first_name: 'JOHN',
         last_name: 'DOE',
         year_of_death: null,
-        inscription: null
+        inscription: null,
+        file_name: 'test.jpg',
+        ai_provider: 'anthropic',
+        model_version: null,
+        prompt_template: null,
+        prompt_version: null
       });
     });
 
@@ -121,7 +136,8 @@ describe('MemorialOCRPrompt', () => {
         first_name: 'JOHN',
         last_name: 'DOE',
         year_of_death: 'circa 1923',
-        inscription: 'TEST'
+        inscription: 'TEST',
+        file_name: 'test.jpg'
       };
 
       const result = prompt.validateAndConvert(testData);
@@ -130,7 +146,12 @@ describe('MemorialOCRPrompt', () => {
         first_name: 'JOHN',
         last_name: 'DOE',
         year_of_death: null,
-        inscription: 'TEST'
+        inscription: 'TEST',
+        file_name: 'test.jpg',
+        ai_provider: null,
+        model_version: null,
+        prompt_template: null,
+        prompt_version: null
       });
     });
   });

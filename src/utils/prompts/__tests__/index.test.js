@@ -41,8 +41,16 @@ describe('Prompt Module', () => {
   describe('getPrompt', () => {
     beforeEach(() => {
       registerPrompt('memorial', {
-        '1.0.0': MemorialOCRPrompt,
-        '2.0.0': MemorialOCRPrompt
+        '1.0.0': class MemorialOCRPromptV1 extends MemorialOCRPrompt {
+          constructor(config = {}) {
+            super({ ...config, version: '1.0.0' });
+          }
+        },
+        '2.0.0': class MemorialOCRPromptV2 extends MemorialOCRPrompt {
+          constructor(config = {}) {
+            super({ ...config, version: '2.0.0' });
+          }
+        }
       });
     });
 
@@ -101,8 +109,7 @@ describe('Prompt Module', () => {
     });
 
     it('should return empty array when no prompts registered', () => {
-      jest.resetModules();
-      const { listPrompts } = require('../index');
+      clearRegistry();
       expect(listPrompts()).toEqual([]);
     });
   });

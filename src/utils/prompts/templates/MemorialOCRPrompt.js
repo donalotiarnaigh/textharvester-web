@@ -12,8 +12,8 @@ class MemorialOCRPrompt extends BasePrompt {
    */
   constructor(config = {}) {
     super({
-      version: '1.0.0',
-      description: 'Standard OCR prompt for extracting memorial inscription data',
+      version: '2.0.0',
+      description: 'Standard OCR prompt for extracting memorial inscription data with strict type validation',
       typeDefinitions: memorialTypes,
       ...config
     });
@@ -27,11 +27,17 @@ class MemorialOCRPrompt extends BasePrompt {
     return `You're an expert in OCR and are working in a heritage/genealogy context assisting in data processing post graveyard survey.
 
 Examine this image and extract the following data with specific types:
-- memorial_number: INTEGER
+- memorial_number: INTEGER (must be a number, not text)
 - first_name: STRING
 - last_name: STRING
-- year_of_death: INTEGER
+- year_of_death: INTEGER (must be between 1500 and 2100, must be a number not text)
 - inscription: STRING
+
+IMPORTANT:
+- All numeric values MUST be actual numbers, not strings
+- The year_of_death MUST be a number between 1500 and 2100
+- Use null for any fields that cannot be determined
+- Names should be in UPPERCASE
 
 Respond in JSON format only with these exact field names. Example:
 {
@@ -39,12 +45,12 @@ Respond in JSON format only with these exact field names. Example:
   "first_name": "THOMAS",
   "last_name": "RUANE",
   "year_of_death": 1923,
-  "inscription": "SACRED HEART OF JESUS HAVE MERCY ON THE SOUL OF THOMAS RUANE LISNAGROOBE WHO DIED APRIL 16th 1923 AGED 74 YRS AND OF HIS WIFE MARGARET RUANE DIED JULY 26th 1929 AGED 78 YEARS R. I. P. ERECTED BY THEIR FOND SON THOMAS RUANE PHILADELPHIA USA"
+  "inscription": "SACRED HEART OF JESUS HAVE MERCY ON THE SOUL OF THOMAS RUANE LISNAGROOBE WHO DIED APRIL 16th 1923 AGED 74 YRS"
 }
 
 If any field is not visible or cannot be determined, use null. For example:
 {
-  "memorial_number": 42,
+  "memorial_number": null,
   "first_name": "JOHN",
   "last_name": "SMITH",
   "year_of_death": null,
@@ -54,22 +60,21 @@ If any field is not visible or cannot be determined, use null. For example:
 
   /**
    * Get a prompt variation for a specific provider
-   * @param {string} provider AI provider name
+   * @param {string} provider - AI provider name
    * @returns {string} Provider-specific prompt
    */
   getProviderPrompt(provider) {
     const basePrompt = this.getPromptText();
     
-    switch (provider.toLowerCase()) {
-      case 'openai':
-        return `${basePrompt}\n\nNote: This response will be parsed as JSON with response_format: { type: "json_object" }`;
-      
-      case 'anthropic':
-        return `${basePrompt}\n\nEnsure years are extracted as numbers, not text. If a year appears as text (e.g., "nineteen twenty-three"), convert it to a numeric value.`;
-      
-      default:
-        return basePrompt;
+    if (provider.toLowerCase() === 'anthropic') {
+      return basePrompt + '\n\nRemember: All numeric values (memorial_number, year_of_death) MUST be actual integers, not strings. Years must be between 1500 and 2100.';
     }
+    
+    if (provider.toLowerCase() === 'openai') {
+      return basePrompt + '\n\nUse response_format: { type: "json_object" }';
+    }
+    
+    return basePrompt;
   }
 }
 

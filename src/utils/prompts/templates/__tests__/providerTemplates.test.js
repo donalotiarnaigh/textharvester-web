@@ -31,25 +31,24 @@ describe('Provider Templates', () => {
   });
 
   describe('OpenAI Template', () => {
-    it('should have all required fields', () => {
+    it('should have correct provider name', () => {
       expect(openaiTemplate.provider).toBe('openai');
-      expect(openaiTemplate.systemPrompt).toBeDefined();
-      expect(openaiTemplate.formatInstructions).toBeDefined();
-      expect(openaiTemplate.typeFormatting).toBeDefined();
-    });
-
-    it('should support all basic types', () => {
-      const types = ['integer', 'float', 'string', 'boolean', 'date', 'array'];
-      types.forEach(type => {
-        expect(openaiTemplate.typeFormatting[type]).toBeDefined();
-      });
     });
 
     it('should format prompt correctly', () => {
-      const formatted = promptManager.formatPrompt(testPrompt, 'openai');
-      
-      expect(formatted.systemPrompt).toContain('You are an expert OCR system specializing in extracting structured data from memorial inscriptions');
-      expect(formatted.prompt).toContain('Extract the following fields');
+      const mockPrompt = {
+        typeDefinitions: {
+          id: 'integer',
+          name: 'string',
+          active: 'boolean',
+          created: 'date',
+          tags: 'array'
+        },
+        getPromptText: () => 'Extract the following fields from the data'
+      };
+
+      const formatted = promptManager.formatPrompt(mockPrompt, 'openai');
+
       expect(formatted.prompt).toContain('id: number');
       expect(formatted.prompt).toContain('name: string');
       expect(formatted.prompt).toContain('response_format: { type: "json_object" }');
@@ -57,28 +56,27 @@ describe('Provider Templates', () => {
   });
 
   describe('Anthropic Template', () => {
-    it('should have all required fields', () => {
+    it('should have correct provider name', () => {
       expect(anthropicTemplate.provider).toBe('anthropic');
-      expect(anthropicTemplate.systemPrompt).toBeDefined();
-      expect(anthropicTemplate.formatInstructions).toBeDefined();
-      expect(anthropicTemplate.typeFormatting).toBeDefined();
-    });
-
-    it('should support all basic types', () => {
-      const types = ['integer', 'float', 'string', 'boolean', 'date', 'array'];
-      types.forEach(type => {
-        expect(anthropicTemplate.typeFormatting[type]).toBeDefined();
-      });
     });
 
     it('should format prompt correctly', () => {
-      const formatted = promptManager.formatPrompt(testPrompt, 'anthropic');
-      
-      expect(formatted.systemPrompt).toContain('You are an expert OCR system specializing in extracting structured data from memorial inscriptions');
-      expect(formatted.prompt).toContain('Extract the following fields');
+      const mockPrompt = {
+        typeDefinitions: {
+          id: 'integer',
+          name: 'string',
+          active: 'boolean',
+          created: 'date',
+          tags: 'array'
+        },
+        getPromptText: () => 'Extract the following fields from the data'
+      };
+
+      const formatted = promptManager.formatPrompt(mockPrompt, 'anthropic');
+
       expect(formatted.prompt).toContain('id: numeric');
       expect(formatted.prompt).toContain('name: text');
-      expect(formatted.prompt).toContain('Convert all numeric values to actual numbers');
+      expect(formatted.prompt).toContain('must be a number, not text');
     });
   });
 

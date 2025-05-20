@@ -4,8 +4,8 @@
 
 const openaiTemplate = {
   provider: 'openai',
-  systemPrompt: 'You are an expert OCR system specializing in extracting structured data from memorial inscriptions. Return all data in JSON format.',
-  formatInstructions: 'Ensure the response is a valid JSON object with the specified fields. Use response_format: { type: "json_object" }.',
+  systemPrompt: 'You are an expert OCR system specializing in extracting structured data from memorial inscriptions. Your task is to extract specific fields with strict type handling, ensuring numeric values are returned as actual numbers, not strings.',
+  formatInstructions: 'Return data as a valid JSON object with the following requirements:\n- memorial_number must be an integer or null\n- first_name and last_name must be strings or null\n- year_of_death must be an integer between 1500 and 2100, or null\n- inscription must be a string or null\nUse response_format: { type: "json_object" }.',
   typeFormatting: {
     integer: 'number',
     float: 'number',
@@ -18,8 +18,8 @@ const openaiTemplate = {
 
 const openaiTemplateV2 = {
   provider: 'openai',
-  systemPrompt: 'You are an expert OCR system specializing in extracting structured data from memorial inscriptions. Return all data in JSON format with strict type validation.',
-  formatInstructions: 'Ensure the response is a valid JSON object with the specified fields. Use response_format: { type: "json_object" }. All numeric values must be actual numbers, not strings.',
+  systemPrompt: 'You are an expert OCR system specializing in extracting structured data from memorial inscriptions. Your task is to extract specific fields with strict type handling and validation, ensuring numeric values are returned as actual numbers, not strings.',
+  formatInstructions: 'Return data as a valid JSON object with the following requirements:\n- memorial_number must be an integer or null\n- first_name and last_name must be strings or null\n- year_of_death must be an integer between 1500 and 2100, or null (do not return strings for years)\n- inscription must be a string or null\nUse response_format: { type: "json_object" }.',
   typeFormatting: {
     integer: 'number',
     float: 'number',
@@ -32,8 +32,8 @@ const openaiTemplateV2 = {
 
 const anthropicTemplate = {
   provider: 'anthropic',
-  systemPrompt: 'You are an expert OCR system specializing in extracting structured data from memorial inscriptions. Focus on accuracy and proper type conversion.',
-  formatInstructions: 'Return data as a JSON object. Convert all numeric values to actual numbers, not text (e.g., "1923" not "nineteen twenty-three"). Handle missing values with null.',
+  systemPrompt: 'You are an expert OCR system specializing in extracting structured data from memorial inscriptions. Focus on accurate extraction and proper type conversion, ensuring numeric values are actual numbers.',
+  formatInstructions: 'Return data as a JSON object with these requirements:\n- memorial_number: integer or null\n- first_name: string or null\n- last_name: string or null\n- year_of_death: integer between 1500-2100 or null (must be a number, not text)\n- inscription: string or null\nHandle missing or uncertain values with null.',
   typeFormatting: {
     integer: 'numeric',
     float: 'decimal',
@@ -46,16 +46,15 @@ const anthropicTemplate = {
 
 const anthropicTemplateV2 = {
   provider: 'anthropic',
-  systemPrompt: 'You are an expert OCR system specializing in extracting structured data from memorial inscriptions. Focus on accuracy, proper type conversion, and handling ambiguous cases.',
-  formatInstructions: 'Return data as a JSON object. Convert all numeric values to actual numbers. Handle missing or uncertain values with null. Include a confidence score for each field.',
+  systemPrompt: 'You are an expert OCR system specializing in extracting structured data from memorial inscriptions. Focus on accurate extraction, proper type conversion, and strict validation of numeric values.',
+  formatInstructions: 'Return data as a JSON object with these requirements:\n- memorial_number: integer or null\n- first_name: string or null\n- last_name: string or null\n- year_of_death: integer between 1500-2100 or null (must be a number, not text)\n- inscription: string or null\nHandle missing or uncertain values with null. Years must be actual integers, not strings.',
   typeFormatting: {
     integer: 'numeric',
     float: 'decimal',
     string: 'text',
     boolean: 'true/false',
     date: 'YYYY-MM-DD',
-    array: 'list',
-    confidence: 'float'
+    array: 'list'
   }
 };
 
