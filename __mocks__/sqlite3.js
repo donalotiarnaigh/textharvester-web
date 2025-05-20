@@ -3,8 +3,30 @@ class Database {
   constructor() {
     this.data = [];
     this.lastId = 0;
-    this.schema = new Map();
-    this.indexes = new Map();
+  }
+
+  serialize(fn) {
+    fn();
+  }
+
+  get(sql, params, callback) {
+    if (typeof params === 'function') {
+      callback = params;
+      params = [];
+    }
+
+    try {
+      if (sql.includes('WHERE id = ?')) {
+        const record = this.data.find(r => r.id === params[0]);
+        callback(null, record);
+        return;
+      }
+
+      // Default to first record
+      callback(null, this.data[0]);
+    } catch (error) {
+      callback(error);
+    }
   }
 
   run(sql, params, callback) {
@@ -13,36 +35,26 @@ class Database {
       params = [];
     }
 
-    if (sql.includes('DROP TABLE')) {
-      const tableName = sql.match(/DROP TABLE.*?(\w+)/)[1];
-      this.schema.delete(tableName);
-      this.data = [];
-      if (callback) callback.call({ lastID: null });
-      return;
-    }
-
+    // Handle CREATE TABLE
     if (sql.includes('CREATE TABLE')) {
-      // Store table schema
-      const tableName = sql.match(/CREATE TABLE.*?(\w+)/)[1];
-      this.schema.set(tableName, sql);
-      if (callback) callback.call({ lastID: null });
+      if (callback) callback.call(null);
       return;
     }
 
-    if (sql.includes('CREATE INDEX')) {
-      // Store index
-      const indexName = sql.match(/CREATE INDEX.*?(\w+)/)[1];
-      this.indexes.set(indexName, sql);
-      if (callback) callback.call({ lastID: null });
-      return;
-    }
-
-    if (sql.includes('DELETE FROM')) {
+    // Handle DROP TABLE
+    if (sql.includes('DROP TABLE')) {
       this.data = [];
-      if (callback) callback.call({ lastID: null });
+      if (callback) callback.call(null);
       return;
     }
 
+    // Handle CREATE INDEX
+    if (sql.includes('CREATE INDEX')) {
+      if (callback) callback.call(null);
+      return;
+    }
+
+    // Handle INSERT
     if (sql.includes('INSERT INTO memorials')) {
       try {
         // Extract column names from SQL, handling multi-line SQL
@@ -67,9 +79,16 @@ class Database {
         }
 
         // Validate year_of_death constraint
-        if (record.year_of_death) {
-          const currentYear = new Date().getFullYear();
-          if (record.year_of_death <= 1500 || record.year_of_death > currentYear + 1) {
+        if (record.year_of_death !== null) {
+          // Check if it's an integer
+          if (!Number.isInteger(record.year_of_death)) {
+            const error = new Error('CHECK constraint failed: valid_year');
+            if (callback) callback.call(null, error);
+            return;
+          }
+          
+          // Check range
+          if (record.year_of_death <= 1500 || record.year_of_death > 2100) {
             const error = new Error('CHECK constraint failed: valid_year');
             if (callback) callback.call(null, error);
             return;
@@ -90,54 +109,30 @@ class Database {
       return;
     }
 
+    // Handle SELECT
+    if (sql.includes('SELECT')) {
+      try {
+        // Simple WHERE id = ? handler
+        if (sql.includes('WHERE id = ?')) {
+          const record = this.data.find(r => r.id === params[0]);
+          if (callback) callback.call(null, null, record);
+          return;
+        }
+
+        // Default to return all records
+        if (callback) callback.call(null, null, this.data);
+      } catch (error) {
+        if (callback) callback.call(null, error);
+      }
+      return;
+    }
+
     // Default callback for unhandled queries
     if (callback) callback.call({ lastID: null });
   }
 
-  get(sql, params, callback) {
-    if (typeof params === 'function') {
-      callback = params;
-      params = [];
-    }
-
-    if (sql.includes('SELECT COUNT(*) as count')) {
-      callback(null, { count: this.data.length });
-      return;
-    }
-
-    if (sql.includes('SELECT * FROM memorials WHERE id = ?')) {
-      const id = params[0];
-      const record = this.data.find(r => r.id === id);
-      callback(null, record);
-      return;
-    }
-
-    callback(null, null);
-  }
-
-  all(sql, params, callback) {
-    if (typeof params === 'function') {
-      callback = params;
-      params = [];
-    }
-
-    if (sql.includes('SELECT * FROM memorials ORDER BY processed_date DESC')) {
-      const sortedData = [...this.data].sort((a, b) => 
-        new Date(b.processed_date).getTime() - new Date(a.processed_date).getTime()
-      );
-      callback(null, sortedData);
-      return;
-    }
-
-    callback(null, []);
-  }
-
   close(callback) {
     if (callback) callback();
-  }
-
-  serialize(fn) {
-    fn();
   }
 }
 

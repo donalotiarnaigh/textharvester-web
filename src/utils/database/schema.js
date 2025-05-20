@@ -24,14 +24,14 @@ async function initializeDatabase(db) {
           memorial_number INTEGER,
           first_name TEXT,
           last_name TEXT,
-          year_of_death INTEGER,
+          year_of_death INTEGER CONSTRAINT valid_year CHECK (year_of_death IS NULL OR (year_of_death > 1500 AND year_of_death <= 2100 AND typeof(year_of_death) = 'integer')),
           inscription TEXT,
           file_name TEXT NOT NULL,
           ai_provider TEXT,
           model_version TEXT,
+          prompt_template TEXT,
           prompt_version TEXT,
-          processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-          CONSTRAINT valid_year CHECK (year_of_death > 1500 AND year_of_death < strftime('%Y', 'now', '+1 year'))
+          processed_date DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `, (err) => {
         if (err) {
