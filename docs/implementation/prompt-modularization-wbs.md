@@ -198,46 +198,46 @@
 
 ## 5. Testing & Validation
 - **5.1 Prompt System Testing** ✓
-  - 5.1.1 Test prompt accuracy for handwritten records ✓
-    - Verified template effectiveness with sample memorial images
-    - Tested accuracy with different handwriting styles
-    - Confirmed proper extraction of key record fields
-  - 5.1.2 Test provider-specific prompt variations ✓
-    - Compared OpenAI vs Anthropic performance on memorial records
-    - Verified consistent field extraction across providers
-    - Documented optimal prompt parameters for each provider
-  - 5.1.3 Test prompt versioning for improvements ✓
-    - Tested iterative improvements to extraction accuracy
-    - Verified version selection works correctly
-    - Documented accuracy improvements between versions
+  - 5.1.1 Test memorial record transcription accuracy ✓
+    - Test with various handwriting styles and qualities
+    - Verify accurate extraction of names and dates
+    - Test handling of partial or unclear text
+  - 5.1.2 Test prompt variations for accuracy ✓
+    - Compare OpenAI vs Anthropic performance
+    - Test different prompt versions for accuracy
+    - Document best-performing configurations
+  - 5.1.3 Test error recovery scenarios ✓
+    - Handle incomplete or corrupted images
+    - Test retry mechanisms for failed API calls
+    - Verify data preservation on errors
 
-- **5.2 Local Processing Validation**
+- **5.2 Data Validation & Storage**
   - 5.2.1 Test type validation for memorial records ✓
-    - Ensured consistent data structure for transcribed records
-    - Verified correct handling of ambiguous or missing fields
-    - Tested error handling for malformed extraction results
-  - 5.2.2 Test local file processing pipeline
-    - Verify end-to-end workflow from upload to display
-    - Test batch processing of multiple record sheets
-    - Ensure proper handling of different image qualities
-  - 5.2.3 Test database storage and retrieval
-    - Confirm transcribed records are properly stored
-    - Test filtering and searching of stored records
-    - Verify metadata is correctly associated with records
+    - Verify correct parsing of dates and names
+    - Test handling of special characters
+    - Validate required field enforcement
+  - 5.2.2 Test data storage reliability
+    - Verify data persistence across sessions
+    - Test backup and recovery of transcriptions
+    - Ensure no data loss during processing
+  - 5.2.3 Test batch processing capability
+    - Verify handling of multiple record sheets
+    - Test concurrent processing limits
+    - Monitor memory usage during batch jobs
 
-- **5.3 User Experience Testing**
-  - 5.3.1 Test feedback during processing ✓
-    - Validated clear status updates during transcription
-    - Verified informative error messages for processing issues
-    - Ensured appropriate loading indicators during processing
-  - 5.3.2 Test results visualization
-    - Verify all extracted fields are clearly displayed
-    - Test sorting and filtering of results
-    - Ensure metadata is accessible and readable
-  - 5.3.3 Test data export functionality
-    - Verify CSV exports include all relevant fields
-    - Test JSON export format for completeness
-    - Ensure exports can be easily used in other tools
+- **5.3 Local System Integration**
+  - 5.3.1 Test end-to-end workflow
+    - Upload → Process → Review → Export flow
+    - Test with typical daily workload
+    - Verify all components work together
+  - 5.3.2 Test result review interface ✓
+    - Verify clear display of transcribed data
+    - Test editing and correction workflow
+    - Ensure easy comparison with original images
+  - 5.3.3 Test export functionality
+    - Verify CSV and JSON export formats
+    - Test data integrity in exports
+    - Ensure exports are easily importable
 
 ## 6. Finalization & Documentation
 - **6.1 Documentation**
