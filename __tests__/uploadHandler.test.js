@@ -30,23 +30,25 @@ describe('Upload Handler', () => {
     mockRes = httpMocks.createResponse();
     
     // Mock multer middleware
-    multer.mockReturnValue(() => {
-      return function(req, res, next) {
-        req.files = {
-          file: [{
-            originalname: 'test.jpg',
-            path: '/uploads/test.jpg',
-            mimetype: 'image/jpeg'
-          }]
+    multer.mockReturnValue({
+      fields: () => {
+        return function(req, res, next) {
+          req.files = {
+            file: [{
+              originalname: 'test.jpg',
+              path: '/uploads/test.jpg',
+              mimetype: 'image/jpeg'
+            }]
+          };
+          req.body = {
+            aiProvider: req.body.aiProvider || 'openai',
+            promptTemplate: req.body.promptTemplate || 'memorialOCR',
+            promptVersion: req.body.promptVersion || 'latest',
+            replaceExisting: req.body.replaceExisting || 'false'
+          };
+          next();
         };
-        req.body = {
-          aiProvider: req.body.aiProvider || 'openai',
-          promptTemplate: req.body.promptTemplate || 'memorialOCR',
-          promptVersion: req.body.promptVersion || 'latest',
-          replaceExisting: req.body.replaceExisting || 'false'
-        };
-        next();
-      };
+      }
     });
     
     // Mock getPrompt
@@ -148,8 +150,10 @@ describe('Upload Handler', () => {
     test('handles multer errors', async () => {
       // Setup
       const multerError = new multer.MulterError('LIMIT_FILE_SIZE');
-      multer.mockReturnValue(() => {
-        throw multerError;
+      multer.mockReturnValue({
+        fields: () => {
+          throw multerError;
+        }
       });
       
       // Execute
@@ -162,11 +166,13 @@ describe('Upload Handler', () => {
 
     test('handles missing files', async () => {
       // Setup
-      multer.mockReturnValue(() => {
-        return function(req, res, next) {
-          req.files = {};
-          next();
-        };
+      multer.mockReturnValue({
+        fields: () => {
+          return function(req, res, next) {
+            req.files = {};
+            next();
+          };
+        }
       });
       
       // Execute
@@ -188,29 +194,25 @@ describe('Upload Handler', () => {
         replaceExisting: 'false'
       };
 
-      // Mock multer to use the custom settings
-      multer.mockReturnValue(() => {
-        return function(req, res, next) {
-          req.files = {
-            file: [{
-              originalname: 'test.jpg',
-              path: '/uploads/test.jpg',
-              mimetype: 'image/jpeg'
-            }]
+      multer.mockReturnValue({
+        fields: () => {
+          return function(req, res, next) {
+            req.files = {
+              file: [{
+                originalname: 'test.jpg',
+                path: '/uploads/test.jpg',
+                mimetype: 'image/jpeg'
+              }]
+            };
+            req.body = mockReq.body;
+            next();
           };
-          req.body = {
-            aiProvider: 'anthropic',
-            promptTemplate: 'customTemplate',
-            promptVersion: '2.0',
-            replaceExisting: 'false'
-          };
-          next();
-        };
+        }
       });
-      
+
       // Execute
       await handleFileUpload(mockReq, mockRes);
-      
+
       // Assert
       expect(enqueueFiles).toHaveBeenCalledWith(
         expect.arrayContaining([
@@ -218,6 +220,73 @@ describe('Upload Handler', () => {
             provider: 'anthropic',
             promptTemplate: 'customTemplate',
             promptVersion: '2.0'
+          })
+        ])
+      );
+    });
+  });
+
+  describe('Multer Middleware Configuration', () => {
+    test('configures multer with correct fields option', async () => {
+      // Setup
+      const multerFieldsSpy = jest.fn().mockReturnValue((req, res, next) => next());
+      const mockStorage = multer.diskStorage({});
+      
+      // Mock storage creation
+      jest.spyOn(multer, 'diskStorage').mockReturnValue(mockStorage);
+      
+      multer.mockReturnValue({
+        fields: multerFieldsSpy
+      });
+      
+      // Execute
+      await handleFileUpload(mockReq, mockRes);
+      
+      // Assert
+      expect(multer).toHaveBeenCalledWith({
+        storage: mockStorage,
+        fileFilter: expect.any(Function),
+        limits: expect.objectContaining({
+          fileSize: 100 * 1024 * 1024 // 100MB
+        })
+      });
+      expect(multerFieldsSpy).toHaveBeenCalledWith([
+        { name: 'file', maxCount: 10 }
+      ]);
+    });
+
+    test('handles file upload with fields configuration', async () => {
+      // Setup
+      const mockFiles = [{
+        originalname: 'test.jpg',
+        path: '/uploads/test.jpg',
+        mimetype: 'image/jpeg'
+      }];
+      
+      multer.mockReturnValue({
+        fields: () => (req, res, next) => {
+          req.files = { file: mockFiles };
+          req.body = {
+            aiProvider: 'openai',
+            promptTemplate: 'memorialOCR',
+            promptVersion: 'latest'
+          };
+          next();
+        }
+      });
+      
+      // Execute
+      await handleFileUpload(mockReq, mockRes);
+      
+      // Assert
+      expect(mockRes._getStatusCode()).toBe(200);
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: '/uploads/test.jpg',
+            provider: 'openai',
+            promptTemplate: 'memorialOCR',
+            promptVersion: 'latest'
           })
         ])
       );

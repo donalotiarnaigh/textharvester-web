@@ -82,7 +82,7 @@ const handleFileUpload = async (req, res) => {
   logger.info("Handling file upload request");
 
   try {
-    const uploadMiddleware = multer(multerConfig)();
+    const uploadMiddleware = multer(multerConfig).fields([{ name: 'file', maxCount: 10 }]);
     await new Promise((resolve, reject) => {
       uploadMiddleware(req, res, (err) => {
         if (err) reject(err);
