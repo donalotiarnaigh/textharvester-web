@@ -2,6 +2,9 @@
  * Default provider-specific prompt templates
  */
 
+const MemorialOCRPrompt = require('./MemorialOCRPrompt');
+const ProviderPromptManager = require('../ProviderPromptManager');
+
 const openaiTemplate = {
   provider: 'openai',
   systemPrompt: 'You are an expert OCR system specializing in extracting structured data from memorial inscriptions. Your task is to extract specific fields with strict type handling, ensuring numeric values are returned as actual numbers, not strings.',
@@ -59,7 +62,6 @@ const anthropicTemplateV2 = {
 };
 
 // Initialize the prompt manager with default templates
-const ProviderPromptManager = require('../ProviderPromptManager');
 const promptManager = new ProviderPromptManager();
 
 // Register templates with versions
@@ -71,10 +73,30 @@ promptManager.registerPromptTemplate('anthropic', anthropicTemplate, '1.0');
 promptManager.registerPromptTemplate('anthropic', anthropicTemplateV2, '2.0');
 promptManager.registerPromptTemplate('anthropic', anthropicTemplateV2); // Register latest
 
-// Register templates for each provider with the memorialOCR template name
+// Create instances of MemorialOCRPrompt for each provider
 const memorialOCRTemplates = {
-  openai: openaiTemplate, 
-  anthropic: anthropicTemplate
+  openai: new MemorialOCRPrompt({
+    version: '2.0.0',
+    provider: 'openai',
+    typeDefinitions: {
+      memorial_number: 'integer',
+      first_name: 'string',
+      last_name: 'string',
+      year_of_death: 'integer',
+      inscription: 'string'
+    }
+  }),
+  anthropic: new MemorialOCRPrompt({
+    version: '2.0.0',
+    provider: 'anthropic',
+    typeDefinitions: {
+      memorial_number: 'integer',
+      first_name: 'string',
+      last_name: 'string',
+      year_of_death: 'integer',
+      inscription: 'string'
+    }
+  })
 };
 
 /**
@@ -86,26 +108,19 @@ const memorialOCRTemplates = {
  */
 const getPrompt = (provider, templateName, version = 'latest') => {
   // Handle the special case for memorialOCR template
-  if (templateName === 'memorialOCR' && memorialOCRTemplates[provider]) {
-    return {
-      validateTemplate: () => true,  // For backward compatibility with tests
-      validateAndConvert: (data) => data, // For test compatibility
-      version: version,
-      getProviderPrompt: () => memorialOCRTemplates[provider].systemPrompt,
-      ...memorialOCRTemplates[provider]
-    };
+  if (templateName === 'memorialOCR') {
+    const promptInstance = memorialOCRTemplates[provider];
+    if (!promptInstance) {
+      throw new Error(`No memorial OCR template found for provider: ${provider}`);
+    }
+    return promptInstance;
   }
 
   const template = promptManager.getPromptTemplate(provider, templateName, version);
   if (!template) {
     throw new Error(`Invalid template configuration for provider ${provider}`);
   }
-  return {
-    validateTemplate: () => true,  // For backward compatibility with tests
-    validateAndConvert: (data) => data, // For test compatibility
-    version: version,
-    ...template
-  };
+  return template;
 };
 
 module.exports = {

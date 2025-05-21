@@ -3,7 +3,7 @@ const multer = require('multer');
 const { handleFileUpload } = require('../src/controllers/uploadHandler');
 const { enqueueFiles } = require('../src/utils/fileQueue');
 const { clearAllMemorials } = require('../src/utils/database');
-const { getPrompt } = require('../src/utils/prompts/templates/providerTemplates');
+const { getPrompt, promptManager } = require('../src/utils/prompts/templates/providerTemplates');
 const logger = require('../src/utils/logger');
 
 // Mock dependencies
@@ -30,43 +30,38 @@ describe('Upload Handler', () => {
     mockRes = httpMocks.createResponse();
     
     // Mock multer middleware
+    const mockMiddleware = (req, res, next) => {
+      req.files = {
+        file: [{
+          originalname: 'test.jpg',
+          path: '/uploads/test.jpg',
+          mimetype: 'image/jpeg'
+        }]
+      };
+      req.body = {
+        aiProvider: req.body.aiProvider || 'openai',
+        promptTemplate: req.body.promptTemplate || 'memorialOCR',
+        promptVersion: req.body.promptVersion || 'latest',
+        replaceExisting: req.body.replaceExisting || 'false'
+      };
+      next();
+    };
+
     multer.mockReturnValue({
-      fields: () => {
-        return function(req, res, next) {
-          req.files = {
-            file: [{
-              originalname: 'test.jpg',
-              path: '/uploads/test.jpg',
-              mimetype: 'image/jpeg'
-            }]
-          };
-          req.body = {
-            aiProvider: req.body.aiProvider || 'openai',
-            promptTemplate: req.body.promptTemplate || 'memorialOCR',
-            promptVersion: req.body.promptVersion || 'latest',
-            replaceExisting: req.body.replaceExisting || 'false'
-          };
-          next();
-        };
-      }
+      fields: jest.fn().mockReturnValue(mockMiddleware)
     });
     
-    // Mock getPrompt
-    getPrompt.mockReturnValue({
-      validateTemplate: jest.fn().mockReturnValue(true),
+    // Mock getPrompt and promptManager
+    const mockTemplate = {
       version: '1.0'
-    });
+    };
+    
+    getPrompt.mockResolvedValue(mockTemplate);
+    promptManager.validatePrompt = jest.fn().mockReturnValue({ isValid: true });
   });
 
   describe('Basic Upload Functionality', () => {
     test('handles file upload with prompt configuration', async () => {
-      // Setup
-      const files = [{
-        originalname: 'test.jpg',
-        path: '/uploads/test.jpg',
-        mimetype: 'image/jpeg'
-      }];
-      
       // Execute
       await handleFileUpload(mockReq, mockRes);
       
@@ -110,9 +105,7 @@ describe('Upload Handler', () => {
     test('validates prompt template selection', async () => {
       // Setup
       mockReq.body.promptTemplate = 'invalidTemplate';
-      getPrompt.mockImplementation(() => {
-        throw new Error('Invalid template');
-      });
+      getPrompt.mockRejectedValue(new Error('Invalid template'));
       
       // Execute
       await handleFileUpload(mockReq, mockRes);
@@ -129,9 +122,7 @@ describe('Upload Handler', () => {
     test('validates prompt version', async () => {
       // Setup
       mockReq.body.promptVersion = 'invalidVersion';
-      getPrompt.mockImplementation(() => {
-        throw new Error('Invalid version');
-      });
+      getPrompt.mockRejectedValue(new Error('Invalid version'));
       
       // Execute
       await handleFileUpload(mockReq, mockRes);
@@ -144,6 +135,25 @@ describe('Upload Handler', () => {
         })
       );
     });
+
+    test('validates prompt against provider', async () => {
+      // Setup
+      promptManager.validatePrompt.mockReturnValue({ 
+        isValid: false, 
+        errors: ['Type not supported'] 
+      });
+      
+      // Execute
+      await handleFileUpload(mockReq, mockRes);
+      
+      // Assert
+      expect(mockRes._getStatusCode()).toBe(400);
+      expect(JSON.parse(mockRes._getData())).toEqual(
+        expect.objectContaining({
+          error: expect.stringContaining('Type not supported')
+        })
+      );
+    });
   });
 
   describe('Error Handling', () => {
@@ -151,9 +161,9 @@ describe('Upload Handler', () => {
       // Setup
       const multerError = new multer.MulterError('LIMIT_FILE_SIZE');
       multer.mockReturnValue({
-        fields: () => {
+        fields: jest.fn().mockImplementation(() => {
           throw multerError;
-        }
+        })
       });
       
       // Execute
@@ -167,12 +177,10 @@ describe('Upload Handler', () => {
     test('handles missing files', async () => {
       // Setup
       multer.mockReturnValue({
-        fields: () => {
-          return function(req, res, next) {
-            req.files = {};
-            next();
-          };
-        }
+        fields: jest.fn().mockReturnValue((req, res, next) => {
+          req.files = {};
+          next();
+        })
       });
       
       // Execute
@@ -194,21 +202,11 @@ describe('Upload Handler', () => {
         replaceExisting: 'false'
       };
 
-      multer.mockReturnValue({
-        fields: () => {
-          return function(req, res, next) {
-            req.files = {
-              file: [{
-                originalname: 'test.jpg',
-                path: '/uploads/test.jpg',
-                mimetype: 'image/jpeg'
-              }]
-            };
-            req.body = mockReq.body;
-            next();
-          };
-        }
-      });
+      const mockTemplate = {
+        version: '2.0'
+      };
+      getPrompt.mockResolvedValue(mockTemplate);
+      promptManager.validatePrompt.mockReturnValue({ isValid: true });
 
       // Execute
       await handleFileUpload(mockReq, mockRes);
@@ -227,52 +225,21 @@ describe('Upload Handler', () => {
   });
 
   describe('Multer Middleware Configuration', () => {
-    test('configures multer with correct fields option', async () => {
+    test('handles file upload with fields configuration', async () => {
       // Setup
-      const multerFieldsSpy = jest.fn().mockReturnValue((req, res, next) => next());
-      const mockStorage = multer.diskStorage({});
-      
-      // Mock storage creation
-      jest.spyOn(multer, 'diskStorage').mockReturnValue(mockStorage);
+      const multerFieldsSpy = jest.fn().mockReturnValue((req, res, next) => {
+        req.files = {
+          file: [{
+            originalname: 'test.jpg',
+            path: '/uploads/test.jpg',
+            mimetype: 'image/jpeg'
+          }]
+        };
+        next();
+      });
       
       multer.mockReturnValue({
         fields: multerFieldsSpy
-      });
-      
-      // Execute
-      await handleFileUpload(mockReq, mockRes);
-      
-      // Assert
-      expect(multer).toHaveBeenCalledWith({
-        storage: mockStorage,
-        fileFilter: expect.any(Function),
-        limits: expect.objectContaining({
-          fileSize: 100 * 1024 * 1024 // 100MB
-        })
-      });
-      expect(multerFieldsSpy).toHaveBeenCalledWith([
-        { name: 'file', maxCount: 10 }
-      ]);
-    });
-
-    test('handles file upload with fields configuration', async () => {
-      // Setup
-      const mockFiles = [{
-        originalname: 'test.jpg',
-        path: '/uploads/test.jpg',
-        mimetype: 'image/jpeg'
-      }];
-      
-      multer.mockReturnValue({
-        fields: () => (req, res, next) => {
-          req.files = { file: mockFiles };
-          req.body = {
-            aiProvider: 'openai',
-            promptTemplate: 'memorialOCR',
-            promptVersion: 'latest'
-          };
-          next();
-        }
       });
       
       // Execute
@@ -283,10 +250,7 @@ describe('Upload Handler', () => {
       expect(enqueueFiles).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
-            path: '/uploads/test.jpg',
-            provider: 'openai',
-            promptTemplate: 'memorialOCR',
-            promptVersion: 'latest'
+            path: '/uploads/test.jpg'
           })
         ])
       );

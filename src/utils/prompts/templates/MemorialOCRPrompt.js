@@ -13,7 +13,7 @@ class MemorialOCRPrompt extends BasePrompt {
   constructor(config = {}) {
     super({
       version: '2.0.0',
-      description: 'Standard OCR prompt for extracting memorial inscription data with strict type validation',
+      description: 'Standard OCR prompt for extracting basic memorial inscription data with type validation',
       typeDefinitions: memorialTypes,
       ...config
     });
@@ -26,36 +26,35 @@ class MemorialOCRPrompt extends BasePrompt {
   getPromptText() {
     return `You're an expert in OCR and are working in a heritage/genealogy context assisting in data processing post graveyard survey.
 
-Examine this image and extract the following data with specific types:
-- memorial_number: INTEGER (must be a number, not text)
-- first_name: STRING
-- last_name: STRING
-- year_of_death: INTEGER (must be between 1500 and 2100, must be a number not text)
-- inscription: STRING
+Your task is to extract specific fields and return them in JSON format.
 
-IMPORTANT:
-- All numeric values MUST be actual numbers, not strings
-- The year_of_death MUST be a number between 1500 and 2100
-- Use null for any fields that cannot be determined
-- Names should be in UPPERCASE
+CRITICAL: Return ONLY these 5 fields in JSON format, nothing more:
+- memorial_number: The memorial's identifier (INTEGER)
+- first_name: The first person's first name (STRING, UPPERCASE)
+- last_name: The first person's last name (STRING, UPPERCASE)
+- year_of_death: The first person's year of death only (INTEGER)
+- inscription: The complete inscription text (STRING)
 
-Respond in JSON format only with these exact field names. Example:
+Example of EXACT JSON format required:
+
 {
-  "memorial_number": 69,
-  "first_name": "THOMAS",
+  "memorial_number": 18,
+  "first_name": "MICHEAL",
   "last_name": "RUANE",
-  "year_of_death": 1923,
-  "inscription": "SACRED HEART OF JESUS HAVE MERCY ON THE SOUL OF THOMAS RUANE LISNAGROOBE WHO DIED APRIL 16th 1923 AGED 74 YRS"
+  "year_of_death": 1959,
+  "inscription": "IN MEMORY OF MICHEAL RUANE DIED 2. FEB. 1959 AGED 92 YEARS MARY THERESA RUANE DIED 8 FEB. 1945 AGED 3 YEARS THOMAS JOSEPH RUANE DIED 24 MARCH 1948 AGED 9 DAYS JAMES GARETH RUANE (INFANT) AUGUST 1953"
 }
 
-If any field is not visible or cannot be determined, use null. For example:
-{
-  "memorial_number": null,
-  "first_name": "JOHN",
-  "last_name": "SMITH",
-  "year_of_death": null,
-  "inscription": "Inscription text here..."
-}`;
+IMPORTANT RULES:
+- Return ONLY these 5 fields in JSON format - NO NESTED OBJECTS, NO ADDITIONAL FIELDS
+- Even if the image is a structured form or sheet, DO NOT reproduce that structure
+- Do not include 'document_type', 'graveyard_info', or any other metadata
+- For multiple people, use ONLY the first person mentioned
+- Names must be in UPPERCASE
+- Preserve memorial numbers exactly as written
+- Extract only the year from death dates as INTEGER
+- If any field cannot be determined, use null
+- Preserve original spelling in the inscription text`;
   }
 
   /**
@@ -67,14 +66,61 @@ If any field is not visible or cannot be determined, use null. For example:
     const basePrompt = this.getPromptText();
     
     if (provider.toLowerCase() === 'anthropic') {
-      return basePrompt + '\n\nRemember: All numeric values (memorial_number, year_of_death) MUST be actual integers, not strings. Years must be between 1500 and 2100.';
+      return basePrompt + '\n\nCRITICAL: Your response must contain ONLY the 5 specified fields in JSON format. All numeric values (memorial_number, year_of_death) MUST be actual integers.';
     }
     
     if (provider.toLowerCase() === 'openai') {
-      return basePrompt + '\n\nUse response_format: { type: "json_object" }';
+      return basePrompt + '\n\nUse response_format: { type: "json_object" } with ONLY the 5 specified fields in JSON format.';
     }
     
     return basePrompt;
+  }
+
+  /**
+   * Validates and converts data types according to schema
+   * @param {Object} data - The data object to validate
+   * @returns {Object} - The validated and converted data object
+   */
+  validateAndConvert(data) {
+    // Start with metadata fields
+    const result = {
+      memorial_number: null,
+      first_name: null,
+      last_name: null,
+      year_of_death: null,
+      inscription: null,
+      ai_provider: data.ai_provider || null,
+      file_name: data.file_name || null,
+      model_version: data.model_version || null,
+      prompt_template: data.prompt_template || null,
+      prompt_version: data.prompt_version || null
+    };
+
+    // Convert numeric fields
+    if (data.memorial_number) {
+      const num = parseInt(data.memorial_number, 10);
+      result.memorial_number = !isNaN(num) ? num : null;
+    }
+
+    if (data.year_of_death) {
+      const year = parseInt(data.year_of_death, 10);
+      result.year_of_death = (!isNaN(year) && year >= 1500 && year <= new Date().getFullYear()) ? year : null;
+    }
+
+    // Handle string fields
+    if (data.first_name) {
+      result.first_name = String(data.first_name).toUpperCase();
+    }
+
+    if (data.last_name) {
+      result.last_name = String(data.last_name).toUpperCase();
+    }
+
+    if (data.inscription) {
+      result.inscription = String(data.inscription);
+    }
+
+    return result;
   }
 }
 

@@ -8,6 +8,7 @@ const { clearProcessingCompleteFlag } = require("../utils/processingFlag");
 const { convertPdfToJpegs } = require("../utils/pdfConverter");
 const { clearAllMemorials } = require('../utils/database');
 const { getPrompt } = require('../utils/prompts/templates/providerTemplates');
+const { promptManager } = require('../utils/prompts/templates/providerTemplates');
 
 function createUniqueName(file) {
   const originalName = path.basename(
@@ -63,8 +64,14 @@ const validatePromptConfig = async (provider, template, version) => {
 
   try {
     const promptTemplate = await getPrompt(provider, templateName, templateVersion);
-    if (!promptTemplate || !promptTemplate.validateTemplate()) {
+    if (!promptTemplate) {
       throw new Error(`Invalid template: ${templateName}`);
+    }
+
+    // Use the provider prompt manager to validate the template
+    const validation = promptManager.validatePrompt(promptTemplate, provider);
+    if (!validation.isValid) {
+      throw new Error(`Template validation failed: ${validation.errors.join(', ')}`);
     }
 
     return {
