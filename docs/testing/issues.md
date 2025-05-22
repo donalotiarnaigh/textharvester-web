@@ -48,6 +48,10 @@ When uploading multiple image files (3 in the test case), the progress bar exhib
 4. No automatic redirect to results page occurs
 5. Results are processed correctly but require manual navigation to view
 
+**Update (2025-05-23):** Additional testing reveals:
+- When uploading 3 populated images, the progress bar goes up to 200% before redirecting
+- When uploading 3 images with one empty, the progress bar goes up to 300% and doesn't redirect automatically
+
 ### Expected Behavior
 1. Progress bar should start at 0%
 2. Should increment proportionally based on processing progress
@@ -60,6 +64,7 @@ The issue appears to be related to:
 2. Progress event handling possibly double-counting events
 3. Completion detection not triggering redirect
 4. Disconnect between actual processing status and UI representation
+5. Different behavior when empty images are included in the batch
 
 ### Partial Resolution
 Progress tracking has been improved but not fully fixed. Implementation of error handling has resolved some aspects of this issue, but the progress calculation still doesn't increment proportionally with multiple files.
@@ -84,6 +89,11 @@ When processing a PDF with a record containing no first name (e.g., "R.R Talbot 
 - Processing continues for other valid records
 - Error information is included in the progress tracking
 - Results page shows valid records while indicating errors
+
+**Update (2025-05-23):** Scope clarification:
+- Provider-specific name extraction rules are NOT required for this issue
+- Extracting multiple identities per page is NOT needed - additional names are expected to be in the inscription field
+- Focus should be on name parsing standardization and fixing the "undefined attempts" bug
 
 ### Error Message
 ```
@@ -267,8 +277,8 @@ The error handling aspect has been improved:
    ```
 
 ### Remaining Work
-1. Implement the name validation rules and preprocessing logic
-2. Add support for handling multiple records on a single page
+1. ~~Implement the name validation rules and preprocessing logic~~ ✅
+2. ~~Add support for handling multiple records on a single page~~ (Not required - additional names are in inscription field)
 3. Standardize name parsing across providers
 4. Fix the "undefined attempts" bug in the error message for validation errors
 
@@ -287,6 +297,11 @@ The error handling aspect has been improved:
 ### Description
 When uploading 3 individual images using the Anthropic provider, the progress bar incorrectly counts up to 300%. This appears to be a variant of Issue #2, but with different behavior specific to the Anthropic provider.
 
+**Update (2025-05-23):** Further testing confirms that progress bar behavior is inconsistent:
+- With 3 populated images: progress reaches 200% before redirecting
+- With 3 images (one empty): progress reaches 300% with no automatic redirect
+- This suggests a compounding problem when empty images are involved
+
 ### Analysis
 This issue, combined with Issue #2, suggests:
 1. Progress tracking is not properly normalized across providers
@@ -296,6 +311,7 @@ This issue, combined with Issue #2, suggests:
    - Double-counting certain events
 3. No upper bound validation on progress percentage
 4. Provider-specific progress tracking may need different handling
+5. Error handling for empty images affects progress calculation differently
 
 ### Partial Resolution
 Progress tracking has been improved but not fully fixed. Implementation of error handling has resolved some aspects of this issue, but the progress calculation still doesn't handle multiple files correctly with Anthropic.
@@ -358,3 +374,75 @@ The issue stems from:
 - `src/controllers/resultsManager.js` - Handles results retrieval and reporting
 - `public/js/modules/processing/api.js` - Manages frontend progress checking and redirection
 - `public/js/modules/results/main.js` - Handles results page loading 
+
+## Issue #6: Source File Information Missing in View Inscription Modal
+**Status:** Open  
+**Date Reported:** 2025-05-23  
+**Component:** UI/Results Display  
+**Severity:** Medium  
+
+### Description
+When viewing memorial details in the modal dialog, the source file information (filename of the original image/PDF) is not displayed. This makes it difficult for users to trace back results to their original source documents, especially when processing multiple files in a batch.
+
+### Expected Behavior
+1. The memorial details modal should include the source filename
+2. The source file information should be clearly labeled
+3. For multi-page PDFs, both the original PDF name and the page number should be displayed
+
+### Analysis
+The issue appears to be that:
+1. The source file information is captured during processing but not displayed in the UI
+2. The memorial details modal template does not include a field for the source file
+3. The data is likely available in the database but not included in the API response
+
+### Proposed Solution
+1. Update the memorial details modal template to include a source file field
+2. Modify the API response to include the source file information
+3. Ensure the source file is properly captured and stored during processing
+4. For multi-page PDFs, extract and store both the filename and page number
+
+### Related Files
+- `public/js/modules/results/modal.js` - Handles the memorial details modal
+- `src/controllers/resultsManager.js` - Manages the results API
+- `src/utils/database.js` - Stores the memorial data
+- `src/utils/fileProcessing.js` - Processes files and extracts metadata 
+
+## Issue #7: Empty Modal on First Click After PDF Processing
+**Status:** Open  
+**Date Reported:** 2025-05-23  
+**Component:** UI/Results Display  
+**Severity:** Medium  
+
+### Description
+After processing a PDF with multiple pages (five sheets in the test case) and navigating to the results page, clicking the 'View' button on any result row for the first time shows an empty modal. On subsequent clicks of the same button, the modal displays correctly with the expected memorial information.
+
+### Reproduction Steps
+1. Upload a multi-page PDF (5 pages in the test case)
+2. Wait for processing to complete
+3. Navigate to the results page (either automatically or manually)
+4. Click the 'View' button on the first or any other result row
+5. Observe that the modal appears but is empty
+6. Close the modal and click the same 'View' button again
+7. Observe that the modal now displays the memorial information correctly
+
+### Expected Behavior
+The modal should display the memorial information correctly on the first click, without requiring a second attempt.
+
+### Analysis
+This appears to be a timing or initialization issue. Possible causes include:
+1. Asynchronous data loading not completing before the modal is displayed
+2. Race condition in the modal initialization code
+3. Event handling issues where the first click triggers data loading but doesn't wait for completion
+4. Caching or state management issue where data is only available after the first attempt
+
+### Proposed Solution
+1. Implement proper loading state management for the modal
+2. Ensure data is fully loaded before displaying the modal
+3. Add error handling to detect and recover from initialization failures
+4. Implement a loading indicator in the modal for better user experience
+5. Add console logging to trace the exact sequence of events during modal opening
+
+### Related Files
+- `public/js/modules/results/modal.js` - Handles the memorial details modal
+- `public/js/modules/results/dataFetching.js` - Likely handles data fetching for the modal
+- `public/js/results.js` - Main results page JavaScript 
