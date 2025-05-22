@@ -75,6 +75,7 @@ dist/
 data/
 data/results.json
 .prettierrc
+uploads/
 
 # Sample data
 sample_data/
