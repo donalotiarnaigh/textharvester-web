@@ -86,19 +86,19 @@ class ProviderPromptManager {
       throw new Error(`No template registered for provider: ${providerName}`);
     }
 
-    // Format type definitions according to provider's preferences
-    const typeDefinitions = Object.entries(prompt.typeDefinitions)
-      .map(([field, type]) => {
-        const formattedType = template.typeFormatting[type] || type;
-        return `${field}: ${formattedType}`;
+    // Format field definitions according to provider's preferences
+    const fieldDefinitions = Object.entries(prompt.fields || {})
+      .map(([fieldName, field]) => {
+        const formattedType = template.typeFormatting[field.type] || field.type;
+        return `${fieldName}: ${field.description} (${formattedType})`;
       })
       .join('\n');
 
     // Combine base prompt with provider-specific formatting
     const formattedPrompt = `${prompt.getPromptText()}
 
-Type Definitions:
-${typeDefinitions}
+Field Definitions:
+${fieldDefinitions}
 
 ${template.formatInstructions}`;
 
@@ -126,11 +126,15 @@ ${template.formatInstructions}`;
     const errors = [];
 
     // Check if all types in the prompt are supported by the provider
-    Object.entries(prompt.typeDefinitions).forEach(([field, type]) => {
-      if (!template.typeFormatting[type]) {
-        errors.push(`Type "${type}" not supported by provider ${providerName}`);
-      }
-    });
+    if (prompt.fields) {
+      Object.entries(prompt.fields).forEach(([fieldName, field]) => {
+        if (!template.typeFormatting[field.type]) {
+          errors.push(`Type "${field.type}" not supported by provider ${providerName}`);
+        }
+      });
+    } else {
+      errors.push('No field definitions found in prompt');
+    }
 
     return {
       isValid: errors.length === 0,
