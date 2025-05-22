@@ -31,21 +31,21 @@ describe('Upload Handler', () => {
     
     // Mock multer middleware
     const mockMiddleware = (req, res, next) => {
-      req.files = {
-        file: [{
-          originalname: 'test.jpg',
-          path: '/uploads/test.jpg',
-          mimetype: 'image/jpeg'
-        }]
-      };
-      req.body = {
-        aiProvider: req.body.aiProvider || 'openai',
-        promptTemplate: req.body.promptTemplate || 'memorialOCR',
-        promptVersion: req.body.promptVersion || 'latest',
-        replaceExisting: req.body.replaceExisting || 'false'
-      };
-      next();
-    };
+          req.files = {
+            file: [{
+              originalname: 'test.jpg',
+              path: '/uploads/test.jpg',
+              mimetype: 'image/jpeg'
+            }]
+          };
+          req.body = {
+            aiProvider: req.body.aiProvider || 'openai',
+            promptTemplate: req.body.promptTemplate || 'memorialOCR',
+            promptVersion: req.body.promptVersion || 'latest',
+            replaceExisting: req.body.replaceExisting || 'false'
+          };
+          next();
+        };
 
     multer.mockReturnValue({
       fields: jest.fn().mockReturnValue(mockMiddleware)
@@ -178,8 +178,8 @@ describe('Upload Handler', () => {
       // Setup
       multer.mockReturnValue({
         fields: jest.fn().mockReturnValue((req, res, next) => {
-          req.files = {};
-          next();
+            req.files = {};
+            next();
         })
       });
       
