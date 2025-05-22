@@ -1,7 +1,7 @@
 # Testing Issues Log
 
 ## Issue #1: Empty Record Sheet Handling
-**Status:** Open  
+**Status:** Resolved  
 **Date Reported:** 2024-03-22  
 **Component:** MemorialOCRPrompt  
 **Severity:** High  
@@ -26,40 +26,16 @@ Specifically:
 3. The error happens when processing data from an empty record sheet where the AI model returns null values for required fields
 4. There's no early validation to reject completely empty sheets before attempting to transform the data
 
-### Proposed Solution
-1. Add null checks before string operations in all transform functions:
-   ```javascript
-   // In MemorialOCRPrompt.js, lines 128-132, update the default case:
-   default:
-     // Add null check before calling transform
-     result[fieldName] = value === null ? null : field.transform(value);
-     break;
-   ```
-
-2. Update field transform functions in `memorialFields.js` to handle null values:
-   ```javascript
-   // Example safe transform:
-   transform: (value) => value === null ? null : value.trim().toUpperCase()
-   ```
-
-3. Add improved validation logic to reject empty responses:
-   ```javascript
-   // At the beginning of validateAndConvert:
-   if (!data || Object.keys(data).length === 0) {
-     throw new Error('Empty or invalid data received from OCR processing');
-   }
-   ```
-
-4. Add test case for handling empty input and null values
-
-### Related Files
-- `src/utils/prompts/templates/MemorialOCRPrompt.js` - Main file needing fixes, specifically the `validateAndConvert` method
-- `src/utils/fileProcessing.js` - Calls validateAndConvert and needs proper error handling
-- `src/utils/prompts/types/memorialFields.js` - Contains transform functions that need null-safety
-- `src/utils/prompts/types/dataTypes.js` - Base type system with validation logic
+### Solution Implemented
+1. Added `ProcessingError` class extending standard Error with type information
+2. Implemented helper functions `isEmptySheetError` and `isValidationError`
+3. Enhanced `MemorialOCRPrompt` to use these typed errors with descriptive messages
+4. Modified `fileProcessing.js` to handle empty sheet errors gracefully by returning error objects
+5. Updated `fileQueue.js` to store both successful and error results, continuing processing when empty sheets are encountered
+6. Added UI components to display error messages to users
 
 ## Issue #2: Progress Bar Malfunction
-**Status:** Open  
+**Status:** Partially Resolved  
 **Date Reported:** 2024-03-22  
 **Component:** UI/Progress Tracking  
 **Severity:** Medium  
@@ -85,18 +61,8 @@ The issue appears to be related to:
 3. Completion detection not triggering redirect
 4. Disconnect between actual processing status and UI representation
 
-### Proposed Solution
-1. Review and fix progress calculation logic
-2. Ensure progress events are not duplicated
-3. Implement proper completion detection
-4. Add logging to track progress events
-5. Add error handling for progress tracking
-6. Update tests to cover multiple file upload scenarios
-
-### Related Files
-- `src/components/UploadProgress.js` (or similar UI component)
-- `src/utils/fileProcessing.js`
-- `src/utils/progressTracking.js` (if exists)
+### Partial Resolution
+Progress tracking has been improved but not fully fixed. Implementation of error handling has resolved some aspects of this issue, but the progress calculation still doesn't increment proportionally with multiple files.
 
 ## Issue #3: Missing First Name Validation Error
 **Status:** Open  
@@ -156,7 +122,7 @@ The issue appears to be related to:
 - `src/utils/validation/nameValidation.js` (if exists)
 
 ## Issue #4: Progress Bar Over-Counting with Anthropic
-**Status:** Open  
+**Status:** Partially Resolved  
 **Date Reported:** 2024-03-22  
 **Component:** UI/Progress Tracking  
 **Severity:** Medium  
@@ -175,25 +141,58 @@ This issue, combined with Issue #2, suggests:
 3. No upper bound validation on progress percentage
 4. Provider-specific progress tracking may need different handling
 
+### Partial Resolution
+Progress tracking has been improved but not fully fixed. Implementation of error handling has resolved some aspects of this issue, but the progress calculation still doesn't handle multiple files correctly with Anthropic.
+
+## Issue #5: Premature Redirect and Incomplete Results Display
+**Status:** Open  
+**Date Reported:** 2025-05-22  
+**Component:** Progress Tracking and Results Display  
+**Severity:** Medium  
+**Related:** Issues #2 and #4
+
+### Description
+When uploading multiple images (including a mix of valid and empty sheets), the system:
+1. Correctly identifies empty sheets and tracks them as errors
+2. Prematurely redirects to the results page after processing only some files
+3. Shows incomplete results on initial page load
+4. Only displays all processed results after manually refreshing the results page
+
+### Reproduction Steps
+1. Select 3 images for upload (1 empty sheet, 2 valid sheets)
+2. Submit for processing
+3. Observe progress bar reaches 100% after processing only some files
+4. System redirects to results page showing only one result
+5. Refreshing the page shows both valid results and the error for the empty sheet
+
+### Expected Behavior
+1. Progress bar should increment proportionally:
+   - 33% after processing first file
+   - 66% after processing second file
+   - 100% after processing all three files
+2. Redirect should only occur after all files are completely processed
+3. Results page should show all processed results on initial load without requiring refresh
+
+### Analysis
+The issue stems from:
+1. Incorrect synchronization between file processing and progress tracking
+2. Race condition where the redirect occurs before all processing completes
+3. Possible caching issue with the results endpoint
+4. Progress complete flag being set too early
+5. Inconsistent state between the backend processing status and frontend progress tracking
+
 ### Proposed Solution
-1. Normalize progress tracking across providers:
-   - Implement provider-specific progress calculation if needed
-   - Ensure progress is properly bounded (0-100%)
-   - Add validation for progress updates
-2. Add provider-specific progress tracking configuration
-3. Implement progress aggregation logic that:
-   - Properly handles multiple files
-   - Accounts for provider-specific steps
-   - Maintains correct bounds
-4. Add logging for progress tracking events to help debug
-5. Add tests for:
-   - Multiple provider scenarios
-   - Multiple file uploads
-   - Progress bounds validation
-   - Progress aggregation logic
+1. Modify the progress tracking to:
+   - Accurately reflect the number of files processed vs. total files
+   - Only mark as complete when all files (including error cases) are fully processed
+2. Delay the redirect until confirmed that all files are processed
+3. Ensure the results endpoint returns the most current data
+4. Add additional synchronization between file processing and progress reporting
+5. Implement a confirmation step before redirecting to ensure all processing has completed
+6. Add logging to track the exact sequence of processing events and results retrieval
 
 ### Related Files
-- `src/components/UploadProgress.js` (or similar UI component)
-- `src/utils/fileProcessing.js`
-- `src/utils/progressTracking.js` (if exists)
-- `src/services/anthropicService.js` (if exists) 
+- `src/utils/fileQueue.js` - Manages file processing queue and completion status
+- `src/controllers/resultsManager.js` - Handles results retrieval and reporting
+- `public/js/modules/processing/api.js` - Manages frontend progress checking and redirection
+- `public/js/modules/results/main.js` - Handles results page loading 
