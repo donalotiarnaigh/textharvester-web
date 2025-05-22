@@ -113,4 +113,47 @@ The issue appears to be related to:
 ### Related Files
 - `src/utils/prompts/templates/MemorialOCRPrompt.js`
 - `src/utils/fileProcessing.js`
-- `src/utils/validation/nameValidation.js` (if exists) 
+- `src/utils/validation/nameValidation.js` (if exists)
+
+## Issue #4: Progress Bar Over-Counting with Anthropic
+**Status:** Open  
+**Date Reported:** 2024-03-22  
+**Component:** UI/Progress Tracking  
+**Severity:** Medium  
+**Related:** Issue #2  
+
+### Description
+When uploading 3 individual images using the Anthropic provider, the progress bar incorrectly counts up to 300%. This appears to be a variant of Issue #2, but with different behavior specific to the Anthropic provider.
+
+### Analysis
+This issue, combined with Issue #2, suggests:
+1. Progress tracking is not properly normalized across providers
+2. Progress calculation might be:
+   - Adding instead of averaging progress
+   - Not accounting for provider-specific processing steps
+   - Double-counting certain events
+3. No upper bound validation on progress percentage
+4. Provider-specific progress tracking may need different handling
+
+### Proposed Solution
+1. Normalize progress tracking across providers:
+   - Implement provider-specific progress calculation if needed
+   - Ensure progress is properly bounded (0-100%)
+   - Add validation for progress updates
+2. Add provider-specific progress tracking configuration
+3. Implement progress aggregation logic that:
+   - Properly handles multiple files
+   - Accounts for provider-specific steps
+   - Maintains correct bounds
+4. Add logging for progress tracking events to help debug
+5. Add tests for:
+   - Multiple provider scenarios
+   - Multiple file uploads
+   - Progress bounds validation
+   - Progress aggregation logic
+
+### Related Files
+- `src/components/UploadProgress.js` (or similar UI component)
+- `src/utils/fileProcessing.js`
+- `src/utils/progressTracking.js` (if exists)
+- `src/services/anthropicService.js` (if exists) 
