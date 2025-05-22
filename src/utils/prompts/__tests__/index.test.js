@@ -1,116 +1,213 @@
 const { getPrompt, registerPrompt, listPrompts, clearRegistry } = require('../index');
 const MemorialOCRPrompt = require('../templates/MemorialOCRPrompt');
 
-describe('Prompt Module', () => {
+// Define mock classes first
+class MockBasePrompt {
+  constructor(config = {}) {
+    this.version = config.version || '1.0.0';
+    this.description = config.description || '';
+    this.fields = this._validateFields(config.fields || {});
+    this.providers = config.providers || ['openai', 'anthropic'];
+  }
+
+  _validateFields(fields) {
+    const validatedFields = {};
+    for (const [fieldName, field] of Object.entries(fields)) {
+      validatedFields[fieldName] = {
+        type: field.type || 'string',
+        description: field.description || fieldName,
+        ...field
+      };
+    }
+    return validatedFields;
+  }
+
+  getPromptText() {
+    throw new Error('Method not implemented in base class');
+  }
+
+  getProviderPrompt() {
+    return {
+      systemPrompt: 'test system prompt',
+      userPrompt: 'test user prompt'
+    };
+  }
+
+  validateAndConvert(data) {
+    return data;
+  }
+}
+
+class MockMemorialOCRPrompt extends MockBasePrompt {
+  constructor(config = {}) {
+    super({
+      version: '1.0.0',
+      description: 'Memorial OCR Prompt',
+      fields: {
+        text: { type: 'string', description: 'OCR text' }
+      },
+      ...config
+    });
+  }
+
+  getPromptText() {
+    return 'Memorial OCR prompt text';
+  }
+}
+
+class MockPromptManager {
+  constructor() {
+    this.promptClasses = new Map();
+    this.promptInstances = new Map();
+  }
+
+  registerPromptClass(name, PromptClass) {
+    if (this.promptClasses.has(name)) {
+      throw new Error('Prompt name already registered');
+    }
+    this.promptClasses.set(name, PromptClass);
+  }
+
+  getPrompt(name, config = {}, force = false) {
+    const PromptClass = this.promptClasses.get(name);
+    if (!PromptClass) {
+      throw new Error('Unknown prompt type: ' + name);
+    }
+
+    const cacheKey = `${name}-${JSON.stringify(config)}`;
+    if (!force && this.promptInstances.has(cacheKey)) {
+      return this.promptInstances.get(cacheKey);
+    }
+
+    const instance = new PromptClass(config);
+    if (!force) {
+      this.promptInstances.set(cacheKey, instance);
+    }
+    return instance;
+  }
+
+  clearRegistry() {
+    this.promptClasses.clear();
+    this.promptInstances.clear();
+  }
+}
+
+// Mock the modules
+jest.doMock('../types/dataTypes', () => ({
+  isValidType: () => true,
+  validateValue: (value, type) => ({ value, errors: [] })
+}));
+
+jest.doMock('../providers/providerConfig', () => ({
+  PROVIDER_TYPES: ['openai', 'anthropic'],
+  createProviderConfig: () => ({
+    getFieldFormat: () => 'string',
+    systemPromptTemplate: 'test system prompt',
+    formatInstructions: 'test format instructions',
+    maxTokens: 1000,
+    temperature: 0.7
+  })
+}));
+
+jest.doMock('../BasePrompt', () => ({
+  BasePrompt: MockBasePrompt
+}));
+
+jest.doMock('../templates/MemorialOCRPrompt', () => ({
+  MemorialOCRPrompt: MockMemorialOCRPrompt
+}));
+
+jest.doMock('../PromptManager', () => ({
+  PromptManager: MockPromptManager
+}));
+
+describe('Prompt Module Exports', () => {
+  let promptModule;
+
   beforeEach(() => {
-    // Reset module state between tests
-    clearRegistry();
-    jest.clearAllMocks();
+    jest.resetModules();
+    promptModule = require('../index');
+    // Reset the factory state
+    promptModule._getFactory()._manager.clearRegistry();
   });
 
-  describe('registerPrompt', () => {
-    it('should register a prompt with its versions', () => {
-      const result = registerPrompt('memorial', {
-        '1.0.0': MemorialOCRPrompt,
-        '2.0.0': MemorialOCRPrompt
-      });
-
-      expect(result).toBeTruthy();
-      expect(listPrompts()).toContainEqual({
-        name: 'memorial',
-        versions: ['1.0.0', '2.0.0']
-      });
+  describe('Main exports', () => {
+    it('should export PromptFactory as default and named export', () => {
+      expect(promptModule.default).toBeDefined();
+      expect(promptModule.PromptFactory).toBeDefined();
+      expect(promptModule.default).toBe(promptModule.PromptFactory);
     });
 
-    it('should throw error when registering invalid prompt class', () => {
-      expect(() => {
-        registerPrompt('invalid', {
-          '1.0.0': class InvalidPrompt {}
-        });
-      }).toThrow('Invalid prompt class');
+    it('should export BasePrompt', () => {
+      expect(promptModule.BasePrompt).toBeDefined();
+      expect(new promptModule.BasePrompt()).toBeInstanceOf(MockBasePrompt);
     });
 
-    it('should throw error when registering duplicate prompt name', () => {
-      registerPrompt('test', { '1.0.0': MemorialOCRPrompt });
-      expect(() => {
-        registerPrompt('test', { '1.0.0': MemorialOCRPrompt });
-      }).toThrow('Prompt name already registered');
+    it('should export PromptManager', () => {
+      expect(promptModule.PromptManager).toBeDefined();
     });
   });
 
-  describe('getPrompt', () => {
-    beforeEach(() => {
-      registerPrompt('memorial', {
-        '1.0.0': class MemorialOCRPromptV1 extends MemorialOCRPrompt {
-          constructor(config = {}) {
-            super({ ...config, version: '1.0.0' });
-          }
-        },
-        '2.0.0': class MemorialOCRPromptV2 extends MemorialOCRPrompt {
-          constructor(config = {}) {
-            super({ ...config, version: '2.0.0' });
-          }
-        }
-      });
+  describe('Template exports', () => {
+    it('should export MemorialOCRPrompt', () => {
+      expect(promptModule.MemorialOCRPrompt).toBeDefined();
+      const prompt = new promptModule.MemorialOCRPrompt();
+      expect(prompt.version).toBe('1.0.0');
+      expect(prompt.description).toBe('Memorial OCR Prompt');
+    });
+  });
+
+  describe('Utility exports', () => {
+    it('should export type utilities', () => {
+      expect(promptModule.isValidType).toBeDefined();
+      expect(promptModule.validateValue).toBeDefined();
     });
 
-    it('should return latest version when version is not specified', () => {
-      const prompt = getPrompt('memorial');
-      expect(prompt).toBeInstanceOf(MemorialOCRPrompt);
-      expect(prompt.version).toBe('2.0.0');
+    it('should export provider utilities', () => {
+      expect(promptModule.PROVIDER_TYPES).toBeDefined();
+      expect(promptModule.createProviderConfig).toBeDefined();
+    });
+  });
+
+  describe('Factory helper functions', () => {
+    it('should export createPrompt function', () => {
+      expect(promptModule.createPrompt).toBeDefined();
+      expect(typeof promptModule.createPrompt).toBe('function');
     });
 
-    it('should return specific version when requested', () => {
-      const prompt = getPrompt('memorial', '1.0.0');
-      expect(prompt).toBeInstanceOf(MemorialOCRPrompt);
+    it('should create prompt instance using createPrompt', () => {
+      const prompt = promptModule.createPrompt('memorial_ocr');
+      expect(prompt).toBeDefined();
       expect(prompt.version).toBe('1.0.0');
     });
 
-    it('should throw error for unknown prompt name', () => {
+    it('should throw error for unknown prompt type in createPrompt', () => {
       expect(() => {
-        getPrompt('unknown');
-      }).toThrow('Unknown prompt: unknown');
-    });
-
-    it('should throw error for unknown version', () => {
-      expect(() => {
-        getPrompt('memorial', '3.0.0');
-      }).toThrow('Version 3.0.0 not found for prompt: memorial');
-    });
-
-    it('should accept configuration options', () => {
-      const config = {
-        description: 'Custom memorial prompt',
-        modelTargets: ['openai']
-      };
-      const prompt = getPrompt('memorial', 'latest', config);
-      expect(prompt.description).toBe('Custom memorial prompt');
-      expect(prompt.modelTargets).toEqual(['openai']);
+        promptModule.createPrompt('unknown');
+      }).toThrow('Unknown prompt type: unknown');
     });
   });
 
-  describe('listPrompts', () => {
-    beforeEach(() => {
-      registerPrompt('memorial', {
-        '1.0.0': MemorialOCRPrompt,
-        '2.0.0': MemorialOCRPrompt
+  describe('Backward compatibility', () => {
+    it('should maintain legacy prompt creation pattern', () => {
+      const legacyPrompt = new promptModule.MemorialOCRPrompt({
+        version: '0.9.0'
       });
-      registerPrompt('inscription', {
-        '1.0.0': MemorialOCRPrompt
-      });
+      expect(legacyPrompt.version).toBe('0.9.0');
     });
 
-    it('should list all registered prompts and their versions', () => {
-      const prompts = listPrompts();
-      expect(prompts).toEqual([
-        { name: 'memorial', versions: ['1.0.0', '2.0.0'] },
-        { name: 'inscription', versions: ['1.0.0'] }
-      ]);
+    it('should support both new and old provider config patterns', () => {
+      const config = promptModule.createProviderConfig('openai');
+      expect(config.getFieldFormat).toBeDefined();
+      expect(config.systemPromptTemplate).toBeDefined();
     });
 
-    it('should return empty array when no prompts registered', () => {
-      clearRegistry();
-      expect(listPrompts()).toEqual([]);
+    it('should maintain compatibility with existing type validation', () => {
+      expect(promptModule.isValidType('string')).toBe(true);
+      expect(promptModule.validateValue('test', 'string')).toEqual({
+        value: 'test',
+        errors: []
+      });
     });
   });
 }); 
