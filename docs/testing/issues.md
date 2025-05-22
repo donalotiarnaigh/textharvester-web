@@ -71,4 +71,46 @@ The issue appears to be related to:
 ### Related Files
 - `src/components/UploadProgress.js` (or similar UI component)
 - `src/utils/fileProcessing.js`
-- `src/utils/progressTracking.js` (if exists) 
+- `src/utils/progressTracking.js` (if exists)
+
+## Issue #3: Missing First Name Validation Error
+**Status:** Open  
+**Date Reported:** 2024-03-22  
+**Component:** MemorialOCRPrompt  
+**Severity:** High  
+
+### Description
+When processing a PDF with a record containing no first name (e.g., "R.R Talbot Junr"), the system fails with a validation error. The error occurs even though another valid record ("Rev. Peter Butler") exists on the same page.
+
+### Error Message
+```
+[ERROR] Error processing file uploads/test_17479_1747903798021_page-5.jpg: Error: Invalid name format for first_name
+    at MemorialOCRPrompt.validateAndConvert (/Users/danieltierney/projects/textharvester-web/src/utils/prompts/templates/MemorialOCRPrompt.js:150:15)
+    at processFile (/Users/danieltierney/projects/textharvester-web/src/utils/fileProcessing.js:40:42)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+```
+
+### Analysis
+The issue appears to be related to:
+1. Strict validation rules not accommodating missing first names
+2. No handling for special cases like initials-only names
+3. Validation failing for the entire page when one record is invalid
+4. No partial success handling for multiple records on a page
+
+### Proposed Solution
+1. Update name validation rules to handle:
+   - Missing first names
+   - Initial-only names
+   - Titles (e.g., "Rev.", "Jr.", "Junr")
+2. Implement partial success handling for multiple records
+3. Add more descriptive error messages
+4. Add test cases for:
+   - Missing first names
+   - Initial-only names
+   - Multiple records with mixed validity
+   - Various title formats
+
+### Related Files
+- `src/utils/prompts/templates/MemorialOCRPrompt.js`
+- `src/utils/fileProcessing.js`
+- `src/utils/validation/nameValidation.js` (if exists) 
