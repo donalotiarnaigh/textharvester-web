@@ -102,6 +102,54 @@ describe('MemorialOCRPrompt', () => {
       expect(result.inscription).toBeNull();
     });
 
+    it('should reject empty or null input data', () => {
+      expect(() => prompt.validateAndConvert(null))
+        .toThrow('Empty or invalid data received from OCR processing');
+      
+      expect(() => prompt.validateAndConvert({}))
+        .toThrow('Empty or invalid data received from OCR processing');
+    });
+
+    it('should handle null values in required fields', () => {
+      // Test memorial_number null
+      expect(() => prompt.validateAndConvert({
+        memorial_number: null,
+        first_name: 'JOHN',
+        last_name: 'DOE'
+      })).toThrow('Memorial_number is required');
+
+      // Test first_name null
+      expect(() => prompt.validateAndConvert({
+        memorial_number: 'HG-44',
+        first_name: null,
+        last_name: 'DOE'
+      })).toThrow('First_name is required');
+
+      // Test last_name null
+      expect(() => prompt.validateAndConvert({
+        memorial_number: 'HG-44',
+        first_name: 'JOHN',
+        last_name: null
+      })).toThrow('Last_name is required');
+    });
+
+    it('should safely transform null values in optional fields', () => {
+      const testData = {
+        memorial_number: 'HG-44',
+        first_name: 'JOHN',
+        last_name: 'DOE',
+        year_of_death: null,
+        inscription: null
+      };
+
+      const result = prompt.validateAndConvert(testData);
+      expect(result.memorial_number).toBe('HG-44');
+      expect(result.first_name).toBe('JOHN');
+      expect(result.last_name).toBe('DOE');
+      expect(result.year_of_death).toBeNull();
+      expect(result.inscription).toBeNull();
+    });
+
     it('should reject invalid year values', () => {
       const testData = {
         memorial_number: 'HG-44',

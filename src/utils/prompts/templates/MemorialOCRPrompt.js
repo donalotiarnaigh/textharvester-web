@@ -91,12 +91,24 @@ IMPORTANT RULES:
    * @returns {Object} Validated and converted data
    */
   validateAndConvert(data) {
+    // Early validation for empty or invalid data
+    if (!data || Object.keys(data).length === 0) {
+      throw new Error('Empty or invalid data received from OCR processing');
+    }
+
     const result = {};
     const errors = [];
 
     // First pass: validate required fields are present
+    // Check memorial_number first as it's the primary identifier
+    if (this.fields.memorial_number.required && (data.memorial_number === null || data.memorial_number === undefined)) {
+      throw new Error('Memorial_number is required');
+    }
+
+    // Then check other required fields
     for (const [fieldName, field] of Object.entries(this.fields)) {
-      if (field.required && !(fieldName in data)) {
+      if (fieldName === 'memorial_number') continue; // Already checked
+      if (field.required && (data[fieldName] === null || data[fieldName] === undefined)) {
         errors.push(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`);
       }
     }
@@ -120,10 +132,17 @@ IMPORTANT RULES:
         switch (fieldName) {
           case 'first_name':
           case 'last_name':
-            if (value && !/^[A-Za-z\s\-']+$/.test(value)) {
-              throw new Error(`Invalid name format for ${fieldName}`);
+            if (value === null) {
+              if (field.required) {
+                throw new Error(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`);
+              }
+              result[fieldName] = null;
+            } else {
+              if (!/^[A-Za-z\s\-']+$/.test(value)) {
+                throw new Error(`Invalid name format for ${fieldName}`);
+              }
+              result[fieldName] = field.transform(value);
             }
-            result[fieldName] = field.transform(value);
             break;
 
           case 'year_of_death':
@@ -144,7 +163,8 @@ IMPORTANT RULES:
             break;
 
           default:
-            result[fieldName] = field.transform(value);
+            // Safe transform for all other fields
+            result[fieldName] = value === null ? null : field.transform(value);
         }
       } catch (error) {
         throw new Error(error.message);
