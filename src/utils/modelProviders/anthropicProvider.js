@@ -29,7 +29,7 @@ class AnthropicProvider extends BaseVisionProvider {
   /**
    * Process an image using Anthropic Claude's vision capabilities
    * @param {string} base64Image - Base64 encoded image
-   * @param {string} prompt - The prompt to send to the model
+   * @param {string|Object} prompt - The prompt to send to the model
    * @param {Object} options - Additional options for processing
    * @param {boolean} options.raw - Whether to return raw response without JSON parsing
    * @param {BasePrompt} options.promptTemplate - Optional prompt template to use
@@ -39,12 +39,25 @@ class AnthropicProvider extends BaseVisionProvider {
     try {
       // Format prompt if template is provided
       let systemPrompt = 'Return a JSON object with the extracted text details.';
-      let userPrompt = prompt;
+      let userPrompt = '';
+
+      // Handle different prompt formats
+      if (typeof prompt === 'string') {
+        userPrompt = prompt;
+      } else if (prompt && typeof prompt === 'object') {
+        systemPrompt = prompt.systemPrompt || systemPrompt;
+        userPrompt = prompt.userPrompt || '';
+      }
 
       if (options.promptTemplate) {
         const formatted = promptManager.formatPrompt(options.promptTemplate, 'anthropic');
         systemPrompt = formatted.systemPrompt;
         userPrompt = formatted.prompt;
+      }
+
+      // Ensure userPrompt is a valid string
+      if (typeof userPrompt !== 'string') {
+        userPrompt = JSON.stringify(userPrompt);
       }
 
       const result = await this.client.messages.create({
