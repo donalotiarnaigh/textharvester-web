@@ -47,6 +47,17 @@
         <h1 class="mt-4">Processing Results</h1>
         <p class="info-message"></p>
 
+        <!-- Error Summary Section -->
+        <div id="errorSummary" class="card mb-4 border-warning" style="display: none;">
+          <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">Processing Notices</h5>
+          </div>
+          <div class="card-body">
+            <p>The following files could not be processed successfully:</p>
+            <ul id="errorList" class="list-group"></ul>
+          </div>
+        </div>
+
         <!-- Model Info Panel -->
         <div class="model-info-panel card mb-4">
           <div class="card-header d-flex justify-content-between align-items-center">

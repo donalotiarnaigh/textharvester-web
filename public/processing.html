@@ -54,6 +54,13 @@
               <span id="fileProgress"></span>
               <button id="cancelProcessingButton" class="btn btn-danger mt-3">Cancel Processing</button>
             </div>
+            
+            <!-- Error Container -->
+            <div id="errorContainer" class="mt-4 alert alert-warning" style="display: none;">
+              <h5>Processing Notices</h5>
+              <p>Some files are being processed with exceptions:</p>
+              <div id="errorList" class="mt-2"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -66,72 +73,26 @@
     </footer>
 
     <script type="module">
-      import { initModelTracking, getStatusMessage, updateModelDisplay } from '/js/modules/processing/modelTracking.js';
+      import { initModelTracking, updateModelDisplay } from '/js/modules/processing/modelTracking.js';
       import { handleCancelProcessing } from '/js/modules/processing/cancelProcessing.js';
-      
-      // Function to update progress UI
-      function updateProgressUI(progress) {
-        const progressBar = document.getElementById('progressBar');
-        
-        if (progressBar) {
-          const percentage = Math.round(progress);
-          progressBar.style.width = `${percentage}%`;
-          progressBar.setAttribute('aria-valuenow', percentage);
-          progressBar.textContent = `${percentage}%`;
-        }
-      }
-      
-      // Function to check processing progress
-      async function checkProgress() {
-        try {
-          const response = await fetch('/progress');
-          const data = await response.json();
-          
-          const statusMessage = document.getElementById('statusMessage');
-          const fileProgress = document.getElementById('fileProgress');
-          const selectedModel = localStorage.getItem('selectedModel') || 'openai';
-          
-          // Update model display and progress
-          updateModelDisplay(selectedModel);
-          updateProgressUI(data.progress);
-          
-          // Update file progress text if available
-          if (fileProgress && data.processedFiles !== undefined && data.totalFiles !== undefined) {
-            fileProgress.textContent = `Processed ${data.processedFiles} of ${data.totalFiles} files`;
-          }
-          
-          if (data.state === 'complete') {
-            if (statusMessage) {
-              statusMessage.textContent = getStatusMessage('complete', selectedModel);
-            }
-            setTimeout(() => {
-              window.location.href = '/results.html';
-            }, 1000);
-          } else if (data.state === 'error') {
-            if (statusMessage) {
-              statusMessage.textContent = getStatusMessage('error', selectedModel);
-            }
-          }
-        } catch (error) {
-          console.error('Error checking progress:', error);
-        }
-      }
+      import { checkProgress } from '/js/modules/processing/api.js';
       
       document.addEventListener('DOMContentLoaded', () => {
+        // Initialize model tracking
         initModelTracking();
         
-        // Update initial status message
-        const statusMessage = document.getElementById('statusMessage');
+        // Display selected model
         const selectedModel = localStorage.getItem('selectedModel') || 'openai';
-        if (statusMessage) {
-          statusMessage.textContent = getStatusMessage('processing', selectedModel);
-        }
+        updateModelDisplay(selectedModel);
         
         // Attach cancel button event listener
         const cancelButton = document.getElementById('cancelProcessingButton');
         if (cancelButton) {
           cancelButton.addEventListener('click', handleCancelProcessing);
         }
+        
+        // Do initial progress check
+        checkProgress();
         
         // Check progress every 2 seconds
         setInterval(checkProgress, 2000);
