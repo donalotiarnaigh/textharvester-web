@@ -31,4 +31,44 @@ The error occurs in the `validateAndConvert` method of `MemorialOCRPrompt` class
 
 ### Related Files
 - `src/utils/prompts/templates/MemorialOCRPrompt.js`
-- `src/utils/fileProcessing.js` 
+- `src/utils/fileProcessing.js`
+
+## Issue #2: Progress Bar Malfunction
+**Status:** Open  
+**Date Reported:** 2024-03-22  
+**Component:** UI/Progress Tracking  
+**Severity:** Medium  
+
+### Description
+When uploading multiple image files (3 in the test case), the progress bar exhibits incorrect behavior:
+1. Starts at 0%
+2. Almost immediately jumps to 200%
+3. Gets stuck at 200%
+4. No automatic redirect to results page occurs
+5. Results are processed correctly but require manual navigation to view
+
+### Expected Behavior
+1. Progress bar should start at 0%
+2. Should increment proportionally based on processing progress
+3. Should reach 100% when all files are processed
+4. Should automatically redirect to results page upon completion
+
+### Analysis
+The issue appears to be related to:
+1. Progress calculation logic not properly handling multiple files
+2. Progress event handling possibly double-counting events
+3. Completion detection not triggering redirect
+4. Disconnect between actual processing status and UI representation
+
+### Proposed Solution
+1. Review and fix progress calculation logic
+2. Ensure progress events are not duplicated
+3. Implement proper completion detection
+4. Add logging to track progress events
+5. Add error handling for progress tracking
+6. Update tests to cover multiple file upload scenarios
+
+### Related Files
+- `src/components/UploadProgress.js` (or similar UI component)
+- `src/utils/fileProcessing.js`
+- `src/utils/progressTracking.js` (if exists) 
