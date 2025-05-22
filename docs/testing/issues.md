@@ -65,7 +65,7 @@ The issue appears to be related to:
 Progress tracking has been improved but not fully fixed. Implementation of error handling has resolved some aspects of this issue, but the progress calculation still doesn't increment proportionally with multiple files.
 
 ## Issue #3: Missing First Name Validation Error
-**Status:** Open  
+**Status:** Partially Addressed  
 **Date Reported:** 2024-03-22  
 **Component:** MemorialOCRPrompt  
 **Severity:** High  
@@ -78,6 +78,12 @@ When processing a PDF with a record containing no first name (e.g., "R.R Talbot 
 - Takes "Talbot" as first name and "Jun" as last name
 - No validation error occurs, but results in incorrect name parsing
 - Shows inconsistency in name handling between providers
+
+**Update (2025-05-22):** While validation rules haven't been updated, error handling now works correctly:
+- System properly identifies and reports the validation error
+- Processing continues for other valid records
+- Error information is included in the progress tracking
+- Results page shows valid records while indicating errors
 
 ### Error Message
 ```
@@ -98,23 +104,21 @@ The issue appears to be related to:
    - Others ignore initials and parse remaining text incorrectly
    - No standardized approach to handling special name formats
 
-### Proposed Solution
+### Partial Solution Implemented
+The error handling aspect has been improved:
+1. Validation errors are now caught and properly reported
+2. Processing continues for other files even when validation errors occur
+3. The error information is tracked and displayed to the user
+4. Results for valid records are preserved and displayed
+
+### Remaining Work
 1. Update name validation rules to handle:
    - Missing first names
    - Initial-only names
    - Titles (e.g., "Rev.", "Jr.", "Junr")
-2. Implement partial success handling for multiple records
-3. Add more descriptive error messages
-4. Add test cases for:
-   - Missing first names
-   - Initial-only names
-   - Multiple records with mixed validity
-   - Various title formats
-5. Standardize name parsing across providers:
-   - Create consistent rules for handling initials
-   - Define provider-specific name parsing configurations if needed
-   - Add validation to catch incorrect parsing
-   - Implement proper handling of suffixes (Jr, Junr, etc.)
+2. Implement partial success handling for multiple records on a single page
+3. Standardize name parsing across providers
+4. Fix the "undefined attempts" bug in the error message for validation errors
 
 ### Related Files
 - `src/utils/prompts/templates/MemorialOCRPrompt.js`
@@ -145,7 +149,7 @@ This issue, combined with Issue #2, suggests:
 Progress tracking has been improved but not fully fixed. Implementation of error handling has resolved some aspects of this issue, but the progress calculation still doesn't handle multiple files correctly with Anthropic.
 
 ## Issue #5: Premature Redirect and Incomplete Results Display
-**Status:** Open  
+**Status:** Intermittent  
 **Date Reported:** 2025-05-22  
 **Component:** Progress Tracking and Results Display  
 **Severity:** Medium  
@@ -157,6 +161,16 @@ When uploading multiple images (including a mix of valid and empty sheets), the 
 2. Prematurely redirects to the results page after processing only some files
 3. Shows incomplete results on initial page load
 4. Only displays all processed results after manually refreshing the results page
+
+**Update (2025-05-22):** Testing with a multi-page PDF showed improved behavior:
+- Progress bar worked correctly, showing proper progression to 100%
+- All valid results were present on the initial results page load
+- Validation errors were properly handled and reported
+
+The issue appears to be intermittent or context-dependent, possibly related to:
+- Different upload methods (individual files vs. multi-page PDFs)
+- Processing time differences between files
+- Race conditions that occur under specific circumstances
 
 ### Reproduction Steps
 1. Select 3 images for upload (1 empty sheet, 2 valid sheets)
@@ -175,21 +189,17 @@ When uploading multiple images (including a mix of valid and empty sheets), the 
 
 ### Analysis
 The issue stems from:
-1. Incorrect synchronization between file processing and progress tracking
-2. Race condition where the redirect occurs before all processing completes
-3. Possible caching issue with the results endpoint
-4. Progress complete flag being set too early
-5. Inconsistent state between the backend processing status and frontend progress tracking
+1. Possible race condition where the redirect occurs before all processing completes
+2. Potential caching issue with the results endpoint
+3. Progress complete flag possibly being set too early in some circumstances
+4. Inconsistent state between the backend processing status and frontend progress tracking
 
 ### Proposed Solution
-1. Modify the progress tracking to:
-   - Accurately reflect the number of files processed vs. total files
-   - Only mark as complete when all files (including error cases) are fully processed
-2. Delay the redirect until confirmed that all files are processed
-3. Ensure the results endpoint returns the most current data
-4. Add additional synchronization between file processing and progress reporting
-5. Implement a confirmation step before redirecting to ensure all processing has completed
-6. Add logging to track the exact sequence of processing events and results retrieval
+1. Add more robust synchronization between file processing completion and redirection
+2. Implement a delay or confirmation mechanism before redirecting
+3. Ensure the results endpoint always returns the most current data
+4. Add additional logging to track the exact sequence of events in problematic cases
+5. Implement a final verification step before marking processing as complete
 
 ### Related Files
 - `src/utils/fileQueue.js` - Manages file processing queue and completion status
