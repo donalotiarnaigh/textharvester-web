@@ -60,10 +60,10 @@
 
 ## 4. Enhance Base Prompt Class
 
-4.1. **Refactor BasePrompt**
-   - Update imports for new modules
-   - Modify constructor to use new field structure
-   - Implement unified validation logic
+4.1. **Refactor BasePrompt** ✓ (2024-03-22)
+   - Update imports for new modules ✓
+   - Modify constructor to use new field structure ✓
+   - Implement unified validation logic ✓
 
 4.2. **Implement Provider Integration**
    - Add provider-aware methods

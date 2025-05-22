@@ -1,120 +1,186 @@
 const BasePrompt = require('../BasePrompt');
+const { PROVIDER_TYPES } = require('../providers/providerConfig');
+const { createProviderConfig } = require('../providers/providerConfig');
+const dataTypes = require('../types/dataTypes');
 
 describe('BasePrompt', () => {
   describe('constructor', () => {
     it('should initialize with default values when no config provided', () => {
       const prompt = new BasePrompt();
       expect(prompt.version).toBe('1.0.0');
-      expect(prompt.modelTargets).toEqual(['openai', 'anthropic']);
       expect(prompt.description).toBe('');
-      expect(prompt.typeDefinitions).toEqual({});
+      expect(prompt.fields).toEqual({});
+      expect(prompt.providers).toEqual(['openai', 'anthropic']);
     });
 
     it('should initialize with provided config values', () => {
       const config = {
         version: '2.0.0',
-        modelTargets: ['openai'],
         description: 'Test prompt',
-        typeDefinitions: {
-          field1: 'string',
-          field2: 'integer'
-        }
+        fields: {
+          name: { type: 'string', description: 'Full name' },
+          age: { type: 'integer', description: 'Age in years' }
+        },
+        providers: ['openai']
       };
       const prompt = new BasePrompt(config);
       expect(prompt.version).toBe('2.0.0');
-      expect(prompt.modelTargets).toEqual(['openai']);
       expect(prompt.description).toBe('Test prompt');
-      expect(prompt.typeDefinitions).toEqual({
-        field1: 'string',
-        field2: 'integer'
-      });
+      expect(prompt.fields).toEqual(config.fields);
+      expect(prompt.providers).toEqual(['openai']);
+    });
+
+    it('should validate field types against supported types', () => {
+      expect(() => {
+        new BasePrompt({
+          fields: {
+            test: { type: 'unsupported_type', description: 'Test field' }
+          }
+        });
+      }).toThrow('Unsupported field type: unsupported_type');
     });
   });
 
-  describe('validateAndConvert', () => {
-    it('should convert data types according to type definitions', () => {
-      const prompt = new BasePrompt({
-        typeDefinitions: {
-          stringField: 'string',
-          integerField: 'integer',
-          floatField: 'float',
-          booleanField: 'boolean',
-          dateField: 'date'
+  describe('field validation', () => {
+    let prompt;
+
+    beforeEach(() => {
+      prompt = new BasePrompt({
+        fields: {
+          name: { type: 'string', description: 'Full name' },
+          age: { type: 'integer', description: 'Age in years' },
+          active: { type: 'boolean', description: 'Is active' },
+          score: { type: 'float', description: 'Test score' },
+          birthdate: { type: 'date', description: 'Date of birth' }
         }
       });
-
-      const testData = {
-        stringField: 'test',
-        integerField: '42',
-        floatField: '3.14',
-        booleanField: 'true',
-        dateField: '2024-03-15'
-      };
-
-      const result = prompt.validateAndConvert(testData);
-      expect(typeof result.stringField).toBe('string');
-      expect(typeof result.integerField).toBe('number');
-      expect(Number.isInteger(result.integerField)).toBe(true);
-      expect(typeof result.floatField).toBe('number');
-      expect(typeof result.booleanField).toBe('boolean');
-      expect(result.dateField instanceof Date).toBe(true);
     });
 
-    it('should handle null values', () => {
-      const prompt = new BasePrompt({
-        typeDefinitions: {
-          stringField: 'string',
-          integerField: 'integer'
-        }
-      });
-
-      const testData = {
-        stringField: null,
-        integerField: null
-      };
-
-      const result = prompt.validateAndConvert(testData);
-      expect(result.stringField).toBeNull();
-      expect(result.integerField).toBeNull();
+    it('should validate and convert string fields', () => {
+      const result = prompt.validateField('name', 'John Doe');
+      expect(result).toBe('John Doe');
     });
 
-    it('should handle invalid values by converting them to null', () => {
-      const prompt = new BasePrompt({
-        typeDefinitions: {
-          integerField: 'integer',
-          floatField: 'float',
-          dateField: 'date'
-        }
-      });
+    it('should validate and convert integer fields', () => {
+      expect(prompt.validateField('age', '25')).toBe(25);
+      expect(prompt.validateField('age', 25)).toBe(25);
+      expect(prompt.validateField('age', 'invalid')).toBeNull();
+    });
 
-      const testData = {
-        integerField: 'not a number',
-        floatField: 'invalid',
-        dateField: 'not a date'
-      };
+    it('should validate and convert boolean fields', () => {
+      expect(prompt.validateField('active', true)).toBe(true);
+      expect(prompt.validateField('active', 'true')).toBe(true);
+      expect(prompt.validateField('active', 'false')).toBe(false);
+      expect(prompt.validateField('active', 'invalid')).toBe(false);
+    });
 
-      const result = prompt.validateAndConvert(testData);
-      expect(result.integerField).toBeNull();
-      expect(result.floatField).toBeNull();
-      expect(result.dateField).toBeNull();
+    it('should validate and convert float fields', () => {
+      expect(prompt.validateField('score', '92.5')).toBe(92.5);
+      expect(prompt.validateField('score', 92.5)).toBe(92.5);
+      expect(prompt.validateField('score', 'invalid')).toBeNull();
+    });
+
+    it('should validate and convert date fields', () => {
+      const date = new Date('2024-03-22');
+      expect(prompt.validateField('birthdate', '2024-03-22')).toEqual(date);
+      expect(prompt.validateField('birthdate', date)).toEqual(date);
+      expect(prompt.validateField('birthdate', 'invalid')).toBeNull();
+    });
+
+    it('should handle null and undefined values', () => {
+      expect(prompt.validateField('name', null)).toBeNull();
+      expect(prompt.validateField('age', undefined)).toBeNull();
     });
   });
 
-  describe('getPromptText', () => {
-    it('should throw error when not implemented', () => {
-      const prompt = new BasePrompt();
-      expect(() => prompt.getPromptText()).toThrow('Method not implemented in base class');
-    });
-  });
+  describe('provider integration', () => {
+    let prompt;
 
-  describe('getProviderPrompt', () => {
-    it('should return default prompt text when not overridden', () => {
-      const prompt = new BasePrompt();
-      const mockPromptText = 'Test prompt text';
-      prompt.getPromptText = jest.fn().mockReturnValue(mockPromptText);
+    beforeEach(() => {
+      prompt = new BasePrompt({
+        fields: {
+          name: { type: 'string', description: 'Full name' },
+          age: { type: 'integer', description: 'Age in years' }
+        }
+      });
+      prompt.getPromptText = jest.fn().mockReturnValue('Extract the following fields from the data');
+    });
+
+    it('should format prompt for specific provider', () => {
+      const formatted = prompt.getProviderPrompt('openai');
+      expect(formatted).toHaveProperty('systemPrompt');
+      expect(formatted).toHaveProperty('userPrompt');
+      expect(formatted.systemPrompt).toContain('OpenAI');
+    });
+
+    it('should include field descriptions in provider prompt', () => {
+      const formatted = prompt.getProviderPrompt('openai');
+      expect(formatted.userPrompt).toContain('Full name');
+      expect(formatted.userPrompt).toContain('Age in years');
+    });
+
+    it('should throw error for unsupported provider', () => {
+      expect(() => {
+        prompt.getProviderPrompt('unsupported');
+      }).toThrow('Provider not supported: unsupported');
+    });
+
+    it('should validate provider configuration', () => {
+      expect(() => {
+        prompt.validateProvider('invalid');
+      }).toThrow('Provider not supported: invalid');
       
-      expect(prompt.getProviderPrompt('openai')).toBe(mockPromptText);
-      expect(prompt.getPromptText).toHaveBeenCalled();
+      expect(() => {
+        prompt.validateProvider('openai');
+      }).not.toThrow();
+    });
+  });
+
+  describe('data validation', () => {
+    let prompt;
+
+    beforeEach(() => {
+      prompt = new BasePrompt({
+        fields: {
+          name: { type: 'string', description: 'Full name' },
+          age: { type: 'integer', description: 'Age in years' }
+        }
+      });
+    });
+
+    it('should validate and convert complete data object', () => {
+      const data = {
+        name: 'John Doe',
+        age: '25'
+      };
+      const result = prompt.validateAndConvert(data);
+      expect(result).toEqual({
+        name: 'John Doe',
+        age: 25
+      });
+    });
+
+    it('should handle missing fields', () => {
+      const data = {
+        name: 'John Doe'
+      };
+      const result = prompt.validateAndConvert(data);
+      expect(result).toEqual({
+        name: 'John Doe',
+        age: null
+      });
+    });
+
+    it('should handle invalid data', () => {
+      const data = {
+        name: 'John Doe',
+        age: 'invalid'
+      };
+      const result = prompt.validateAndConvert(data);
+      expect(result).toEqual({
+        name: 'John Doe',
+        age: null
+      });
     });
   });
 }); 

@@ -1,5 +1,8 @@
+const { PROVIDER_TYPES, createProviderConfig } = require('./providers/providerConfig');
+const dataTypes = require('./types/dataTypes');
+
 /**
- * Base class for all OCR prompts
+ * Base class for all prompts
  * Provides common functionality for prompt management and type validation
  */
 class BasePrompt {
@@ -7,15 +10,67 @@ class BasePrompt {
    * Create a new prompt instance
    * @param {Object} config Configuration options
    * @param {string} config.version Prompt version
-   * @param {string[]} config.modelTargets List of supported AI models
    * @param {string} config.description Human-readable prompt description
-   * @param {Object} config.typeDefinitions Type definitions for expected fields
+   * @param {Object} config.fields Field definitions with types and descriptions
+   * @param {string[]} config.providers List of supported AI providers
    */
   constructor(config = {}) {
     this.version = config.version || '1.0.0';
-    this.modelTargets = config.modelTargets || ['openai', 'anthropic'];
     this.description = config.description || '';
-    this.typeDefinitions = config.typeDefinitions || {};
+    this.fields = this._validateFields(config.fields || {});
+    this.providers = config.providers || ['openai', 'anthropic'];
+  }
+
+  /**
+   * Validate field definitions
+   * @private
+   * @param {Object} fields Field definitions
+   * @returns {Object} Validated field definitions
+   */
+  _validateFields(fields) {
+    for (const [fieldName, field] of Object.entries(fields)) {
+      if (!field.type || !dataTypes.isValidType(field.type)) {
+        throw new Error(`Unsupported field type: ${field.type}`);
+      }
+      if (!field.description) {
+        field.description = fieldName; // Use field name as default description
+      }
+    }
+    return fields;
+  }
+
+  /**
+   * Validate a single field value
+   * @param {string} fieldName Name of the field to validate
+   * @param {*} value Value to validate
+   * @returns {*} Validated and converted value
+   */
+  validateField(fieldName, value) {
+    const field = this.fields[fieldName];
+    if (!field) {
+      throw new Error(`Unknown field: ${fieldName}`);
+    }
+
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    try {
+      return dataTypes.convertValue(value, field.type);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Validate provider support
+   * @param {string} provider Provider name to validate
+   * @throws {Error} If provider is not supported
+   */
+  validateProvider(provider) {
+    if (!this.providers.includes(provider.toLowerCase())) {
+      throw new Error(`Provider not supported: ${provider}`);
+    }
   }
 
   /**
@@ -30,50 +85,35 @@ class BasePrompt {
   /**
    * Get the appropriate prompt for a specific AI provider
    * @param {string} provider AI provider name
-   * @returns {string} Provider-specific prompt
+   * @returns {Object} Provider-specific prompt configuration
    */
   getProviderPrompt(provider) {
-    return this.getPromptText();
+    this.validateProvider(provider);
+    const config = createProviderConfig(provider);
+    const basePrompt = this.getPromptText();
+
+    // Format field descriptions
+    const fieldDescriptions = Object.entries(this.fields)
+      .map(([name, field]) => `${name} (${field.type}): ${field.description}`)
+      .join('\n');
+
+    return {
+      systemPrompt: config.systemPromptTemplate,
+      userPrompt: `${basePrompt}\n\nField Definitions:\n${fieldDescriptions}\n\n${config.formatInstructions || ''}`
+    };
   }
 
   /**
-   * Validate response data against type definitions
+   * Validate response data against field definitions
    * @param {Object} data Response data from AI model
    * @returns {Object} Validated and converted data
    */
   validateAndConvert(data) {
     const result = {};
     
-    for (const [key, type] of Object.entries(this.typeDefinitions)) {
-      if (data[key] === null || data[key] === undefined) {
-        result[key] = null;
-        continue;
-      }
-      
-      try {
-        switch (type.toLowerCase()) {
-          case 'integer':
-            result[key] = data[key] === null ? null : parseInt(data[key], 10) || null;
-            break;
-          case 'float':
-            result[key] = data[key] === null ? null : parseFloat(data[key]) || null;
-            break;
-          case 'boolean':
-            result[key] = data[key] === null ? null : Boolean(data[key]);
-            break;
-          case 'date':
-            result[key] = data[key] === null ? null : new Date(data[key]);
-            if (result[key] instanceof Date && isNaN(result[key])) {
-              result[key] = null;
-            }
-            break;
-          case 'string':
-          default:
-            result[key] = data[key];
-        }
-      } catch (error) {
-        result[key] = null;
-      }
+    for (const fieldName of Object.keys(this.fields)) {
+      const value = data[fieldName];
+      result[fieldName] = this.validateField(fieldName, value);
     }
     
     return result;

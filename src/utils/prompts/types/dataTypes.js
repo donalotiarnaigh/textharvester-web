@@ -82,7 +82,7 @@ class BooleanType extends DataType {
       if (value.toLowerCase() === 'true') return true;
       if (value.toLowerCase() === 'false') return false;
     }
-    return Boolean(value);
+    return false;
   }
 }
 
@@ -101,10 +101,88 @@ function validateValue(value, type) {
   }
 }
 
+/**
+ * Supported data types
+ */
+const SUPPORTED_TYPES = ['string', 'integer', 'float', 'boolean', 'date'];
+
+/**
+ * Check if a type is supported
+ * @param {string} type Type to check
+ * @returns {boolean} True if type is supported
+ */
+function isValidType(type) {
+  return SUPPORTED_TYPES.includes(type.toLowerCase());
+}
+
+/**
+ * Convert a value to the specified type
+ * @param {*} value Value to convert
+ * @param {string} type Target type
+ * @returns {*} Converted value
+ * @throws {Error} If conversion fails
+ */
+function convertValue(value, type) {
+  switch (type.toLowerCase()) {
+    case 'string':
+      return String(value);
+    
+    case 'integer':
+      if (typeof value === 'number' && Number.isInteger(value)) {
+        return value;
+      }
+      const intValue = parseInt(value, 10);
+      if (isNaN(intValue)) {
+        throw new Error('Invalid integer value');
+      }
+      return intValue;
+    
+    case 'float':
+      if (typeof value === 'number') {
+        return value;
+      }
+      const floatValue = parseFloat(value);
+      if (isNaN(floatValue)) {
+        throw new Error('Invalid float value');
+      }
+      return floatValue;
+    
+    case 'boolean':
+      if (typeof value === 'boolean') {
+        return value;
+      }
+      if (typeof value === 'string') {
+        const lowered = value.toLowerCase();
+        if (lowered === 'true') return true;
+        if (lowered === 'false') return false;
+      }
+      return false;
+    
+    case 'date':
+      if (value instanceof Date) {
+        if (isNaN(value)) {
+          throw new Error('Invalid date value');
+        }
+        return value;
+      }
+      const dateValue = new Date(value);
+      if (isNaN(dateValue)) {
+        throw new Error('Invalid date value');
+      }
+      return dateValue;
+    
+    default:
+      throw new Error(`Unsupported type: ${type}`);
+  }
+}
+
 module.exports = {
   DataType,
   StringType,
   IntegerType,
   BooleanType,
-  validateValue
+  validateValue,
+  SUPPORTED_TYPES,
+  isValidType,
+  convertValue
 }; 
