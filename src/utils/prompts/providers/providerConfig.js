@@ -44,63 +44,62 @@ const PROVIDER_CONFIGS = {
   }
 };
 
+const TYPE_FORMATS = {
+  [PROVIDER_TYPES.OPENAI]: {
+    string: 'text',
+    integer: 'integer',
+    float: 'number',
+    boolean: 'boolean',
+    date: 'string'
+  },
+  [PROVIDER_TYPES.ANTHROPIC]: {
+    string: 'text',
+    integer: 'number',
+    float: 'number',
+    boolean: 'boolean',
+    date: 'string'
+  }
+};
+
 /**
  * Represents a provider configuration
  */
 class ProviderConfig {
   /**
-   * @param {Object} config - Provider configuration
-   * @param {string} config.name - Provider name
-   * @param {PROVIDER_TYPES} config.type - Provider type
-   * @param {number} [config.maxTokens] - Maximum tokens
-   * @param {number} [config.temperature] - Temperature for response generation
-   * @param {string} [config.systemPromptTemplate] - System prompt template
-   * @param {Object} [config.responseFormat] - Response format configuration
+   * @param {string} type - Provider type
    */
-  constructor(config) {
-    this.validateConfig(config);
-    
-    this.name = config.name;
-    this.type = config.type;
-    this.maxTokens = config.maxTokens || DEFAULT_CONFIG.maxTokens;
-    this.temperature = config.temperature || DEFAULT_CONFIG.temperature;
-    this.systemPromptTemplate = config.systemPromptTemplate || 
-      (PROVIDER_CONFIGS[config.type]?.systemPromptTemplate || DEFAULT_CONFIG.systemPromptTemplate);
-    this.responseFormat = config.responseFormat || 
-      (PROVIDER_CONFIGS[config.type]?.responseFormat || DEFAULT_CONFIG.responseFormat);
-    
-    this.validateResponseFormat();
+  constructor(type) {
+    this.type = type;
+    this.maxTokens = 2000;
+    this.temperature = 0.7;
+    this.systemPromptTemplate = this.getDefaultSystemPrompt();
+    this.formatInstructions = this.getDefaultFormatInstructions();
   }
 
-  /**
-   * Validate provider configuration
-   * @private
-   * @param {Object} config - Configuration to validate
-   */
-  validateConfig(config) {
-    if (!config.name) {
-      throw new Error('Provider name is required');
-    }
-    if (!config.type) {
-      throw new Error('Provider type is required');
-    }
-    if (!Object.values(PROVIDER_TYPES).includes(config.type)) {
-      throw new Error('Invalid provider type');
+  getDefaultSystemPrompt() {
+    switch (this.type) {
+      case PROVIDER_TYPES.OPENAI:
+        return 'You are an AI assistant trained by OpenAI to help with data extraction.';
+      case PROVIDER_TYPES.ANTHROPIC:
+        return 'You are Claude, an AI assistant created by Anthropic to help with data extraction.';
+      default:
+        return 'You are an AI assistant designed to help with data extraction.';
     }
   }
 
-  /**
-   * Validate response format configuration
-   * @private
-   */
-  validateResponseFormat() {
-    const validTypes = ['text', 'json', 'markdown'];
-    if (!validTypes.includes(this.responseFormat.type)) {
-      throw new Error('Invalid response format type');
+  getDefaultFormatInstructions() {
+    switch (this.type) {
+      case PROVIDER_TYPES.OPENAI:
+        return 'Respond with a JSON object containing only the specified fields.';
+      case PROVIDER_TYPES.ANTHROPIC:
+        return 'Respond with a JSON object containing only the specified fields. Do not include any explanations or markdown formatting.';
+      default:
+        return 'Respond with the extracted data in the specified format.';
     }
-    if (this.responseFormat.type === 'json' && !this.responseFormat.schema) {
-      throw new Error('Schema is required for JSON response format');
-    }
+  }
+
+  getFieldFormat(type) {
+    return TYPE_FORMATS[this.type]?.[type] || type;
   }
 
   /**
@@ -127,29 +126,13 @@ function createProviderConfig(providerName) {
   if (!type) {
     throw new Error(`Unknown provider: ${providerName}`);
   }
-
-  // Import provider-specific configurations
-  const OpenAIConfig = require('./openaiConfig');
-  const AnthropicConfig = require('./anthropicConfig');
-
-  switch (type) {
-    case PROVIDER_TYPES.OPENAI:
-      return new OpenAIConfig();
-    case PROVIDER_TYPES.ANTHROPIC:
-      return new AnthropicConfig();
-    default:
-      return new ProviderConfig({
-        name: providerName,
-        type,
-        ...PROVIDER_CONFIGS[type]
-      });
-  }
+  return new ProviderConfig(type);
 }
 
 module.exports = {
-  ProviderConfig,
-  createProviderConfig,
   PROVIDER_TYPES,
+  createProviderConfig,
+  ProviderConfig,
   DEFAULT_CONFIG,
   PROVIDER_CONFIGS
 }; 

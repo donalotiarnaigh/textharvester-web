@@ -83,6 +83,121 @@ class BasePrompt {
   }
 
   /**
+   * Get provider-specific field formatting
+   * @param {string} provider Provider name
+   * @returns {Object} Provider-specific field definitions
+   */
+  getProviderFields(provider) {
+    this.validateProvider(provider);
+    const config = createProviderConfig(provider);
+    const result = {};
+
+    for (const [name, field] of Object.entries(this.fields)) {
+      result[name] = {
+        ...field,
+        format: config.getFieldFormat(field.type)
+      };
+    }
+
+    return result;
+  }
+
+  /**
+   * Format response for specific provider
+   * @param {string} provider Provider name
+   * @param {Object} data Response data
+   * @returns {Object} Provider-specific formatted response
+   */
+  formatProviderResponse(provider, data) {
+    this.validateProvider(provider);
+    const validatedData = this.validateAndConvert(data);
+
+    switch (provider.toLowerCase()) {
+      case 'openai':
+        return {
+          response_format: { type: 'json' },
+          content: validatedData
+        };
+      
+      case 'anthropic':
+        return {
+          messages: [{
+            role: 'assistant',
+            content: JSON.stringify(validatedData, null, 2)
+          }]
+        };
+      
+      default:
+        throw new Error(`Unsupported provider: ${provider}`);
+    }
+  }
+
+  /**
+   * Get provider-specific validation rules
+   * @param {string} provider Provider name
+   * @returns {Object} Provider validation rules
+   */
+  getProviderValidationRules(provider) {
+    this.validateProvider(provider);
+    const config = createProviderConfig(provider);
+
+    switch (provider.toLowerCase()) {
+      case 'openai':
+        return {
+          maxTokens: config.maxTokens,
+          temperature: config.temperature,
+          responseFormat: { type: 'json' }
+        };
+      
+      case 'anthropic':
+        return {
+          maxTokens: config.maxTokens,
+          temperature: config.temperature,
+          format: 'json'
+        };
+      
+      default:
+        throw new Error(`Unsupported provider: ${provider}`);
+    }
+  }
+
+  /**
+   * Validate provider-specific response format
+   * @param {string} provider Provider name
+   * @param {Object} response Provider response
+   * @throws {Error} If response format is invalid
+   */
+  validateProviderResponse(provider, response) {
+    this.validateProvider(provider);
+
+    switch (provider.toLowerCase()) {
+      case 'openai':
+        if (!response.response_format || response.response_format.type !== 'json') {
+          throw new Error('Invalid OpenAI response format');
+        }
+        if (response.content?.error === 'token_limit_exceeded') {
+          throw new Error('OpenAI token limit exceeded');
+        }
+        break;
+      
+      case 'anthropic':
+        if (!response.messages || !Array.isArray(response.messages)) {
+          throw new Error('Invalid Anthropic response format');
+        }
+        const content = response.messages[0]?.content;
+        try {
+          JSON.parse(content);
+        } catch (error) {
+          throw new Error('Invalid JSON in Anthropic response');
+        }
+        break;
+      
+      default:
+        throw new Error(`Unsupported provider: ${provider}`);
+    }
+  }
+
+  /**
    * Get the appropriate prompt for a specific AI provider
    * @param {string} provider AI provider name
    * @returns {Object} Provider-specific prompt configuration
@@ -92,14 +207,18 @@ class BasePrompt {
     const config = createProviderConfig(provider);
     const basePrompt = this.getPromptText();
 
-    // Format field descriptions
-    const fieldDescriptions = Object.entries(this.fields)
-      .map(([name, field]) => `${name} (${field.type}): ${field.description}`)
+    // Format field descriptions with provider-specific types
+    const providerFields = this.getProviderFields(provider);
+    const fieldDescriptions = Object.entries(providerFields)
+      .map(([name, field]) => `${name} (${field.format}): ${field.description}`)
       .join('\n');
+
+    // Get provider-specific validation rules
+    const validationRules = this.getProviderValidationRules(provider);
 
     return {
       systemPrompt: config.systemPromptTemplate,
-      userPrompt: `${basePrompt}\n\nField Definitions:\n${fieldDescriptions}\n\n${config.formatInstructions || ''}`
+      userPrompt: `${basePrompt}\n\nField Definitions:\n${fieldDescriptions}\n\nValidation Rules:\n${JSON.stringify(validationRules, null, 2)}\n\n${config.formatInstructions || ''}`
     };
   }
 
