@@ -14,6 +14,7 @@ let fileQueue = [];
 let isProcessing = false;
 let processedFiles = 0;
 let totalFiles = 0;
+let processedResults = []; // Store both successful and error results
 const retryLimits = {};
 
 function enqueueFiles(files) {
@@ -41,6 +42,7 @@ function enqueueFiles(files) {
 
   totalFiles = files.length;  // Set total files to new batch size
   processedFiles = 0;        // Reset processed files counter
+  processedResults = [];     // Clear any previous results
   
   logger.info(
     `Enqueued ${files.length} new file(s). Queue length is now: ${fileQueue.length}. Total files to process: ${totalFiles}`
@@ -53,6 +55,7 @@ function resetFileProcessingState() {
   totalFiles = 0;
   isProcessing = false;
   fileQueue = [];
+  processedResults = [];
   logger.info('File processing state reset for a new session.');
 }
 
@@ -78,6 +81,16 @@ function enqueueFileForRetry(file) {
     );
   } else {
     logger.error(`File processing failed after maximum retries: ${file.path}`);
+    
+    // Add to processed results with error info
+    processedResults.push({
+      fileName: path.basename(file.path),
+      error: true,
+      errorType: 'processing_failed',
+      errorMessage: `Processing failed after ${config.maxRetryCount} attempts`
+    });
+    
+    processedFiles++; // Count as processed even though it failed
     delete retryLimits[file.path];
   }
 }
@@ -102,8 +115,16 @@ function checkAndProcessNextFile() {
       `Dequeued file for processing: ${file.path} with provider: ${file.provider}. Initiating processing.`
     );
     processFile(file.path, { provider: file.provider })
-      .then(() => {
-        logger.info(`File processing completed: ${file.path}.`);
+      .then((result) => {
+        // Store result regardless of success or error
+        processedResults.push(result);
+        
+        if (result.error) {
+          logger.info(`File ${file.path} processed with error: ${result.errorMessage}`);
+        } else {
+          logger.info(`File processing completed successfully: ${file.path}.`);
+        }
+        
         processedFiles++;
         isProcessing = false;
         checkAndProcessNextFile();
@@ -144,6 +165,10 @@ function getProcessedFiles() {
   return processedFiles;
 }
 
+function getProcessedResults() {
+  return processedResults;
+}
+
 function getProcessingProgress() {
   const totalFiles = getTotalFiles();
   const processedFiles = getProcessedFiles();
@@ -168,7 +193,8 @@ function getProcessingProgress() {
   const progress = Math.round((processedFiles / totalFiles) * 100);
   return {
     state: progress === 100 ? 'complete' : 'processing',
-    progress: progress
+    progress: progress,
+    errors: processedResults.filter(r => r && r.error) // Include errors in progress response
   };
 }
 
@@ -193,6 +219,7 @@ function cancelProcessing() {
   isProcessing = false;
   processedFiles = 0;
   totalFiles = 0;
+  processedResults = [];
   logger.info('Processing has been cancelled and the queue has been cleared.');
 }
 
@@ -203,6 +230,7 @@ module.exports = {
   resetFileProcessingState,
   getTotalFiles,
   getProcessedFiles,
+  getProcessedResults,
   getProcessingProgress,
   cancelProcessing,
 };

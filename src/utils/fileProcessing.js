@@ -4,6 +4,7 @@ const logger = require('./logger'); // Assuming logger is modularized or its pat
 const { createProvider } = require('./modelProviders');
 const { storeMemorial } = require('./database');
 const { getPrompt } = require('./prompts/templates/providerTemplates');
+const { isEmptySheetError } = require('./errorTypes');
 
 /**
  * Enhances the processFile function with detailed logging for better tracking and debugging.
@@ -36,29 +37,56 @@ async function processFile(filePath, options = {}) {
     // Process the image using the selected provider
     const rawExtractedData = await provider.processImage(base64Image, promptText);
     
-    // Validate and convert the data according to our type definitions
-    const extractedData = promptInstance.validateAndConvert(rawExtractedData);
-    
-    logger.info(`${providerName} API response for ${filePath}`);
-    logger.info(JSON.stringify(extractedData, null, 2));
-    
-    // Add metadata to the extracted data
-    extractedData.fileName = path.basename(filePath);
-    extractedData.ai_provider = providerName;
-    extractedData.model_version = provider.getModelVersion();
-    extractedData.prompt_template = promptTemplate;
-    extractedData.prompt_version = promptInstance.version;
-    
-    // Store in database
-    await storeMemorial(extractedData);
-    
-    logger.info(`OCR text for ${filePath} stored in database with model: ${providerName}`);
-    
-    // Clean up the file after successful processing
-    await fs.unlink(filePath);
-    logger.info(`Cleaned up processed file: ${filePath}`);
-    
-    return extractedData;
+    try {
+      // Validate and convert the data according to our type definitions
+      const extractedData = promptInstance.validateAndConvert(rawExtractedData);
+      
+      logger.info(`${providerName} API response for ${filePath}`);
+      logger.info(JSON.stringify(extractedData, null, 2));
+      
+      // Add metadata to the extracted data
+      extractedData.fileName = path.basename(filePath);
+      extractedData.ai_provider = providerName;
+      extractedData.model_version = provider.getModelVersion();
+      extractedData.prompt_template = promptTemplate;
+      extractedData.prompt_version = promptInstance.version;
+      
+      // Store in database
+      await storeMemorial(extractedData);
+      
+      logger.info(`OCR text for ${filePath} stored in database with model: ${providerName}`);
+      
+      // Clean up the file after successful processing
+      await fs.unlink(filePath);
+      logger.info(`Cleaned up processed file: ${filePath}`);
+      
+      return extractedData;
+    } catch (error) {
+      // Check if this is an empty sheet error
+      if (isEmptySheetError(error)) {
+        logger.warn(`Empty sheet detected for ${filePath}: ${error.message}`);
+        
+        // Return error info instead of throwing
+        const errorResult = {
+          fileName: path.basename(filePath),
+          error: true,
+          errorType: error.type || 'empty_sheet',
+          errorMessage: error.message,
+          ai_provider: providerName,
+          model_version: provider.getModelVersion()
+        };
+        
+        // Clean up the file even for empty sheets
+        await fs.unlink(filePath);
+        logger.info(`Cleaned up empty sheet file: ${filePath}`);
+        
+        return errorResult;
+      }
+      
+      // Re-throw other errors
+      logger.error(`Validation error for ${filePath}: ${error.message}`);
+      throw error;
+    }
   } catch (error) {
     logger.error(`Error processing file ${filePath}:`, error);
     throw error;

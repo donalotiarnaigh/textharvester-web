@@ -4,7 +4,7 @@ const logger = require('../utils/logger'); // Adjust the path as needed
 const config = require('../../config.json'); // Adjust the path as needed
 const { jsonToCsv, formatJsonForExport } = require('../utils/dataConversion'); // Adjust path as needed
 const moment = require('moment'); // Ensure moment is installed and imported
-const { getTotalFiles, getProcessedFiles } = require('../utils/fileQueue.js'); // Adjust the path as needed
+const { getTotalFiles, getProcessedFiles, getProcessedResults } = require('../utils/fileQueue.js'); // Adjust the path as needed
 const { getAllMemorials } = require('../utils/database');
 const { validateAndConvertRecords } = require('../utils/dataValidation');
 
@@ -25,13 +25,30 @@ function getProcessingStatus(req, res) {
           return res.status(500).send('Error checking processing status.');
         }
         if (data === 'complete') {
-          res.json({ status: 'complete', progress: 100 });
+          // Include error information in the response
+          const processedResults = getProcessedResults();
+          const errors = processedResults.filter(r => r && r.error);
+          
+          res.json({ 
+            status: 'complete', 
+            progress: 100,
+            errors: errors.length > 0 ? errors : undefined
+          });
         } else {
           const totalFiles = getTotalFiles();
           const processedFiles = getProcessedFiles();
           let progress =
             totalFiles > 0 ? (processedFiles / totalFiles) * 100 : 0;
-          res.json({ status: 'processing', progress: progress.toFixed(2) });
+          
+          // Get any errors from processed files so far
+          const processedResults = getProcessedResults();
+          const errors = processedResults.filter(r => r && r.error);
+          
+          res.json({ 
+            status: 'processing', 
+            progress: progress.toFixed(2),
+            errors: errors.length > 0 ? errors : undefined
+          });
         }
       });
     } else {
@@ -39,14 +56,23 @@ function getProcessingStatus(req, res) {
       const totalFiles = getTotalFiles();
       const processedFiles = getProcessedFiles();
       let progress = totalFiles > 0 ? (processedFiles / totalFiles) * 100 : 0;
-      res.json({ status: 'processing', progress: progress.toFixed(2) });
+      
+      // Get any errors from processed files so far
+      const processedResults = getProcessedResults();
+      const errors = processedResults.filter(r => r && r.error);
+      
+      res.json({ 
+        status: 'processing', 
+        progress: progress.toFixed(2),
+        errors: errors.length > 0 ? errors : undefined
+      });
     }
   });
 }
 
 async function downloadResultsJSON(req, res) {
   try {
-    // Get all records from database
+    // Get all successful records from database
     const results = await getAllMemorials();
     
     // Validate and convert data types
@@ -84,7 +110,7 @@ function sanitizeFilename(filename) {
 
 async function downloadResultsCSV(req, res) {
   try {
-    // Get all records from database
+    // Get all successful records from database
     const results = await getAllMemorials();
     
     // Validate and convert data types
@@ -112,12 +138,21 @@ async function downloadResultsCSV(req, res) {
 
 async function getResults(req, res) {
   try {
-    const results = await getAllMemorials();
+    // Get all successful records from database
+    const dbResults = await getAllMemorials();
     
     // Validate and convert data types
-    const validatedResults = validateAndConvertRecords(results);
+    const validatedResults = validateAndConvertRecords(dbResults);
     
-    res.json(validatedResults);
+    // Get any errors from processed files
+    const processedResults = getProcessedResults();
+    const errors = processedResults.filter(r => r && r.error);
+    
+    // Return both memorials and errors
+    res.json({
+      memorials: validatedResults,
+      errors: errors
+    });
   } catch (error) {
     logger.error('Error retrieving results:', error);
     res.status(500).json({ error: 'Failed to retrieve results' });
