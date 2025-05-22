@@ -93,16 +93,43 @@ When processing a PDF with a record containing no first name (e.g., "R.R Talbot 
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
 ```
 
-### Analysis
-The issue appears to be related to:
-1. Strict validation rules not accommodating missing first names
-2. No handling for special cases like initials-only names
-3. Validation failing for the entire page when one record is invalid
-4. No partial success handling for multiple records on a page
-5. Inconsistent name parsing behavior across different providers:
-   - Some providers fail validation on initials
-   - Others ignore initials and parse remaining text incorrectly
-   - No standardized approach to handling special name formats
+### Root Cause Analysis
+After extensive investigation, I've identified several specific issues in the name validation logic:
+
+1. **Rigid Name Format Expectations**:
+   - The current validation assumes all memorial inscriptions follow a standard "First Last" pattern
+   - No accommodation for names with initials only (e.g., "R.R. Talbot")
+   - No handling for missing first names or single-name entries
+   - No support for compound names with hyphens or multiple words
+
+2. **Provider-Specific Parsing Inconsistencies**:
+   - OpenAI tends to preserve initials as the first name but fails validation
+   - Anthropic often ignores initials and treats the next word as the first name
+   - This creates inconsistent behavior depending on which provider is used
+
+3. **String Type Validation Implementation**:
+   Examining the code in `src/utils/prompts/types/memorialFields.js`:
+   ```javascript
+   // Simplified version of current code
+   MEMORIAL_FIELDS.first_name = {
+     type: 'string',
+     required: true,
+     transform: (value) => value.trim().toUpperCase(),
+     validate: (value) => /^[A-Z]+$/.test(value) // Only accepts simple uppercase names
+   };
+   ```
+   This validation pattern is too restrictive for real-world names.
+
+4. **Missing Name Variation Handling**:
+   - No recognition of common prefixes (Rev., Dr., Mr., etc.)
+   - No handling of suffixes (Jr., Sr., III, etc.)
+   - No accommodation for initials with periods (e.g., "J.R.")
+   - No support for culturally diverse name formats
+
+5. **Incorrect Regular Expression Patterns**:
+   - Current regex patterns like `/^[A-Z]+$/` only match continuous uppercase letters
+   - This fails on names with initials, spaces, hyphens, or apostrophes
+   - No accommodation for non-English characters or diacritics
 
 ### Partial Solution Implemented
 The error handling aspect has been improved:
@@ -111,19 +138,144 @@ The error handling aspect has been improved:
 3. The error information is tracked and displayed to the user
 4. Results for valid records are preserved and displayed
 
+### Detailed Fix Proposal
+
+1. **Update Name Validation Regular Expressions**:
+   ```javascript
+   // Replace current validation regex with more flexible pattern
+   MEMORIAL_FIELDS.first_name = {
+     type: 'string',
+     required: true,
+     transform: (value) => value?.trim().toUpperCase() || '',
+     // New pattern accommodates initials, compound names, and single-character names
+     validate: (value) => value === '' || /^[A-Z\.]{1,2}(\.[A-Z\.]{1,2})*$|^[A-Z]+([\s\-'][A-Z]+)*$/.test(value)
+   };
+
+   MEMORIAL_FIELDS.last_name = {
+     type: 'string',
+     required: true,
+     transform: (value) => value?.trim().toUpperCase() || '',
+     // Allow more complex last names with prefixes, hyphens, apostrophes
+     validate: (value) => value === '' || /^[A-Z]+([\s\-'][A-Z]+)*(\s(JR|SR|I{1,3}|IV|V|VI{1,3}))?$/.test(value)
+   };
+   ```
+
+2. **Implement Name Preprocessing**:
+   Create a new preprocessing function to standardize names before validation:
+   ```javascript
+   function preprocessName(nameString) {
+     if (!nameString) return { firstName: '', lastName: '' };
+     
+     // Remove common prefixes
+     const withoutPrefix = nameString.replace(/^(REV|DR|MR|MRS|MS|MISS)\.?\s+/i, '');
+     
+     // Handle case with only initials and last name
+     const initialsMatch = withoutPrefix.match(/^([A-Z](\.[A-Z])*\.?)\s+([A-Z][A-Za-z\s\-']+)(\s+(JR|SR|I{1,3}|IV|V|VI{1,3}))?$/);
+     if (initialsMatch) {
+       return {
+         firstName: initialsMatch[1], // Initials become first name
+         lastName: initialsMatch[3] + (initialsMatch[4] || '')
+       };
+     }
+     
+     // Handle standard case
+     const parts = withoutPrefix.split(/\s+/);
+     if (parts.length === 1) {
+       // Single name - treat as last name
+       return { firstName: '', lastName: parts[0] };
+     }
+     
+     // Handle suffix if present
+     const suffixMatch = parts[parts.length-1].match(/^(JR|SR|I{1,3}|IV|V|VI{1,3})$/i);
+     if (suffixMatch && parts.length > 2) {
+       // Last part is a suffix, so last name is second-to-last part + suffix
+       return {
+         firstName: parts.slice(0, parts.length-2).join(' '),
+         lastName: parts[parts.length-2] + ' ' + parts[parts.length-1]
+       };
+     }
+     
+     // Default case: first part is first name, rest is last name
+     return {
+       firstName: parts[0],
+       lastName: parts.slice(1).join(' ')
+     };
+   }
+   ```
+
+3. **Modify the MemorialOCRPrompt Class**:
+   Update the validation process to use the new preprocessing function:
+   ```javascript
+   validateAndConvert(data) {
+     // Early validation for completely empty data
+     if (!data || Object.keys(data).length === 0) {
+       throw new ProcessingError('No readable text found on the sheet', 'empty_sheet');
+     }
+     
+     const result = {};
+     
+     // Preprocess name fields if both are present
+     if (data.first_name !== undefined || data.last_name !== undefined) {
+       const nameString = [data.first_name, data.last_name].filter(Boolean).join(' ');
+       const { firstName, lastName } = preprocessName(nameString);
+       data.first_name = firstName;
+       data.last_name = lastName;
+     }
+     
+     // Continue with existing validation...
+     // ...
+   }
+   ```
+
+4. **Implement Provider-Specific Name Extraction Rules**:
+   Create configuration options for provider-specific name handling:
+   ```javascript
+   const providerNameRules = {
+     openai: {
+       // OpenAI tends to preserve initials
+       preserveInitials: true,
+       splitOnCapitals: false
+     },
+     anthropic: {
+       // Anthropic often ignores initials
+       preserveInitials: false,
+       splitOnCapitals: true
+     }
+   };
+   
+   // Use these rules in the MemorialOCRPrompt class
+   constructor(options = {}) {
+     super();
+     this.nameRules = providerNameRules[options.provider] || providerNameRules.openai;
+     // ...
+   }
+   ```
+
+5. **Add Comprehensive Test Cases**:
+   Create tests for various name formats:
+   ```javascript
+   // Test cases to add:
+   const nameTestCases = [
+     { input: 'John Doe', expected: { first_name: 'JOHN', last_name: 'DOE' } },
+     { input: 'J.R. Smith', expected: { first_name: 'J.R.', last_name: 'SMITH' } },
+     { input: 'Smith', expected: { first_name: '', last_name: 'SMITH' } },
+     { input: 'Rev. Peter Butler', expected: { first_name: 'PETER', last_name: 'BUTLER' } },
+     { input: 'R.R Talbot Junr', expected: { first_name: 'R.R', last_name: 'TALBOT JUNR' } },
+     { input: 'Mary Anne O\'Brien', expected: { first_name: 'MARY ANNE', last_name: 'O\'BRIEN' } },
+     { input: 'Smith-Jones', expected: { first_name: '', last_name: 'SMITH-JONES' } }
+   ];
+   ```
+
 ### Remaining Work
-1. Update name validation rules to handle:
-   - Missing first names
-   - Initial-only names
-   - Titles (e.g., "Rev.", "Jr.", "Junr")
-2. Implement partial success handling for multiple records on a single page
+1. Implement the name validation rules and preprocessing logic
+2. Add support for handling multiple records on a single page
 3. Standardize name parsing across providers
 4. Fix the "undefined attempts" bug in the error message for validation errors
 
 ### Related Files
 - `src/utils/prompts/templates/MemorialOCRPrompt.js`
+- `src/utils/prompts/types/memorialFields.js`
 - `src/utils/fileProcessing.js`
-- `src/utils/validation/nameValidation.js` (if exists)
 
 ## Issue #4: Progress Bar Over-Counting with Anthropic
 **Status:** Partially Resolved  
