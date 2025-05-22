@@ -51,15 +51,16 @@ class BasePrompt {
       throw new Error(`Unknown field: ${fieldName}`);
     }
 
-    if (value === null || value === undefined) {
-      return null;
+    const result = dataTypes.validateValue(value, field.type, field.metadata);
+    
+    if (result.errors.length > 0) {
+      const errorMessages = result.errors.map(error => 
+        error.replace('Value', fieldName.charAt(0).toUpperCase() + fieldName.slice(1))
+      );
+      throw new Error(errorMessages[0]);
     }
 
-    try {
-      return dataTypes.convertValue(value, field.type);
-    } catch (error) {
-      return null;
-    }
+    return result.value;
   }
 
   /**
@@ -226,15 +227,35 @@ class BasePrompt {
    * Validate response data against field definitions
    * @param {Object} data Response data from AI model
    * @returns {Object} Validated and converted data
+   * @throws {Error} If validation fails with details about the failures
    */
   validateAndConvert(data) {
     const result = {};
+    const errors = [];
     
-    for (const fieldName of Object.keys(this.fields)) {
-      const value = data[fieldName];
-      result[fieldName] = this.validateField(fieldName, value);
+    // First pass: validate required fields are present
+    for (const [fieldName, field] of Object.entries(this.fields)) {
+      if (field.metadata?.required && !(fieldName in data)) {
+        errors.push(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`);
+      }
     }
-    
+
+    // Second pass: validate and convert each field
+    for (const [fieldName, field] of Object.entries(this.fields)) {
+      try {
+        const value = fieldName in data ? data[fieldName] : null;
+        result[fieldName] = this.validateField(fieldName, value);
+      } catch (error) {
+        errors.push(error.message);
+      }
+    }
+
+    if (errors.length > 0) {
+      const error = new Error(errors[0]);
+      error.details = errors;
+      throw error;
+    }
+
     return result;
   }
 }

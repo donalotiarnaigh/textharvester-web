@@ -56,34 +56,38 @@ describe('BasePrompt', () => {
     });
 
     it('should validate and convert string fields', () => {
-      const result = prompt.validateField('name', 'John Doe');
-      expect(result).toBe('John Doe');
+      expect(prompt.validateField('name', 'John Doe')).toBe('John Doe');
+      expect(prompt.validateField('name', null)).toBeNull();
     });
 
     it('should validate and convert integer fields', () => {
       expect(prompt.validateField('age', '25')).toBe(25);
       expect(prompt.validateField('age', 25)).toBe(25);
-      expect(prompt.validateField('age', 'invalid')).toBeNull();
+      expect(prompt.validateField('age', null)).toBeNull();
+      expect(() => prompt.validateField('age', 'invalid')).toThrow('Cannot convert value "invalid" to integer');
     });
 
     it('should validate and convert boolean fields', () => {
       expect(prompt.validateField('active', true)).toBe(true);
       expect(prompt.validateField('active', 'true')).toBe(true);
       expect(prompt.validateField('active', 'false')).toBe(false);
-      expect(prompt.validateField('active', 'invalid')).toBe(false);
+      expect(() => prompt.validateField('active', 'invalid')).toThrow('Invalid boolean value');
+      expect(prompt.validateField('active', null)).toBeNull();
     });
 
     it('should validate and convert float fields', () => {
       expect(prompt.validateField('score', '92.5')).toBe(92.5);
       expect(prompt.validateField('score', 92.5)).toBe(92.5);
-      expect(prompt.validateField('score', 'invalid')).toBeNull();
+      expect(prompt.validateField('score', null)).toBeNull();
+      expect(() => prompt.validateField('score', 'invalid')).toThrow('Cannot convert value "invalid" to float');
     });
 
     it('should validate and convert date fields', () => {
       const date = new Date('2024-03-22');
       expect(prompt.validateField('birthdate', '2024-03-22')).toEqual(date);
       expect(prompt.validateField('birthdate', date)).toEqual(date);
-      expect(prompt.validateField('birthdate', 'invalid')).toBeNull();
+      expect(prompt.validateField('birthdate', null)).toBeNull();
+      expect(() => prompt.validateField('birthdate', 'invalid')).toThrow('Invalid date value');
     });
 
     it('should handle null and undefined values', () => {
@@ -141,8 +145,20 @@ describe('BasePrompt', () => {
     beforeEach(() => {
       prompt = new BasePrompt({
         fields: {
-          name: { type: 'string', description: 'Full name' },
-          age: { type: 'integer', description: 'Age in years' }
+          name: { 
+            type: 'string', 
+            description: 'Full name',
+            metadata: { required: true }
+          },
+          age: { 
+            type: 'integer', 
+            description: 'Age in years',
+            metadata: { required: true }
+          },
+          email: {
+            type: 'string',
+            description: 'Email address'
+          }
         }
       });
     });
@@ -150,36 +166,39 @@ describe('BasePrompt', () => {
     it('should validate and convert complete data object', () => {
       const data = {
         name: 'John Doe',
-        age: '25'
+        age: '25',
+        email: 'john@example.com'
       };
       const result = prompt.validateAndConvert(data);
       expect(result).toEqual({
         name: 'John Doe',
-        age: 25
+        age: 25,
+        email: 'john@example.com'
       });
     });
 
     it('should handle missing fields', () => {
-      const data = {
-        name: 'John Doe'
-      };
-      const result = prompt.validateAndConvert(data);
-      expect(result).toEqual({
+      expect(() => {
+        prompt.validateAndConvert({
+          age: 25
+        });
+      }).toThrow('Name is required');
+
+      const result = prompt.validateAndConvert({
         name: 'John Doe',
-        age: null
+        age: 25
       });
+      expect(result.email).toBeNull();
     });
 
     it('should handle invalid data', () => {
-      const data = {
-        name: 'John Doe',
-        age: 'invalid'
-      };
-      const result = prompt.validateAndConvert(data);
-      expect(result).toEqual({
-        name: 'John Doe',
-        age: null
-      });
+      expect(() => {
+        prompt.validateAndConvert({
+          name: 'John Doe',
+          age: 'invalid',
+          email: 'john@example.com'
+        });
+      }).toThrow('Cannot convert value "invalid" to integer');
     });
   });
 
@@ -306,6 +325,166 @@ describe('BasePrompt', () => {
           }]
         });
       }).toThrow('Invalid JSON in Anthropic response');
+    });
+  });
+
+  describe('enhanced type conversion', () => {
+    let prompt;
+
+    beforeEach(() => {
+      prompt = new BasePrompt({
+        fields: {
+          name: { 
+            type: 'string', 
+            description: 'Full name',
+            metadata: {
+              maxLength: 100,
+              required: true,
+              format: 'name'
+            }
+          },
+          age: { 
+            type: 'integer', 
+            description: 'Age in years',
+            metadata: {
+              min: 0,
+              max: 150,
+              required: true
+            }
+          },
+          email: {
+            type: 'string',
+            description: 'Email address',
+            metadata: {
+              format: 'email',
+              required: false
+            }
+          },
+          score: {
+            type: 'float',
+            description: 'Test score',
+            metadata: {
+              min: 0.0,
+              max: 100.0,
+              precision: 2
+            }
+          }
+        }
+      });
+    });
+
+    it('should validate and convert data with metadata constraints', () => {
+      const validData = {
+        name: 'John Doe',
+        age: 25,
+        email: 'john@example.com',
+        score: 92.5
+      };
+      const result = prompt.validateAndConvert(validData);
+      expect(result).toEqual(validData);
+
+      // Test maxLength constraint
+      expect(() => {
+        prompt.validateAndConvert({
+          ...validData,
+          name: 'a'.repeat(101)
+        });
+      }).toThrow('Name exceeds maximum length of 100 characters');
+
+      // Test min/max constraints
+      expect(() => {
+        prompt.validateAndConvert({
+          ...validData,
+          age: -1
+        });
+      }).toThrow('Age must be between 0 and 150');
+
+      expect(() => {
+        prompt.validateAndConvert({
+          ...validData,
+          score: 100.001
+        });
+      }).toThrow('Score must be between 0 and 100');
+    });
+
+    it('should handle required fields correctly', () => {
+      // Missing required field
+      expect(() => {
+        prompt.validateAndConvert({
+          age: 25,
+          email: 'john@example.com'
+        });
+      }).toThrow('Name is required');
+
+      // Optional field can be omitted
+      const result = prompt.validateAndConvert({
+        name: 'John Doe',
+        age: 25,
+        score: 92.5
+      });
+      expect(result.email).toBeNull();
+    });
+
+    it('should validate field formats', () => {
+      // Invalid email format
+      expect(() => {
+        prompt.validateAndConvert({
+          name: 'John Doe',
+          age: 25,
+          email: 'invalid-email'
+        });
+      }).toThrow('Invalid email format');
+
+      // Invalid name format (e.g., contains numbers)
+      expect(() => {
+        prompt.validateAndConvert({
+          name: 'John123',
+          age: 25
+        });
+      }).toThrow('Invalid name format');
+    });
+
+    it('should handle precision for float values', () => {
+      const result = prompt.validateAndConvert({
+        name: 'John Doe',
+        age: 25,
+        score: 92.555
+      });
+      expect(result.score).toBe(92.56); // Rounded to 2 decimal places
+    });
+
+    it('should provide detailed error messages', () => {
+      try {
+        prompt.validateAndConvert({
+          name: 'a'.repeat(101),
+          age: -1,
+          email: 'invalid-email',
+          score: 150
+        });
+      } catch (error) {
+        expect(error.details).toBeDefined();
+        expect(error.details).toEqual([
+          'Name exceeds maximum length of 100 characters',
+          'Age must be between 0 and 150',
+          'Invalid email format',
+          'Score must be between 0 and 100'
+        ]);
+      }
+    });
+
+    it('should handle type coercion with metadata', () => {
+      const result = prompt.validateAndConvert({
+        name: '  John Doe  ', // Should trim
+        age: '25', // Should convert to number
+        score: '92.555' // Should convert and round
+      });
+
+      expect(result).toEqual({
+        name: 'John Doe',
+        age: 25,
+        email: null,
+        score: 92.56
+      });
     });
   });
 }); 
