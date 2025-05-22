@@ -18,20 +18,45 @@ When uploading an empty record sheet, the system fails to handle null values pro
 ```
 
 ### Analysis
-The error occurs in the `validateAndConvert` method of `MemorialOCRPrompt` class when attempting to trim a null value. This indicates:
-1. No null-checking is being performed before string operations
-2. Empty or invalid input is not being properly validated
-3. Error handling for invalid input states needs to be improved
+The error occurs in the `validateAndConvert` method of `MemorialOCRPrompt` class when attempting to trim a null value. Upon code review, the issue was found on line 150 where `field.transform(value)` is called without checking if the value is null. The transform function for text fields attempts to call `.trim()` on the null value, causing the error.
+
+Specifically:
+1. In `src/utils/prompts/templates/MemorialOCRPrompt.js`, the `validateAndConvert` method handles null checks for the 'year_of_death' field case but not for other fields
+2. In `src/utils/prompts/types/memorialFields.js`, the transform functions for string fields (e.g., `value.trim()`) assume non-null values
+3. The error happens when processing data from an empty record sheet where the AI model returns null values for required fields
+4. There's no early validation to reject completely empty sheets before attempting to transform the data
 
 ### Proposed Solution
-1. Add null checks before string operations
-2. Implement proper validation for empty/invalid input
-3. Add appropriate error messages for invalid states
-4. Update tests to cover empty input scenarios
+1. Add null checks before string operations in all transform functions:
+   ```javascript
+   // In MemorialOCRPrompt.js, lines 128-132, update the default case:
+   default:
+     // Add null check before calling transform
+     result[fieldName] = value === null ? null : field.transform(value);
+     break;
+   ```
+
+2. Update field transform functions in `memorialFields.js` to handle null values:
+   ```javascript
+   // Example safe transform:
+   transform: (value) => value === null ? null : value.trim().toUpperCase()
+   ```
+
+3. Add improved validation logic to reject empty responses:
+   ```javascript
+   // At the beginning of validateAndConvert:
+   if (!data || Object.keys(data).length === 0) {
+     throw new Error('Empty or invalid data received from OCR processing');
+   }
+   ```
+
+4. Add test case for handling empty input and null values
 
 ### Related Files
-- `src/utils/prompts/templates/MemorialOCRPrompt.js`
-- `src/utils/fileProcessing.js`
+- `src/utils/prompts/templates/MemorialOCRPrompt.js` - Main file needing fixes, specifically the `validateAndConvert` method
+- `src/utils/fileProcessing.js` - Calls validateAndConvert and needs proper error handling
+- `src/utils/prompts/types/memorialFields.js` - Contains transform functions that need null-safety
+- `src/utils/prompts/types/dataTypes.js` - Base type system with validation logic
 
 ## Issue #2: Progress Bar Malfunction
 **Status:** Open  
