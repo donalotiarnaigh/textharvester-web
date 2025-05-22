@@ -87,10 +87,13 @@
 
 ## 5. Update Memorial OCR Prompt
 
-5.1. **Refactor MemorialOCRPrompt**
-   - Update to use new BasePrompt functionality
-   - Remove duplicate validation logic
-   - Use field definitions from memorialFields
+5.1. **Refactor MemorialOCRPrompt** ✓ (2024-03-22)
+   - Update to use new BasePrompt functionality ✓
+   - Remove duplicate validation logic ✓
+   - Use field definitions from memorialFields ✓
+   - Add comprehensive test coverage ✓
+   - Add provider-specific prompt formatting ✓
+   - Add field validation with constraints ✓
 
 5.2. **Optimize Prompt Text**
    - Review and update prompt text for effectiveness
