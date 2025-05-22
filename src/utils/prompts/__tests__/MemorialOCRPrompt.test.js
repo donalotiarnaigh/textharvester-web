@@ -1,22 +1,26 @@
 const MemorialOCRPrompt = require('../templates/MemorialOCRPrompt');
-const { memorialTypes } = require('../types/memorialTypes');
+const { MEMORIAL_FIELDS } = require('../types/memorialFields');
 
 describe('MemorialOCRPrompt', () => {
   describe('constructor', () => {
-    it('should initialize with memorial type definitions', () => {
+    it('should initialize with memorial field definitions', () => {
       const prompt = new MemorialOCRPrompt();
-      expect(prompt.typeDefinitions).toEqual(memorialTypes);
+      expect(prompt.fields).toEqual(MEMORIAL_FIELDS);
+      expect(prompt.version).toBe('2.0.0');
+      expect(prompt.description).toBe('Standard OCR prompt for extracting basic memorial inscription data with type validation');
     });
 
     it('should allow overriding default config', () => {
       const config = {
-        version: '2.0.0',
-        description: 'Custom memorial prompt'
+        version: '2.1.0',
+        description: 'Custom memorial prompt',
+        providers: ['openai']
       };
       const prompt = new MemorialOCRPrompt(config);
-      expect(prompt.version).toBe('2.0.0');
+      expect(prompt.version).toBe('2.1.0');
       expect(prompt.description).toBe('Custom memorial prompt');
-      expect(prompt.typeDefinitions).toEqual(memorialTypes);
+      expect(prompt.providers).toEqual(['openai']);
+      expect(prompt.fields).toEqual(MEMORIAL_FIELDS);
     });
   });
 
@@ -45,31 +49,6 @@ describe('MemorialOCRPrompt', () => {
     });
   });
 
-  describe('getProviderPrompt', () => {
-    let prompt;
-    
-    beforeEach(() => {
-      prompt = new MemorialOCRPrompt();
-    });
-
-    it('should return base prompt for unknown providers', () => {
-      const basePrompt = prompt.getPromptText();
-      expect(prompt.getProviderPrompt('unknown')).toBe(basePrompt);
-    });
-
-    it('should return optimized prompt for OpenAI', () => {
-      const openaiPrompt = prompt.getProviderPrompt('openai');
-      expect(openaiPrompt).toContain('JSON format');
-      expect(openaiPrompt).toContain('response_format: { type: "json_object" }');
-    });
-
-    it('should return optimized prompt for Anthropic', () => {
-      const anthropicPrompt = prompt.getProviderPrompt('anthropic');
-      expect(anthropicPrompt).toContain('JSON format');
-      expect(anthropicPrompt).toContain('All numeric values (memorial_number, year_of_death) MUST be actual integers');
-    });
-  });
-
   describe('validateAndConvert', () => {
     let prompt;
     
@@ -79,11 +58,11 @@ describe('MemorialOCRPrompt', () => {
 
     it('should properly validate and convert memorial data', () => {
       const testData = {
-        memorial_number: '42',
-        first_name: 'JOHN',
-        last_name: 'DOE',
-        year_of_death: '1923',
-        inscription: 'REST IN PEACE',
+        memorial_number: ' HG-42 ',  // Has whitespace
+        first_name: 'john',          // Lowercase
+        last_name: 'doe',            // Lowercase
+        year_of_death: '1923',       // String number
+        inscription: ' REST IN PEACE ', // Has whitespace
         file_name: 'test.jpg',
         ai_provider: 'openai',
         model_version: 'gpt-4',
@@ -93,11 +72,11 @@ describe('MemorialOCRPrompt', () => {
 
       const result = prompt.validateAndConvert(testData);
       expect(result).toEqual({
-        memorial_number: 42,
-        first_name: 'JOHN',
-        last_name: 'DOE',
-        year_of_death: 1923,
-        inscription: 'REST IN PEACE',
+        memorial_number: 'HG-42',    // Trimmed
+        first_name: 'JOHN',          // Uppercase
+        last_name: 'DOE',            // Uppercase
+        year_of_death: 1923,         // Converted to number
+        inscription: 'REST IN PEACE', // Trimmed
         file_name: 'test.jpg',
         ai_provider: 'openai',
         model_version: 'gpt-4',
@@ -106,53 +85,121 @@ describe('MemorialOCRPrompt', () => {
       });
     });
 
-    it('should handle missing or null fields', () => {
+    it('should handle missing optional fields', () => {
       const testData = {
-        memorial_number: null,
+        memorial_number: 'HG-43',
         first_name: 'JOHN',
         last_name: 'DOE',
-        file_name: 'test.jpg',
-        ai_provider: 'anthropic'
+        year_of_death: 1924
+        // inscription is optional
       };
 
       const result = prompt.validateAndConvert(testData);
-      expect(result).toEqual({
-        memorial_number: null,
-        first_name: 'JOHN',
-        last_name: 'DOE',
-        year_of_death: null,
-        inscription: null,
-        file_name: 'test.jpg',
-        ai_provider: 'anthropic',
-        model_version: null,
-        prompt_template: null,
-        prompt_version: null
-      });
+      expect(result.memorial_number).toBe('HG-43');
+      expect(result.first_name).toBe('JOHN');
+      expect(result.last_name).toBe('DOE');
+      expect(result.year_of_death).toBe(1924);
+      expect(result.inscription).toBeNull();
     });
 
-    it('should handle invalid numeric values', () => {
+    it('should reject invalid year values', () => {
       const testData = {
-        memorial_number: 'not a number',
+        memorial_number: 'HG-44',
         first_name: 'JOHN',
         last_name: 'DOE',
-        year_of_death: 'circa 1923',
-        inscription: 'TEST',
-        file_name: 'test.jpg'
+        year_of_death: 1400  // Too early
       };
 
-      const result = prompt.validateAndConvert(testData);
-      expect(result).toEqual({
-        memorial_number: null,
+      expect(() => {
+        prompt.validateAndConvert(testData);
+      }).toThrow('Year_of_death must be between 1500 and');
+
+      testData.year_of_death = new Date().getFullYear() + 1; // Future year
+      expect(() => {
+        prompt.validateAndConvert(testData);
+      }).toThrow('Year_of_death must be between 1500 and');
+    });
+
+    it('should reject missing required fields', () => {
+      const testData = {
+        // memorial_number missing
         first_name: 'JOHN',
         last_name: 'DOE',
-        year_of_death: null,
-        inscription: 'TEST',
-        file_name: 'test.jpg',
-        ai_provider: null,
-        model_version: null,
-        prompt_template: null,
-        prompt_version: null
-      });
+        year_of_death: 1924
+      };
+
+      expect(() => {
+        prompt.validateAndConvert(testData);
+      }).toThrow('Memorial_number is required');
+    });
+
+    it('should handle invalid name formats', () => {
+      const testData = {
+        memorial_number: 'HG-45',
+        first_name: 'John123',  // Contains numbers
+        last_name: 'DOE',
+        year_of_death: 1924
+      };
+
+      expect(() => {
+        prompt.validateAndConvert(testData);
+      }).toThrow('Invalid name format');
+    });
+  });
+
+  describe('provider integration', () => {
+    let prompt;
+    
+    beforeEach(() => {
+      prompt = new MemorialOCRPrompt();
+    });
+
+    it('should format OpenAI prompt correctly', () => {
+      const openaiPrompt = prompt.getProviderPrompt('openai');
+      expect(openaiPrompt.systemPrompt).toContain('OpenAI');
+      expect(openaiPrompt.userPrompt).toContain('memorial_number: The memorial\'s identifier (STRING)');
+      expect(openaiPrompt.userPrompt).toContain('year_of_death: The first person\'s year of death only (INTEGER)');
+      expect(openaiPrompt.userPrompt).toContain('response_format: { type: "json" }');
+    });
+
+    it('should format Anthropic prompt correctly', () => {
+      const anthropicPrompt = prompt.getProviderPrompt('anthropic');
+      expect(anthropicPrompt.systemPrompt).toContain('Claude');
+      expect(anthropicPrompt.userPrompt).toContain('memorial_number: The memorial\'s identifier (STRING)');
+      expect(anthropicPrompt.userPrompt).toContain('year_of_death: The first person\'s year of death only (INTEGER)');
+      expect(anthropicPrompt.userPrompt).toContain('MUST be actual integers');
+    });
+
+    it('should validate provider responses', () => {
+      const validOpenAIResponse = {
+        response_format: { type: 'json' },
+        content: {
+          memorial_number: 'HG-46',
+          first_name: 'JOHN',
+          last_name: 'DOE',
+          year_of_death: 1925,
+          inscription: 'TEST'
+        }
+      };
+      expect(() => {
+        prompt.validateProviderResponse('openai', validOpenAIResponse);
+      }).not.toThrow();
+
+      const validAnthropicResponse = {
+        messages: [{
+          role: 'assistant',
+          content: JSON.stringify({
+            memorial_number: 'HG-46',
+            first_name: 'JOHN',
+            last_name: 'DOE',
+            year_of_death: 1925,
+            inscription: 'TEST'
+          })
+        }]
+      };
+      expect(() => {
+        prompt.validateProviderResponse('anthropic', validAnthropicResponse);
+      }).not.toThrow();
     });
   });
 }); 

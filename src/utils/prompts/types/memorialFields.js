@@ -6,7 +6,7 @@ const { StringType, IntegerType } = require('./dataTypes');
 class MemorialField {
   /**
    * @param {string} name - The name of the field
-   * @param {import('./dataTypes').DataType} type - The data type of the field
+   * @param {string} type - The data type of the field
    * @param {Object} metadata - Additional field metadata
    * @param {string} [metadata.description=''] - Description of the field
    * @param {boolean} [metadata.required=false] - Whether the field is required
@@ -41,30 +41,34 @@ class MemorialField {
  * Definitions for all memorial record fields
  */
 const MEMORIAL_FIELDS = {
-  memorial_number: new MemorialField('memorial_number', new StringType(), {
+  memorial_number: new MemorialField('memorial_number', 'string', {
     description: 'Unique identifier for the memorial record (e.g. HG123)',
     required: true,
     transform: (value) => value.trim()
   }),
 
-  first_name: new MemorialField('first_name', new StringType(), {
+  first_name: new MemorialField('first_name', 'string', {
     description: 'First name of the primary person commemorated on the memorial',
     required: true,
-    transform: (value) => value.trim()
+    transform: (value) => value.trim().toUpperCase()
   }),
 
-  last_name: new MemorialField('last_name', new StringType(), {
+  last_name: new MemorialField('last_name', 'string', {
     description: 'Last name/surname of the primary person commemorated on the memorial',
     required: true,
-    transform: (value) => value.trim()
+    transform: (value) => value.trim().toUpperCase()
   }),
 
-  year_of_death: new MemorialField('year_of_death', new IntegerType(), {
+  year_of_death: new MemorialField('year_of_death', 'integer', {
     description: 'Year of death for the primary person commemorated on the memorial',
-    required: true
+    required: true,
+    metadata: {
+      min: 1500,
+      max: new Date().getFullYear()
+    }
   }),
 
-  inscription: new MemorialField('inscription', new StringType(), {
+  inscription: new MemorialField('inscription', 'string', {
     description: 'Full text inscription from the memorial, including any additional commemorated individuals',
     required: false,
     transform: (value) => value.trim()

@@ -1,5 +1,5 @@
 const BasePrompt = require('../BasePrompt');
-const { memorialTypes } = require('../types/memorialTypes');
+const { MEMORIAL_FIELDS } = require('../types/memorialFields');
 
 /**
  * Standard OCR prompt for memorial inscriptions
@@ -14,7 +14,8 @@ class MemorialOCRPrompt extends BasePrompt {
     super({
       version: '2.0.0',
       description: 'Standard OCR prompt for extracting basic memorial inscription data with type validation',
-      typeDefinitions: memorialTypes,
+      fields: MEMORIAL_FIELDS,
+      providers: ['openai', 'anthropic'],
       ...config
     });
   }
@@ -29,7 +30,7 @@ class MemorialOCRPrompt extends BasePrompt {
 Your task is to extract specific fields and return them in JSON format.
 
 CRITICAL: Return ONLY these 5 fields in JSON format, nothing more:
-- memorial_number: The memorial's identifier (INTEGER)
+- memorial_number: The memorial's identifier (STRING)
 - first_name: The first person's first name (STRING, UPPERCASE)
 - last_name: The first person's last name (STRING, UPPERCASE)
 - year_of_death: The first person's year of death only (INTEGER)
@@ -38,7 +39,7 @@ CRITICAL: Return ONLY these 5 fields in JSON format, nothing more:
 Example of EXACT JSON format required:
 
 {
-  "memorial_number": 18,
+  "memorial_number": "HG-18",
   "first_name": "MICHEAL",
   "last_name": "RUANE",
   "year_of_death": 1959,
@@ -58,66 +59,97 @@ IMPORTANT RULES:
   }
 
   /**
-   * Get a prompt variation for a specific provider
-   * @param {string} provider - AI provider name
-   * @returns {string} Provider-specific prompt
+   * Get provider-specific prompt configuration
+   * @param {string} provider Provider name
+   * @returns {Object} Provider-specific prompt configuration
    */
   getProviderPrompt(provider) {
+    this.validateProvider(provider);
     const basePrompt = this.getPromptText();
-    
-    if (provider.toLowerCase() === 'anthropic') {
-      return basePrompt + '\n\nCRITICAL: Your response must contain ONLY the 5 specified fields in JSON format. All numeric values (memorial_number, year_of_death) MUST be actual integers.';
+
+    switch (provider.toLowerCase()) {
+      case 'openai':
+        return {
+          systemPrompt: 'You are an expert OCR system trained by OpenAI, specializing in heritage and genealogical data extraction.',
+          userPrompt: `${basePrompt}\n\nResponse Format:\n- Use response_format: { type: "json" }\n- All numeric values (year_of_death) MUST be actual integers\n- All text fields must be properly formatted strings`
+        };
+
+      case 'anthropic':
+        return {
+          systemPrompt: 'You are Claude, an expert OCR system trained by Anthropic, specializing in heritage and genealogical data extraction.',
+          userPrompt: `${basePrompt}\n\nResponse Format:\n- Return valid JSON only\n- All numeric values (year_of_death) MUST be actual integers\n- All text fields must be properly formatted strings\n- Ensure strict adherence to field formats`
+        };
+
+      default:
+        return { userPrompt: basePrompt };
     }
-    
-    if (provider.toLowerCase() === 'openai') {
-      return basePrompt + '\n\nUse response_format: { type: "json_object" } with ONLY the 5 specified fields in JSON format.';
-    }
-    
-    return basePrompt;
   }
 
   /**
-   * Validates and converts data types according to schema
-   * @param {Object} data - The data object to validate
-   * @returns {Object} - The validated and converted data object
+   * Validate and convert memorial data
+   * @param {Object} data Data to validate
+   * @returns {Object} Validated and converted data
    */
   validateAndConvert(data) {
-    // Start with metadata fields
-    const result = {
-      memorial_number: null,
-      first_name: null,
-      last_name: null,
-      year_of_death: null,
-      inscription: null,
-      ai_provider: data.ai_provider || null,
-      file_name: data.file_name || null,
-      model_version: data.model_version || null,
-      prompt_template: data.prompt_template || null,
-      prompt_version: data.prompt_version || null
-    };
+    const result = {};
+    const errors = [];
 
-    // Convert numeric fields
-    if (data.memorial_number) {
-      const num = parseInt(data.memorial_number, 10);
-      result.memorial_number = !isNaN(num) ? num : null;
+    // First pass: validate required fields are present
+    for (const [fieldName, field] of Object.entries(this.fields)) {
+      if (field.required && !(fieldName in data)) {
+        errors.push(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`);
+      }
     }
 
-    if (data.year_of_death) {
-      const year = parseInt(data.year_of_death, 10);
-      result.year_of_death = (!isNaN(year) && year >= 1500 && year <= new Date().getFullYear()) ? year : null;
+    if (errors.length > 0) {
+      throw new Error(errors[0]);
     }
 
-    // Handle string fields
-    if (data.first_name) {
-      result.first_name = String(data.first_name).toUpperCase();
+    // Second pass: validate and convert each field
+    for (const [fieldName, field] of Object.entries(this.fields)) {
+      try {
+        const value = fieldName in data ? data[fieldName] : null;
+        
+        // Skip validation for null values in optional fields
+        if (value === null && !field.required) {
+          result[fieldName] = null;
+          continue;
+        }
+
+        // Apply field-specific validation
+        switch (fieldName) {
+          case 'first_name':
+          case 'last_name':
+            if (value && !/^[A-Za-z\s\-']+$/.test(value)) {
+              throw new Error(`Invalid name format for ${fieldName}`);
+            }
+            result[fieldName] = field.transform(value);
+            break;
+
+          case 'year_of_death':
+            const year = parseInt(value, 10);
+            if (isNaN(year)) {
+              throw new Error('Invalid year format');
+            }
+            if (year < 1500 || year > new Date().getFullYear()) {
+              throw new Error(`Year_of_death must be between 1500 and ${new Date().getFullYear()}`);
+            }
+            result[fieldName] = year;
+            break;
+
+          default:
+            result[fieldName] = field.transform(value);
+        }
+      } catch (error) {
+        throw new Error(error.message);
+      }
     }
 
-    if (data.last_name) {
-      result.last_name = String(data.last_name).toUpperCase();
-    }
-
-    if (data.inscription) {
-      result.inscription = String(data.inscription);
+    // Copy additional fields that aren't part of the memorial fields
+    for (const [key, value] of Object.entries(data)) {
+      if (!(key in this.fields)) {
+        result[key] = value;
+      }
     }
 
     return result;
