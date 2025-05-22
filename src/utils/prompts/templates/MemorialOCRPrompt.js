@@ -127,6 +127,12 @@ IMPORTANT RULES:
             break;
 
           case 'year_of_death':
+            // Handle null value for year_of_death
+            if (value === null) {
+              result[fieldName] = null;
+              break;
+            }
+            
             const year = parseInt(value, 10);
             if (isNaN(year)) {
               throw new Error('Invalid year format');

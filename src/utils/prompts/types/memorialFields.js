@@ -61,7 +61,7 @@ const MEMORIAL_FIELDS = {
 
   year_of_death: new MemorialField('year_of_death', 'integer', {
     description: 'Year of death for the primary person commemorated on the memorial',
-    required: true,
+    required: false,
     metadata: {
       min: 1500,
       max: new Date().getFullYear()
