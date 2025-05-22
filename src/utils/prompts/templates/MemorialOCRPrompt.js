@@ -1,5 +1,6 @@
 const BasePrompt = require('../BasePrompt');
 const { MEMORIAL_FIELDS } = require('../types/memorialFields');
+const { ProcessingError } = require('../../errorTypes');
 
 /**
  * Standard OCR prompt for memorial inscriptions
@@ -91,9 +92,23 @@ IMPORTANT RULES:
    * @returns {Object} Validated and converted data
    */
   validateAndConvert(data) {
-    // Early validation for empty or invalid data
-    if (!data || Object.keys(data).length === 0) {
-      throw new Error('Empty or invalid data received from OCR processing');
+    // Enhanced early validation for empty or invalid data
+    if (!data || typeof data !== 'object') {
+      throw new ProcessingError('No data received from OCR processing - the sheet may be empty or unreadable', 'empty_sheet');
+    }
+
+    if (Object.keys(data).length === 0) {
+      throw new ProcessingError('Empty data received from OCR processing - no text could be extracted from the sheet', 'empty_sheet');
+    }
+
+    // Check if all fields are null/undefined/empty strings
+    const allFieldsEmpty = Object.entries(this.fields).every(([fieldName]) => {
+      const value = data[fieldName];
+      return value === null || value === undefined || value === '';
+    });
+
+    if (allFieldsEmpty) {
+      throw new ProcessingError('No readable text found on the sheet - please check if the sheet is empty or the image quality is sufficient', 'empty_sheet');
     }
 
     const result = {};
@@ -101,20 +116,20 @@ IMPORTANT RULES:
 
     // First pass: validate required fields are present
     // Check memorial_number first as it's the primary identifier
-    if (this.fields.memorial_number.required && (data.memorial_number === null || data.memorial_number === undefined)) {
-      throw new Error('Memorial_number is required');
+    if (this.fields.memorial_number.required && (data.memorial_number === null || data.memorial_number === undefined || data.memorial_number === '')) {
+      throw new ProcessingError('Memorial number could not be found or read from the sheet', 'validation');
     }
 
     // Then check other required fields
     for (const [fieldName, field] of Object.entries(this.fields)) {
       if (fieldName === 'memorial_number') continue; // Already checked
-      if (field.required && (data[fieldName] === null || data[fieldName] === undefined)) {
+      if (field.required && (data[fieldName] === null || data[fieldName] === undefined || data[fieldName] === '')) {
         errors.push(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`);
       }
     }
 
     if (errors.length > 0) {
-      throw new Error(errors[0]);
+      throw new ProcessingError(errors[0], 'validation');
     }
 
     // Second pass: validate and convert each field
@@ -134,12 +149,12 @@ IMPORTANT RULES:
           case 'last_name':
             if (value === null) {
               if (field.required) {
-                throw new Error(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`);
+                throw new ProcessingError(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`, 'validation');
               }
               result[fieldName] = null;
             } else {
               if (!/^[A-Za-z\s\-']+$/.test(value)) {
-                throw new Error(`Invalid name format for ${fieldName}`);
+                throw new ProcessingError(`Invalid name format for ${fieldName}`, 'validation');
               }
               result[fieldName] = field.transform(value);
             }
@@ -154,10 +169,10 @@ IMPORTANT RULES:
             
             const year = parseInt(value, 10);
             if (isNaN(year)) {
-              throw new Error('Invalid year format');
+              throw new ProcessingError('Invalid year format', 'validation');
             }
             if (year < 1500 || year > new Date().getFullYear()) {
-              throw new Error(`Year_of_death must be between 1500 and ${new Date().getFullYear()}`);
+              throw new ProcessingError(`Year_of_death must be between 1500 and ${new Date().getFullYear()}`, 'validation');
             }
             result[fieldName] = year;
             break;
@@ -167,7 +182,12 @@ IMPORTANT RULES:
             result[fieldName] = value === null ? null : field.transform(value);
         }
       } catch (error) {
-        throw new Error(error.message);
+        // Preserve ProcessingError instances but wrap others
+        if (error instanceof ProcessingError) {
+          throw error;
+        } else {
+          throw new ProcessingError(error.message, 'validation');
+        }
       }
     }
 

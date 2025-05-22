@@ -104,10 +104,10 @@ describe('MemorialOCRPrompt', () => {
 
     it('should reject empty or null input data', () => {
       expect(() => prompt.validateAndConvert(null))
-        .toThrow('Empty or invalid data received from OCR processing');
+        .toThrow('No data received from OCR processing - the sheet may be empty or unreadable');
       
       expect(() => prompt.validateAndConvert({}))
-        .toThrow('Empty or invalid data received from OCR processing');
+        .toThrow('Empty data received from OCR processing - no text could be extracted from the sheet');
     });
 
     it('should handle null values in required fields', () => {
@@ -116,7 +116,7 @@ describe('MemorialOCRPrompt', () => {
         memorial_number: null,
         first_name: 'JOHN',
         last_name: 'DOE'
-      })).toThrow('Memorial_number is required');
+      })).toThrow('Memorial number could not be found or read from the sheet');
 
       // Test first_name null
       expect(() => prompt.validateAndConvert({
@@ -178,7 +178,7 @@ describe('MemorialOCRPrompt', () => {
 
       expect(() => {
         prompt.validateAndConvert(testData);
-      }).toThrow('Memorial_number is required');
+      }).toThrow('Memorial number could not be found or read from the sheet');
     });
 
     it('should handle invalid name formats', () => {
