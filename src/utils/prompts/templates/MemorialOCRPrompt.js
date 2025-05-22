@@ -1,6 +1,7 @@
 const BasePrompt = require('../BasePrompt');
-const { MEMORIAL_FIELDS } = require('../types/memorialFields');
+const { MEMORIAL_FIELDS, processFullName } = require('../types/memorialFields');
 const { ProcessingError } = require('../../errorTypes');
+const { preprocessName, extractNamesFromText } = require('../../nameProcessing');
 
 /**
  * Standard OCR prompt for memorial inscriptions
@@ -113,6 +114,43 @@ IMPORTANT RULES:
 
     const result = {};
     const errors = [];
+    
+    // Step 1: Handle full_name if present (integrate name preprocessing)
+    if (data.full_name) {
+      console.log('[NameProcessing] Raw name input:', data.full_name);
+      
+      // Process the full name to extract components
+      const nameComponents = processFullName(data.full_name);
+      console.log('[NameProcessing] Preprocessed name components:', nameComponents);
+      
+      // Add the components to the data for further processing
+      Object.assign(data, nameComponents);
+    }
+    
+    // Step 2: Check if we need to extract names from inscription
+    const hasMissingNames = !data.first_name || !data.last_name;
+    if (hasMissingNames && data.inscription) {
+      console.log('[NameProcessing] Attempting to extract names from inscription');
+      
+      const extractedNames = extractNamesFromText(data.inscription);
+      if (extractedNames) {
+        console.log('[NameProcessing] Names extracted from inscription:', extractedNames);
+        
+        // Only use extracted names if the fields are missing
+        if (!data.first_name && extractedNames.firstName) {
+          data.first_name = extractedNames.firstName;
+        }
+        if (!data.last_name && extractedNames.lastName) {
+          data.last_name = extractedNames.lastName;
+        }
+        if (extractedNames.prefix) {
+          data.prefix = extractedNames.prefix;
+        }
+        if (extractedNames.suffix) {
+          data.suffix = extractedNames.suffix;
+        }
+      }
+    }
 
     // First pass: validate required fields are present
     // Check memorial_number first as it's the primary identifier
@@ -137,9 +175,14 @@ IMPORTANT RULES:
       try {
         const value = fieldName in data ? data[fieldName] : null;
         
+        // Log the value being processed for name fields
+        if (fieldName === 'first_name' || fieldName === 'last_name') {
+          console.log(`[NameProcessing] Processing ${fieldName}:`, value);
+        }
+        
         // Skip validation for null values in optional fields
         if (value === null && !field.required) {
-          result[fieldName] = null;
+          result[fieldName] = fieldName === 'first_name' ? '' : null; // Return empty string for first_name
           continue;
         }
 
@@ -147,16 +190,18 @@ IMPORTANT RULES:
         switch (fieldName) {
           case 'first_name':
           case 'last_name':
-            if (value === null) {
+            if (value === null || value === '') {
               if (field.required) {
                 throw new ProcessingError(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`, 'validation');
               }
-              result[fieldName] = null;
+              result[fieldName] = fieldName === 'first_name' ? '' : null;
             } else {
-              if (!/^[A-Za-z\s\-']+$/.test(value)) {
-                throw new ProcessingError(`Invalid name format for ${fieldName}`, 'validation');
+              // More flexible validation to accommodate international characters
+              if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s\-'.]+$/.test(value)) {
+                throw new ProcessingError(`Invalid name format for ${fieldName}: "${value}"`, 'validation');
               }
               result[fieldName] = field.transform(value);
+              console.log(`[NameProcessing] Transformed ${fieldName}:`, result[fieldName]);
             }
             break;
 
@@ -169,10 +214,10 @@ IMPORTANT RULES:
             
             const year = parseInt(value, 10);
             if (isNaN(year)) {
-              throw new ProcessingError('Invalid year format', 'validation');
+              throw new ProcessingError(`Invalid year format: "${value}"`, 'validation');
             }
             if (year < 1500 || year > new Date().getFullYear()) {
-              throw new ProcessingError(`Year_of_death must be between 1500 and ${new Date().getFullYear()}`, 'validation');
+              throw new ProcessingError(`Year_of_death must be between 1500 and ${new Date().getFullYear()}, got: ${year}`, 'validation');
             }
             result[fieldName] = year;
             break;
@@ -182,6 +227,7 @@ IMPORTANT RULES:
             result[fieldName] = value === null ? null : field.transform(value);
         }
       } catch (error) {
+        console.log(`[NameProcessing] Error processing ${fieldName}:`, error.message);
         // Preserve ProcessingError instances but wrap others
         if (error instanceof ProcessingError) {
           throw error;
@@ -192,11 +238,20 @@ IMPORTANT RULES:
     }
 
     // Copy additional fields that aren't part of the memorial fields
+    // but preserve our name metadata (prefix, suffix)
     for (const [key, value] of Object.entries(data)) {
-      if (!(key in this.fields)) {
+      if (!(key in this.fields) || key === 'prefix' || key === 'suffix') {
         result[key] = value;
       }
     }
+    
+    console.log('[NameProcessing] Final processed data:', {
+      memorial_number: result.memorial_number,
+      first_name: result.first_name,
+      last_name: result.last_name,
+      prefix: result.prefix,
+      suffix: result.suffix
+    });
 
     return result;
   }
