@@ -1,27 +1,29 @@
 /* eslint-disable quotes */
 // progressBar.js
 
-// Function to update the progress bar
+/**
+ * Updates the progress bar UI with the current progress percentage
+ * @param {number} progress - Progress percentage (0-100)
+ */
 export function updateProgressBar(progress) {
-  console.log('updateProgressBar called with progress:', progress);
-  const progressBar = document.getElementById("progressBar");
+  const progressBar = document.getElementById('progressBar');
+  
   if (progressBar) {
-    progressBar.style.width = `${progress}%`;
-    progressBar.textContent = `${progress}%`;
-    console.log('Progress bar updated to:', progress);
-  } else {
-    console.error('Progress bar element not found');
+    const percentage = Math.round(progress);
+    progressBar.style.width = `${percentage}%`;
+    progressBar.setAttribute('aria-valuenow', percentage);
+    progressBar.textContent = `${percentage}%`;
   }
 }
 
-// Function to update the processing message
+/**
+ * Updates the processing message displayed to the user
+ * @param {string} message - Message to display
+ */
 export function updateProcessingMessage(message) {
-  console.log('updateProcessingMessage called with:', message);
-  const statusMessage = document.getElementById("statusMessage");
-  if (statusMessage) {
+  const statusMessage = document.getElementById('statusMessage');
+  
+  if (statusMessage && message) {
     statusMessage.textContent = message;
-    console.log('Status message updated to:', message);
-  } else {
-    console.error('Status message element not found');
   }
 }
