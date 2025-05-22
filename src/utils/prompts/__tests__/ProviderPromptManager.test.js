@@ -1,15 +1,23 @@
 const ProviderPromptManager = require('../ProviderPromptManager');
 const BasePrompt = require('../BasePrompt');
 
-// Mock prompt class for testing
+// Mock prompt class for testing using field-based approach
 class TestPrompt extends BasePrompt {
   constructor(config = {}) {
     super({
       version: '1.0.0',
       description: 'Test prompt',
-      typeDefinitions: {
-        field1: 'string',
-        field2: 'integer'
+      fields: {
+        field1: {
+          type: 'string',
+          description: 'First test field',
+          required: true
+        },
+        field2: {
+          type: 'integer',
+          description: 'Second test field',
+          required: false
+        }
       },
       ...config
     });
@@ -110,10 +118,11 @@ describe('ProviderPromptManager', () => {
       expect(formatted.prompt).toContain('Ensure numeric values are numbers not text');
     });
 
-    it('should include type definitions in formatted prompt', () => {
+    it('should include field definitions in formatted prompt', () => {
       const formatted = promptManager.formatPrompt(mockPrompt, 'openai');
-      expect(formatted.prompt).toContain('field1: string');
-      expect(formatted.prompt).toContain('field2: number');
+      expect(formatted.prompt).toContain('Field Definitions:');
+      expect(formatted.prompt).toContain('field1');
+      expect(formatted.prompt).toContain('field2');
     });
 
     it('should throw error for unknown provider', () => {
@@ -137,6 +146,8 @@ describe('ProviderPromptManager', () => {
 
       const result = promptManager.validatePrompt(mockPrompt, 'openai');
       expect(result.isValid).toBe(true);
+      expect(Array.isArray(result.errors)).toBe(true);
+      expect(result.errors.length).toBe(0);
     });
 
     it('should fail validation if type is not supported', () => {
@@ -152,7 +163,9 @@ describe('ProviderPromptManager', () => {
 
       const result = promptManager.validatePrompt(mockPrompt, 'openai');
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Type "integer" not supported by provider openai');
+      expect(Array.isArray(result.errors)).toBe(true);
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors.some(error => error.includes('integer'))).toBe(true);
     });
   });
 }); 

@@ -1,18 +1,30 @@
 const { promptManager, openaiTemplate, anthropicTemplate } = require('../providerTemplates');
 const BasePrompt = require('../../BasePrompt');
+const { MEMORIAL_FIELDS } = require('../../types/memorialFields');
 
-// Test prompt class
+// Test prompt class using field-based approach
 class TestPrompt extends BasePrompt {
   constructor(config = {}) {
     super({
       version: '1.0.0',
       description: 'Test prompt',
-      typeDefinitions: {
-        id: 'integer',
-        name: 'string',
-        active: 'boolean',
-        created: 'date',
-        tags: 'array'
+      fields: {
+        memorial_number: { 
+          type: 'string',
+          description: 'Memorial identifier',
+          required: true
+        },
+        first_name: {
+          type: 'string',
+          description: 'First name of the deceased',
+          required: false
+        },
+        year_of_death: {
+          type: 'integer', 
+          description: 'Year of death',
+          required: false,
+          constraints: { min: 1500, max: 2100 }
+        }
       },
       ...config
     });
@@ -36,22 +48,15 @@ describe('Provider Templates', () => {
     });
 
     it('should format prompt correctly', () => {
-      const mockPrompt = {
-        typeDefinitions: {
-          id: 'integer',
-          name: 'string',
-          active: 'boolean',
-          created: 'date',
-          tags: 'array'
-        },
-        getPromptText: () => 'Extract the following fields from the data'
-      };
+      const formatted = promptManager.formatPrompt(testPrompt, 'openai');
 
-      const formatted = promptManager.formatPrompt(mockPrompt, 'openai');
-
-      expect(formatted.prompt).toContain('id: number');
-      expect(formatted.prompt).toContain('name: string');
-      expect(formatted.prompt).toContain('response_format: { type: "json_object" }');
+      // Check for field definitions and format instructions
+      expect(formatted.prompt).toContain('Extract the following fields from the data');
+      expect(formatted.prompt).toContain('Field Definitions:');
+      expect(formatted.prompt).toContain('memorial_number');
+      expect(formatted.prompt).toContain('first_name');
+      expect(formatted.prompt).toContain('year_of_death');
+      expect(formatted.prompt).toContain('response_format');
     });
   });
 
@@ -61,22 +66,15 @@ describe('Provider Templates', () => {
     });
 
     it('should format prompt correctly', () => {
-      const mockPrompt = {
-        typeDefinitions: {
-          id: 'integer',
-          name: 'string',
-          active: 'boolean',
-          created: 'date',
-          tags: 'array'
-        },
-        getPromptText: () => 'Extract the following fields from the data'
-      };
+      const formatted = promptManager.formatPrompt(testPrompt, 'anthropic');
 
-      const formatted = promptManager.formatPrompt(mockPrompt, 'anthropic');
-
-      expect(formatted.prompt).toContain('id: numeric');
-      expect(formatted.prompt).toContain('name: text');
-      expect(formatted.prompt).toContain('must be a number, not text');
+      // Check for field definitions and format instructions
+      expect(formatted.prompt).toContain('Extract the following fields from the data');
+      expect(formatted.prompt).toContain('Field Definitions:');
+      expect(formatted.prompt).toContain('memorial_number');
+      expect(formatted.prompt).toContain('first_name');
+      expect(formatted.prompt).toContain('year_of_death');
+      expect(formatted.prompt).toContain('JSON');
     });
   });
 

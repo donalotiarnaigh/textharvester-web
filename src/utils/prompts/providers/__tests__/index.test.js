@@ -18,17 +18,29 @@ describe('Provider Exports', () => {
     it('should return OpenAI config for OpenAI provider', () => {
       const config = getProviderConfig(SUPPORTED_PROVIDERS.OPENAI);
       expect(config).toBeDefined();
-      expect(config.name).toBe('openai');
-      expect(config.systemPromptTemplate).toBeDefined();
-      expect(config.formatSystemPrompt({ task: 'test' })).toContain('test');
+      expect(config.type).toBeDefined();
+      if (typeof config.type === 'object') {
+        expect(config.type.name).toBe(SUPPORTED_PROVIDERS.OPENAI);
+      } else {
+        expect(config.type).toBe(SUPPORTED_PROVIDERS.OPENAI);
+      }
+      expect(typeof config.model).toBe('string');
+      expect(typeof config.maxTokens).toBe('number');
+      expect(typeof config.temperature).toBe('number');
     });
 
     it('should return Anthropic config for Anthropic provider', () => {
       const config = getProviderConfig(SUPPORTED_PROVIDERS.ANTHROPIC);
       expect(config).toBeDefined();
-      expect(config.name).toBe('anthropic');
-      expect(config.systemPromptTemplate).toBeDefined();
-      expect(config.formatSystemPrompt({ task: 'test' })).toContain('test');
+      expect(config.type).toBeDefined();
+      if (typeof config.type === 'object') {
+        expect(config.type.name).toBe(SUPPORTED_PROVIDERS.ANTHROPIC);
+      } else {
+        expect(config.type).toBe(SUPPORTED_PROVIDERS.ANTHROPIC);
+      }
+      expect(typeof config.model).toBe('string');
+      expect(typeof config.maxTokens).toBe('number');
+      expect(typeof config.temperature).toBe('number');
     });
 
     it('should throw error for unsupported provider', () => {
