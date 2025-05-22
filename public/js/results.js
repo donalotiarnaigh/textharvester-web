@@ -1,24 +1,9 @@
-/* eslint-disable quotes */
-// main.js
-
-import { initializeClipboard } from "./clipboard.js";
-import {
-  validateFilenameInput,
-  downloadJsonResults,
-  downloadCsvResults,
-} from "./download.js";
-import { getQueryParam } from "./utils.js";
-import { fetchResultsData } from "./api.js";
-
-/**
- * Main module for the results page
- */
-
 // Function to format date
 function formatDate(dateString) {
   if (!dateString) return 'N/A';
   
   const date = new Date(dateString);
+  const now = new Date();
   
   // Check if date is invalid
   if (isNaN(date.getTime())) return 'N/A';
@@ -184,30 +169,16 @@ export async function loadResults() {
     }
     
     // Show error message
-    const tableBody = document.getElementById('resultsTableBody');
-    if (tableBody) {
-      tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading results. Please try again later.</td></tr>';
+    const memorialsContainer = document.getElementById('memorials-container');
+    if (memorialsContainer) {
+      memorialsContainer.innerHTML = '<div class="alert alert-danger">Error loading results. Please try again later.</div>';
     }
     
     throw error;
   }
 }
 
-// Download functions
-window.downloadJsonResults = function(filenameInput, format) {
-  const filename = filenameInput.value || 'results';
-  window.location.href = `/download/json?filename=${filename}&format=${format}`;
-};
-
-window.downloadCsvResults = function(filenameInput) {
-  const filename = filenameInput.value || 'results';
-  window.location.href = `/download/csv?filename=${filename}`;
-};
-
 // Initialize on document load
 document.addEventListener('DOMContentLoaded', () => {
   loadResults();
-  
-  // Initialize clipboard functionality
-  new ClipboardJS('.copy-info');
-});
+}); 
