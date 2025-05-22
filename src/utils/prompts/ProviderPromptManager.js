@@ -89,7 +89,9 @@ class ProviderPromptManager {
     // Format field definitions according to provider's preferences
     const fieldDefinitions = Object.entries(prompt.fields || {})
       .map(([fieldName, field]) => {
-        const formattedType = template.typeFormatting[field.type] || field.type;
+        // Handle field.type as either string or object
+        const typeKey = typeof field.type === 'object' ? field.type.name : field.type;
+        const formattedType = template.typeFormatting[typeKey] || typeKey;
         return `${fieldName}: ${field.description} (${formattedType})`;
       })
       .join('\n');
@@ -128,8 +130,10 @@ ${template.formatInstructions}`;
     // Check if all types in the prompt are supported by the provider
     if (prompt.fields) {
       Object.entries(prompt.fields).forEach(([fieldName, field]) => {
-        if (!template.typeFormatting[field.type]) {
-          errors.push(`Type "${field.type}" not supported by provider ${providerName}`);
+        // Handle field.type as either string or object
+        const typeKey = typeof field.type === 'object' ? field.type.name : field.type;
+        if (!template.typeFormatting[typeKey]) {
+          errors.push(`Type "${typeKey}" not supported by provider ${providerName}`);
         }
       });
     } else {

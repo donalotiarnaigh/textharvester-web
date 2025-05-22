@@ -29,7 +29,9 @@ class BasePrompt {
    */
   _validateFields(fields) {
     for (const [fieldName, field] of Object.entries(fields)) {
-      if (!field.type || !dataTypes.isValidType(field.type)) {
+      // Allow both string types and DataType objects
+      if (!field.type || (typeof field.type === 'string' && !dataTypes.isValidType(field.type)) || 
+          (typeof field.type === 'object' && !field.type.name)) {
         throw new Error(`Unsupported field type: ${field.type}`);
       }
       if (!field.description) {
@@ -51,7 +53,9 @@ class BasePrompt {
       throw new Error(`Unknown field: ${fieldName}`);
     }
 
-    const result = dataTypes.validateValue(value, field.type, field.metadata);
+    // Handle field.type as either string or object
+    const fieldType = typeof field.type === 'object' ? field.type.name : field.type;
+    const result = dataTypes.validateValue(value, fieldType, field.metadata);
     
     if (result.errors.length > 0) {
       const errorMessages = result.errors.map(error => 
