@@ -82,6 +82,12 @@ The issue appears to be related to:
 ### Description
 When processing a PDF with a record containing no first name (e.g., "R.R Talbot Junr"), the system fails with a validation error. The error occurs even though another valid record ("Rev. Peter Butler") exists on the same page.
 
+**Update (2024-03-22):** Different behavior observed with Anthropic provider:
+- Anthropic ignores the initials "R.R"
+- Takes "Talbot" as first name and "Jun" as last name
+- No validation error occurs, but results in incorrect name parsing
+- Shows inconsistency in name handling between providers
+
 ### Error Message
 ```
 [ERROR] Error processing file uploads/test_17479_1747903798021_page-5.jpg: Error: Invalid name format for first_name
@@ -96,6 +102,10 @@ The issue appears to be related to:
 2. No handling for special cases like initials-only names
 3. Validation failing for the entire page when one record is invalid
 4. No partial success handling for multiple records on a page
+5. Inconsistent name parsing behavior across different providers:
+   - Some providers fail validation on initials
+   - Others ignore initials and parse remaining text incorrectly
+   - No standardized approach to handling special name formats
 
 ### Proposed Solution
 1. Update name validation rules to handle:
@@ -109,6 +119,11 @@ The issue appears to be related to:
    - Initial-only names
    - Multiple records with mixed validity
    - Various title formats
+5. Standardize name parsing across providers:
+   - Create consistent rules for handling initials
+   - Define provider-specific name parsing configurations if needed
+   - Add validation to catch incorrect parsing
+   - Implement proper handling of suffixes (Jr, Junr, etc.)
 
 ### Related Files
 - `src/utils/prompts/templates/MemorialOCRPrompt.js`
