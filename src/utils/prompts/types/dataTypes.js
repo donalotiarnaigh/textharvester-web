@@ -114,8 +114,16 @@ class StringType extends DataType {
           }
           break;
         case 'name':
-          if (!value.match(/^[A-Za-z\s\-']+$/)) {
+          // Enhanced name validation - much more flexible
+          // Allows letters, spaces, hyphens, apostrophes, periods, and accented characters
+          if (!value.match(/^[A-Za-zÀ-ÖØ-öø-ÿ\s\-'.]+$/)) {
             errors.push('Invalid name format');
+          }
+          break;
+        case 'identifier':
+          // Alphanumeric with limited special characters
+          if (!value.match(/^[A-Za-z0-9\-_]+$/)) {
+            errors.push('Invalid identifier format');
           }
           break;
       }
@@ -302,7 +310,7 @@ const TYPES = {
  * @returns {boolean} True if type is supported
  */
 function isValidType(type) {
-  return type.toLowerCase() in TYPES;
+  return typeof type === 'string' && type.toLowerCase() in TYPES;
 }
 
 /**
