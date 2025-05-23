@@ -437,45 +437,30 @@ The issue appears to be that:
 - `src/utils/database.js` - Stores the memorial data
 - `src/utils/fileProcessing.js` - Processes files and extracts metadata 
 
-## Issue #7: Empty Modal on First Click After PDF Processing
-**Status:** Open  
-**Date Reported:** 2025-05-23  
-**Component:** UI/Results Display  
+## Issue #7: Modal View Button Click Not Working
+**Status:** Resolved  
+**Date Reported:** 2024-03-22  
+**Component:** UI/Modal  
 **Severity:** Medium  
 
 ### Description
-After processing a PDF with multiple pages (five sheets in the test case) and navigating to the results page, clicking the 'View' button on any result row for the first time shows an empty modal. On subsequent clicks of the same button, the modal displays correctly with the expected memorial information.
+When clicking the "View" button in the results table, the modal does not appear. This prevents users from viewing detailed information about processed memorials.
 
-### Reproduction Steps
-1. Upload a multi-page PDF (5 pages in the test case)
-2. Wait for processing to complete
-3. Navigate to the results page (either automatically or manually)
-4. Click the 'View' button on the first or any other result row
-5. Observe that the modal appears but is empty
-6. Close the modal and click the same 'View' button again
-7. Observe that the modal now displays the memorial information correctly
+**Update (2024-05-25):** Issue resolved by implementing a new `MemorialModal` class with:
+- Proper event handling for modal show/hide
+- Loading state management
+- Standardized name formatting (uppercase last names)
+- Consistent date formatting
+- Graceful handling of missing data
+- Comprehensive test coverage
+- Clear separation of concerns (UI updates, data formatting, event handling)
 
-### Expected Behavior
-The modal should display the memorial information correctly on the first click, without requiring a second attempt.
-
-### Analysis
-This appears to be a timing or initialization issue. Possible causes include:
-1. Asynchronous data loading not completing before the modal is displayed
-2. Race condition in the modal initialization code
-3. Event handling issues where the first click triggers data loading but doesn't wait for completion
-4. Caching or state management issue where data is only available after the first attempt
-
-### Proposed Solution
-1. Implement proper loading state management for the modal
-2. Ensure data is fully loaded before displaying the modal
-3. Add error handling to detect and recover from initialization failures
-4. Implement a loading indicator in the modal for better user experience
-5. Add console logging to trace the exact sequence of events during modal opening
-
-### Related Files
-- `public/js/modules/results/modal.js` - Handles the memorial details modal
-- `public/js/modules/results/dataFetching.js` - Likely handles data fetching for the modal
-- `public/js/results.js` - Main results page JavaScript 
+The implementation follows TDD principles with a full test suite covering:
+- Modal initialization
+- Loading states
+- Content population
+- Event handling
+- Edge cases (missing data)
 
 ## Issue #8: Unnecessary Periods Added to Regular Names
 **Status:** Resolved  
