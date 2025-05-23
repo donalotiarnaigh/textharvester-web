@@ -446,3 +446,38 @@ This appears to be a timing or initialization issue. Possible causes include:
 - `public/js/modules/results/modal.js` - Handles the memorial details modal
 - `public/js/modules/results/dataFetching.js` - Likely handles data fetching for the modal
 - `public/js/results.js` - Main results page JavaScript 
+
+## Issue #8: Unnecessary Periods Added to Regular Names
+**Status:** Open  
+**Date Reported:** 2025-05-23  
+**Component:** Name Processing  
+**Severity:** Medium  
+
+### Description
+When processing certain inscriptions, the system incorrectly treats regular names as if they were initials, adding periods after each letter. For example, with an inscription reading:
+
+```
+"JAMES BURKE (of ___ DIED MAR 27 ___ SARAH ___ MAY ___"
+```
+
+The first name "JAMES" was incorrectly processed and stored as "J.A.M.E.S."
+
+### Expected Behavior
+Regular names like "JAMES" should be identified as complete names, not initials, and should not have periods added between each letter.
+
+### Analysis
+This appears to be an issue with the name processing logic, specifically:
+1. The `handleInitials` function or its detection method `isInitials` may be too aggressive in identifying names as initials
+2. The heuristic that determines whether a string contains initials is likely not accounting for common names
+3. The system may be failing to check if a sequence of uppercase letters is a valid name before processing it as initials
+
+### Proposed Solution
+1. Improve the `isInitials` function to better distinguish between initials and regular names
+2. Expand the dictionary of common names used to validate against
+3. Add a preliminary check against a list of common names before processing for initials
+4. Consider adding length-based rules (e.g., strings of 4+ characters are less likely to be initials)
+5. Implement additional context-based checks before applying initials formatting
+
+### Related Files
+- `src/utils/nameProcessing.js` - Contains the handleInitials function
+- `src/utils/prompts/templates/MemorialOCRPrompt.js` - Processes and transforms names 
