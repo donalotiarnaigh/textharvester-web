@@ -5,37 +5,46 @@
 const MemorialOCRPrompt = require('../MemorialOCRPrompt');
 const { ProcessingError } = require('../../../errorTypes');
 
-// Mock dependencies to avoid validation issues
-jest.mock('../../../nameProcessing', () => ({
-  preprocessName: jest.fn().mockImplementation(() => ({ 
-    firstName: 'JOHN', 
-    lastName: 'SMITH' 
-  })),
-  extractNamesFromText: jest.fn().mockImplementation(() => ({ 
-    firstName: 'JOHN', 
-    lastName: 'SMITH' 
-  })),
-  handleInitials: Object.assign(
-    jest.fn().mockReturnValue('J.R.'),
-    { isInitials: jest.fn().mockReturnValue(false) }
-  ),
-  detectPrefix: jest.fn(),
-  detectSuffix: jest.fn(),
-  formatName: jest.fn()
+// Mock standardNameParser
+jest.mock('../../../standardNameParser', () => ({
+  standardizeNameParsing: jest.fn().mockImplementation((data, options) => {
+    // Handle test cases based on input
+    if (data.full_name === 'Rev. John Smith Jr.') {
+      return {
+        first_name: 'JOHN',
+        last_name: 'SMITH',
+        prefix: 'REV.',
+        suffix: 'JR.'
+      };
+    } else if (data.full_name === 'J.R. Smith III') {
+      return {
+        first_name: 'J.R.',
+        last_name: 'SMITH',
+        suffix: 'III'
+      };
+    } else if (data.inscription === 'In memory of John Smith who died in 1900') {
+      return {
+        first_name: 'JOHN',
+        last_name: 'SMITH'
+      };
+    } else if (data.first_name && data.last_name) {
+      return {
+        first_name: data.first_name.toUpperCase(),
+        last_name: data.last_name.toUpperCase()
+      };
+    } else if (data.last_name && !data.first_name) {
+      return {
+        first_name: '',
+        last_name: data.last_name.toUpperCase()
+      };
+    } else {
+      return {
+        first_name: 'JOHN',
+        last_name: 'SMITH'
+      };
+    }
+  })
 }));
-
-jest.mock('../../types/memorialFields', () => {
-  const original = jest.requireActual('../../types/memorialFields');
-  return {
-    ...original,
-    processFullName: jest.fn().mockImplementation(() => ({
-      first_name: 'JOHN',
-      last_name: 'SMITH',
-      prefix: 'REV.',
-      suffix: 'JR.'
-    }))
-  };
-});
 
 // Mock the console.log to capture logs
 const originalConsoleLog = console.log;
@@ -112,11 +121,11 @@ describe('MemorialOCRPrompt', () => {
         inscription: 'In memory of John Smith who died in 1900'
       };
       
-      const { extractNamesFromText } = require('../../../nameProcessing');
+      const { standardizeNameParsing } = require('../../../standardNameParser');
       
       const result = prompt.validateAndConvert(data);
       
-      expect(extractNamesFromText).toHaveBeenCalledWith('In memory of John Smith who died in 1900');
+      expect(standardizeNameParsing).toHaveBeenCalled();
       expect(result.first_name).toBe('JOHN');
       expect(result.last_name).toBe('SMITH');
     });
@@ -130,25 +139,16 @@ describe('MemorialOCRPrompt', () => {
       
       prompt.validateAndConvert(data);
       
-      // Check that logs include raw name input and preprocessed components
-      expect(consoleOutput.some(log => log.includes('Raw name input'))).toBe(true);
-      expect(consoleOutput.some(log => log.includes('Preprocessed name components'))).toBe(true);
+      // Check that logs include raw data input and standardized name data
+      expect(consoleOutput.some(log => log.includes('Raw data input'))).toBe(true);
+      expect(consoleOutput.some(log => log.includes('Standardized name data'))).toBe(true);
     });
     
     it('should handle complex name variations', () => {
-      // Test with a single mock implementation that works for all cases
-      const { processFullName } = require('../../types/memorialFields');
-      
       const data = {
         memorial_number: 'HG123',
         full_name: 'J.R. Smith III'
       };
-      
-      processFullName.mockReturnValueOnce({
-        first_name: 'J.R.',
-        last_name: 'SMITH',
-        suffix: 'III'
-      });
       
       const result = prompt.validateAndConvert(data);
       

@@ -1,7 +1,7 @@
 const BasePrompt = require('../BasePrompt');
-const { MEMORIAL_FIELDS, processFullName } = require('../types/memorialFields');
+const { MEMORIAL_FIELDS } = require('../types/memorialFields');
 const { ProcessingError } = require('../../errorTypes');
-const { preprocessName, extractNamesFromText } = require('../../nameProcessing');
+const { standardizeNameParsing } = require('../../standardNameParser');
 
 /**
  * Standard OCR prompt for memorial inscriptions
@@ -115,42 +115,37 @@ IMPORTANT RULES:
     const result = {};
     const errors = [];
     
-    // Step 1: Handle full_name if present (integrate name preprocessing)
-    if (data.full_name) {
-      console.log('[NameProcessing] Raw name input:', data.full_name);
-      
-      // Process the full name to extract components
-      const nameComponents = processFullName(data.full_name);
-      console.log('[NameProcessing] Preprocessed name components:', nameComponents);
-      
-      // Add the components to the data for further processing
-      Object.assign(data, nameComponents);
-    }
+    // Step 1: Apply standardized name parsing with provider-specific options
+    console.log('[NameProcessing] Raw data input:', {
+      full_name: data.full_name,
+      first_name: data.first_name,
+      last_name: data.last_name,
+      inscription: data.inscription?.substring(0, 50) + (data.inscription?.length > 50 ? '...' : '')
+    });
     
-    // Step 2: Check if we need to extract names from inscription
-    const hasMissingNames = !data.first_name || !data.last_name;
-    if (hasMissingNames && data.inscription) {
-      console.log('[NameProcessing] Attempting to extract names from inscription');
-      
-      const extractedNames = extractNamesFromText(data.inscription);
-      if (extractedNames) {
-        console.log('[NameProcessing] Names extracted from inscription:', extractedNames);
-        
-        // Only use extracted names if the fields are missing
-        if (!data.first_name && extractedNames.firstName) {
-          data.first_name = extractedNames.firstName;
-        }
-        if (!data.last_name && extractedNames.lastName) {
-          data.last_name = extractedNames.lastName;
-        }
-        if (extractedNames.prefix) {
-          data.prefix = extractedNames.prefix;
-        }
-        if (extractedNames.suffix) {
-          data.suffix = extractedNames.suffix;
-        }
-      }
-    }
+    // Determine provider-specific options (if any)
+    const providerOptions = {
+      provider: this.config?.provider || 'default',
+      preserveInitials: this.config?.provider === 'openai' // OpenAI tends to preserve initials better
+    };
+    
+    // Apply the standardized name parsing
+    const standardizedData = standardizeNameParsing(data, providerOptions);
+    
+    console.log('[NameProcessing] Standardized name data:', {
+      first_name: standardizedData.first_name,
+      last_name: standardizedData.last_name,
+      prefix: standardizedData.prefix,
+      suffix: standardizedData.suffix
+    });
+    
+    // Copy standardized name fields into the data
+    Object.assign(data, {
+      first_name: standardizedData.first_name,
+      last_name: standardizedData.last_name,
+      prefix: standardizedData.prefix,
+      suffix: standardizedData.suffix
+    });
 
     // First pass: validate required fields are present
     // Check memorial_number first as it's the primary identifier
@@ -175,11 +170,6 @@ IMPORTANT RULES:
       try {
         const value = fieldName in data ? data[fieldName] : null;
         
-        // Log the value being processed for name fields
-        if (fieldName === 'first_name' || fieldName === 'last_name') {
-          console.log(`[NameProcessing] Processing ${fieldName}:`, value);
-        }
-        
         // Skip validation for null values in optional fields
         if (value === null && !field.required) {
           result[fieldName] = fieldName === 'first_name' ? '' : null; // Return empty string for first_name
@@ -200,8 +190,8 @@ IMPORTANT RULES:
               if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s\-'.]+$/.test(value)) {
                 throw new ProcessingError(`Invalid name format for ${fieldName}: "${value}"`, 'validation');
               }
-              result[fieldName] = field.transform(value);
-              console.log(`[NameProcessing] Transformed ${fieldName}:`, result[fieldName]);
+              // Names are already standardized, so just assign the value
+              result[fieldName] = value;
             }
             break;
 
