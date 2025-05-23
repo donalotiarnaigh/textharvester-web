@@ -113,6 +113,18 @@ When processing a PDF with a record containing no first name (e.g., "R.R Talbot 
   - Missing field handling
   - Data structure preservation
 
+**Update (2025-05-25):** "Undefined attempts" bug fixed:
+- Added tests to verify error message handling
+- Confirmed validation errors are properly categorized and displayed
+- No more references to undefined "attempts" variable in error messages
+- Error handling properly distinguishes between validation and processing errors
+- All test cases passing, including:
+  - Missing first name (now optional)
+  - Invalid first name format
+  - Empty string first name
+  - Special characters in first name
+  - Mixed error types display
+
 ### Error Message
 ```
 [ERROR] Error processing file uploads/test_17479_1747903798021_page-5.jpg: Error: Invalid name format for first_name
