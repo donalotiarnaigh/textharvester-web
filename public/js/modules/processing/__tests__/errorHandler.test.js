@@ -2,146 +2,143 @@
  * @jest-environment jsdom
  */
 
-describe('Error Handler UI Component', () => {
-  // Import error handler module
+const { ProcessingStateManager } = require('../../../utils/ProcessingStateManager');
+const { ErrorHandler } = require('../errorHandler');
+
+describe('ErrorHandler', () => {
+  let stateManager;
   let errorHandler;
-  
-  // DOM elements
-  let errorContainer;
-  
+  let mockOperation;
+  let mockStorage;
+
   beforeEach(() => {
-    // Set up DOM elements
-    document.body.innerHTML = `
-      <div id="errorContainer" style="display: none;">
-        <h3>Processing Notices</h3>
-        <div id="errorList"></div>
-      </div>
-    `;
-    
-    errorContainer = document.getElementById('errorContainer');
-    
-    // Clear mocks between tests
-    jest.resetModules();
-    
-    // Import module
-    errorHandler = require('../errorHandler');
+    stateManager = new ProcessingStateManager();
+    mockStorage = {
+      saveError: jest.fn(),
+      loadErrors: jest.fn().mockResolvedValue([]),
+      clearError: jest.fn()
+    };
+    errorHandler = new ErrorHandler(stateManager, mockStorage);
+    mockOperation = jest.fn();
   });
-  
-  it('should display error messages when errors are present', () => {
-    const errors = [
-      {
-        fileName: 'file1.jpg',
-        error: true,
-        errorType: 'empty_sheet',
-        errorMessage: 'No readable text found on the sheet'
-      },
-      {
-        fileName: 'file2.jpg',
-        error: true,
-        errorType: 'validation',
-        errorMessage: 'Invalid year format'
-      }
-    ];
-    
-    errorHandler.updateErrorMessages(errors);
-    
-    // Container should be visible
-    expect(errorContainer.style.display).toBe('block');
-    
-    // Error list should contain both errors
-    const errorItems = document.querySelectorAll('.error-item');
-    expect(errorItems.length).toBe(2);
-    
-    // Verify content of error messages
-    expect(errorItems[0].innerHTML).toContain('file1.jpg');
-    expect(errorItems[0].innerHTML).toContain('empty_sheet');
-    expect(errorItems[0].innerHTML).toContain('No readable text found on the sheet');
-    
-    expect(errorItems[1].innerHTML).toContain('file2.jpg');
-    expect(errorItems[1].innerHTML).toContain('validation');
-    expect(errorItems[1].innerHTML).toContain('Invalid year format');
+
+  describe('Retry Mechanism', () => {
+    it('should retry failed operations with exponential backoff', async () => {
+      const error = new Error('Network error');
+      mockOperation
+        .mockRejectedValueOnce(error)
+        .mockRejectedValueOnce(error)
+        .mockResolvedValueOnce({ success: true });
+
+      const result = await errorHandler.withRetry(
+        'test.jpg',
+        'ocr',
+        mockOperation,
+        { maxRetries: 3, initialDelay: 100 }
+      );
+
+      expect(result).toEqual({ success: true });
+      expect(mockOperation).toHaveBeenCalledTimes(3);
+    });
+
+    it('should respect max retries limit', async () => {
+      const error = new Error('Persistent error');
+      mockOperation.mockRejectedValue(error);
+
+      await expect(errorHandler.withRetry(
+        'test.jpg',
+        'ocr',
+        mockOperation,
+        { maxRetries: 2, initialDelay: 50 }
+      )).rejects.toThrow('Persistent error');
+
+      expect(mockOperation).toHaveBeenCalledTimes(3); // Initial + 2 retries
+    });
+
+    it('should track retry attempts in state', async () => {
+      const error = new Error('Network error');
+      mockOperation
+        .mockRejectedValueOnce(error)
+        .mockResolvedValueOnce({ success: true });
+
+      stateManager.addFiles(['test.jpg']);
+      await errorHandler.withRetry(
+        'test.jpg',
+        'ocr',
+        mockOperation,
+        { maxRetries: 3, initialDelay: 50 }
+      );
+
+      const fileState = stateManager.state.files.get('test.jpg');
+      expect(fileState.retryAttempts?.ocr).toBe(1);
+    });
   });
-  
-  it('should hide container when no errors are present', () => {
-    // First set container to visible
-    errorContainer.style.display = 'block';
-    
-    // Update with empty errors array
-    errorHandler.updateErrorMessages([]);
-    
-    // Container should be hidden
-    expect(errorContainer.style.display).toBe('none');
+
+  describe('Error Recovery', () => {
+    it('should recover from a saved error state', async () => {
+      const savedError = {
+        fileId: 'test.jpg',
+        phase: 'ocr',
+        error: 'OCR service unavailable',
+        timestamp: Date.now()
+      };
+      mockStorage.loadErrors.mockResolvedValueOnce([savedError]);
+
+      const recoveryResult = await errorHandler.attemptRecovery('test.jpg');
+      expect(recoveryResult.attempted).toBe(true);
+      expect(recoveryResult.phase).toBe('ocr');
+    });
+
+    it('should clear error state after successful recovery', async () => {
+      stateManager.addFiles(['test.jpg']);
+      stateManager.recordError('test.jpg', new Error('Initial error'));
+
+      await errorHandler.markErrorResolved('test.jpg');
+
+      const fileState = stateManager.state.files.get('test.jpg');
+      expect(fileState.status).toBe('pending');
+      expect(stateManager.state.errors.has('test.jpg')).toBe(false);
+      expect(mockStorage.clearError).toHaveBeenCalledWith('test.jpg');
+    });
+
+    it('should handle multiple error states for the same file', async () => {
+      const errors = [
+        { fileId: 'test.jpg', phase: 'ocr', error: 'OCR error', timestamp: Date.now() - 1000 },
+        { fileId: 'test.jpg', phase: 'analysis', error: 'Analysis error', timestamp: Date.now() }
+      ];
+      mockStorage.loadErrors.mockResolvedValueOnce(errors);
+
+      const recoveryResult = await errorHandler.attemptRecovery('test.jpg');
+      expect(recoveryResult.attempted).toBe(true);
+      expect(recoveryResult.phase).toBe('analysis'); // Should attempt most recent error first
+    });
   });
-  
-  it('should clear previous errors when updating', () => {
-    // First add some errors
-    const initialErrors = [
-      {
-        fileName: 'file1.jpg',
-        error: true,
-        errorType: 'empty_sheet',
-        errorMessage: 'No readable text found on the sheet'
-      }
-    ];
-    
-    errorHandler.updateErrorMessages(initialErrors);
-    expect(document.querySelectorAll('.error-item').length).toBe(1);
-    
-    // Now update with new errors
-    const newErrors = [
-      {
-        fileName: 'file2.jpg',
-        error: true,
-        errorType: 'validation',
-        errorMessage: 'Invalid year format'
-      }
-    ];
-    
-    errorHandler.updateErrorMessages(newErrors);
-    
-    // Should only have the new error
-    const errorItems = document.querySelectorAll('.error-item');
-    expect(errorItems.length).toBe(1);
-    expect(errorItems[0].innerHTML).toContain('file2.jpg');
-  });
-  
-  it('should format errors based on type', () => {
-    const errors = [
-      {
-        fileName: 'file1.jpg',
-        error: true,
-        errorType: 'empty_sheet',
-        errorMessage: 'No readable text found on the sheet'
-      },
-      {
-        fileName: 'file2.jpg',
-        error: true,
-        errorType: 'processing_failed',
-        errorMessage: 'Processing failed after 3 attempts'
-      },
-      {
-        fileName: 'file3.jpg',
-        error: true,
-        errorType: 'unknown',
-        errorMessage: 'An unknown error occurred'
-      }
-    ];
-    
-    errorHandler.updateErrorMessages(errors);
-    
-    // Verify content has specific formatting for different error types
-    const errorItems = document.querySelectorAll('.error-item');
-    
-    // Empty sheet errors should be formatted as empty sheet notices
-    expect(errorItems[0].innerHTML).toContain('empty sheet');
-    expect(errorItems[0].innerHTML).toContain('skipped');
-    
-    // Processing failed errors should mention retries
-    expect(errorItems[1].innerHTML).toContain('processing failed');
-    expect(errorItems[1].innerHTML).toContain('multiple attempts');
-    
-    // Unknown errors should still show the message
-    expect(errorItems[2].innerHTML).toContain('file3.jpg');
-    expect(errorItems[2].innerHTML).toContain('An unknown error occurred');
+
+  describe('Error Persistence', () => {
+    it('should persist error details to storage', async () => {
+      const error = new Error('Test error');
+      await errorHandler.persistError('test.jpg', 'ocr', error);
+
+      expect(mockStorage.saveError).toHaveBeenCalledWith({
+        fileId: 'test.jpg',
+        phase: 'ocr',
+        error: error.message,
+        timestamp: expect.any(Number)
+      });
+    });
+
+    it('should load persisted errors on initialization', async () => {
+      const savedErrors = [
+        { fileId: 'test1.jpg', phase: 'ocr', error: 'Error 1', timestamp: Date.now() },
+        { fileId: 'test2.jpg', phase: 'analysis', error: 'Error 2', timestamp: Date.now() }
+      ];
+      mockStorage.loadErrors.mockResolvedValueOnce(savedErrors);
+
+      await errorHandler.initialize();
+
+      savedErrors.forEach(error => {
+        expect(stateManager.state.errors.has(error.fileId)).toBe(true);
+      });
+    });
   });
 }); 

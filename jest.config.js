@@ -14,5 +14,8 @@ module.exports = {
   ],
   moduleNameMapper: {
     'sqlite3': '<rootDir>/__mocks__/sqlite3.js'
+  },
+  testEnvironmentOptions: {
+    customExportConditions: ['node', 'node-addons']
   }
 }; 

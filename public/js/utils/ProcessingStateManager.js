@@ -1,13 +1,13 @@
 /**
- * Manages the state of file processing, including progress tracking and error handling
+ * Manages processing state for files and error tracking
  */
 class ProcessingStateManager {
   constructor() {
     this.state = {
       files: new Map(),
+      errors: new Map(),
       totalFiles: 0,
       processedFiles: 0,
-      errors: new Map(),
       phase: 'idle'
     };
     this.listeners = new Set();
@@ -20,26 +20,24 @@ class ProcessingStateManager {
   }
 
   /**
-   * Add files to be tracked by the state manager
-   * @param {string[]} fileIds Array of file IDs to track
+   * Add files to be processed
+   * @param {Array<string>} fileIds Array of file IDs
    */
   addFiles(fileIds) {
-    const uniqueFiles = [...new Set(fileIds)];
-    uniqueFiles.forEach(fileId => {
-      if (!this.state.files.has(fileId)) {
-        this.state.files.set(fileId, {
-          id: fileId,
-          phases: {
-            upload: 0,
-            ocr: 0,
-            analysis: 0,
-            validation: 0
-          },
-          status: 'pending'
-        });
-      }
+    fileIds.forEach(fileId => {
+      this.state.files.set(fileId, {
+        id: fileId,
+        status: 'pending',
+        phases: {
+          upload: 0,
+          ocr: 0,
+          analysis: 0,
+          validation: 0
+        },
+        retryAttempts: {}
+      });
     });
-    this.state.totalFiles = this.state.files.size;
+    this.state.totalFiles += fileIds.length;
     this._notifyListeners();
   }
 
@@ -86,17 +84,17 @@ class ProcessingStateManager {
    * @param {Error} error Error object
    */
   recordError(fileId, error) {
-    const file = this.state.files.get(fileId);
-    if (!file) return;
-
-    file.status = 'error';
-    this.state.errors.set(fileId, error);
-    this._notifyListeners();
+    const fileState = this.state.files.get(fileId);
+    if (fileState) {
+      fileState.status = 'error';
+      this.state.errors.set(fileId, error);
+      this._notifyListeners();
+    }
   }
 
   /**
    * Add a state change listener
-   * @param {Function} listener Callback function
+   * @param {Function} listener Listener function
    */
   addListener(listener) {
     this.listeners.add(listener);
@@ -104,7 +102,7 @@ class ProcessingStateManager {
 
   /**
    * Remove a state change listener
-   * @param {Function} listener Callback function
+   * @param {Function} listener Listener function
    */
   removeListener(listener) {
     this.listeners.delete(listener);
@@ -124,9 +122,9 @@ class ProcessingStateManager {
   reset() {
     this.state = {
       files: new Map(),
+      errors: new Map(),
       totalFiles: 0,
       processedFiles: 0,
-      errors: new Map(),
       phase: 'idle'
     };
     this._notifyListeners();
