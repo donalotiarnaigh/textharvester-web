@@ -1,6 +1,8 @@
 /**
  * Manages the state of file processing, including progress tracking and error handling
  */
+const logger = require('./logger');
+
 class ProcessingStateManager {
   constructor() {
     this.state = {
@@ -20,12 +22,21 @@ class ProcessingStateManager {
     this.listeners = new Set();
     this.phaseWeights = {
       upload: 0.2,
-      ocr: 0.3,
+      ocr: 0.4,
       analysis: 0.3,
-      validation: 0.2
+      validation: 0.1
     };
     this._locked = false;
     this._lockQueue = [];
+
+    logger.info('[ProcessingStateManager] Initialized', {
+      phaseWeights: this.phaseWeights,
+      initialState: {
+        totalFiles: this.state.totalFiles,
+        processedFiles: this.state.processedFiles,
+        phase: this.state.phase
+      }
+    });
   }
 
   /**
@@ -63,29 +74,57 @@ class ProcessingStateManager {
    * @returns {Promise} Resolves when the update is complete
    */
   async updateFileProgress(fileId, phase, progress) {
+    logger.debug('[ProcessingStateManager] Updating file progress', {
+      fileId,
+      phase,
+      progress,
+      currentState: {
+        totalFiles: this.state.totalFiles,
+        processedFiles: this.state.processedFiles,
+        queueSize: this.state.processingQueue.size
+      }
+    });
+
     return await this._atomicUpdate(async () => {
       // Validate phase
       if (!this.phaseWeights.hasOwnProperty(phase)) {
+        logger.error('[ProcessingStateManager] Invalid phase name', { phase });
         throw new Error('Invalid phase name');
       }
 
       // Validate progress bounds
       if (progress < 0 || progress > 100) {
-        throw new Error('Progress value must be between 0 and 100');
+        logger.warn('[ProcessingStateManager] Progress value out of bounds', { progress });
+        progress = Math.max(0, Math.min(100, progress));
       }
 
       // Get file state
       const file = this.state.files.get(fileId);
       if (!file) {
+        logger.error('[ProcessingStateManager] File not found', { fileId });
         throw new Error('File not found');
       }
 
       // Update phase progress
+      const oldProgress = file.phases[phase];
       file.phases[phase] = progress;
+
+      logger.debug('[ProcessingStateManager] Updated phase progress', {
+        fileId,
+        phase,
+        oldProgress,
+        newProgress: progress,
+        allPhases: file.phases
+      });
 
       // Check if file is complete
       const isComplete = Object.values(file.phases).every(p => p === 100);
       if (isComplete && file.status !== 'complete') {
+        logger.info('[ProcessingStateManager] File processing complete', {
+          fileId,
+          finalPhases: file.phases
+        });
+        
         file.status = 'complete';
         this.state.processingQueue.delete(fileId);
         await this._recalculateProcessedFiles();
@@ -98,6 +137,14 @@ class ProcessingStateManager {
         allFilesProcessed: false,
         resultsVerified: false
       };
+
+      logger.debug('[ProcessingStateManager] Progress update complete', {
+        fileId,
+        isComplete,
+        queueSize: this.state.processingQueue.size,
+        processedFiles: this.state.processedFiles,
+        totalFiles: this.state.totalFiles
+      });
     });
   }
 
@@ -106,7 +153,10 @@ class ProcessingStateManager {
    * @returns {number} Overall progress percentage
    */
   getOverallProgress() {
-    if (this.state.totalFiles === 0) return 0;
+    if (this.state.totalFiles === 0) {
+      logger.debug('[ProcessingStateManager] No files to process');
+      return 0;
+    }
 
     const fileProgresses = Array.from(this.state.files.values()).map(file => {
       let weightedProgress = 0;
@@ -117,7 +167,15 @@ class ProcessingStateManager {
     });
 
     const totalProgress = fileProgresses.reduce((sum, progress) => sum + progress, 0);
-    return Math.min(100, totalProgress / this.state.totalFiles);
+    const overallProgress = Math.min(100, totalProgress / this.state.totalFiles);
+
+    logger.debug('[ProcessingStateManager] Calculated overall progress', {
+      totalFiles: this.state.totalFiles,
+      fileProgresses,
+      overallProgress
+    });
+
+    return overallProgress;
   }
 
   /**
@@ -229,13 +287,28 @@ class ProcessingStateManager {
    * @private
    */
   async _recalculateProcessedFiles() {
+    const oldProcessedFiles = this.state.processedFiles;
+    
     let processed = 0;
     for (const file of this.state.files.values()) {
-      if (Object.values(file.phases).every(progress => progress === 100)) {
+      if (file.status === 'complete') {
         processed++;
       }
     }
     this.state.processedFiles = processed;
+
+    logger.debug('[ProcessingStateManager] Recalculated processed files', {
+      oldCount: oldProcessedFiles,
+      newCount: processed,
+      totalFiles: this.state.totalFiles
+    });
+
+    if (processed === this.state.totalFiles) {
+      logger.info('[ProcessingStateManager] All files processed', {
+        totalFiles: this.state.totalFiles,
+        processedFiles: processed
+      });
+    }
   }
 
   /**

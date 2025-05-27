@@ -173,9 +173,15 @@ function getProcessingProgress() {
   const totalFiles = getTotalFiles();
   const processedFiles = getProcessedFiles();
   
+  logger.debug('[FileQueue] Getting processing progress', {
+    totalFiles,
+    processedFiles
+  });
+
   // If there are no files at all and we've processed some files previously,
   // return 100% to trigger redirect
   if (totalFiles === 0 && processedFiles > 0) {
+    logger.info('[FileQueue] No files in queue but files were processed, marking as complete');
     return {
       state: 'complete',
       progress: 100
@@ -184,6 +190,7 @@ function getProcessingProgress() {
   
   // If there are no files and we haven't processed any, we're waiting
   if (totalFiles === 0) {
+    logger.debug('[FileQueue] No files to process, waiting state');
     return {
       state: 'waiting',
       progress: 0
@@ -191,10 +198,26 @@ function getProcessingProgress() {
   }
 
   const progress = Math.round((processedFiles / totalFiles) * 100);
+  const errors = processedResults.filter(r => r && r.error);
+  
+  if (errors.length > 0) {
+    logger.warn('[FileQueue] Errors detected during processing', {
+      errorCount: errors.length,
+      errors: errors.map(e => ({ message: e.error.message }))
+    });
+  }
+
+  const state = progress === 100 ? 'complete' : 'processing';
+  logger.debug('[FileQueue] Progress calculation complete', {
+    progress,
+    state,
+    hasErrors: errors.length > 0
+  });
+
   return {
-    state: progress === 100 ? 'complete' : 'processing',
-    progress: progress,
-    errors: processedResults.filter(r => r && r.error) // Include errors in progress response
+    state,
+    progress,
+    errors: errors.length > 0 ? errors : undefined
   };
 }
 
