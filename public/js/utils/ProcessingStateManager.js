@@ -1,8 +1,10 @@
 /**
  * Manages processing state for files and error tracking
  */
+const { CompletionVerifier } = require('../modules/processing/CompletionVerifier');
+
 class ProcessingStateManager {
-  constructor() {
+  constructor(storage) {
     this.state = {
       files: new Map(),
       errors: new Map(),
@@ -17,6 +19,9 @@ class ProcessingStateManager {
       analysis: 0.3,
       validation: 0.2
     };
+    this.storage = storage;
+    this.completionVerifier = new CompletionVerifier(this, storage);
+    this.completionListeners = new Set();
   }
 
   /**
@@ -47,9 +52,11 @@ class ProcessingStateManager {
    * @param {string} phase Processing phase
    * @param {number} progress Progress percentage (0-100)
    */
-  updateProgress(fileId, phase, progress) {
+  async updateProgress(fileId, phase, progress) {
     const file = this.state.files.get(fileId);
-    if (!file) return;
+    if (!file) {
+      throw new Error(`File ${fileId} not found`);
+    }
 
     // Validate progress bounds
     progress = Math.max(0, Math.min(100, progress));
@@ -59,12 +66,16 @@ class ProcessingStateManager {
 
     // Check if file is complete
     const isComplete = Object.values(file.phases).every(p => p === 100);
-    if (isComplete) {
+    if (isComplete && file.status !== 'complete') {
       file.status = 'complete';
       this.state.processedFiles++;
     }
 
+    // Notify state listeners
     this._notifyListeners();
+
+    // Check overall completion
+    await this._checkCompletion();
   }
 
   /**
@@ -128,6 +139,92 @@ class ProcessingStateManager {
       phase: 'idle'
     };
     this._notifyListeners();
+  }
+
+  /**
+   * Add a completion listener
+   * @param {Function} listener Callback function for completion events
+   */
+  addCompletionListener(listener) {
+    this.completionListeners.add(listener);
+  }
+
+  /**
+   * Remove a completion listener
+   * @param {Function} listener Callback function to remove
+   */
+  removeCompletionListener(listener) {
+    this.completionListeners.delete(listener);
+  }
+
+  /**
+   * Add a completion verification hook
+   * @param {string} type Hook type ('preValidation', 'postCleanup', 'resultVerification')
+   * @param {Function} hook Hook function
+   */
+  addCompletionHook(type, hook) {
+    switch (type) {
+      case 'preValidation':
+        this.completionVerifier.addPreValidationHook(hook);
+        break;
+      case 'postCleanup':
+        this.completionVerifier.addPostCleanupHook(hook);
+        break;
+      case 'resultVerification':
+        this.completionVerifier.addResultVerificationHook(hook);
+        break;
+    }
+  }
+
+  /**
+   * Remove a completion verification hook
+   * @param {string} type Hook type ('preValidation', 'postCleanup', 'resultVerification')
+   * @param {Function} hook Hook function to remove
+   */
+  removeCompletionHook(type, hook) {
+    switch (type) {
+      case 'preValidation':
+        this.completionVerifier.removePreValidationHook(hook);
+        break;
+      case 'postCleanup':
+        this.completionVerifier.removePostCleanupHook(hook);
+        break;
+      case 'resultVerification':
+        this.completionVerifier.removeResultVerificationHook(hook);
+        break;
+    }
+  }
+
+  /**
+   * Check completion status and notify listeners
+   * @private
+   */
+  async _checkCompletion() {
+    // First check if all files have 100% progress
+    let allFilesComplete = true;
+    for (const [, file] of this.state.files) {
+      if (!Object.values(file.phases).every(p => p === 100)) {
+        allFilesComplete = false;
+        break;
+      }
+    }
+
+    // Only verify completion if all files have 100% progress
+    if (allFilesComplete) {
+      const result = await this.completionVerifier.verifyCompletion();
+      for (const listener of this.completionListeners) {
+        listener(result);
+      }
+    }
+  }
+
+  /**
+   * Clean up completed files
+   */
+  async cleanupCompletedFiles() {
+    for (const [fileId] of this.state.files) {
+      await this.completionVerifier.cleanupTemporaryStates(fileId);
+    }
   }
 }
 
