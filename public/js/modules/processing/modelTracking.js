@@ -57,32 +57,6 @@ export function updateModelDisplay(modelKey) {
 }
 
 /**
- * Update progress bar and its ARIA attributes
- * @param {number} percentComplete - Progress percentage (0-100)
- */
-export function updateProgress(percentComplete) {
-  const progressBar = document.getElementById('progressBar');
-  if (progressBar) {
-    const progress = Math.min(Math.max(0, percentComplete), 100);
-    progressBar.style.width = `${progress}%`;
-    progressBar.setAttribute('aria-valuenow', progress.toString());
-    
-    // Update status message based on progress
-    const statusMessage = document.getElementById('statusMessage');
-    if (statusMessage) {
-      const selectedModel = getSelectedModel();
-      const model = modelInfo[selectedModel];
-      
-      if (progress === 100) {
-        statusMessage.textContent = model.messages.complete;
-      } else if (progress > 0) {
-        statusMessage.textContent = model.messages.processing;
-      }
-    }
-  }
-}
-
-/**
  * Get the appropriate status message based on state and model
  * @param {string} state - Current processing state
  * @param {string} modelKey - The model identifier

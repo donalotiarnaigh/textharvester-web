@@ -1,52 +1,114 @@
 /* eslint-disable quotes */
 // api.js
 
-import { updateProgressBar, updateProcessingMessage } from "./progressBar.js";
-import { updateErrorMessages } from "./errorHandler.js";
 import { getStatusMessage } from "./modelTracking.js";
 
 /**
- * Fetches the current processing progress from the server
- * @returns {Promise} Promise with progress data
+ * Progress API module for handling processing state and completion
  */
-export async function checkProgress() {
+
+let stateManager = null;
+
+/**
+ * Setup the progress API with a state manager instance
+ * @param {ProcessingStateManager} manager State manager instance
+ */
+function setupProgressAPI(manager) {
+  stateManager = manager;
+}
+
+/**
+ * Check current processing progress
+ * @returns {Promise<Object>} Current progress state
+ */
+async function checkProgress() {
   try {
-    const response = await fetch('/progress');
+    const response = await fetch('/api/progress', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      if (response.status === 500) {
+        throw new Error('Server error');
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const data = await response.json();
-    
-    // Get currently selected model
-    const selectedModel = localStorage.getItem('selectedModel') || 'openai';
-    
-    // Update progress bar
-    updateProgressBar(data.progress);
-    
-    // Update error messages if present
-    if (data.errors && Array.isArray(data.errors)) {
-      updateErrorMessages(data.errors);
-    }
-    
-    // Update file progress text if available
-    const fileProgress = document.getElementById('fileProgress');
-    if (fileProgress && data.processedFiles !== undefined && data.totalFiles !== undefined) {
-      fileProgress.textContent = `Processed ${data.processedFiles} of ${data.totalFiles} files`;
-    }
-    
-    // Update status message based on processing state
-    if (data.state === 'complete') {
-      updateProcessingMessage(getStatusMessage('complete', selectedModel));
-      // Redirect to results page after a short delay
-      setTimeout(() => {
-        window.location.href = '/results.html';
-      }, 1000);
-    } else if (data.state === 'error') {
-      updateProcessingMessage(getStatusMessage('error', selectedModel));
-    } else {
-      updateProcessingMessage(getStatusMessage('processing', selectedModel));
-    }
-    
-    return data;
+    return {
+      files: data.files,
+      totalFiles: data.totalFiles,
+      processedFiles: data.processedFiles,
+      phase: data.phase
+    };
   } catch (error) {
-    console.error('Error checking progress:', error);
-    throw error;
+    // Re-throw original error if it's already a specific error
+    if (error.message === 'Server error') {
+      throw error;
+    }
+    throw new Error('Failed to fetch progress');
   }
 }
+
+/**
+ * Verify processing completion
+ * @returns {Promise<Object>} Completion verification result
+ */
+async function verifyCompletion() {
+  try {
+    const response = await fetch('/api/verify-completion', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to verify completion');
+    }
+
+    const result = await response.json();
+    return {
+      isComplete: result.isComplete,
+      validFiles: result.validFiles,
+      invalidFiles: result.invalidFiles,
+      errors: result.errors,
+      validationErrors: result.validationErrors
+    };
+  } catch (error) {
+    throw new Error('Failed to verify completion');
+  }
+}
+
+/**
+ * Cleanup completed processing
+ * @returns {Promise<Object>} Cleanup result
+ */
+async function cleanupProcessing() {
+  try {
+    const response = await fetch('/api/cleanup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to cleanup processing');
+    }
+
+    return await response.json();
+  } catch (error) {
+    throw new Error('Failed to cleanup processing');
+  }
+}
+
+module.exports = {
+  setupProgressAPI,
+  checkProgress,
+  verifyCompletion,
+  cleanupProcessing
+};

@@ -112,40 +112,6 @@ class FileProcessor {
   }
 
   /**
-   * Track progress of an async operation
-   * @param {string} fileId File identifier
-   * @param {Function} operation Async operation to track
-   * @param {Function} progressCallback Callback for progress updates
-   * @private
-   */
-  async _trackProgress(fileId, operation, progressCallback) {
-    let progress = 0;
-    const updateInterval = setInterval(() => {
-      if (this._isCancelled(fileId)) {
-        this._cleanupProgressInterval(fileId);
-        return;
-      }
-      progress = Math.min(95, progress + 10); // Cap at 95% until complete
-      progressCallback(progress);
-    }, 100);
-
-    // Store the interval for potential cancellation
-    this.progressIntervals.set(fileId, updateInterval);
-
-    try {
-      const result = await operation();
-      this._cleanupProgressInterval(fileId);
-      if (!this._isCancelled(fileId)) {
-        progressCallback(100);
-      }
-      return result;
-    } catch (error) {
-      this._cleanupProgressInterval(fileId);
-      throw error;
-    }
-  }
-
-  /**
    * Clean up progress tracking interval
    * @param {string} fileId File identifier
    * @private

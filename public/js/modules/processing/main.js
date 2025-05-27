@@ -14,6 +14,3 @@ cancelProcessingButton.addEventListener("click", handleCancelProcessing);
 
 // Start checking progress immediately
 checkProgress();
-
-// Check progress every 2 seconds
-setInterval(checkProgress, 2000);

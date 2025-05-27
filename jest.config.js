@@ -3,18 +3,10 @@ module.exports = {
   transform: {
     '^.+\\.js$': 'babel-jest',
   },
-  moduleFileExtensions: ['js'],
-  moduleDirectories: ['node_modules'],
-  testMatch: ['**/tests/**/*.test.js', '**/__tests__/**/*.test.js'],
-  transformIgnorePatterns: [
-    '/node_modules/',
-  ],
-  setupFiles: [
-    '<rootDir>/jest.setup.js'
-  ],
-  moduleNameMapper: {
-    'sqlite3': '<rootDir>/__mocks__/sqlite3.js'
-  },
+  moduleFileExtensions: ['js', 'json', 'node'],
+  testMatch: ['**/__tests__/**/*.js?(x)', '**/?(*.)+(spec|test).js?(x)'],
+  transformIgnorePatterns: ['/node_modules/'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironmentOptions: {
     customExportConditions: ['node', 'node-addons']
   }

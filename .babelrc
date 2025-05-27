@@ -4,7 +4,10 @@
       "targets": {
         "node": "current"
       },
-      "modules": "auto"
+      "modules": "commonjs"
     }]
+  ],
+  "plugins": [
+    "@babel/plugin-transform-classes"
   ]
 } 

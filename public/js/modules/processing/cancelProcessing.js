@@ -1,7 +1,7 @@
 /* eslint-disable quotes */
 // cancelProcessing.js
 
-import { updateProgressBar, updateProcessingMessage } from "./progressBar.js";
+let progressBarUI = null;
 
 // Flag to indicate if cancellation has started
 let isCancelling = false;
@@ -13,13 +13,10 @@ function simulateProgressTo100(currentProgress) {
   function incrementProgress() {
     if (progress < 100) {
       progress += 10; // Increment progress by 10%
-      updateProgressBar(progress);
-      updateProcessingMessage("Cancelling... Please wait.");
+      progressBarUI.updateProgress(progress, "Cancelling...");
     } else {
       clearInterval(progressInterval); // Clear the interval once progress reaches 100%
-      updateProcessingMessage(
-        "Processing cancelled. Redirecting to results..."
-      );
+      progressBarUI.updateProgress(100, "Processing cancelled. Redirecting to results...");
       setTimeout(() => {
         window.location.href = "/results.html?status=cancelled";
       }, 1000);
@@ -31,7 +28,9 @@ function simulateProgressTo100(currentProgress) {
 }
 
 // Function to handle cancellation
-export function handleCancelProcessing() {
+export function handleCancelProcessing(progressUI) {
+  progressBarUI = progressUI; // Store the ProgressBarUI instance
+  
   const userConfirmed = confirm(
     "Are you sure you want to cancel? This action will stop all processing, and you may not receive complete results."
   );
@@ -44,11 +43,9 @@ export function handleCancelProcessing() {
       .then((response) => {
         if (response.ok) {
           console.log("Cancel request successful.");
-          updateProcessingMessage(
-            "Processing cancelled. Redirecting to results..."
-          );
+          progressBarUI.updateProgress(100, "Processing cancelled. Redirecting to results...");
           simulateProgressTo100(
-            parseInt(document.getElementById("progressBar").textContent)
+            parseInt(progressBarUI.progressBarFill.style.width) || 0
           );
         } else {
           console.error(
@@ -59,9 +56,7 @@ export function handleCancelProcessing() {
       })
       .catch((error) => {
         console.error("Error during cancellation:", error);
-        updateProcessingMessage(
-          "Failed to cancel processing, please try again."
-        );
+        progressBarUI.updateProgress(0, "Failed to cancel processing, please try again.");
         document.getElementById("cancelProcessingButton").disabled = false;
         isCancelling = false; // Reset the cancelling flag on error
       });

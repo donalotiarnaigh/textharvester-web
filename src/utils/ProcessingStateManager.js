@@ -8,7 +8,14 @@ class ProcessingStateManager {
       totalFiles: 0,
       processedFiles: 0,
       errors: new Map(),
-      phase: 'idle'
+      phase: 'idle',
+      processingQueue: new Set(),
+      completionState: {
+        verificationAttempts: 0,
+        lastVerification: null,
+        allFilesProcessed: false,
+        resultsVerified: false
+      }
     };
     this.listeners = new Set();
     this.phaseWeights = {
@@ -17,31 +24,35 @@ class ProcessingStateManager {
       analysis: 0.3,
       validation: 0.2
     };
+    this._locked = false;
+    this._lockQueue = [];
   }
 
   /**
    * Add files to be tracked by the state manager
    * @param {string[]} fileIds Array of file IDs to track
    */
-  addFiles(fileIds) {
-    const uniqueFiles = [...new Set(fileIds)];
-    uniqueFiles.forEach(fileId => {
-      if (!this.state.files.has(fileId)) {
-        this.state.files.set(fileId, {
-          id: fileId,
-          phases: {
-            upload: 0,
-            ocr: 0,
-            analysis: 0,
-            validation: 0
-          },
-          errors: [],
-          status: 'pending'
-        });
-        this.state.totalFiles++;
-      }
+  async addFiles(fileIds) {
+    await this._atomicUpdate(() => {
+      const uniqueFiles = [...new Set(fileIds)];
+      uniqueFiles.forEach(fileId => {
+        if (!this.state.files.has(fileId)) {
+          this.state.files.set(fileId, {
+            id: fileId,
+            phases: {
+              upload: 0,
+              ocr: 0,
+              analysis: 0,
+              validation: 0
+            },
+            errors: [],
+            status: 'pending'
+          });
+          this.state.totalFiles++;
+          this.state.processingQueue.add(fileId);
+        }
+      });
     });
-    this._notifyListeners();
   }
 
   /**
@@ -52,35 +63,41 @@ class ProcessingStateManager {
    * @returns {Promise} Resolves when the update is complete
    */
   async updateFileProgress(fileId, phase, progress) {
-    return new Promise((resolve, reject) => {
+    return await this._atomicUpdate(async () => {
       // Validate phase
       if (!this.phaseWeights.hasOwnProperty(phase)) {
-        reject(new Error('Invalid phase name'));
-        return;
+        throw new Error('Invalid phase name');
       }
 
       // Validate progress bounds
       if (progress < 0 || progress > 100) {
-        reject(new Error('Progress value must be between 0 and 100'));
-        return;
+        throw new Error('Progress value must be between 0 and 100');
       }
 
       // Get file state
       const file = this.state.files.get(fileId);
       if (!file) {
-        reject(new Error('File not found'));
-        return;
+        throw new Error('File not found');
       }
 
-      // Update atomically
-      try {
-        file.phases[phase] = progress;
-        this._updateProcessedFiles();
-        this._notifyListeners();
-        resolve(true);
-      } catch (error) {
-        reject(error);
+      // Update phase progress
+      file.phases[phase] = progress;
+
+      // Check if file is complete
+      const isComplete = Object.values(file.phases).every(p => p === 100);
+      if (isComplete && file.status !== 'complete') {
+        file.status = 'complete';
+        this.state.processingQueue.delete(fileId);
+        await this._recalculateProcessedFiles();
       }
+
+      // Reset completion verification if any progress changes
+      this.state.completionState = {
+        verificationAttempts: 0,
+        lastVerification: null,
+        allFilesProcessed: false,
+        resultsVerified: false
+      };
     });
   }
 
@@ -100,7 +117,7 @@ class ProcessingStateManager {
     });
 
     const totalProgress = fileProgresses.reduce((sum, progress) => sum + progress, 0);
-    return totalProgress / this.state.totalFiles;
+    return Math.min(100, totalProgress / this.state.totalFiles);
   }
 
   /**
@@ -150,25 +167,68 @@ class ProcessingStateManager {
    * Check if all files are completely processed
    * @returns {boolean} True if all files are complete
    */
-  isComplete() {
-    // Check for any errors
-    if (this.state.errors.size > 0) return false;
+  async isComplete() {
+    return await this._atomicUpdate(() => {
+      // Check for any errors
+      if (this.state.errors.size > 0) return false;
 
-    // Check all files and phases
-    for (const file of this.state.files.values()) {
-      for (const phase of Object.keys(this.phaseWeights)) {
-        if (file.phases[phase] < 100) return false;
+      // Check processing queue
+      if (this.state.processingQueue.size > 0) return false;
+
+      // Check all files and phases
+      for (const file of this.state.files.values()) {
+        for (const phase of Object.keys(this.phaseWeights)) {
+          if (file.phases[phase] < 100) return false;
+        }
       }
-    }
 
-    return true;
+      return true;
+    });
   }
 
   /**
-   * Private method to update processed files count
+   * Perform an atomic state update
    * @private
    */
-  _updateProcessedFiles() {
+  async _atomicUpdate(updateFn) {
+    await this._acquireLock();
+    try {
+      const result = await updateFn();
+      this._notifyListeners();
+      return result;
+    } finally {
+      this._releaseLock();
+    }
+  }
+
+  /**
+   * Acquire state lock
+   * @private
+   */
+  async _acquireLock() {
+    if (this._locked) {
+      await new Promise(resolve => this._lockQueue.push(resolve));
+    }
+    this._locked = true;
+  }
+
+  /**
+   * Release state lock
+   * @private
+   */
+  _releaseLock() {
+    this._locked = false;
+    const nextResolver = this._lockQueue.shift();
+    if (nextResolver) {
+      nextResolver();
+    }
+  }
+
+  /**
+   * Recalculate processed files count
+   * @private
+   */
+  async _recalculateProcessedFiles() {
     let processed = 0;
     for (const file of this.state.files.values()) {
       if (Object.values(file.phases).every(progress => progress === 100)) {
@@ -179,7 +239,7 @@ class ProcessingStateManager {
   }
 
   /**
-   * Private method to notify all listeners of state changes
+   * Notify state change listeners
    * @private
    */
   _notifyListeners() {

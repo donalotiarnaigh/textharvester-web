@@ -6,4 +6,10 @@ jest.mock('fs', () => ({
 }));
 
 // Set test environment variables
-process.env.NODE_ENV = 'test'; 
+process.env.NODE_ENV = 'test';
+
+// Add any custom Jest setup here
+Object.defineProperty(window, 'ProgressBar', {
+  writable: true,
+  value: require('./public/js/modules/processing/ProgressBar')
+}); 

@@ -1,10 +1,14 @@
 /**
- * Verifies completion state of file processing and manages cleanup
+ * Handles completion verification with enhanced logging and state tracking
  */
+const logger = require('../../../src/utils/logger');
+
 class CompletionVerifier {
   constructor(stateManager, storage) {
     this.stateManager = stateManager;
     this.storage = storage;
+    this.verificationStart = null;
+    this.stateTransitions = [];
     this.phaseOrder = ['upload', 'ocr', 'analysis', 'validation'];
     
     // Initialize hook arrays
@@ -109,6 +113,232 @@ class CompletionVerifier {
       }
     }
     return { isValid: true };
+  }
+
+  /**
+   * Verify completion status with enhanced logging
+   * @returns {Promise<boolean>} True if processing is complete
+   */
+  async verifyCompletion() {
+    this.verificationStart = Date.now();
+    logger.info('Starting completion verification');
+    
+    try {
+      // Track initial state
+      this._trackStateTransition('verification_start');
+      
+      // Verify all files are processed
+      const allFilesProcessed = await this._verifyAllFilesProcessed();
+      if (!allFilesProcessed) {
+        logger.debug('Not all files are processed yet');
+        return false;
+      }
+      
+      // Verify results are saved
+      const resultsSaved = await this._verifyResultsSaved();
+      if (!resultsSaved) {
+        logger.warn('Results not yet saved to storage');
+        return false;
+      }
+      
+      // Verify data integrity
+      const dataValid = await this._verifyDataIntegrity();
+      if (!dataValid) {
+        logger.error('Data integrity check failed', new Error('Integrity check failed'));
+        return false;
+      }
+      
+      // Track completion
+      this._trackStateTransition('verification_complete');
+      
+      // Log verification metrics
+      this._logVerificationMetrics();
+      
+      return true;
+    } catch (error) {
+      logger.error('Completion verification failed', error, {
+        phase: 'completion_verification',
+        operation: 'verify'
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Run cleanup operations with logging
+   */
+  async cleanup() {
+    logger.info('Starting cleanup operations');
+    this._trackStateTransition('cleanup_start');
+    
+    try {
+      // Clean up temporary files
+      await this._cleanupTempFiles();
+      
+      // Archive processed files
+      await this._archiveFiles();
+      
+      // Clear processing flags
+      await this._clearFlags();
+      
+      this._trackStateTransition('cleanup_complete');
+      logger.info('Cleanup operations completed successfully');
+    } catch (error) {
+      logger.error('Cleanup operations failed', error, {
+        phase: 'cleanup',
+        operation: 'cleanup'
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Verify all files have been processed
+   * @private
+   */
+  async _verifyAllFilesProcessed() {
+    this._trackStateTransition('checking_files');
+    const { files, totalFiles, processedFiles } = this.stateManager.state;
+    
+    // Check counts match
+    if (processedFiles !== totalFiles) {
+      return false;
+    }
+    
+    // Check individual file states
+    for (const [fileId, file] of files.entries()) {
+      if (file.status !== 'complete' && file.status !== 'error') {
+        logger.debug(`File ${fileId} not complete: ${file.status}`);
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
+  /**
+   * Verify results are properly saved
+   * @private
+   */
+  async _verifyResultsSaved() {
+    this._trackStateTransition('checking_storage');
+    try {
+      const saved = await this.storage.verifyResults();
+      if (!saved) {
+        logger.warn('Results not found in storage');
+      }
+      return saved;
+    } catch (error) {
+      logger.error('Failed to verify results in storage', error, {
+        phase: 'verification',
+        operation: 'check_storage'
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Verify data integrity
+   * @private
+   */
+  async _verifyDataIntegrity() {
+    this._trackStateTransition('checking_integrity');
+    try {
+      const results = await this.storage.loadResults();
+      
+      // Check result count matches processed files
+      if (results.length !== this.stateManager.state.processedFiles) {
+        logger.warn('Result count mismatch');
+        return false;
+      }
+      
+      // Validate each result
+      for (const result of results) {
+        if (!this._validateResultData(result)) {
+          logger.warn(`Invalid result data for ${result.fileId}`);
+          return false;
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      logger.error('Data integrity check failed', error, {
+        phase: 'verification',
+        operation: 'check_integrity'
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Clean up temporary files
+   * @private
+   */
+  async _cleanupTempFiles() {
+    this._trackStateTransition('cleaning_temp');
+    // Implementation depends on storage system
+  }
+
+  /**
+   * Archive processed files
+   * @private
+   */
+  async _archiveFiles() {
+    this._trackStateTransition('archiving');
+    // Implementation depends on storage system
+  }
+
+  /**
+   * Clear processing flags
+   * @private
+   */
+  async _clearFlags() {
+    this._trackStateTransition('clearing_flags');
+    // Implementation depends on storage system
+  }
+
+  /**
+   * Track state transitions for analysis
+   * @private
+   */
+  _trackStateTransition(state) {
+    this.stateTransitions.push({
+      state,
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Log verification metrics
+   * @private
+   */
+  _logVerificationMetrics() {
+    const endTime = Date.now();
+    const duration = endTime - this.verificationStart;
+    
+    logger.trackMetrics({
+      processingTime: duration,
+      success: true,
+      operation: 'verification',
+      transitions: this.stateTransitions.length
+    });
+    
+    logger.info('Verification completed', {
+      duration,
+      transitions: this.stateTransitions,
+      finalState: this.stateTransitions[this.stateTransitions.length - 1]
+    });
+  }
+
+  /**
+   * Validate result data structure
+   * @private
+   */
+  _validateResultData(result) {
+    return result && 
+           typeof result === 'object' &&
+           result.fileId &&
+           (result.status === 'complete' || result.status === 'error');
   }
 
   /**
@@ -303,73 +533,6 @@ class CompletionVerifier {
       // Then execute post-cleanup hooks
       await this._executePostCleanupHooks(fileId, { completion });
     }
-  }
-
-  /**
-   * Verify overall completion status
-   * @returns {Promise<Object>} Overall completion status
-   */
-  async verifyCompletion() {
-    const validFiles = [];
-    const invalidFiles = [];
-    const errors = [];
-    const validationErrors = [];
-
-    for (const [fileId] of this.stateManager.state.files) {
-      // Execute pre-validation hooks first
-      const preValidation = await this._executePreValidationHooks(fileId, {
-        file: this.stateManager.state.files.get(fileId)
-      });
-      
-      if (!preValidation.isValid) {
-        invalidFiles.push(fileId);
-        validationErrors.push({
-          fileId,
-          error: preValidation.error
-        });
-        continue;
-      }
-
-      // Check file completion (skip pre-validation since we just did it)
-      const completion = await this.verifyFileCompletion(fileId, { skipPreValidation: true });
-      if (!completion.isComplete) {
-        invalidFiles.push(fileId);
-        if (completion.error) {
-          errors.push({ fileId, error: completion.error });
-        }
-        continue;
-      }
-
-      // Validate phase order
-      const orderValidation = await this.validatePhaseOrder(fileId);
-      if (!orderValidation.isValid) {
-        invalidFiles.push(fileId);
-        continue;
-      }
-
-      // Check result integrity
-      const integrity = await this.verifyResultIntegrity(fileId);
-      if (!integrity.isValid) {
-        invalidFiles.push(fileId);
-        continue;
-      }
-
-      validFiles.push(fileId);
-    }
-
-    const isComplete = invalidFiles.length === 0 && validFiles.length > 0;
-    const message = isComplete ? 
-      'All files processed successfully' : 
-      `${invalidFiles.length} files incomplete or invalid`;
-
-    return {
-      isComplete,
-      validFiles,
-      invalidFiles,
-      errors,
-      validationErrors,
-      message
-    };
   }
 }
 
