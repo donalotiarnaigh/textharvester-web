@@ -24,12 +24,17 @@ class BasePrompt {
   /**
    * Validate field definitions
    * @private
-   * @param {Object} fields Field definitions
-   * @returns {Object} Validated field definitions
+   * @param {Object|Array} fields Field definitions
+   * @returns {Object|Array} Validated field definitions
    */
   _validateFields(fields) {
+    // If fields is an array (like MEMORIAL_FIELDS), return as is
+    if (Array.isArray(fields)) {
+      return fields;
+    }
+
+    // Original object validation logic
     for (const [fieldName, field] of Object.entries(fields)) {
-      // Allow both string types and DataType objects
       if (!field.type || (typeof field.type === 'string' && !dataTypes.isValidType(field.type)) || 
           (typeof field.type === 'object' && !field.type.name)) {
         throw new Error(`Unsupported field type: ${field.type}`);
@@ -48,12 +53,25 @@ class BasePrompt {
    * @returns {*} Validated and converted value
    */
   validateField(fieldName, value) {
-    const field = this.fields[fieldName];
+    // Handle both array and object field formats
+    const field = Array.isArray(this.fields) 
+      ? this.fields.find(f => f.name === fieldName)
+      : this.fields[fieldName];
+
     if (!field) {
       throw new Error(`Unknown field: ${fieldName}`);
     }
 
-    // Handle field.type as either string or object
+    // For array format (MemorialField objects), use the field's validate method
+    if (typeof field.validate === 'function') {
+      const result = field.validate(value);
+      if (result.errors && result.errors.length > 0) {
+        throw new Error(result.errors[0]);
+      }
+      return result.value;
+    }
+
+    // For object format, use the original validation logic
     const fieldType = typeof field.type === 'object' ? field.type.name : field.type;
     const result = dataTypes.validateValue(value, fieldType, field.metadata);
     

@@ -4,7 +4,22 @@
 
 const fs = require('fs');
 const path = require('path');
-const config = require('../../config.json');
+
+// Default config if none provided
+const defaultConfig = {
+  logging: {
+    errorLogFile: path.join(process.cwd(), 'logs', 'error.log'),
+    combinedLogFile: path.join(process.cwd(), 'logs', 'combined.log')
+  }
+};
+
+// Try to load config, fall back to defaults if not found
+let config;
+try {
+  config = require('../../config.json');
+} catch (err) {
+  config = defaultConfig;
+}
 
 class Logger {
   constructor() {
@@ -16,10 +31,12 @@ class Logger {
       totalFiles: 0
     };
     
-    // Ensure log directory exists
-    const logDir = path.dirname(config.logging.errorLogFile);
-    if (!fs.existsSync(logDir)) {
-      fs.mkdirSync(logDir, { recursive: true });
+    // Ensure log directory exists if we're not in test environment
+    if (process.env.NODE_ENV !== 'test') {
+      const logDir = path.dirname(config.logging?.errorLogFile || defaultConfig.logging.errorLogFile);
+      if (!fs.existsSync(logDir)) {
+        fs.mkdirSync(logDir, { recursive: true });
+      }
     }
   }
 
@@ -91,6 +108,11 @@ class Logger {
    * @private
    */
   _writeToLog(level, message, args) {
+    // Skip file logging in test environment
+    if (process.env.NODE_ENV === 'test') {
+      return;
+    }
+
     const timestamp = new Date().toISOString();
     const logEntry = {
       timestamp,
@@ -100,8 +122,8 @@ class Logger {
     };
 
     const logFile = level === 'error'
-      ? config.logging.errorLogFile
-      : config.logging.combinedLogFile;
+      ? (config.logging?.errorLogFile || defaultConfig.logging.errorLogFile)
+      : (config.logging?.combinedLogFile || defaultConfig.logging.combinedLogFile);
 
     fs.appendFile(
       logFile,
@@ -127,9 +149,9 @@ class Logger {
    * @private
    */
   _getErrorPattern(error, context) {
-    const errorType = error.name || 'UnknownError';
-    const phase = context.phase || 'unknown';
-    const operation = context.operation || 'unknown';
+    const errorType = error && (error.name || error.constructor.name || (typeof error === 'string' ? 'StringError' : 'UnknownError'));
+    const phase = context?.phase || 'unknown';
+    const operation = context?.operation || 'unknown';
     return `${errorType}:${phase}:${operation}`;
   }
 }

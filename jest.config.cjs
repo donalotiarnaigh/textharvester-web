@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   testEnvironment: 'jsdom',
   transform: {
     '^.+\\.js$': ['babel-jest', { configFile: './babel.config.json' }]
@@ -6,7 +6,7 @@ export default {
   moduleFileExtensions: ['js', 'json', 'node'],
   testMatch: ['**/__tests__/**/*.js?(x)', '**/?(*.)+(spec|test).js?(x)'],
   transformIgnorePatterns: ['/node_modules/'],
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.cjs'],
   testEnvironmentOptions: {
     customExportConditions: ['node', 'node-addons']
   },

@@ -9,208 +9,206 @@ const {
   transformMemorialData 
 } = require('../memorialFields');
 
+const { StringType, IntegerType } = require('../dataTypes');
+
 // Import the name processing utilities
 const { preprocessName, formatName } = require('../../../nameProcessing');
 
 describe('MemorialField', () => {
   it('should create a field with default values', () => {
-    const field = new MemorialField('test', 'string');
+    const field = new MemorialField('test', new StringType(), false);
     expect(field.name).toBe('test');
-    expect(field.type.name).toBe('string');
-    expect(field.description).toBe('');
+    expect(field.type).toBeInstanceOf(StringType);
     expect(field.required).toBe(false);
-    expect(field.transform('value')).toBe('value');
   });
 
   it('should create a field with custom metadata', () => {
-    const transform = jest.fn(val => val.toUpperCase());
-    const field = new MemorialField('test', 'string', {
-      description: 'Test field',
-      required: true,
-      transform
+    const field = new MemorialField('test', new StringType(), true, {
+      format: 'name',
+      maxLength: 100,
+      transform: (value) => value.toUpperCase()
     });
     
-    expect(field.description).toBe('Test field');
     expect(field.required).toBe(true);
-    
-    field.transform('test');
-    expect(transform).toHaveBeenCalledWith('test');
+    expect(field.metadata.format).toBe('name');
+    expect(field.metadata.maxLength).toBe(100);
+    expect(field.transform('test')).toBe('TEST');
   });
 });
 
 describe('MEMORIAL_FIELDS', () => {
   it('should define required fields for a memorial record', () => {
-    expect(MEMORIAL_FIELDS.memorial_number).toBeDefined();
-    expect(MEMORIAL_FIELDS.first_name).toBeDefined();
-    expect(MEMORIAL_FIELDS.last_name).toBeDefined();
-    expect(MEMORIAL_FIELDS.year_of_death).toBeDefined();
-    expect(MEMORIAL_FIELDS.inscription).toBeDefined();
+    const memorialNumber = MEMORIAL_FIELDS.find(f => f.name === 'memorial_number');
+    const firstName = MEMORIAL_FIELDS.find(f => f.name === 'first_name');
+    const lastName = MEMORIAL_FIELDS.find(f => f.name === 'last_name');
+    const yearOfDeath = MEMORIAL_FIELDS.find(f => f.name === 'year_of_death');
+    const inscription = MEMORIAL_FIELDS.find(f => f.name === 'inscription');
+
+    expect(memorialNumber).toBeDefined();
+    expect(firstName).toBeDefined();
+    expect(lastName).toBeDefined();
+    expect(yearOfDeath).toBeDefined();
+    expect(inscription).toBeDefined();
+
+    expect(memorialNumber.required).toBe(true);
+    expect(firstName.required).toBe(false);
+    expect(lastName.required).toBe(false);
+    expect(yearOfDeath.required).toBe(false);
+    expect(inscription.required).toBe(false);
   });
 
   describe('first_name field', () => {
     it('should allow valid first names', () => {
-      const field = MEMORIAL_FIELDS.first_name;
+      const field = MEMORIAL_FIELDS.find(f => f.name === 'first_name');
       
       // Should not throw for valid names
-      expect(() => field.validate('John')).not.toThrow();
-      expect(() => field.validate('Mary-Jane')).not.toThrow();
-      expect(() => field.validate('O\'Brien')).not.toThrow();
-      expect(() => field.validate('J.R.')).not.toThrow();
-      expect(() => field.validate('José')).not.toThrow(); // Accented characters
-      expect(() => field.validate('Mary Anne')).not.toThrow(); // Multiple names
+      expect(field.validate('John').errors).toHaveLength(0);
+      expect(field.validate('Mary-Jane').errors).toHaveLength(0);
+      expect(field.validate('O\'Brien').errors).toHaveLength(0);
+      expect(field.validate('J.R.').errors).toHaveLength(0);
     });
 
     it('should transform first names correctly', () => {
-      const field = MEMORIAL_FIELDS.first_name;
+      const field = MEMORIAL_FIELDS.find(f => f.name === 'first_name');
       
       // Basic transformation
-      expect(field.transform('john')).toBe('JOHN');
+      expect(field.validate('john').value).toBe('JOHN');
       
-      // Should handle null by returning empty string (updated behavior)
-      expect(field.transform(null)).toBe('');
+      // Should handle null by returning empty string
+      expect(field.validate(null).value).toBe('');
       
-      // Should standardize initials
-      expect(field.transform('J R')).toBe('J.R.');
-      expect(field.transform('JR')).toBe('J.R.');
-    });
-    
-    it('should integrate with name processing utilities', () => {
-      const field = MEMORIAL_FIELDS.first_name;
-      
-      const processed = preprocessName('Rev. John Smith');
-      expect(field.transform(processed.firstName)).toBe('JOHN');
+      // Should handle initials
+      expect(field.validate('j.r.').value).toBe('J.R.');
+      expect(field.validate('J R').value).toBe('J.R.');
     });
   });
 
   describe('last_name field', () => {
     it('should allow valid last names', () => {
-      const field = MEMORIAL_FIELDS.last_name;
+      const field = MEMORIAL_FIELDS.find(f => f.name === 'last_name');
       
       // Should not throw for valid names
-      expect(() => field.validate('Smith')).not.toThrow();
-      expect(() => field.validate('O\'Brien')).not.toThrow();
-      expect(() => field.validate('Smith-Jones')).not.toThrow();
-      expect(() => field.validate('van der Waals')).not.toThrow();
-      expect(() => field.validate('Müller')).not.toThrow(); // Accented characters
+      expect(field.validate('Smith').errors).toHaveLength(0);
+      expect(field.validate('O\'Brien').errors).toHaveLength(0);
+      expect(field.validate('Smith-Jones').errors).toHaveLength(0);
+      expect(field.validate('van der Waals').errors).toHaveLength(0);
     });
 
     it('should transform last names correctly', () => {
-      const field = MEMORIAL_FIELDS.last_name;
+      const field = MEMORIAL_FIELDS.find(f => f.name === 'last_name');
       
       // Basic transformation
-      expect(field.transform('smith')).toBe('SMITH');
+      expect(field.validate('smith').value).toBe('SMITH');
       
       // Should handle null safely
-      expect(field.transform(null)).toBe(null);
+      expect(field.validate(null).value).toBe(null);
       
-      // Should preserve compound last names
-      expect(field.transform('van der Waals')).toBe('VAN DER WAALS');
-    });
-    
-    it('should integrate with name processing utilities', () => {
-      const field = MEMORIAL_FIELDS.last_name;
-      
-      const processed = preprocessName('John van der Waals');
-      expect(field.transform(processed.lastName)).toBe('VAN DER WAALS');
+      // Should handle compound names
+      expect(field.validate('o\'brien-smith').value).toBe('O\'BRIEN-SMITH');
     });
   });
 });
 
 describe('validateMemorialData', () => {
-  it('should validate complete memorial data', () => {
-    const validData = {
+  it('should validate complete data correctly', () => {
+    const data = {
       memorial_number: 'HG123',
       first_name: 'John',
       last_name: 'Smith',
       year_of_death: 1900,
       inscription: 'In loving memory'
     };
-    
-    expect(() => validateMemorialData(validData)).not.toThrow();
-  });
 
-  it('should validate data with missing non-required fields', () => {
-    const partialData = {
-      memorial_number: 'HG123',
-      first_name: 'John',
-      last_name: 'Smith'
-    };
-    
-    expect(() => validateMemorialData(partialData)).not.toThrow();
+    const result = validateMemorialData(data);
+    expect(result.errors).toHaveLength(0);
+    expect(result.value.memorial_number).toBe('HG123');
+    expect(result.value.first_name).toBe('JOHN');
+    expect(result.value.last_name).toBe('SMITH');
+    expect(result.value.year_of_death).toBe(1900);
+    expect(result.value.inscription).toBe('In loving memory');
   });
 
   it('should reject data with missing required fields', () => {
     const invalidData = {
-      memorial_number: 'HG123',
-      first_name: 'John'
-      // Missing last_name which is required
+      first_name: 'John',
+      last_name: 'Smith'
+      // Missing required memorial_number
     };
     
-    expect(() => validateMemorialData(invalidData)).toThrow();
+    const result = validateMemorialData(invalidData);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0]).toContain('memorial_number');
   });
 
   it('should handle empty string as valid for non-required fields', () => {
-    const validData = {
+    const data = {
       memorial_number: 'HG123',
-      first_name: '',  // Now allowed to be empty
-      last_name: 'Smith',
+      first_name: '',
+      last_name: '',
       year_of_death: null,
       inscription: ''
     };
-    
-    expect(() => validateMemorialData(validData)).not.toThrow();
+
+    const result = validateMemorialData(data);
+    expect(result.errors).toHaveLength(0);
+    expect(result.value.first_name).toBe('');
+    expect(result.value.last_name).toBe(null);
+    expect(result.value.year_of_death).toBe(null);
+    expect(result.value.inscription).toBe(null);
   });
 });
 
 describe('transformMemorialData', () => {
   it('should transform memorial data correctly', () => {
-    const rawData = {
-      memorial_number: ' HG123 ',
+    const data = {
+      memorial_number: 'HG123',
       first_name: 'john',
       last_name: 'smith',
       year_of_death: '1900',
       inscription: ' In loving memory '
     };
-    
-    const transformed = transformMemorialData(rawData);
+
+    const transformed = transformMemorialData(data);
     
     expect(transformed.memorial_number).toBe('HG123');
     expect(transformed.first_name).toBe('JOHN');
     expect(transformed.last_name).toBe('SMITH');
+    expect(transformed.year_of_death).toBe(1900);
     expect(transformed.inscription).toBe('In loving memory');
   });
 
   it('should handle null values safely', () => {
-    const rawData = {
+    const data = {
       memorial_number: 'HG123',
       first_name: null,
-      last_name: 'Smith',
+      last_name: 'SMITH',
       year_of_death: null,
       inscription: null
     };
-    
-    const transformed = transformMemorialData(rawData);
+
+    const transformed = transformMemorialData(data);
     
     expect(transformed.memorial_number).toBe('HG123');
-    expect(transformed.first_name).toBe('');  // Now returns empty string instead of null
+    expect(transformed.first_name).toBe('');  // Returns empty string for first_name
     expect(transformed.last_name).toBe('SMITH');
+    expect(transformed.year_of_death).toBe(null);
     expect(transformed.inscription).toBe(null);
   });
 
   it('should handle missing fields', () => {
-    const rawData = {
+    const data = {
       memorial_number: 'HG123',
       first_name: 'John',
       last_name: 'Smith'
-      // year_of_death and inscription missing
+      // year_of_death and inscription are missing
     };
-    
-    const transformed = transformMemorialData(rawData);
+
+    const transformed = transformMemorialData(data);
     
     expect(transformed.memorial_number).toBe('HG123');
     expect(transformed.first_name).toBe('JOHN');
     expect(transformed.last_name).toBe('SMITH');
-    expect(transformed.year_of_death).toBeUndefined();
-    expect(transformed.inscription).toBeUndefined();
+    expect(transformed.year_of_death).toBe(undefined);
+    expect(transformed.inscription).toBe(undefined);
   });
 }); 

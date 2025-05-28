@@ -1,213 +1,137 @@
 /**
- * Manages the state of file processing, including progress tracking and error handling
+ * Manages processing state for files and error tracking
  */
-const logger = require('./logger');
-
 class ProcessingStateManager {
   constructor() {
     this.state = {
       files: new Map(),
+      errors: new Map(),
       totalFiles: 0,
       processedFiles: 0,
-      errors: new Map(),
-      phase: 'idle',
-      processingQueue: new Set(),
-      completionState: {
-        verificationAttempts: 0,
-        lastVerification: null,
-        allFilesProcessed: false,
-        resultsVerified: false
-      }
+      phase: 'idle'
     };
     this.listeners = new Set();
     this.phaseWeights = {
       upload: 0.2,
-      ocr: 0.4,
+      ocr: 0.3,
       analysis: 0.3,
-      validation: 0.1
+      validation: 0.2
     };
-    this._locked = false;
-    this._lockQueue = [];
+  }
 
-    logger.info('[ProcessingStateManager] Initialized', {
-      phaseWeights: this.phaseWeights,
-      initialState: {
-        totalFiles: this.state.totalFiles,
-        processedFiles: this.state.processedFiles,
-        phase: this.state.phase
+  /**
+   * Add files to be processed
+   * @param {Array<string>} fileIds Array of file IDs
+   */
+  addFiles(fileIds) {
+    const uniqueIds = [...new Set(fileIds)];
+    uniqueIds.forEach(fileId => {
+      if (!this.state.files.has(fileId)) {
+        this.state.files.set(fileId, {
+          id: fileId,
+          status: 'pending',
+          phases: {
+            upload: 0,
+            ocr: 0,
+            analysis: 0,
+            validation: 0
+          },
+          errors: []
+        });
+        this.state.totalFiles++;
       }
     });
+    this._notifyListeners();
   }
 
   /**
-   * Add files to be tracked by the state manager
-   * @param {string[]} fileIds Array of file IDs to track
-   */
-  async addFiles(fileIds) {
-    await this._atomicUpdate(() => {
-      const uniqueFiles = [...new Set(fileIds)];
-      uniqueFiles.forEach(fileId => {
-        if (!this.state.files.has(fileId)) {
-          this.state.files.set(fileId, {
-            id: fileId,
-            phases: {
-              upload: 0,
-              ocr: 0,
-              analysis: 0,
-              validation: 0
-            },
-            errors: [],
-            status: 'pending'
-          });
-          this.state.totalFiles++;
-          this.state.processingQueue.add(fileId);
-        }
-      });
-    });
-  }
-
-  /**
-   * Update progress for a specific phase of file processing
-   * @param {string} fileId The file identifier
-   * @param {string} phase The processing phase
-   * @param {number} progress Progress value (0-100)
-   * @returns {Promise} Resolves when the update is complete
+   * Update progress for a specific file and phase
+   * @param {string} fileId File identifier
+   * @param {string} phase Processing phase
+   * @param {number} progress Progress percentage (0-100)
+   * @returns {Promise<boolean>} True if update was successful
    */
   async updateFileProgress(fileId, phase, progress) {
-    logger.debug('[ProcessingStateManager] Updating file progress', {
-      fileId,
-      phase,
-      progress,
-      currentState: {
-        totalFiles: this.state.totalFiles,
-        processedFiles: this.state.processedFiles,
-        queueSize: this.state.processingQueue.size
-      }
-    });
+    const file = this.state.files.get(fileId);
+    if (!file) {
+      throw new Error(`File ${fileId} not found`);
+    }
 
-    return await this._atomicUpdate(async () => {
-      // Validate phase
-      if (!this.phaseWeights.hasOwnProperty(phase)) {
-        logger.error('[ProcessingStateManager] Invalid phase name', { phase });
-        throw new Error('Invalid phase name');
-      }
+    if (!this.phaseWeights.hasOwnProperty(phase)) {
+      throw new Error('Invalid phase name');
+    }
 
-      // Validate progress bounds
-      if (progress < 0 || progress > 100) {
-        logger.warn('[ProcessingStateManager] Progress value out of bounds', { progress });
-        progress = Math.max(0, Math.min(100, progress));
-      }
+    if (progress < 0 || progress > 100) {
+      throw new Error('Progress value must be between 0 and 100');
+    }
 
-      // Get file state
-      const file = this.state.files.get(fileId);
-      if (!file) {
-        logger.error('[ProcessingStateManager] File not found', { fileId });
-        throw new Error('File not found');
-      }
+    // Update phase progress
+    file.phases[phase] = progress;
 
-      // Update phase progress
-      const oldProgress = file.phases[phase];
-      file.phases[phase] = progress;
+    // Check if file is complete
+    const isComplete = Object.values(file.phases).every(p => p === 100);
+    if (isComplete && file.status !== 'complete') {
+      file.status = 'complete';
+      this.state.processedFiles++;
+    }
 
-      logger.debug('[ProcessingStateManager] Updated phase progress', {
-        fileId,
-        phase,
-        oldProgress,
-        newProgress: progress,
-        allPhases: file.phases
-      });
+    // Notify state listeners
+    this._notifyListeners();
 
-      // Check if file is complete
-      const isComplete = Object.values(file.phases).every(p => p === 100);
-      if (isComplete && file.status !== 'complete') {
-        logger.info('[ProcessingStateManager] File processing complete', {
-          fileId,
-          finalPhases: file.phases
-        });
-        
-        file.status = 'complete';
-        this.state.processingQueue.delete(fileId);
-        await this._recalculateProcessedFiles();
-      }
-
-      // Reset completion verification if any progress changes
-      this.state.completionState = {
-        verificationAttempts: 0,
-        lastVerification: null,
-        allFilesProcessed: false,
-        resultsVerified: false
-      };
-
-      logger.debug('[ProcessingStateManager] Progress update complete', {
-        fileId,
-        isComplete,
-        queueSize: this.state.processingQueue.size,
-        processedFiles: this.state.processedFiles,
-        totalFiles: this.state.totalFiles
-      });
-    });
+    return true;
   }
 
   /**
-   * Calculate the overall progress across all files
+   * Calculate overall progress across all files
    * @returns {number} Overall progress percentage
    */
   getOverallProgress() {
-    if (this.state.totalFiles === 0) {
-      logger.debug('[ProcessingStateManager] No files to process');
-      return 0;
+    if (this.state.totalFiles === 0) return 0;
+
+    let totalProgress = 0;
+    for (const [, file] of this.state.files) {
+      let fileProgress = 0;
+      for (const [phase, weight] of Object.entries(this.phaseWeights)) {
+        fileProgress += (file.phases[phase] || 0) * weight;
+      }
+      totalProgress += fileProgress;
     }
 
-    const fileProgresses = Array.from(this.state.files.values()).map(file => {
-      let weightedProgress = 0;
-      for (const [phase, weight] of Object.entries(this.phaseWeights)) {
-        weightedProgress += (file.phases[phase] * weight);
-      }
-      return weightedProgress;
-    });
-
-    const totalProgress = fileProgresses.reduce((sum, progress) => sum + progress, 0);
-    const overallProgress = Math.min(100, totalProgress / this.state.totalFiles);
-
-    logger.debug('[ProcessingStateManager] Calculated overall progress', {
-      totalFiles: this.state.totalFiles,
-      fileProgresses,
-      overallProgress
-    });
-
-    return overallProgress;
+    return totalProgress / this.state.totalFiles;
   }
 
   /**
-   * Add an error for a specific file
-   * @param {string} fileId The file identifier
-   * @param {Error} error The error object
+   * Add an error for a file
+   * @param {string} fileId File identifier
+   * @param {Error} error Error object
    */
   addError(fileId, error) {
-    const file = this.state.files.get(fileId);
-    if (file) {
+    const fileState = this.state.files.get(fileId);
+    if (fileState) {
+      fileState.status = 'error';
+      fileState.errors.push(error);
       this.state.errors.set(fileId, error);
-      file.status = 'error';
       this._notifyListeners();
     }
   }
 
   /**
-   * Clear error for a specific file
-   * @param {string} fileId The file identifier
+   * Clear error for a file
+   * @param {string} fileId File identifier
    */
   clearError(fileId) {
-    const file = this.state.files.get(fileId);
-    if (file) {
+    const fileState = this.state.files.get(fileId);
+    if (fileState) {
+      fileState.status = 'pending';
+      fileState.errors = [];
       this.state.errors.delete(fileId);
-      file.status = 'pending';
       this._notifyListeners();
     }
   }
 
   /**
    * Add a state change listener
-   * @param {Function} listener Callback function
+   * @param {Function} listener Listener function
    */
   addListener(listener) {
     this.listeners.add(listener);
@@ -215,110 +139,49 @@ class ProcessingStateManager {
 
   /**
    * Remove a state change listener
-   * @param {Function} listener Callback function to remove
+   * @param {Function} listener Listener function
    */
   removeListener(listener) {
     this.listeners.delete(listener);
   }
 
   /**
-   * Check if all files are completely processed
-   * @returns {boolean} True if all files are complete
-   */
-  async isComplete() {
-    return await this._atomicUpdate(() => {
-      // Check for any errors
-      if (this.state.errors.size > 0) return false;
-
-      // Check processing queue
-      if (this.state.processingQueue.size > 0) return false;
-
-      // Check all files and phases
-      for (const file of this.state.files.values()) {
-        for (const phase of Object.keys(this.phaseWeights)) {
-          if (file.phases[phase] < 100) return false;
-        }
-      }
-
-      return true;
-    });
-  }
-
-  /**
-   * Perform an atomic state update
-   * @private
-   */
-  async _atomicUpdate(updateFn) {
-    await this._acquireLock();
-    try {
-      const result = await updateFn();
-      this._notifyListeners();
-      return result;
-    } finally {
-      this._releaseLock();
-    }
-  }
-
-  /**
-   * Acquire state lock
-   * @private
-   */
-  async _acquireLock() {
-    if (this._locked) {
-      await new Promise(resolve => this._lockQueue.push(resolve));
-    }
-    this._locked = true;
-  }
-
-  /**
-   * Release state lock
-   * @private
-   */
-  _releaseLock() {
-    this._locked = false;
-    const nextResolver = this._lockQueue.shift();
-    if (nextResolver) {
-      nextResolver();
-    }
-  }
-
-  /**
-   * Recalculate processed files count
-   * @private
-   */
-  async _recalculateProcessedFiles() {
-    const oldProcessedFiles = this.state.processedFiles;
-    
-    let processed = 0;
-    for (const file of this.state.files.values()) {
-      if (file.status === 'complete') {
-        processed++;
-      }
-    }
-    this.state.processedFiles = processed;
-
-    logger.debug('[ProcessingStateManager] Recalculated processed files', {
-      oldCount: oldProcessedFiles,
-      newCount: processed,
-      totalFiles: this.state.totalFiles
-    });
-
-    if (processed === this.state.totalFiles) {
-      logger.info('[ProcessingStateManager] All files processed', {
-        totalFiles: this.state.totalFiles,
-        processedFiles: processed
-      });
-    }
-  }
-
-  /**
-   * Notify state change listeners
+   * Notify all listeners of state change
    * @private
    */
   _notifyListeners() {
-    for (const listener of this.listeners) {
-      listener(this.state);
+    this.listeners.forEach(listener => listener(this.state));
+  }
+
+  /**
+   * Check if all files are complete
+   * @returns {boolean} True if all files are complete
+   */
+  isComplete() {
+    if (this.state.errors.size > 0) return false;
+    if (this.state.processedFiles !== this.state.totalFiles) return false;
+
+    for (const [, file] of this.state.files) {
+      if (!Object.values(file.phases).every(p => p === 100)) {
+        return false;
+      }
     }
+
+    return true;
+  }
+
+  /**
+   * Reset the state manager
+   */
+  reset() {
+    this.state = {
+      files: new Map(),
+      errors: new Map(),
+      totalFiles: 0,
+      processedFiles: 0,
+      phase: 'idle'
+    };
+    this._notifyListeners();
   }
 }
 

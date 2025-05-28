@@ -10,64 +10,59 @@ class MemorialField {
   /**
    * @param {string} name - The name of the field
    * @param {string|Object} type - The data type of the field
+   * @param {boolean} required - Whether the field is required
    * @param {Object} metadata - Additional field metadata
    * @param {string} [metadata.description=''] - Description of the field
-   * @param {boolean} [metadata.required=false] - Whether the field is required
    * @param {function} [metadata.transform=(value) => value] - Transform function for the field value
    * @param {Object} [metadata.validation={}] - Validation options
    */
-  constructor(name, type, metadata = {}) {
+  constructor(name, type, required = false, metadata = {}) {
     this.name = name;
-    
-    // Handle type - could be string name or type object
-    if (typeof type === 'string') {
-      // Convert string type to appropriate type object
-      switch (type) {
-        case 'string':
-          this.type = new StringType();
-          break;
-        case 'integer':
-          this.type = new IntegerType();
-          break;
-        default:
-          throw new Error(`Unknown type: ${type}`);
-      }
-    } else {
-      this.type = type;
-    }
-    
-    this.description = metadata.description || '';
-    this.required = metadata.required || false;
+    this.type = type;
+    this.required = required;
+    this.metadata = metadata;
     this.transform = metadata.transform || ((value) => value);
-    this.validation = metadata.validation || {};
   }
 
   /**
    * Validates a value against this field's type
    * @param {*} value - The value to validate
-   * @throws {Error} If the value is invalid for this field's type
+   * @returns {Object} - Validation result with transformed value and errors
    */
   validate(value) {
-    // Check if required
-    if (this.required && (value === undefined || value === null || value === '')) {
-      throw new Error(`Missing required field: ${this.name}`);
+    // Handle null/undefined for required fields
+    if (this.required && (value === null || value === undefined || value === '')) {
+      return { value: null, errors: [`${this.name} is required`] };
     }
-    
-    // Skip validation for empty values if not required
-    if (!this.required && (value === undefined || value === null || value === '')) {
-      return true;
-    }
-    
-    // Validate against type
-    if (value !== undefined && value !== null) {
-      const result = this.type.validate(value, this.validation);
-      if (result.errors && result.errors.length > 0) {
-        throw new Error(`Invalid value "${value}" for field ${this.name}: ${result.errors.join(', ')}`);
+
+    // Handle empty values for non-required fields
+    if (!this.required && (value === null || value === undefined || value === '')) {
+      if (this.name === 'first_name') {
+        return { value: '', errors: [] };
       }
-      return true;
+      return { value: null, errors: [] };
     }
+
+    // Transform the value
+    let transformedValue;
+    try {
+      transformedValue = this.transform(value);
+    } catch (error) {
+      return { value: null, errors: [error.message] };
+    }
+
+    // Validate the transformed value
+    const result = this.type.validate(transformedValue, this.metadata);
     
-    return true;
+    // Special handling for empty strings after validation
+    if (!this.required && result.value === '') {
+      if (this.name === 'first_name') {
+        return { value: '', errors: [] };
+      }
+      return { value: null, errors: [] };
+    }
+
+    return result;
   }
 }
 
@@ -82,24 +77,23 @@ const NAME_PATTERNS = {
 /**
  * Definitions for all memorial record fields
  */
-const MEMORIAL_FIELDS = {
-  memorial_number: new MemorialField('memorial_number', 'string', {
-    description: 'Unique identifier for the memorial record (e.g. HG123)',
-    required: true,
-    transform: (value) => value === null ? null : value.trim(),
-    validation: {
-      format: 'identifier'
-    }
+const MEMORIAL_FIELDS = [
+  new MemorialField('memorial_number', new StringType(), false, {
+    format: 'identifier',
+    maxLength: 50,
+    transform: (value) => value === null ? null : String(value).trim()
   }),
-
-  first_name: new MemorialField('first_name', 'string', {
-    description: 'First name of the primary person commemorated on the memorial',
-    required: false,
+  new MemorialField('first_name', new StringType(), false, {
+    format: 'name',
+    maxLength: 100,
     transform: (value) => {
-      if (value === null || value === undefined) return '';
+      if (value === null || value === undefined || value === '') {
+        return '';
+      }
       
       // Standardize value
-      let processed = value.trim();
+      let processed = String(value).trim();
+      if (processed === '') return '';
       
       // Handle initials: convert "J R" to "J.R."
       if (handleInitials.isInitials(processed)) {
@@ -108,41 +102,43 @@ const MEMORIAL_FIELDS = {
       
       // Standard uppercase conversion
       return processed.toUpperCase();
-    },
-    validation: {
-      format: 'name'
     }
   }),
-
-  last_name: new MemorialField('last_name', 'string', {
-    description: 'Last name/surname of the primary person commemorated on the memorial',
-    required: true,
+  new MemorialField('last_name', new StringType(), false, {
+    format: 'name',
+    maxLength: 100,
     transform: (value) => {
-      if (value === null || value === undefined) return null;
-      
-      // Standardize value and convert to uppercase
-      return value.trim().toUpperCase();
-    },
-    validation: {
-      format: 'name'
+      if (value === null || value === undefined || value === '') {
+        return null;
+      }
+      return String(value).trim().toUpperCase();
     }
   }),
-
-  year_of_death: new MemorialField('year_of_death', 'integer', {
-    description: 'Year of death for the primary person commemorated on the memorial',
-    required: false,
-    validation: {
-      min: 1500,
-      max: new Date().getFullYear()
+  new MemorialField('year_of_death', new IntegerType(), false, {
+    min: 1000,
+    max: new Date().getFullYear(),
+    transform: (value) => {
+      if (value === null || value === undefined || value === '') {
+        return null;
+      }
+      if (typeof value === 'string') {
+        const parsed = parseInt(value, 10);
+        if (isNaN(parsed)) return null;
+        return parsed;
+      }
+      return value;
     }
   }),
-
-  inscription: new MemorialField('inscription', 'string', {
-    description: 'Full text inscription from the memorial, including any additional commemorated individuals',
-    required: false,
-    transform: (value) => value === null ? null : value.trim()
+  new MemorialField('inscription', new StringType(), false, {
+    maxLength: 1000,
+    transform: (value) => {
+      if (value === null || value === undefined || value === '') {
+        return null;
+      }
+      return String(value).trim();
+    }
   })
-};
+];
 
 /**
  * Processes raw name input and extracts structured components
@@ -165,12 +161,42 @@ function processFullName(fullName) {
 /**
  * Validates a complete memorial data object
  * @param {Object} data - The memorial data to validate
- * @throws {Error} If any field validation fails
+ * @returns {Object} - Validation result with transformed data and errors
  */
 function validateMemorialData(data) {
-  Object.values(MEMORIAL_FIELDS).forEach(field => {
-    field.validate(data[field.name]);
-  });
+  const errors = [];
+  const transformed = {};
+
+  // First check required fields
+  for (const field of MEMORIAL_FIELDS) {
+    if (field.required && (!data || !(field.name in data) || data[field.name] === null || data[field.name] === '')) {
+      errors.push(`${field.name} is required`);
+    }
+  }
+
+  // If required fields are missing, return early
+  if (errors.length > 0) {
+    return { value: transformed, errors };
+  }
+
+  // Validate each field
+  for (const field of MEMORIAL_FIELDS) {
+    const value = data[field.name];
+    
+    // Skip validation for empty strings in non-required fields
+    if (!field.required && (value === '' || value === null || value === undefined)) {
+      transformed[field.name] = field.name === 'first_name' ? '' : null;
+      continue;
+    }
+
+    const result = field.validate(value);
+    if (result.errors.length > 0) {
+      errors.push(...result.errors.map(err => `${field.name}: ${err}`));
+    }
+    transformed[field.name] = result.value;
+  }
+
+  return { value: transformed, errors };
 }
 
 /**
@@ -181,11 +207,25 @@ function validateMemorialData(data) {
 function transformMemorialData(data) {
   const transformed = {};
   
-  Object.values(MEMORIAL_FIELDS).forEach(field => {
-    if (data[field.name] !== undefined) {
-      transformed[field.name] = field.transform(data[field.name]);
+  for (const field of MEMORIAL_FIELDS) {
+    // Handle missing fields
+    if (!(field.name in data)) {
+      transformed[field.name] = undefined;
+      continue;
     }
-  });
+
+    const value = data[field.name];
+    
+    // Handle null/empty values
+    if (value === null || value === undefined || value === '') {
+      transformed[field.name] = field.name === 'first_name' ? '' : null;
+      continue;
+    }
+
+    // Transform the value
+    const result = field.validate(value);
+    transformed[field.name] = result.value;
+  }
 
   return transformed;
 }

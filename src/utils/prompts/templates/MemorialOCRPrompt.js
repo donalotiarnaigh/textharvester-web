@@ -2,6 +2,7 @@ const BasePrompt = require('../BasePrompt');
 const { MEMORIAL_FIELDS } = require('../types/memorialFields');
 const { ProcessingError } = require('../../errorTypes');
 const { standardizeNameParsing } = require('../../standardNameParser');
+const { preprocessName } = require('../../nameProcessing');
 
 /**
  * Standard OCR prompt for memorial inscriptions
@@ -88,160 +89,55 @@ IMPORTANT RULES:
   }
 
   /**
-   * Validate and convert memorial data
-   * @param {Object} data Data to validate
-   * @returns {Object} Validated and converted data
+   * Validate and convert OCR data
+   * @param {Object} data - Raw OCR data
+   * @returns {Object} - Validated and converted data
    */
   validateAndConvert(data) {
-    // Enhanced early validation for empty or invalid data
-    if (!data || typeof data !== 'object') {
-      throw new ProcessingError('No data received from OCR processing - the sheet may be empty or unreadable', 'empty_sheet');
+    // First check for required fields
+    const requiredFields = this.fields.filter(field => field.required);
+    for (const field of requiredFields) {
+      if (!data[field.name] || data[field.name].trim() === '') {
+        throw new ProcessingError(
+          `${field.name} could not be found - please check if the field is present on the memorial`,
+          'validation'
+        );
+      }
     }
 
-    if (Object.keys(data).length === 0) {
-      throw new ProcessingError('Empty data received from OCR processing - no text could be extracted from the sheet', 'empty_sheet');
-    }
-
-    // Check if all fields are null/undefined/empty strings
-    const allFieldsEmpty = Object.entries(this.fields).every(([fieldName]) => {
-      const value = data[fieldName];
-      return value === null || value === undefined || value === '';
+    // Check if all fields are empty
+    const allFieldsEmpty = this.fields.every(field => {
+      const value = data[field.name];
+      return !value || value.trim() === '';
     });
 
     if (allFieldsEmpty) {
-      throw new ProcessingError('No readable text found on the sheet - please check if the sheet is empty or the image quality is sufficient', 'empty_sheet');
+      throw new ProcessingError(
+        'No readable text found on the sheet - please check if the sheet is empty or the image quality is sufficient',
+        'empty_sheet'
+      );
     }
 
     const result = {};
-    const errors = [];
-    
-    // Step 1: Apply standardized name parsing with provider-specific options
-    console.log('[NameProcessing] Raw data input:', {
-      full_name: data.full_name,
-      first_name: data.first_name,
-      last_name: data.last_name,
-      inscription: data.inscription?.substring(0, 50) + (data.inscription?.length > 50 ? '...' : '')
-    });
-    
-    // Determine provider-specific options (if any)
-    const providerOptions = {
-      provider: this.config?.provider || 'default',
-      preserveInitials: this.config?.provider === 'openai' // OpenAI tends to preserve initials better
-    };
-    
-    // Apply the standardized name parsing
-    const standardizedData = standardizeNameParsing(data, providerOptions);
-    
-    console.log('[NameProcessing] Standardized name data:', {
-      first_name: standardizedData.first_name,
-      last_name: standardizedData.last_name,
-      prefix: standardizedData.prefix,
-      suffix: standardizedData.suffix
-    });
-    
-    // Copy standardized name fields into the data
-    Object.assign(data, {
-      first_name: standardizedData.first_name,
-      last_name: standardizedData.last_name,
-      prefix: standardizedData.prefix,
-      suffix: standardizedData.suffix
-    });
 
-    // First pass: validate required fields are present
-    // Check memorial_number first as it's the primary identifier
-    if (this.fields.memorial_number.required && (data.memorial_number === null || data.memorial_number === undefined || data.memorial_number === '')) {
-      throw new ProcessingError('Memorial number could not be found or read from the sheet', 'validation');
+    // Process name fields first
+    if (data.first_name || data.last_name) {
+      const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ');
+      const processedName = preprocessName(fullName);
+      
+      result.first_name = processedName.firstName || data.first_name;
+      result.last_name = processedName.lastName || data.last_name;
     }
 
-    // Then check other required fields
-    for (const [fieldName, field] of Object.entries(this.fields)) {
-      if (fieldName === 'memorial_number') continue; // Already checked
-      if (field.required && (data[fieldName] === null || data[fieldName] === undefined || data[fieldName] === '')) {
-        errors.push(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`);
-      }
-    }
-
-    if (errors.length > 0) {
-      throw new ProcessingError(errors[0], 'validation');
-    }
-
-    // Second pass: validate and convert each field
-    for (const [fieldName, field] of Object.entries(this.fields)) {
-      try {
-        const value = fieldName in data ? data[fieldName] : null;
-        
-        // Skip validation for null values in optional fields
-        if (value === null && !field.required) {
-          result[fieldName] = fieldName === 'first_name' ? '' : null; // Return empty string for first_name
-          continue;
-        }
-
-        // Apply field-specific validation
-        switch (fieldName) {
-          case 'first_name':
-          case 'last_name':
-            if (value === null || value === '') {
-              if (field.required) {
-                throw new ProcessingError(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`, 'validation');
-              }
-              result[fieldName] = fieldName === 'first_name' ? '' : null;
-            } else {
-              // More flexible validation to accommodate international characters
-              if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s\-'.]+$/.test(value)) {
-                throw new ProcessingError(`Invalid name format for ${fieldName}: "${value}"`, 'validation');
-              }
-              // Names are already standardized, so just assign the value
-              result[fieldName] = value;
-            }
-            break;
-
-          case 'year_of_death':
-            // Handle null value for year_of_death
-            if (value === null) {
-              result[fieldName] = null;
-              break;
-            }
-            
-            const year = parseInt(value, 10);
-            if (isNaN(year)) {
-              throw new ProcessingError(`Invalid year format: "${value}"`, 'validation');
-            }
-            if (year < 1500 || year > new Date().getFullYear()) {
-              throw new ProcessingError(`Year_of_death must be between 1500 and ${new Date().getFullYear()}, got: ${year}`, 'validation');
-            }
-            result[fieldName] = year;
-            break;
-
-          default:
-            // Safe transform for all other fields
-            result[fieldName] = value === null ? null : field.transform(value);
-        }
-      } catch (error) {
-        console.log(`[NameProcessing] Error processing ${fieldName}:`, error.message);
-        // Preserve ProcessingError instances but wrap others
-        if (error instanceof ProcessingError) {
-          throw error;
-        } else {
-          throw new ProcessingError(error.message, 'validation');
+    // Process remaining fields
+    for (const field of this.fields) {
+      if (field.name !== 'first_name' && field.name !== 'last_name') {
+        const value = data[field.name];
+        if (value !== undefined) {
+          result[field.name] = this.validateField(field.name, value);
         }
       }
     }
-
-    // Copy additional fields that aren't part of the memorial fields
-    // but preserve our name metadata (prefix, suffix)
-    for (const [key, value] of Object.entries(data)) {
-      if (!(key in this.fields) || key === 'prefix' || key === 'suffix') {
-        result[key] = value;
-      }
-    }
-    
-    console.log('[NameProcessing] Final processed data:', {
-      memorial_number: result.memorial_number,
-      first_name: result.first_name,
-      last_name: result.last_name,
-      prefix: result.prefix,
-      suffix: result.suffix
-    });
 
     return result;
   }

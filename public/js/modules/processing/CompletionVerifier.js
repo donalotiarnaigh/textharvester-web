@@ -117,7 +117,7 @@ class CompletionVerifier {
 
   /**
    * Verify completion status with enhanced logging
-   * @returns {Promise<boolean>} True if processing is complete
+   * @returns {Promise<Object>} Completion status object
    */
   async verifyCompletion() {
     this.verificationStart = Date.now();
@@ -127,40 +127,82 @@ class CompletionVerifier {
       // Track initial state
       this._trackStateTransition('verification_start');
       
-      // Verify all files are processed
-      const allFilesProcessed = await this._verifyAllFilesProcessed();
-      if (!allFilesProcessed) {
-        logger.debug('Not all files are processed yet');
-        return false;
+      const validFiles = [];
+      const invalidFiles = [];
+      const errors = [];
+      const validationErrors = [];
+
+      // Verify each file
+      for (const [fileId, file] of this.stateManager.state.files) {
+        // Execute pre-validation hooks
+        const preValidation = await this._executePreValidationHooks(fileId, { file });
+        if (!preValidation.isValid) {
+          invalidFiles.push(fileId);
+          validationErrors.push({
+            fileId,
+            error: preValidation.error
+          });
+          continue;
+        }
+
+        // Verify file completion
+        const completion = await this.verifyFileCompletion(fileId);
+        if (!completion.isComplete) {
+          invalidFiles.push(fileId);
+          if (completion.hasError) {
+            errors.push({
+              fileId,
+              error: completion.error
+            });
+          }
+          continue;
+        }
+
+        // Verify result integrity
+        const integrity = await this.verifyResultIntegrity(fileId);
+        if (!integrity.isValid) {
+          invalidFiles.push(fileId);
+          validationErrors.push({
+            fileId,
+            error: integrity.message
+          });
+          continue;
+        }
+
+        validFiles.push(fileId);
       }
-      
-      // Verify results are saved
-      const resultsSaved = await this._verifyResultsSaved();
-      if (!resultsSaved) {
-        logger.warn('Results not yet saved to storage');
-        return false;
-      }
-      
-      // Verify data integrity
-      const dataValid = await this._verifyDataIntegrity();
-      if (!dataValid) {
-        logger.error('Data integrity check failed', new Error('Integrity check failed'));
-        return false;
-      }
-      
+
       // Track completion
       this._trackStateTransition('verification_complete');
       
       // Log verification metrics
       this._logVerificationMetrics();
       
-      return true;
+      return {
+        isComplete: invalidFiles.length === 0,
+        validFiles,
+        invalidFiles,
+        errors,
+        validationErrors,
+        message: invalidFiles.length === 0 ? 
+          'All files processed successfully' : 
+          `${invalidFiles.length} files incomplete or invalid`
+      };
     } catch (error) {
       logger.error('Completion verification failed', error, {
         phase: 'completion_verification',
         operation: 'verify'
       });
-      return false;
+      return {
+        isComplete: false,
+        validFiles: [],
+        invalidFiles: Array.from(this.stateManager.state.files.keys()),
+        errors: [{
+          error: error.message || 'Unknown error during verification'
+        }],
+        validationErrors: [],
+        message: 'Verification failed due to error'
+      };
     }
   }
 

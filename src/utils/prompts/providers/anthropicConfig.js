@@ -5,35 +5,25 @@ const { ProviderConfig, PROVIDER_TYPES } = require('./providerConfig');
  */
 class AnthropicConfig extends ProviderConfig {
   /**
-   * @param {Object} config - Anthropic configuration
-   * @param {string} [config.model='claude-3-sonnet-20240229'] - Anthropic model name
-   * @param {Object} [config.responseFormat] - Response format configuration
+   * @param {Object} options - Anthropic configuration
+   * @param {string} [options.model='claude-3-opus'] - Anthropic model name
+   * @param {Object} [options.responseFormat] - Response format configuration
    */
-  constructor(config = {}) {
-    super({
-      name: 'anthropic',
-      type: PROVIDER_TYPES.ANTHROPIC,
-      ...config
-    });
-
-    this.model = config.model || 'claude-3-sonnet-20240229';
-    this.validateModel();
+  constructor(options = {}) {
+    super(PROVIDER_TYPES.ANTHROPIC);
+    
+    this.model = options.model || 'claude-3-opus';
+    if (!this.isSupportedModel(this.model)) {
+      throw new Error('Unsupported Anthropic model');
+    }
   }
 
-  /**
-   * Validate Anthropic model configuration
-   * @private
-   */
-  validateModel() {
-    const supportedModels = [
-      'claude-3-sonnet-20240229',
-      'claude-3-haiku-20240307',
-      'claude-3-opus-20240229'
-    ];
-
-    if (!supportedModels.includes(this.model)) {
-      throw new Error(`Unsupported Anthropic model: ${this.model}`);
-    }
+  isSupportedModel(model) {
+    return [
+      'claude-3-opus',
+      'claude-3-sonnet',
+      'claude-3-haiku'
+    ].includes(model);
   }
 
   /**
@@ -45,7 +35,7 @@ class AnthropicConfig extends ProviderConfig {
       model: this.model,
       max_tokens: this.maxTokens,
       temperature: this.temperature,
-      messages: [] // Will be populated by the provider
+      response_format: this.responseFormat
     };
   }
 

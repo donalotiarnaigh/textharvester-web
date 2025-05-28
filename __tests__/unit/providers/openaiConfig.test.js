@@ -1,21 +1,19 @@
 const OpenAIConfig = require('../../../src/utils/prompts/providers/openaiConfig');
-const { ProviderConfig, PROVIDER_TYPES } = require('../../../src/utils/prompts/providers/providerConfig');
 
 describe('OpenAIConfig', () => {
   describe('constructor', () => {
     it('should create a valid OpenAI configuration', () => {
       const config = new OpenAIConfig();
-      expect(config).toBeInstanceOf(ProviderConfig);
-      expect(config.name).toBe('openai');
-      expect(config.type).toBe(PROVIDER_TYPES.OPENAI);
-      expect(config.model).toBe('gpt-4-vision-preview');
+      expect(config.model).toBe('gpt-4');
+      expect(config.maxTokens).toBe(2000);
+      expect(config.temperature).toBe(0.7);
     });
 
     it('should accept custom model', () => {
       const config = new OpenAIConfig({
-        model: 'gpt-4-1106-vision-preview'
+        model: 'gpt-4-turbo'
       });
-      expect(config.model).toBe('gpt-4-1106-vision-preview');
+      expect(config.model).toBe('gpt-4-turbo');
     });
 
     it('should throw error for unsupported model', () => {
@@ -27,17 +25,22 @@ describe('OpenAIConfig', () => {
 
   describe('getApiParams', () => {
     it('should return valid API parameters', () => {
-      const config = new OpenAIConfig({
-        maxTokens: 1000,
-        temperature: 0.5
-      });
-
+      const config = new OpenAIConfig();
       const params = config.getApiParams();
       expect(params).toEqual({
-        model: 'gpt-4-vision-preview',
-        max_tokens: 1000,
-        temperature: 0.5,
-        response_format: { type: 'json' }
+        model: 'gpt-4',
+        max_tokens: 2000,
+        temperature: 0.7,
+        response_format: {
+          type: 'json',
+          schema: {
+            type: 'object',
+            properties: {
+              result: { type: 'string' }
+            },
+            required: ['result']
+          }
+        }
       });
     });
   });

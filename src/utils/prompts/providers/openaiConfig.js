@@ -5,34 +5,25 @@ const { ProviderConfig, PROVIDER_TYPES } = require('./providerConfig');
  */
 class OpenAIConfig extends ProviderConfig {
   /**
-   * @param {Object} config - OpenAI configuration
-   * @param {string} [config.model='gpt-4-vision-preview'] - OpenAI model name
-   * @param {Object} [config.responseFormat] - Response format configuration
+   * @param {Object} options - OpenAI configuration
+   * @param {string} [options.model='gpt-4'] - OpenAI model name
+   * @param {Object} [options.responseFormat] - Response format configuration
    */
-  constructor(config = {}) {
-    super({
-      name: 'openai',
-      type: PROVIDER_TYPES.OPENAI,
-      ...config
-    });
-
-    this.model = config.model || 'gpt-4-vision-preview';
-    this.validateModel();
+  constructor(options = {}) {
+    super(PROVIDER_TYPES.OPENAI);
+    
+    this.model = options.model || 'gpt-4';
+    if (!this.isSupportedModel(this.model)) {
+      throw new Error('Unsupported OpenAI model');
+    }
   }
 
-  /**
-   * Validate OpenAI model configuration
-   * @private
-   */
-  validateModel() {
-    const supportedModels = [
-      'gpt-4-vision-preview',
-      'gpt-4-1106-vision-preview'
-    ];
-
-    if (!supportedModels.includes(this.model)) {
-      throw new Error(`Unsupported OpenAI model: ${this.model}`);
-    }
+  isSupportedModel(model) {
+    return [
+      'gpt-4',
+      'gpt-4-turbo',
+      'gpt-3.5-turbo'
+    ].includes(model);
   }
 
   /**
@@ -44,7 +35,7 @@ class OpenAIConfig extends ProviderConfig {
       model: this.model,
       max_tokens: this.maxTokens,
       temperature: this.temperature,
-      response_format: { type: 'json' }
+      response_format: this.responseFormat
     };
   }
 }

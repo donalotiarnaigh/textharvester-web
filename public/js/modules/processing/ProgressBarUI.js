@@ -47,6 +47,7 @@ export class ProgressBarUI {
    * Show error state
    */
   showError() {
+    this.progressBar.classList.remove('complete');
     this.progressBar.classList.add('error');
     this.statusElement.textContent = 'Error processing files';
   }

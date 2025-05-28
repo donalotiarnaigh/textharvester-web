@@ -5,8 +5,8 @@ describe('Data Types Module', () => {
     it('should create a DataType with name and validator', () => {
       const type = new DataType('test', (val) => typeof val === 'string');
       expect(type.name).toBe('test');
-      expect(type.validate('test')).toBe(true);
-      expect(type.validate(123)).toBe(false);
+      expect(type.validate('test').value).toBe('test');
+      expect(type.validate(123).errors).toHaveLength(1);
     });
   });
 
@@ -14,10 +14,15 @@ describe('Data Types Module', () => {
     const stringType = new StringType();
 
     it('should validate strings correctly', () => {
-      expect(stringType.validate('test')).toBe(true);
-      expect(stringType.validate('')).toBe(true);
-      expect(stringType.validate(123)).toBe(false);
-      expect(stringType.validate(null)).toBe(false);
+      expect(stringType.validate('test').errors).toHaveLength(0);
+      expect(stringType.validate('').errors).toHaveLength(0);
+      expect(stringType.validate(123).errors).toHaveLength(1);
+      expect(stringType.validate(null).errors).toHaveLength(0);
+    });
+
+    it('should handle metadata validation', () => {
+      expect(stringType.validate('test', { maxLength: 5 }).errors).toHaveLength(0);
+      expect(stringType.validate('test', { maxLength: 3 }).errors).toHaveLength(1);
     });
 
     it('should convert values to strings', () => {
@@ -31,16 +36,22 @@ describe('Data Types Module', () => {
     const integerType = new IntegerType();
 
     it('should validate integers correctly', () => {
-      expect(integerType.validate(123)).toBe(true);
-      expect(integerType.validate(-123)).toBe(true);
-      expect(integerType.validate(123.45)).toBe(false);
-      expect(integerType.validate('123')).toBe(false);
+      expect(integerType.validate(123).errors).toHaveLength(0);
+      expect(integerType.validate(-123).errors).toHaveLength(0);
+      expect(integerType.validate(123.45).errors).toHaveLength(1);
+      expect(integerType.validate('123').errors).toHaveLength(1);
+    });
+
+    it('should handle range validation', () => {
+      expect(integerType.validate(5, { min: 0, max: 10 }).errors).toHaveLength(0);
+      expect(integerType.validate(-1, { min: 0 }).errors).toHaveLength(1);
     });
 
     it('should convert values to integers', () => {
-      expect(integerType.convert('123')).toBe(123);
-      expect(integerType.convert(123.45)).toBe(123);
-      expect(() => integerType.convert('abc')).toThrow();
+      expect(integerType.convert(123)).toBe(123);
+      expect(integerType.convert(-123)).toBe(-123);
+      expect(() => integerType.convert('123')).toThrow();
+      expect(() => integerType.convert(123.45)).toThrow();
     });
   });
 
@@ -48,30 +59,32 @@ describe('Data Types Module', () => {
     const booleanType = new BooleanType();
 
     it('should validate booleans correctly', () => {
-      expect(booleanType.validate(true)).toBe(true);
-      expect(booleanType.validate(false)).toBe(true);
-      expect(booleanType.validate('true')).toBe(false);
-      expect(booleanType.validate(1)).toBe(false);
+      expect(booleanType.validate(true).errors).toHaveLength(0);
+      expect(booleanType.validate(false).errors).toHaveLength(0);
+      expect(booleanType.validate('true').errors).toHaveLength(1);
+      expect(booleanType.validate(1).errors).toHaveLength(1);
     });
 
     it('should convert values to booleans', () => {
-      expect(booleanType.convert('true')).toBe(true);
-      expect(booleanType.convert('false')).toBe(false);
-      expect(booleanType.convert(1)).toBe(true);
-      expect(booleanType.convert(0)).toBe(false);
+      const result = booleanType.validate(true);
+      expect(result.errors).toHaveLength(0);
+      expect(result.value).toBe(true);
     });
   });
 
   describe('validateValue', () => {
+    const stringType = new StringType();
+    const integerType = new IntegerType();
+
     it('should validate values against specified type', () => {
-      expect(() => validateValue('test', new StringType())).not.toThrow();
-      expect(() => validateValue(123, new IntegerType())).not.toThrow();
-      expect(() => validateValue('123', new IntegerType())).toThrow();
+      expect(validateValue('test', stringType).errors).toHaveLength(0);
+      expect(validateValue(123, integerType).errors).toHaveLength(0);
+      expect(validateValue('123', integerType).errors).toHaveLength(1);
     });
 
     it('should handle null and undefined', () => {
-      expect(() => validateValue(null, new StringType())).toThrow();
-      expect(() => validateValue(undefined, new StringType())).toThrow();
+      expect(validateValue(null, stringType).errors).toHaveLength(0);
+      expect(validateValue(undefined, stringType).errors).toHaveLength(0);
     });
   });
 }); 

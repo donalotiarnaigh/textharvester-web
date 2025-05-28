@@ -24,7 +24,7 @@ const DEFAULT_CONFIG = {
  */
 const PROVIDER_CONFIGS = {
   [PROVIDER_TYPES.OPENAI]: {
-    systemPromptTemplate: 'You are an AI assistant trained by OpenAI. {task}',
+    systemPromptTemplate: 'You are an AI assistant trained by OpenAI to help with data extraction.',
     responseFormat: {
       type: 'json',
       schema: {
@@ -37,7 +37,7 @@ const PROVIDER_CONFIGS = {
     }
   },
   [PROVIDER_TYPES.ANTHROPIC]: {
-    systemPromptTemplate: 'You are Claude, an AI assistant created by Anthropic. {task}',
+    systemPromptTemplate: 'You are Claude, an AI assistant created by Anthropic to help with data extraction.',
     responseFormat: {
       type: 'markdown'
     }
@@ -69,37 +69,15 @@ class ProviderConfig {
    * @param {string} type - Provider type
    */
   constructor(type) {
+    if (!Object.values(PROVIDER_TYPES).includes(type)) {
+      throw new Error(`Invalid provider type: ${type}`);
+    }
+    
     this.type = type;
-    this.maxTokens = 2000;
-    this.temperature = 0.7;
-    this.systemPromptTemplate = this.getDefaultSystemPrompt();
-    this.formatInstructions = this.getDefaultFormatInstructions();
-  }
-
-  getDefaultSystemPrompt() {
-    switch (this.type) {
-      case PROVIDER_TYPES.OPENAI:
-        return 'You are an AI assistant trained by OpenAI to help with data extraction.';
-      case PROVIDER_TYPES.ANTHROPIC:
-        return 'You are Claude, an AI assistant created by Anthropic to help with data extraction.';
-      default:
-        return 'You are an AI assistant designed to help with data extraction.';
-    }
-  }
-
-  getDefaultFormatInstructions() {
-    switch (this.type) {
-      case PROVIDER_TYPES.OPENAI:
-        return 'Respond with a JSON object containing only the specified fields.';
-      case PROVIDER_TYPES.ANTHROPIC:
-        return 'Respond with a JSON object containing only the specified fields. Do not include any explanations or markdown formatting.';
-      default:
-        return 'Respond with the extracted data in the specified format.';
-    }
-  }
-
-  getFieldFormat(type) {
-    return TYPE_FORMATS[this.type]?.[type] || type;
+    this.maxTokens = DEFAULT_CONFIG.maxTokens;
+    this.temperature = DEFAULT_CONFIG.temperature;
+    this.systemPromptTemplate = PROVIDER_CONFIGS[type].systemPromptTemplate;
+    this.responseFormat = PROVIDER_CONFIGS[type].responseFormat;
   }
 
   /**
@@ -112,7 +90,16 @@ class ProviderConfig {
     if (!params.task) {
       throw new Error('Task is required');
     }
-    return this.systemPromptTemplate.replace('{task}', params.task);
+    return this.systemPromptTemplate;
+  }
+
+  /**
+   * Get the format for a specific field type
+   * @param {string} type - The field type
+   * @returns {string} The provider-specific format
+   */
+  getFieldFormat(type) {
+    return TYPE_FORMATS[this.type]?.[type] || type;
   }
 }
 

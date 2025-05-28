@@ -2,7 +2,8 @@
  * @jest-environment jsdom
  */
 
-const ProgressBarUI = require('../ProgressBarUI');
+import { jest } from '@jest/globals';
+import { ProgressBarUI } from '../ProgressBarUI.js';
 
 describe('ProgressBarUI', () => {
   let container;
@@ -31,13 +32,16 @@ describe('ProgressBarUI', () => {
     expect(progressBar.progressBar).toBeDefined();
     expect(progressBar.progressBarFill).toBeDefined();
     expect(progressBar.statusElement).toBeDefined();
+    expect(progressBar.statusElement.textContent).toBe('Ready to start processing...');
   });
 
   test('should update progress correctly', () => {
     progressBar.updateProgress(50, 'Processing');
     
     expect(progressBar.progressBarFill.style.width).toBe('50%');
+    expect(progressBar.progressBarFill.textContent).toBe('50%');
     expect(progressBar.statusElement.textContent).toBe('Processing');
+    expect(progressBar.progressBar.getAttribute('aria-valuenow')).toBe('50');
   });
 
   test('should show error state correctly', () => {
@@ -45,7 +49,7 @@ describe('ProgressBarUI', () => {
     
     expect(progressBar.progressBar.classList.contains('error')).toBe(true);
     expect(progressBar.progressBar.classList.contains('complete')).toBe(false);
-    expect(progressBar.statusElement.textContent).toBe('Error occurred');
+    expect(progressBar.statusElement.textContent).toBe('Error processing files');
   });
 
   test('should show complete state correctly', () => {
@@ -55,13 +59,10 @@ describe('ProgressBarUI', () => {
     // Call showComplete
     progressBar.showComplete();
     
-    // Log the element state for debugging
-    console.log('Progress bar element:', progressBar.progressBar.outerHTML);
-    console.log('Progress bar classes:', progressBar.progressBar.classList.toString());
-    
     // Verify final state
     expect(progressBar.progressBarFill.style.width).toBe('100%');
-    expect(progressBar.statusElement.textContent).toBe('Complete');
+    expect(progressBar.progressBarFill.textContent).toBe('100%');
+    expect(progressBar.statusElement.textContent).toBe('Processing complete');
     expect(progressBar.progressBar.classList.contains('error')).toBe(false);
     expect(progressBar.progressBar.classList.contains('complete')).toBe(true);
   });
@@ -71,15 +72,18 @@ describe('ProgressBarUI', () => {
     progressBar.showComplete();
     expect(progressBar.progressBar.classList.contains('complete')).toBe(true);
     expect(progressBar.progressBar.classList.contains('error')).toBe(false);
+    expect(progressBar.statusElement.textContent).toBe('Processing complete');
     
     // Switch to error state
     progressBar.showError();
     expect(progressBar.progressBar.classList.contains('complete')).toBe(false);
     expect(progressBar.progressBar.classList.contains('error')).toBe(true);
+    expect(progressBar.statusElement.textContent).toBe('Error processing files');
     
     // Back to complete state
     progressBar.showComplete();
     expect(progressBar.progressBar.classList.contains('complete')).toBe(true);
     expect(progressBar.progressBar.classList.contains('error')).toBe(false);
+    expect(progressBar.statusElement.textContent).toBe('Processing complete');
   });
 }); 

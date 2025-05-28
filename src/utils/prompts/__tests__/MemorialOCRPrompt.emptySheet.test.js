@@ -1,5 +1,5 @@
 const MemorialOCRPrompt = require('../templates/MemorialOCRPrompt');
-const { ProcessingError } = require('../../errorTypes');
+const { ProcessingError } = require('../../errors');
 
 describe('MemorialOCRPrompt Empty Sheet Handling', () => {
   let prompt;
@@ -50,20 +50,40 @@ describe('MemorialOCRPrompt Empty Sheet Handling', () => {
   });
 
   it('should throw a ProcessingError with type "validation" for missing required field', () => {
-    const missingRequiredField = {
-      // memorial_number is missing (required)
-      first_name: 'JOHN',
-      last_name: 'DOE',
-      year_of_death: 1950
+    const data = {
+      first_name: 'John',
+      last_name: 'Smith',
+      year_of_death: 1900,
+      inscription: 'In loving memory'
+      // Missing required memorial_number
     };
 
     try {
-      prompt.validateAndConvert(missingRequiredField);
+      prompt.validateAndConvert(data);
       fail('Expected error was not thrown');
     } catch (error) {
       expect(error).toBeInstanceOf(ProcessingError);
       expect(error.type).toBe('validation');
-      expect(error.message).toContain('Memorial number could not be found');
+      expect(error.message).toContain('memorial_number could not be found');
+    }
+  });
+
+  it('should throw a ProcessingError with type "empty_sheet" when all fields are empty', () => {
+    const data = {
+      memorial_number: '',
+      first_name: '',
+      last_name: '',
+      year_of_death: null,
+      inscription: ''
+    };
+
+    try {
+      prompt.validateAndConvert(data);
+      fail('Expected error was not thrown');
+    } catch (error) {
+      expect(error).toBeInstanceOf(ProcessingError);
+      expect(error.type).toBe('empty_sheet');
+      expect(error.message).toContain('No readable text found on the sheet');
     }
   });
 }); 

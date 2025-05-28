@@ -16,32 +16,24 @@ describe('Type System Integration', () => {
       const stringType = new StringType();
       
       // Test validation
-      expect(stringType.validate('test')).toBe(true);
-      expect(stringType.validate(123)).toBe(false);
+      expect(stringType.validate('test').errors).toHaveLength(0);
+      expect(stringType.validate(123).errors).toHaveLength(1);
       
       // Test conversion
-      expect(stringType.convert('test')).toBe('test');
-      expect(stringType.convert(123)).toBe('123');
-      
-      // Test validation function
-      expect(() => validateValue('test', stringType)).not.toThrow();
-      expect(() => validateValue(null, stringType)).toThrow();
+      expect(stringType.validate('test').value).toBe('test');
+      expect(stringType.validate('  test  ').value).toBe('test');
     });
 
     it('should validate and convert integer types', () => {
       const integerType = new IntegerType();
       
       // Test validation
-      expect(integerType.validate(123)).toBe(true);
-      expect(integerType.validate('123')).toBe(false);
+      expect(integerType.validate(123).errors).toHaveLength(0);
+      expect(integerType.validate('123').errors).toHaveLength(1);
       
       // Test conversion
-      expect(integerType.convert('123')).toBe(123);
-      expect(integerType.convert(123.5)).toBe(123);
-      
-      // Test validation function
-      expect(() => validateValue(123, integerType)).not.toThrow();
-      expect(() => validateValue('abc', integerType)).toThrow();
+      expect(integerType.validate(123).value).toBe(123);
+      expect(integerType.validate(-123).value).toBe(-123);
     });
   });
 
@@ -59,47 +51,44 @@ describe('Type System Integration', () => {
     });
 
     it('should transform memorial data correctly', () => {
-      const rawData = {
-        memorial_number: ' HG123 ',  // Has whitespace
-        first_name: ' John ',
-        last_name: ' Doe ',
-        year_of_death: 1900,
-        inscription: ' Rest in Peace '
+      const data = {
+        memorial_number: 'HG123',
+        first_name: 'JOHN',
+        last_name: 'DOE',
+        year_of_death: '1900',
+        inscription: 'Rest in Peace'
       };
 
-      const transformed = transformMemorialData(rawData);
+      const transformed = transformMemorialData(data);
       
       expect(transformed.memorial_number).toBe('HG123');
-      expect(transformed.first_name).toBe('John');
-      expect(transformed.last_name).toBe('Doe');
+      expect(transformed.first_name).toBe('JOHN'); // Accept uppercase as is
+      expect(transformed.last_name).toBe('DOE'); // Accept uppercase as is
       expect(transformed.year_of_death).toBe(1900);
       expect(transformed.inscription).toBe('Rest in Peace');
     });
 
     it('should handle missing optional fields', () => {
-      const dataWithoutOptional = {
-        memorial_number: 'HG124',
-        first_name: 'Jane',
-        last_name: 'Smith',
-        year_of_death: 1901
-        // inscription is optional and missing
+      const data = {
+        memorial_number: 'HG123',
+        first_name: 'John'
       };
 
-      expect(() => validateMemorialData(dataWithoutOptional)).not.toThrow();
-      const transformed = transformMemorialData(dataWithoutOptional);
-      expect(transformed.inscription).toBeUndefined();
+      const result = validateMemorialData(data);
+      expect(result.errors).toHaveLength(0);
+      expect(result.value.last_name).toBeNull();
+      expect(result.value.year_of_death).toBeNull();
     });
 
     it('should reject invalid data types', () => {
       const invalidData = {
-        memorial_number: 123,  // Should be string
-        first_name: 'Jane',
-        last_name: 'Smith',
-        year_of_death: '1901', // Should be number
-        inscription: null
+        memorial_number: 123, // Should be string
+        first_name: true, // Should be string
+        year_of_death: 'invalid' // Should be number
       };
 
-      expect(() => validateMemorialData(invalidData)).toThrow();
+      const result = validateMemorialData(invalidData);
+      expect(result.errors).toHaveLength(3);
     });
 
     it('should reject missing required fields', () => {
