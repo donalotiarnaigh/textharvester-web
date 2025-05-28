@@ -98,6 +98,13 @@ function displayMemorials(memorials) {
   memorials.forEach(memorial => {
     const row = document.createElement('tr');
     
+    // Properly escape the memorial data for HTML attributes
+    const memorialDataEscaped = JSON.stringify(memorial)
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    
     // Populate row with memorial data
     row.innerHTML = `
       <td>${memorial.memorial_number || 'N/A'}</td>
@@ -109,7 +116,7 @@ function displayMemorials(memorials) {
       <td>${formatDate(memorial.processed_date)}</td>
       <td>
         <button class="btn btn-sm btn-info view-inscription" 
-          data-memorial='${JSON.stringify(memorial)}'>
+          data-memorial="${memorialDataEscaped}">
           <i class="fas fa-eye"></i> View
         </button>
       </td>
@@ -214,14 +221,23 @@ document.addEventListener('click', function(event) {
     
     try {
       const memorialData = button.getAttribute('data-memorial');
-      console.log('Memorial data attribute:', memorialData);
+      console.log('Memorial data attribute (raw):', memorialData);
       
       if (!memorialData) {
         console.error('No memorial data found on button');
         return;
       }
       
-      const memorial = JSON.parse(memorialData);
+      // Decode HTML entities back to valid JSON
+      const decodedData = memorialData
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
+      
+      console.log('Memorial data attribute (decoded):', decodedData);
+      
+      const memorial = JSON.parse(decodedData);
       console.log('Parsed memorial:', memorial);
       
       // Populate modal content first
