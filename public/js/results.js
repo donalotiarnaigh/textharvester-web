@@ -123,6 +123,74 @@ function displayModalDetails(memorial) {
   document.getElementById('modalProcessDate').textContent = formatDate(memorial.processed_date);
 }
 
+// Function to download JSON results
+async function downloadJsonResults(filenameInput, format = 'compact') {
+  try {
+    const filename = filenameInput.value || `memorials_${new Date().toISOString().slice(0,10)}`;
+    const response = await fetch(`/download-json?filename=${encodeURIComponent(filename)}&format=${format}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    // Get the blob from the response
+    const blob = await response.blob();
+    
+    // Create a temporary URL for the blob
+    const url = window.URL.createObjectURL(blob);
+    
+    // Create a temporary link element
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}.json`;
+    
+    // Append to body, click, and remove
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    // Clean up the URL
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error downloading JSON:', error);
+    alert('Failed to download JSON results. Please try again.');
+  }
+}
+
+// Function to download CSV results
+async function downloadCsvResults(filenameInput) {
+  try {
+    const filename = filenameInput.value || `memorials_${new Date().toISOString().slice(0,10)}`;
+    const response = await fetch(`/download-csv?filename=${encodeURIComponent(filename)}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    // Get the blob from the response
+    const blob = await response.blob();
+    
+    // Create a temporary URL for the blob
+    const url = window.URL.createObjectURL(blob);
+    
+    // Create a temporary link element
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}.csv`;
+    
+    // Append to body, click, and remove
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    // Clean up the URL
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error downloading CSV:', error);
+    alert('Failed to download CSV results. Please try again.');
+  }
+}
+
 // Function to enable download buttons
 function enableDownloadButtons() {
   document.getElementById('downloadButton').disabled = false;
@@ -177,6 +245,10 @@ export async function loadResults() {
     throw error;
   }
 }
+
+// Make download functions globally available
+window.downloadJsonResults = downloadJsonResults;
+window.downloadCsvResults = downloadCsvResults;
 
 // Initialize on document load
 document.addEventListener('DOMContentLoaded', () => {

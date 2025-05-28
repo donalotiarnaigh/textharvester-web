@@ -196,12 +196,12 @@ export async function loadResults() {
 // Download functions
 window.downloadJsonResults = function(filenameInput, format) {
   const filename = filenameInput.value || 'results';
-  window.location.href = `/download/json?filename=${filename}&format=${format}`;
+  window.location.href = `/download-json?filename=${encodeURIComponent(filename)}&format=${format}`;
 };
 
 window.downloadCsvResults = function(filenameInput) {
   const filename = filenameInput.value || 'results';
-  window.location.href = `/download/csv?filename=${filename}`;
+  window.location.href = `/download-csv?filename=${encodeURIComponent(filename)}`;
 };
 
 // Initialize on document load
