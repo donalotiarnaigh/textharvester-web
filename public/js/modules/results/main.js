@@ -108,7 +108,7 @@ function displayMemorials(memorials) {
       <td>${memorial.prompt_version || 'N/A'}</td>
       <td>${formatDate(memorial.processed_date)}</td>
       <td>
-        <button class="btn btn-sm btn-info view-inscription" data-toggle="modal" data-target="#inscriptionModal" 
+        <button class="btn btn-sm btn-info view-inscription" 
           data-memorial='${JSON.stringify(memorial)}'>
           <i class="fas fa-eye"></i> View
         </button>
@@ -116,14 +116,6 @@ function displayMemorials(memorials) {
     `;
     
     tableBody.appendChild(row);
-  });
-  
-  // Add event listeners for the view buttons
-  document.querySelectorAll('.view-inscription').forEach(button => {
-    button.addEventListener('click', function() {
-      const memorial = JSON.parse(this.getAttribute('data-memorial'));
-      displayModalDetails(memorial);
-    });
   });
 }
 
@@ -210,4 +202,19 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Initialize clipboard functionality
   new ClipboardJS('.copy-info');
+  
+  // Add event delegation for modal view buttons to handle timing issues
+  document.addEventListener('click', function(event) {
+    if (event.target.closest('.view-inscription')) {
+      event.preventDefault();
+      const button = event.target.closest('.view-inscription');
+      const memorial = JSON.parse(button.getAttribute('data-memorial'));
+      
+      // Populate modal content first
+      displayModalDetails(memorial);
+      
+      // Then show the modal
+      $('#inscriptionModal').modal('show');
+    }
+  });
 });
