@@ -114,12 +114,11 @@ export class ProgressController {
       return;
     }
 
-    // Check for errors
+    // Check for errors - but don't stop processing if we have errors
+    // Errors like empty sheets should still allow completion
     if (progressData.errors && progressData.errors.length > 0) {
-      console.error('[ProgressController] Errors detected:', progressData.errors);
-      this.progressBar.showError();
-      this.stopPolling();
-      return;
+      console.warn('[ProgressController] Errors detected, but continuing processing:', progressData.errors);
+      // Show errors in UI but don't stop polling - let normal completion logic handle it
     }
 
     const currentProgress = progressData.progress;
@@ -154,17 +153,18 @@ export class ProgressController {
       }
     } else if (currentProgress === 100) {
       // We're at 100% but state isn't complete yet
-      console.log('[ProgressController] At 100% but not complete state');
+      // This can happen when all files are processed (including errors) but state hasn't updated
+      console.log('[ProgressController] At 100% but not complete state, checking for completion');
       if (!this.finalizingTimestamp) {
         this.finalizingTimestamp = Date.now();
         console.log('[ProgressController] Started finalizing timer');
       }
       
-      // If we've been at 100% for more than 5 seconds, verify completion
+      // If we've been at 100% for more than 2 seconds (reduced from 5), verify completion
       const timeInFinalizing = Date.now() - this.finalizingTimestamp;
       console.log('[ProgressController] Time in finalizing:', timeInFinalizing);
       
-      if (timeInFinalizing >= 5000) {
+      if (timeInFinalizing >= 2000) {
         console.log('[ProgressController] Finalizing timeout reached, verifying completion');
         await this._verifyAndComplete();
       }

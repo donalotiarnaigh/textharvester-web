@@ -4,69 +4,23 @@ const logger = require('../utils/logger'); // Adjust the path as needed
 const config = require('../../config.json'); // Adjust the path as needed
 const { jsonToCsv, formatJsonForExport } = require('../utils/dataConversion'); // Adjust path as needed
 const moment = require('moment'); // Ensure moment is installed and imported
-const { getTotalFiles, getProcessedFiles, getProcessedResults } = require('../utils/fileQueue.js'); // Adjust the path as needed
+const { getTotalFiles, getProcessedFiles, getProcessedResults, getProcessingProgress } = require('../utils/fileQueue.js'); // Adjust the path as needed
 const { getAllMemorials } = require('../utils/database');
 const { validateAndConvertRecords } = require('../utils/dataValidation');
 
 function getProcessingStatus(req, res) {
-  const flagPath = path.join(
-    __dirname,
-    '../../data', // This moves up two levels from src/controllers
-    'processing_complete.flag'
-  );
-
-  // Use fs.access to check for the existence of the flag file
-  fs.access(flagPath, fs.constants.F_OK, (err) => {
-    if (!err) {
-      // If no error, file exists, proceed to read it
-      fs.readFile(flagPath, 'utf8', (readErr, data) => {
-        if (readErr) {
-          logger.error('Error reading processing complete flag:', readErr);
-          return res.status(500).send('Error checking processing status.');
-        }
-        if (data === 'complete') {
-          // Include error information in the response
-          const processedResults = getProcessedResults();
-          const errors = processedResults.filter(r => r && r.error);
-          
-          res.json({ 
-            status: 'complete', 
-            progress: 100,
-            errors: errors.length > 0 ? errors : undefined
-          });
-        } else {
-          const totalFiles = getTotalFiles();
-          const processedFiles = getProcessedFiles();
-          let progress =
-            totalFiles > 0 ? (processedFiles / totalFiles) * 100 : 0;
-          
-          // Get any errors from processed files so far
-          const processedResults = getProcessedResults();
-          const errors = processedResults.filter(r => r && r.error);
-          
-          res.json({ 
-            status: 'processing', 
-            progress: progress.toFixed(2),
-            errors: errors.length > 0 ? errors : undefined
-          });
-        }
-      });
-    } else {
-      // If error (meaning file does not exist), consider it still processing
-      const totalFiles = getTotalFiles();
-      const processedFiles = getProcessedFiles();
-      let progress = totalFiles > 0 ? (processedFiles / totalFiles) * 100 : 0;
-      
-      // Get any errors from processed files so far
-      const processedResults = getProcessedResults();
-      const errors = processedResults.filter(r => r && r.error);
-      
-      res.json({ 
-        status: 'processing', 
-        progress: progress.toFixed(2),
-        errors: errors.length > 0 ? errors : undefined
-      });
-    }
+  // Use the same logic as getProcessingProgress for consistency
+  const progressData = getProcessingProgress();
+  
+  // Get any errors from processed files
+  const processedResults = getProcessedResults();
+  const errors = processedResults.filter(r => r && r.error);
+  
+  // Return the progress data with errors included
+  res.json({
+    status: progressData.state,
+    progress: progressData.progress,
+    errors: errors.length > 0 ? errors : undefined
   });
 }
 
