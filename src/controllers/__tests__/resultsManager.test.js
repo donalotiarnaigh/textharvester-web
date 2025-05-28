@@ -61,7 +61,7 @@ describe('Enhanced Results Manager with Error Handling', () => {
           memorial_number: 'HG-123',
           first_name: 'JOHN',
           last_name: 'DOE',
-          fileName: 'file1.jpg'
+          file_name: 'file1.jpg'
         },
         {
           fileName: 'file2.jpg',
@@ -77,7 +77,13 @@ describe('Enhanced Results Manager with Error Handling', () => {
       await getResults({}, mockResponse);
       
       expect(mockResponse.json).toHaveBeenCalledWith({
-        memorials: [mockResults[0]],
+        memorials: [{
+          memorial_number: 'HG-123',
+          first_name: 'JOHN',
+          last_name: 'DOE',
+          file_name: 'file1.jpg',
+          fileName: 'file1.jpg'
+        }],
         errors: [mockResults[1]]
       });
     });
@@ -89,13 +95,13 @@ describe('Enhanced Results Manager with Error Handling', () => {
           memorial_number: 'HG-123',
           first_name: 'JOHN',
           last_name: 'DOE',
-          fileName: 'file1.jpg'
+          file_name: 'file1.jpg'
         },
         {
           memorial_number: 'HG-124',
           first_name: 'JANE',
           last_name: 'DOE',
-          fileName: 'file2.jpg'
+          file_name: 'file2.jpg'
         }
       ];
       
@@ -105,7 +111,22 @@ describe('Enhanced Results Manager with Error Handling', () => {
       await getResults({}, mockResponse);
       
       expect(mockResponse.json).toHaveBeenCalledWith({
-        memorials: mockResults,
+        memorials: [
+          {
+            memorial_number: 'HG-123',
+            first_name: 'JOHN',
+            last_name: 'DOE',
+            file_name: 'file1.jpg',
+            fileName: 'file1.jpg'
+          },
+          {
+            memorial_number: 'HG-124',
+            first_name: 'JANE',
+            last_name: 'DOE',
+            file_name: 'file2.jpg',
+            fileName: 'file2.jpg'
+          }
+        ],
         errors: []
       });
     });
@@ -147,7 +168,7 @@ describe('Enhanced Results Manager with Error Handling', () => {
           memorial_number: 'HG-123',
           first_name: 'JOHN',
           last_name: 'DOE',
-          fileName: 'file1.jpg'
+          file_name: 'file1.jpg'
         },
         {
           fileName: 'file2.jpg',

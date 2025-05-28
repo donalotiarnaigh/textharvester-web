@@ -29,8 +29,14 @@ async function downloadResultsJSON(req, res) {
     // Get all successful records from database
     const results = await getAllMemorials();
     
+    // Transform database field names to match frontend expectations
+    const transformedResults = results.map(memorial => ({
+      ...memorial,
+      fileName: memorial.file_name, // Map file_name to fileName for frontend compatibility
+    }));
+    
     // Validate and convert data types
-    const validatedResults = validateAndConvertRecords(results);
+    const validatedResults = validateAndConvertRecords(transformedResults);
         
     // Extract filename from query parameters or use a default
     const defaultFilename = `memorials_${moment().format('YYYYMMDD_HHmmss')}.json`;
@@ -67,8 +73,14 @@ async function downloadResultsCSV(req, res) {
     // Get all successful records from database
     const results = await getAllMemorials();
     
+    // Transform database field names to match frontend expectations
+    const transformedResults = results.map(memorial => ({
+      ...memorial,
+      fileName: memorial.file_name, // Map file_name to fileName for frontend compatibility
+    }));
+    
     // Validate and convert data types
-    const validatedResults = validateAndConvertRecords(results);
+    const validatedResults = validateAndConvertRecords(transformedResults);
         
     // Convert to CSV
     const csvData = jsonToCsv(validatedResults);
@@ -95,8 +107,15 @@ async function getResults(req, res) {
     // Get all successful records from database
     const dbResults = await getAllMemorials();
     
+    // Transform database field names to match frontend expectations
+    const transformedResults = dbResults.map(memorial => ({
+      ...memorial,
+      fileName: memorial.file_name, // Map file_name to fileName for frontend compatibility
+      // Keep the original file_name for backward compatibility if needed
+    }));
+    
     // Validate and convert data types
-    const validatedResults = validateAndConvertRecords(dbResults);
+    const validatedResults = validateAndConvertRecords(transformedResults);
     
     // Get any errors from processed files
     const processedResults = getProcessedResults();
