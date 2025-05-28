@@ -202,19 +202,35 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Initialize clipboard functionality
   new ClipboardJS('.copy-info');
-  
-  // Add event delegation for modal view buttons to handle timing issues
-  document.addEventListener('click', function(event) {
-    if (event.target.closest('.view-inscription')) {
-      event.preventDefault();
-      const button = event.target.closest('.view-inscription');
-      const memorial = JSON.parse(button.getAttribute('data-memorial'));
+});
+
+// Add event delegation for modal view buttons - outside DOMContentLoaded to avoid nesting
+document.addEventListener('click', function(event) {
+  const button = event.target.closest('.view-inscription');
+  if (button) {
+    console.log('View button clicked:', button);
+    event.preventDefault();
+    event.stopPropagation();
+    
+    try {
+      const memorialData = button.getAttribute('data-memorial');
+      console.log('Memorial data attribute:', memorialData);
+      
+      if (!memorialData) {
+        console.error('No memorial data found on button');
+        return;
+      }
+      
+      const memorial = JSON.parse(memorialData);
+      console.log('Parsed memorial:', memorial);
       
       // Populate modal content first
       displayModalDetails(memorial);
       
       // Then show the modal
       $('#inscriptionModal').modal('show');
+    } catch (error) {
+      console.error('Error displaying modal:', error);
     }
-  });
+  }
 });
