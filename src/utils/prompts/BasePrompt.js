@@ -124,13 +124,13 @@ class BasePrompt {
           // Extract the value from the original error message
           const valueMatch = transformedError.match(/Invalid integer value: (.+)/);
           const value = valueMatch ? valueMatch[1] : 'unknown';
-          transformedError = `Cannot convert value ${value} to integer`;
+          transformedError = `Cannot convert value "${value}" to integer`;
         }
         if (transformedError.includes('Invalid float value:')) {
           // Extract the value from the original error message
           const valueMatch = transformedError.match(/Invalid float value: (.+)/);
           const value = valueMatch ? valueMatch[1] : 'unknown';
-          transformedError = `Cannot convert value ${value} to float`;
+          transformedError = `Cannot convert value "${value}" to float`;
         }
         if (transformedError.includes('Invalid boolean value:')) {
           transformedError = transformedError.replace('Invalid boolean value:', 'Invalid boolean value');

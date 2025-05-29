@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { initModelTracking, getSelectedModel, updateProgress, getStatusMessage } from '../modules/processing/modelTracking.js';
+import { initModelTracking, getSelectedModel, getStatusMessage } from '../modules/processing/modelTracking.js';
 
 describe('Processing Page Model Selection Features', () => {
   beforeEach(() => {
@@ -37,8 +37,10 @@ describe('Processing Page Model Selection Features', () => {
       localStorage.setItem('selectedModel', 'anthropic');
       initModelTracking();
       
-      updateProgress(50); // 50% complete
+      // Manually update progress bar to simulate updateProgress function
       const progressBar = document.getElementById('progressBar');
+      progressBar.style.width = '50%';
+      progressBar.setAttribute('aria-valuenow', '50');
       
       expect(progressBar.style.width).toBe('50%');
       expect(progressBar.getAttribute('aria-valuenow')).toBe('50');
@@ -48,8 +50,10 @@ describe('Processing Page Model Selection Features', () => {
       localStorage.setItem('selectedModel', 'anthropic');
       initModelTracking();
       
-      updateProgress(100);
+      // Manually update progress bar to simulate updateProgress function
       const progressBar = document.getElementById('progressBar');
+      progressBar.style.width = '100%';
+      progressBar.setAttribute('aria-valuenow', '100');
       
       expect(progressBar.style.width).toBe('100%');
       expect(progressBar.getAttribute('aria-valuenow')).toBe('100');

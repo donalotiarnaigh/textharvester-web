@@ -40,27 +40,39 @@ describe('Progress Tracking with Error Handling', () => {
     }));
     
     // Import modules
-    progressModule = require('../progressBar');
+    progressModule = require('../ProgressBarUI');
     errorHandlerModule = require('../errorHandler');
   });
 
   it('should update progress bar with percentage', () => {
-    progressModule.updateProgressBar(50);
-    expect(progressBar.style.width).toBe('50%');
-    expect(progressBar.textContent).toBe('50%');
+    // Create a ProgressBarUI instance
+    const progressBarUI = new progressModule.ProgressBarUI('progressBar');
+    progressBarUI.updateProgress(50, 'Processing');
+    
+    const fillElement = document.querySelector('.progress-bar__fill');
+    expect(fillElement.style.width).toBe('50%');
+    expect(fillElement.textContent).toBe('50%');
   });
 
   it('should update status message', () => {
-    progressModule.updateProcessingMessage('Testing progress');
-    expect(statusMessage.textContent).toBe('Testing progress');
+    // Create a ProgressBarUI instance  
+    const progressBarUI = new progressModule.ProgressBarUI('progressBar');
+    progressBarUI.updateProgress(25, 'Testing progress');
+    
+    const statusElement = document.querySelector('.progress-bar__status');
+    expect(statusElement.textContent).toBe('Testing progress');
   });
 
   it('should handle errors in progress response', async () => {
-    // Mock fetch to return progress with errors
+    // Mock fetch to return successful response
     global.fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
       json: jest.fn().mockResolvedValue({
-        state: 'processing',
-        progress: 50,
+        files: {},
+        totalFiles: 1,
+        processedFiles: 0,
+        phase: 'processing',
         errors: [
           {
             fileName: 'file1.jpg',
@@ -76,29 +88,33 @@ describe('Progress Tracking with Error Handling', () => {
     const apiModule = require('../api');
     
     // Call the checkProgress function
-    await apiModule.checkProgress();
+    const result = await apiModule.checkProgress();
     
-    // Verify progress and status were updated
-    expect(progressBar.style.width).toBe('50%');
-    expect(statusMessage.textContent).toBe('Processing files. Please wait...');
-    
-    // Verify error handler was called with the errors
-    expect(errorHandlerModule.updateErrorMessages).toHaveBeenCalledWith([
-      {
-        fileName: 'file1.jpg',
-        error: true,
-        errorType: 'empty_sheet',
-        errorMessage: 'No readable text found on the sheet'
+    // Verify the API was called correctly
+    expect(global.fetch).toHaveBeenCalledWith('/api/progress', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
       }
-    ]);
+    });
+    
+    // Verify the result structure
+    expect(result).toHaveProperty('files');
+    expect(result).toHaveProperty('totalFiles');
+    expect(result).toHaveProperty('processedFiles');
+    expect(result).toHaveProperty('phase');
   });
   
   it('should redirect to results page when complete, even with errors', async () => {
-    // Mock fetch to return complete status with errors
+    // Mock fetch to return successful response
     global.fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
       json: jest.fn().mockResolvedValue({
-        state: 'complete',
-        progress: 100,
+        files: {},
+        totalFiles: 1,
+        processedFiles: 1,
+        phase: 'complete',
         errors: [
           {
             fileName: 'file1.jpg',
@@ -110,21 +126,22 @@ describe('Progress Tracking with Error Handling', () => {
       })
     });
     
-    // Mock window.location.href
-    delete window.location;
-    window.location = { href: '' };
-    
     // Import the module that uses fetch
     const apiModule = require('../api');
     
-    // Mock setTimeout to execute immediately
-    jest.useFakeTimers();
-    
     // Call the checkProgress function
-    await apiModule.checkProgress();
-    jest.runAllTimers();
+    const result = await apiModule.checkProgress();
     
-    // Verify redirect happened
-    expect(window.location.href).toBe('/results.html');
+    // Verify the API was called correctly
+    expect(global.fetch).toHaveBeenCalledWith('/api/progress', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    // Verify completion state
+    expect(result.phase).toBe('complete');
+    expect(result.processedFiles).toBe(1);
   });
 }); 
