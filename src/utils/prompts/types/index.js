@@ -53,7 +53,8 @@ function createBooleanType(config = {}) {
  * @returns {MemorialField} The created field
  */
 function createField(name, type, metadata = {}) {
-  return new MemorialField(name, type, metadata);
+  const { required = false, ...fieldMetadata } = metadata;
+  return new MemorialField(name, type, required, fieldMetadata);
 }
 
 // Export everything needed for the type system

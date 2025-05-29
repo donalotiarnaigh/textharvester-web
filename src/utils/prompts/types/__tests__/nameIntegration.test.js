@@ -11,6 +11,11 @@ const {
 
 const { preprocessName, formatName } = require('../../../nameProcessing');
 
+// Helper function to find a field by name
+function getField(fieldName) {
+  return MEMORIAL_FIELDS.find(field => field.name === fieldName);
+}
+
 describe('Name Processing Integration', () => {
   it('should process and validate a full name correctly', () => {
     // Extract name components using the name processor
@@ -88,11 +93,11 @@ describe('Name Processing Integration', () => {
       expect(() => validateMemorialData(data)).not.toThrow();
     });
     
-    // Special handling for the initial case
-    const initialComponents = processFullName('J.');
+    // Special handling for the initial case using the field's transform method
+    const firstNameField = getField('first_name');
     const initialData = {
       memorial_number: 'HG123',
-      first_name: MEMORIAL_FIELDS.first_name.transform('J.'),  // Force transform
+      first_name: firstNameField.transform('J.'),  // Use field's transform method
       last_name: 'UNKNOWN'  // Supply a default last name
     };
     
@@ -127,8 +132,11 @@ describe('Name Processing Integration', () => {
     expect(() => validateMemorialData(data)).not.toThrow();
     
     // Verify transformations work correctly with the field transformers
-    expect(MEMORIAL_FIELDS.first_name.transform('mary')).toBe('MARY');
-    expect(MEMORIAL_FIELDS.last_name.transform('o\'brien-smith')).toBe('O\'BRIEN-SMITH');
-    expect(MEMORIAL_FIELDS.first_name.transform('j.r.')).toBe('J.R.');
+    const firstNameField = getField('first_name');
+    const lastNameField = getField('last_name');
+    
+    expect(firstNameField.transform('mary')).toBe('MARY');
+    expect(lastNameField.transform('o\'brien-smith')).toBe('O\'BRIEN-SMITH');
+    expect(firstNameField.transform('j.r.')).toBe('J.R.');
   });
 }); 

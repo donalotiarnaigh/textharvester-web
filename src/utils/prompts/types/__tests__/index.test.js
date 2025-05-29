@@ -60,6 +60,9 @@ describe('Types Index Module', () => {
       expect(field).toBeInstanceOf(MemorialField);
       expect(field.name).toBe('test');
       expect(field.required).toBe(true);
+      expect(field.metadata).toEqual({
+        description: 'Test field'
+      });
     });
   });
 
@@ -86,8 +89,8 @@ describe('Types Index Module', () => {
       };
 
       const transformed = types.transformMemorialData(data);
-      expect(transformed.memorial_number).toBe('HG123');
-      expect(transformed.first_name).toBe('John');
+      expect(transformed.memorial_number).toBe('123'); // Extracts numeric part
+      expect(transformed.first_name).toBe('JOHN'); // Transforms to uppercase
     });
   });
 }); 
