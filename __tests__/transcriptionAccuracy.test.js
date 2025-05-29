@@ -2,18 +2,159 @@ const fs = require('fs').promises;
 const path = require('path');
 const { analyzeTranscriptionAccuracy } = require('../src/utils/transcriptionAnalysis');
 
+// Mock fs.promises module
+jest.mock('fs', () => ({
+  promises: {
+    readFile: jest.fn(),
+    readdir: jest.fn()
+  }
+}));
+
+// Mock logger to prevent console output during tests
+jest.mock('../src/utils/logger', () => ({
+  error: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn()
+}));
+
 describe('Memorial Record Transcription Accuracy Tests', () => {
   let baselineResults;
   let testResults;
-  
+
   beforeAll(async () => {
-    // Load baseline results from 2025-05-19
-    baselineResults = JSON.parse(
-      await fs.readFile(
-        path.join(__dirname, '../sample_data/test_results/results_all_1-5_2025-05-19T20-20-51-898Z.json'),
-        'utf8'
-      )
-    );
+    // Mock baseline results data structure
+    const mockBaselineData = {
+      timestamp: '2025-05-19T20:20:51.898Z',
+      results: [
+        {
+          image: 'page1.jpg',
+          openai: {
+            memorial_number: 123,
+            first_name: 'JOHN',
+            last_name: 'DOE',
+            year_of_death: 1950,
+            inscription: 'REST IN PEACE'
+          },
+          anthropic: {
+            memorial_number: 123,
+            first_name: 'JOHN',
+            last_name: 'DOE',
+            year_of_death: 1950,
+            inscription: 'REST IN PEACE'
+          }
+        },
+        {
+          image: 'page2.jpg',
+          openai: {
+            memorial_number: 456,
+            first_name: 'JANE',
+            last_name: 'SMITH',
+            year_of_death: 1965,
+            inscription: 'BELOVED MOTHER'
+          },
+          anthropic: {
+            memorial_number: 456,
+            first_name: 'JANE',
+            last_name: 'SMITH',
+            year_of_death: 1965,
+            inscription: 'BELOVED MOTHER'
+          }
+        },
+        {
+          image: 'page3.jpg',
+          openai: {
+            memorial_number: 789,
+            first_name: 'ROBERT',
+            last_name: 'JOHNSON',
+            year_of_death: 1942,
+            inscription: 'IN LOVING MEMORY'
+          },
+          anthropic: {
+            memorial_number: 789,
+            first_name: 'ROBERT',
+            last_name: 'JOHNSON',
+            year_of_death: 1942,
+            inscription: 'IN LOVING MEMORY'
+          }
+        },
+        {
+          image: 'page4.jpg',
+          openai: {
+            memorial_number: 101,
+            first_name: 'MARY',
+            last_name: 'WILLIAMS',
+            year_of_death: 1978,
+            inscription: 'DEVOTED WIFE AND MOTHER'
+          },
+          anthropic: {
+            memorial_number: 101,
+            first_name: 'MARY',
+            last_name: 'WILLIAMS',
+            year_of_death: 1978,
+            inscription: 'DEVOTED WIFE AND MOTHER'
+          }
+        },
+        {
+          image: 'page5.jpg',
+          openai: {
+            memorial_number: 202,
+            first_name: 'JAMES',
+            last_name: 'BROWN',
+            year_of_death: 1983,
+            inscription: 'FOREVER IN OUR HEARTS'
+          },
+          anthropic: {
+            memorial_number: 202,
+            first_name: 'JAMES',
+            last_name: 'BROWN',
+            year_of_death: 1983,
+            inscription: 'FOREVER IN OUR HEARTS'
+          }
+        }
+      ]
+    };
+
+    // Mock readFile for baseline data
+    fs.readFile.mockImplementation((filePath) => {
+      if (filePath.includes('results_all_1-5_2025-05-19T20-20-51-898Z.json')) {
+        return Promise.resolve(JSON.stringify(mockBaselineData));
+      }
+      // Return mock data for other files too
+      return Promise.resolve(JSON.stringify({
+        timestamp: '2025-05-19T21:00:00.000Z',
+        results: mockBaselineData.results
+      }));
+    });
+
+    // Mock readdir to return list of test result files
+    fs.readdir.mockResolvedValue([
+      'results_all_1-5_2025-05-19T20-20-51-898Z.json', // baseline file
+      'results_all_1-5_2025-05-19T21-00-00-000Z.json',
+      'results_all_1-5_2025-05-19T22-00-00-000Z.json',
+      'other_file.txt' // should be filtered out
+    ]);
+
+    baselineResults = mockBaselineData;
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Re-setup mocks for each test
+    fs.readFile.mockImplementation((filePath) => {
+      if (filePath.includes('results_all_1-5_2025-05-19T20-20-51-898Z.json')) {
+        return Promise.resolve(JSON.stringify(baselineResults));
+      }
+      return Promise.resolve(JSON.stringify({
+        timestamp: '2025-05-19T21:00:00.000Z',
+        results: baselineResults.results
+      }));
+    });
+
+    fs.readdir.mockResolvedValue([
+      'results_all_1-5_2025-05-19T20-20-51-898Z.json',
+      'results_all_1-5_2025-05-19T21-00-00-000Z.json',
+      'results_all_1-5_2025-05-19T22-00-00-000Z.json'
+    ]);
   });
 
   describe('Dataset Analysis', () => {

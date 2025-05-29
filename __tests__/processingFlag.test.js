@@ -1,6 +1,5 @@
 const fs = require('fs');
 const { clearProcessingCompleteFlag } = require('../src/utils/processingFlag');
-const logger = require('../src/utils/logger');
 const config = require('../config.json');
 
 // Mock fs module
@@ -10,19 +9,32 @@ jest.mock('fs', () => ({
   mkdirSync: jest.fn()
 }));
 
-jest.mock('../src/utils/logger');
-
 describe('clearProcessingCompleteFlag', () => {
   const flagPath = config.processingCompleteFlagPath;
+  let originalConsoleLog;
+  let originalConsoleError;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Mock console methods to capture logger output
+    originalConsoleLog = console.log;
+    originalConsoleError = console.error;
+    console.log = jest.fn();
+    console.error = jest.fn();
+  });
+
+  afterEach(() => {
+    // Restore console methods
+    console.log = originalConsoleLog;
+    console.error = originalConsoleError;
   });
 
   it('should delete the flag file if it exists', () => {
     fs.existsSync.mockReturnValue(true);
     clearProcessingCompleteFlag();
     expect(fs.unlinkSync).toHaveBeenCalledWith(expect.stringContaining('processing_complete.flag'));
+    expect(console.log).toHaveBeenCalledWith('[INFO] Cleared existing processing completion flag.');
   });
 
   it('should do nothing if the flag file does not exist', () => {
@@ -32,6 +44,7 @@ describe('clearProcessingCompleteFlag', () => {
 
     expect(fs.existsSync).toHaveBeenCalledWith(flagPath);
     expect(fs.unlinkSync).not.toHaveBeenCalled();
+    expect(console.log).not.toHaveBeenCalled();
   });
 
   it('should log an error if there is a problem deleting the flag file', () => {
@@ -44,8 +57,8 @@ describe('clearProcessingCompleteFlag', () => {
     clearProcessingCompleteFlag();
 
     expect(fs.unlinkSync).toHaveBeenCalledWith(flagPath);
-    expect(logger.error).toHaveBeenCalledWith(
-      'Error clearing processing completion flag:',
+    expect(console.error).toHaveBeenCalledWith(
+      '[ERROR] Error clearing processing completion flag:',
       error
     );
   });
