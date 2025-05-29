@@ -57,7 +57,7 @@ class ProcessingStateManager {
       throw new Error(`File ${fileId} not found`);
     }
 
-    if (!this.phaseWeights.hasOwnProperty(phase)) {
+    if (!Object.prototype.hasOwnProperty.call(this.phaseWeights, phase)) {
       throw new Error('Invalid phase name');
     }
 

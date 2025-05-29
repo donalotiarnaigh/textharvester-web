@@ -62,27 +62,22 @@ const validatePromptConfig = async (provider, template, version) => {
   const templateName = template || defaultTemplate;
   const templateVersion = version || defaultVersion;
 
-  try {
-    const promptTemplate = await getPrompt(provider, templateName, templateVersion);
-    if (!promptTemplate) {
-      throw new Error(`Invalid template: ${templateName}`);
-    }
-
-    // Use the provider prompt manager to validate the template
-    const validation = promptManager.validatePrompt(promptTemplate, provider);
-    if (!validation.isValid) {
-      throw new Error(`Template validation failed: ${validation.errors.join(', ')}`);
-    }
-
-    return {
-      template: templateName,
-      version: templateVersion,
-      config: promptTemplate
-    };
-  } catch (error) {
-    // Preserve the original error message
-    throw error;
+  const promptTemplate = await getPrompt(provider, templateName, templateVersion);
+  if (!promptTemplate) {
+    throw new Error(`Invalid template: ${templateName}`);
   }
+
+  // Use the provider prompt manager to validate the template
+  const validation = promptManager.validatePrompt(promptTemplate, provider);
+  if (!validation.isValid) {
+    throw new Error(`Template validation failed: ${validation.errors.join(', ')}`);
+  }
+
+  return {
+    template: templateName,
+    version: templateVersion,
+    config: promptTemplate
+  };
 };
 
 const handleFileUpload = async (req, res) => {

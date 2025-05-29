@@ -141,9 +141,10 @@ function validateField(field, value) {
   switch (field) {
   case 'memorial_number':
     return Number.isInteger(Number(value));
-  case 'year_of_death':
+  case 'year_of_death': {
     const year = Number(value);
     return Number.isInteger(year) && year >= 1500 && year <= new Date().getFullYear();
+  }
   case 'first_name':
   case 'last_name':
     return typeof value === 'string' && value.length > 0;

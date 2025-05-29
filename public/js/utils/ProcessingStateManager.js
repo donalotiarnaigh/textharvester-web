@@ -83,7 +83,7 @@ class ProcessingStateManager {
    * @param {string} phase Current phase
    */
   setPhase(phase) {
-    if (this.phaseWeights.hasOwnProperty(phase)) {
+    if (Object.prototype.hasOwnProperty.call(this.phaseWeights, phase)) {
       this.state.phase = phase;
       this._notifyListeners();
     }

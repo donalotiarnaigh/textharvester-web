@@ -83,19 +83,21 @@ class BasePrompt {
     // Convert string values to appropriate types
     if (typeof value === 'string' && value.trim() !== '') {
       switch (fieldType) {
-      case 'integer':
+      case 'integer': {
         const intValue = parseInt(value.trim(), 10);
         if (!isNaN(intValue) && intValue.toString() === value.trim()) {
           convertedValue = intValue;
         }
         break;
-      case 'float':
+      }
+      case 'float': {
         const floatValue = parseFloat(value.trim());
         if (!isNaN(floatValue)) {
           convertedValue = floatValue;
         }
         break;
-      case 'boolean':
+      }
+      case 'boolean': {
         const lowerValue = value.toLowerCase().trim();
         if (lowerValue === 'true') {
           convertedValue = true;
@@ -103,12 +105,14 @@ class BasePrompt {
           convertedValue = false;
         }
         break;
-      case 'date':
+      }
+      case 'date': {
         const dateValue = new Date(value);
         if (!isNaN(dateValue.getTime())) {
           convertedValue = dateValue;
         }
         break;
+      }
       }
     }
 
@@ -265,7 +269,7 @@ class BasePrompt {
       }
       break;
       
-    case 'anthropic':
+    case 'anthropic': {
       if (!response.messages || !Array.isArray(response.messages)) {
         throw new Error('Invalid Anthropic response format');
       }
@@ -276,6 +280,7 @@ class BasePrompt {
         throw new Error('Invalid JSON in Anthropic response');
       }
       break;
+    }
       
     default:
       throw new Error(`Unsupported provider: ${provider}`);

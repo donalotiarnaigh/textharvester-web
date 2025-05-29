@@ -9,6 +9,10 @@ export default [
         ...globals.browser,
         ...globals.node,
         ...globals.jest, // Add Jest globals
+        // Add browser library globals
+        ClipboardJS: 'readonly',
+        bootstrap: 'readonly',
+        $: 'readonly', // jQuery
       },
     },
   },

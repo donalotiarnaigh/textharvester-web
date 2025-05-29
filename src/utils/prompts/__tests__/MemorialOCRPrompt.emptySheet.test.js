@@ -13,31 +13,37 @@ describe('MemorialOCRPrompt Empty Sheet Handling', () => {
   });
 
   it('should throw a ProcessingError with type "empty_sheet" for null data', () => {
-    expect(() => {
-      prompt.validateAndConvert(null);
-    }).toThrow(ProcessingError);
-
+    const throwingFunction = () => prompt.validateAndConvert(null);
+    
+    expect(throwingFunction).toThrow(ProcessingError);
+    
+    let caughtError;
     try {
-      prompt.validateAndConvert(null);
+      throwingFunction();
     } catch (error) {
-      expect(error).toBeInstanceOf(ProcessingError);
-      expect(error.type).toBe('empty_sheet');
-      expect(error.message).toContain('No data received from OCR processing');
+      caughtError = error;
     }
+    
+    expect(caughtError).toBeInstanceOf(ProcessingError);
+    expect(caughtError.type).toBe('empty_sheet');
+    expect(caughtError.message).toContain('No data received from OCR processing');
   });
 
   it('should throw a ProcessingError with type "empty_sheet" for empty object', () => {
-    expect(() => {
-      prompt.validateAndConvert({});
-    }).toThrow(ProcessingError);
-
+    const throwingFunction = () => prompt.validateAndConvert({});
+    
+    expect(throwingFunction).toThrow(ProcessingError);
+    
+    let caughtError;
     try {
-      prompt.validateAndConvert({});
+      throwingFunction();
     } catch (error) {
-      expect(error).toBeInstanceOf(ProcessingError);
-      expect(error.type).toBe('empty_sheet');
-      expect(error.message).toContain('Empty data received from OCR processing');
+      caughtError = error;
     }
+    
+    expect(caughtError).toBeInstanceOf(ProcessingError);
+    expect(caughtError.type).toBe('empty_sheet');
+    expect(caughtError.message).toContain('Empty data received from OCR processing');
   });
 
   it('should throw a ProcessingError for missing required field', () => {
@@ -49,18 +55,21 @@ describe('MemorialOCRPrompt Empty Sheet Handling', () => {
       inscription: null
     };
 
-    expect(() => {
-      prompt.validateAndConvert(data);
-    }).toThrow(ProcessingError);
-
+    const throwingFunction = () => prompt.validateAndConvert(data);
+    
+    expect(throwingFunction).toThrow(ProcessingError);
+    
+    let caughtError;
     try {
-      prompt.validateAndConvert(data);
+      throwingFunction();
     } catch (error) {
-      expect(error).toBeInstanceOf(ProcessingError);
-      // Current implementation throws validation error for missing required field
-      expect(error.type).toBe('validation');
-      expect(error.message).toContain('memorial_number could not be found');
+      caughtError = error;
     }
+    
+    expect(caughtError).toBeInstanceOf(ProcessingError);
+    // Current implementation throws validation error for missing required field
+    expect(caughtError.type).toBe('validation');
+    expect(caughtError.message).toContain('memorial_number could not be found');
   });
 
   it('should throw a ProcessingError with type "validation" for missing required field', () => {
@@ -72,17 +81,20 @@ describe('MemorialOCRPrompt Empty Sheet Handling', () => {
       // memorial_number is missing
     };
 
-    expect(() => {
-      prompt.validateAndConvert(data);
-    }).toThrow(ProcessingError);
-
+    const throwingFunction = () => prompt.validateAndConvert(data);
+    
+    expect(throwingFunction).toThrow(ProcessingError);
+    
+    let caughtError;
     try {
-      prompt.validateAndConvert(data);
+      throwingFunction();
     } catch (error) {
-      expect(error).toBeInstanceOf(ProcessingError);
-      expect(error.type).toBe('validation');
-      expect(error.message).toContain('memorial_number could not be found');
+      caughtError = error;
     }
+    
+    expect(caughtError).toBeInstanceOf(ProcessingError);
+    expect(caughtError.type).toBe('validation');
+    expect(caughtError.message).toContain('memorial_number could not be found');
   });
 
   it('should throw a ProcessingError for empty string fields', () => {
@@ -94,17 +106,20 @@ describe('MemorialOCRPrompt Empty Sheet Handling', () => {
       inscription: ''
     };
 
-    expect(() => {
-      prompt.validateAndConvert(data);
-    }).toThrow(ProcessingError);
-
+    const throwingFunction = () => prompt.validateAndConvert(data);
+    
+    expect(throwingFunction).toThrow(ProcessingError);
+    
+    let caughtError;
     try {
-      prompt.validateAndConvert(data);
+      throwingFunction();
     } catch (error) {
-      expect(error).toBeInstanceOf(ProcessingError);
-      // Current implementation throws validation error for empty memorial_number
-      expect(error.type).toBe('validation');
-      expect(error.message).toContain('memorial_number could not be found');
+      caughtError = error;
     }
+    
+    expect(caughtError).toBeInstanceOf(ProcessingError);
+    // Current implementation throws validation error for empty memorial_number
+    expect(caughtError.type).toBe('validation');
+    expect(caughtError.message).toContain('memorial_number could not be found');
   });
 }); 

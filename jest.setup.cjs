@@ -5,10 +5,8 @@ const { TextEncoder, TextDecoder } = require('util');
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
-// Mock fs module
-jest.mock('fs', () => {
-  return require('./__mocks__/fs.js');
-});
+// Mock fs module - jest will automatically use __mocks__/fs.js
+jest.mock('fs');
 
 // Set test environment variables
 process.env.NODE_ENV = 'test'; 

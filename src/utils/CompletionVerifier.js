@@ -143,7 +143,7 @@ class CompletionVerifier {
    * Check for temporary processing files
    * @private
    */
-  async _checkTemporaryFiles(fileId) {
+  async _checkTemporaryFiles(_fileId) {
     try {
       // Implementation depends on your file storage system
       // This is a placeholder that should be implemented based on your storage backend
@@ -153,4 +153,6 @@ class CompletionVerifier {
       return [];
     }
   }
-} 
+}
+
+module.exports = CompletionVerifier; 
