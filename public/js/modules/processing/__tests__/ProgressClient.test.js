@@ -16,12 +16,13 @@ describe('ProgressClient', () => {
     it('should fetch progress from the API', async () => {
       const mockProgress = {
         progress: 45,
-        phase: 'ocr',
+        status: 'ocr',
         errors: []
       };
 
       global.fetch.mockResolvedValueOnce({
         ok: true,
+        status: 200,
         json: () => Promise.resolve(mockProgress),
         headers: new Headers()
       });
@@ -30,18 +31,22 @@ describe('ProgressClient', () => {
       expect(result).toEqual({
         progress: 45,
         state: 'ocr',
-        phase: 'ocr',
         errors: [],
-        files: {},
-        isComplete: false
+        files: {}
       });
-      expect(fetch).toHaveBeenCalledWith('/api/progress', expect.any(Object));
+      expect(fetch).toHaveBeenCalledWith('/processing-status', expect.any(Object));
     });
 
     it('should handle API errors', async () => {
+      // Disable retries for this test
+      progressClient.maxRetries = 0;
+      
       global.fetch.mockResolvedValueOnce({
         ok: false,
-        status: 500
+        status: 500,
+        headers: {
+          get: () => null
+        }
       });
 
       await expect(progressClient.getProgress()).rejects.toThrow('HTTP error! status: 500');
@@ -60,23 +65,32 @@ describe('ProgressClient', () => {
   describe('verifyCompletion', () => {
     it('should verify completion status', async () => {
       const mockCompletion = {
-        isComplete: true
+        progress: 100,
+        status: 'complete'
       };
 
       global.fetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(mockCompletion)
+        status: 200,
+        json: () => Promise.resolve(mockCompletion),
+        headers: new Headers()
       });
 
       const result = await progressClient.verifyCompletion();
       expect(result).toBe(true);
-      expect(fetch).toHaveBeenCalledWith('/api/verify-completion');
+      expect(fetch).toHaveBeenCalledWith('/processing-status', expect.any(Object));
     });
 
     it('should handle verification errors', async () => {
+      // Disable retries for this test
+      progressClient.maxRetries = 0;
+      
       global.fetch.mockResolvedValueOnce({
         ok: false,
-        status: 500
+        status: 500,
+        headers: {
+          get: () => null
+        }
       });
 
       const result = await progressClient.verifyCompletion();
@@ -91,20 +105,34 @@ describe('ProgressClient', () => {
         { fileId: '2', message: 'Error 2' }
       ];
 
+      const mockProgress = {
+        progress: 50,
+        status: 'processing',
+        errors: mockErrors
+      };
+
       global.fetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(mockErrors)
+        status: 200,
+        json: () => Promise.resolve(mockProgress),
+        headers: new Headers()
       });
 
       const result = await progressClient.getErrors();
       expect(result).toEqual(mockErrors);
-      expect(fetch).toHaveBeenCalledWith('/api/processing-errors');
+      expect(fetch).toHaveBeenCalledWith('/processing-status', expect.any(Object));
     });
 
     it('should handle error fetch failures', async () => {
+      // Disable retries for this test
+      progressClient.maxRetries = 0;
+      
       global.fetch.mockResolvedValueOnce({
         ok: false,
-        status: 500
+        status: 500,
+        headers: {
+          get: () => null
+        }
       });
 
       const result = await progressClient.getErrors();
