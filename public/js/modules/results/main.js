@@ -53,14 +53,14 @@ function displayErrorSummary(errors) {
     
     // Format message based on error type
     switch(error.errorType) {
-      case 'empty_sheet':
-        message += 'Empty or unreadable sheet detected.';
-        break;
-      case 'processing_failed':
-        message += 'Processing failed after multiple attempts.';
-        break;
-      default:
-        message += error.errorMessage || 'An unknown error occurred';
+    case 'empty_sheet':
+      message += 'Empty or unreadable sheet detected.';
+      break;
+    case 'processing_failed':
+      message += 'Processing failed after multiple attempts.';
+      break;
+    default:
+      message += error.errorMessage || 'An unknown error occurred';
     }
     
     // Add model info if available

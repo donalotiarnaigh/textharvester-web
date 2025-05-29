@@ -164,15 +164,15 @@ class ProcessingStateManager {
    */
   addCompletionHook(type, hook) {
     switch (type) {
-      case 'preValidation':
-        this.completionVerifier.addPreValidationHook(hook);
-        break;
-      case 'postCleanup':
-        this.completionVerifier.addPostCleanupHook(hook);
-        break;
-      case 'resultVerification':
-        this.completionVerifier.addResultVerificationHook(hook);
-        break;
+    case 'preValidation':
+      this.completionVerifier.addPreValidationHook(hook);
+      break;
+    case 'postCleanup':
+      this.completionVerifier.addPostCleanupHook(hook);
+      break;
+    case 'resultVerification':
+      this.completionVerifier.addResultVerificationHook(hook);
+      break;
     }
   }
 
@@ -183,15 +183,15 @@ class ProcessingStateManager {
    */
   removeCompletionHook(type, hook) {
     switch (type) {
-      case 'preValidation':
-        this.completionVerifier.removePreValidationHook(hook);
-        break;
-      case 'postCleanup':
-        this.completionVerifier.removePostCleanupHook(hook);
-        break;
-      case 'resultVerification':
-        this.completionVerifier.removeResultVerificationHook(hook);
-        break;
+    case 'preValidation':
+      this.completionVerifier.removePreValidationHook(hook);
+      break;
+    case 'postCleanup':
+      this.completionVerifier.removePostCleanupHook(hook);
+      break;
+    case 'resultVerification':
+      this.completionVerifier.removeResultVerificationHook(hook);
+      break;
     }
   }
 

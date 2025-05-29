@@ -10,24 +10,24 @@ function validateTypeMatch(expected, received) {
   }
 
   switch (expected.type) {
-    case 'string':
-      return typeof received === 'string';
-    case 'number':
-      return typeof received === 'number';
-    case 'boolean':
-      return typeof received === 'boolean';
-    case 'object':
-      if (typeof received !== 'object' || received === null) {
-        return false;
-      }
-      if (expected.properties) {
-        return Object.entries(expected.properties).every(([key, propType]) => {
-          return validateTypeMatch(propType, received[key]);
-        });
-      }
-      return true;
-    default:
+  case 'string':
+    return typeof received === 'string';
+  case 'number':
+    return typeof received === 'number';
+  case 'boolean':
+    return typeof received === 'boolean';
+  case 'object':
+    if (typeof received !== 'object' || received === null) {
       return false;
+    }
+    if (expected.properties) {
+      return Object.entries(expected.properties).every(([key, propType]) => {
+        return validateTypeMatch(propType, received[key]);
+      });
+    }
+    return true;
+  default:
+    return false;
   }
 }
 
@@ -39,13 +39,13 @@ function validateTypeMatch(expected, received) {
  */
 function createFeedbackMessage(type, params = {}) {
   switch (type) {
-    case 'type_mismatch':
-      return `Type mismatch for field "${params.field}": expected ${params.expected} but received ${params.received}`;
-    case 'prompt_error':
-      return `Prompt Error: ${params.error}`;
-    case 'unknown_error':
-    default:
-      return 'An unexpected error occurred';
+  case 'type_mismatch':
+    return `Type mismatch for field "${params.field}": expected ${params.expected} but received ${params.received}`;
+  case 'prompt_error':
+    return `Prompt Error: ${params.error}`;
+  case 'unknown_error':
+  default:
+    return 'An unexpected error occurred';
   }
 }
 
@@ -57,12 +57,12 @@ function createFeedbackMessage(type, params = {}) {
  */
 function updateLoadingMessage(stage, params = {}) {
   switch (stage) {
-    case 'processing_prompt':
-      return `Processing ${params.template} template (v${params.version})...`;
-    case 'validating':
-      return 'Validating data types...';
-    default:
-      return 'Processing...';
+  case 'processing_prompt':
+    return `Processing ${params.template} template (v${params.version})...`;
+  case 'validating':
+    return 'Validating data types...';
+  default:
+    return 'Processing...';
   }
 }
 

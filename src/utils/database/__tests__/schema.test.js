@@ -22,7 +22,7 @@ describe.skip('Database Schema', () => {
 
       // Verify schema
       const schema = await new Promise((resolve, reject) => {
-        db.get("SELECT sql FROM sqlite_master WHERE type='table' AND name='memorials'", (err, row) => {
+        db.get('SELECT sql FROM sqlite_master WHERE type=\'table\' AND name=\'memorials\'', (err, row) => {
           if (err) reject(err);
           else resolve(row.sql);
         });
@@ -47,7 +47,7 @@ describe.skip('Database Schema', () => {
       await initializeDatabase(db);
 
       const indexes = await new Promise((resolve, reject) => {
-        db.all("SELECT name, sql FROM sqlite_master WHERE type='index' AND tbl_name='memorials'", (err, rows) => {
+        db.all('SELECT name, sql FROM sqlite_master WHERE type=\'index\' AND tbl_name=\'memorials\'', (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
         });

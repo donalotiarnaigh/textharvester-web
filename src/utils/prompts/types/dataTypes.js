@@ -120,26 +120,26 @@ class StringType extends DataType {
 
     if (metadata.format) {
       switch (metadata.format) {
-        case 'email':
-          if (!value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-            errors.push('Invalid email format');
-          }
-          break;
-        case 'name':
-          if (!value.match(/^[A-Za-zÀ-ÖØ-öø-ÿ\s\-'.]+$/)) {
-            errors.push('Invalid name format');
-          }
-          break;
-        case 'identifier':
-          if (!value.match(/^[A-Za-z0-9\-_]+$/)) {
-            errors.push(`Invalid identifier format: "${value}" (only letters, numbers, hyphens, and underscores allowed)`);
-          }
-          break;
-        case 'memorial_identifier':
-          if (!value.match(/^\d+$/)) {
-            errors.push(`Invalid memorial identifier: "${value}" (must be a numeric identifier)`);
-          }
-          break;
+      case 'email':
+        if (!value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+          errors.push('Invalid email format');
+        }
+        break;
+      case 'name':
+        if (!value.match(/^[A-Za-zÀ-ÖØ-öø-ÿ\s\-'.]+$/)) {
+          errors.push('Invalid name format');
+        }
+        break;
+      case 'identifier':
+        if (!value.match(/^[A-Za-z0-9\-_]+$/)) {
+          errors.push(`Invalid identifier format: "${value}" (only letters, numbers, hyphens, and underscores allowed)`);
+        }
+        break;
+      case 'memorial_identifier':
+        if (!value.match(/^\d+$/)) {
+          errors.push(`Invalid memorial identifier: "${value}" (must be a numeric identifier)`);
+        }
+        break;
       }
     }
 

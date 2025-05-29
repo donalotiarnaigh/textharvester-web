@@ -32,17 +32,17 @@ export function updateErrorMessages(errors) {
     
     // Format message based on error type
     switch(err.errorType) {
-      case 'empty_sheet':
-        message += "This sheet appears to be empty or unreadable. Processing was skipped for this page.";
-        break;
-      case 'processing_failed':
-        message += "Processing failed after multiple attempts. Please check the image quality.";
-        break;
-      case 'validation':
-        message += `Validation error: ${err.errorMessage}`;
-        break;
-      default:
-        message += err.errorMessage || "An unknown error occurred";
+    case 'empty_sheet':
+      message += 'This sheet appears to be empty or unreadable. Processing was skipped for this page.';
+      break;
+    case 'processing_failed':
+      message += 'Processing failed after multiple attempts. Please check the image quality.';
+      break;
+    case 'validation':
+      message += `Validation error: ${err.errorMessage}`;
+      break;
+    default:
+      message += err.errorMessage || 'An unknown error occurred';
     }
     
     errorItem.innerHTML = message;

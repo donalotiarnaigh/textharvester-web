@@ -56,8 +56,8 @@ class TypeInfoDisplay {
           <span class="field-name">${name} (${requiredText})</span>
           <div class="nested-type-info">
             ${Object.entries(info.properties)
-              .map(([key, value]) => this.renderField(key, value, currentPath))
-              .join('')}
+    .map(([key, value]) => this.renderField(key, value, currentPath))
+    .join('')}
           </div>
         </div>
       `;
@@ -75,8 +75,8 @@ class TypeInfoDisplay {
     return `
       <div class="type-info-container">
         ${Object.entries(this.typeInfo)
-          .map(([name, info]) => this.renderField(name, info))
-          .join('')}
+    .map(([name, info]) => this.renderField(name, info))
+    .join('')}
       </div>
     `;
   }

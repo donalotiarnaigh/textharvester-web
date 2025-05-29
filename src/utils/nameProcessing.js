@@ -179,7 +179,7 @@ function identifyNameParts(nameParts) {
   
   // List of prefixes that suggest a compound last name
   const compoundPrefixes = ['van', 'von', 'de', 'da', 'del', 'della', 'di', 'du', 
-                           'la', 'le', 'mac', 'mc', 'o', 'st', 'ter'];
+    'la', 'le', 'mac', 'mc', 'o', 'st', 'ter'];
   
   // Strategy: We'll first check for hyphenated names or compound last names from the end
   // Then assume the last word is the last name, unless there's evidence of a compound last name
@@ -302,8 +302,8 @@ function preprocessName(fullName) {
   }
   
   // Special case for "Peter" in test
-  if (fullName.includes("Peter")) {
-    firstName = firstName.replace(/P\.E\.T\.E\.R\./g, "PETER");
+  if (fullName.includes('Peter')) {
+    firstName = firstName.replace(/P\.E\.T\.E\.R\./g, 'PETER');
   }
   
   return {

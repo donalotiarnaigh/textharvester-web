@@ -50,9 +50,9 @@ describe('ProcessingStateManager', () => {
       stateManager.addFiles(['file1.jpg', 'file2.jpg']);
     });
 
-    it('should update file phase progress atomically', () => {
+    it('should update file phase progress atomically', async () => {
       const updatePromise = stateManager.updateFileProgress('file1.jpg', 'upload', 50);
-      expect(updatePromise).resolves.toBeTruthy();
+      await expect(updatePromise).resolves.toBeTruthy();
       expect(stateManager.state.files.get('file1.jpg').phases.upload).toBe(50);
     });
 

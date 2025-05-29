@@ -1,19 +1,19 @@
 // Model information
 const modelInfo = {
-  "openai": {
-    name: "OpenAI GPT-4o",
+  'openai': {
+    name: 'OpenAI GPT-4o',
     messages: {
-      processing: "Processing with OpenAI GPT-4o",
-      error: "Error processing with OpenAI GPT-4o - retrying",
-      complete: "Processing complete with OpenAI GPT-4o"
+      processing: 'Processing with OpenAI GPT-4o',
+      error: 'Error processing with OpenAI GPT-4o - retrying',
+      complete: 'Processing complete with OpenAI GPT-4o'
     }
   },
-  "anthropic": {
-    name: "Anthropic Claude 3.7",
+  'anthropic': {
+    name: 'Anthropic Claude 3.7',
     messages: {
-      processing: "Processing with Anthropic Claude",
-      error: "Error processing with Anthropic Claude - retrying",
-      complete: "Processing complete with Anthropic Claude"
+      processing: 'Processing with Anthropic Claude',
+      error: 'Error processing with Anthropic Claude - retrying',
+      complete: 'Processing complete with Anthropic Claude'
     }
   }
 };
@@ -67,13 +67,13 @@ export function getStatusMessage(state, modelKey = getSelectedModel()) {
   if (!model) return '';
   
   switch (state) {
-    case 'processing':
-      return model.messages.processing;
-    case 'error':
-      return model.messages.error;
-    case 'complete':
-      return model.messages.complete;
-    default:
-      return '';
+  case 'processing':
+    return model.messages.processing;
+  case 'error':
+    return model.messages.error;
+  case 'complete':
+    return model.messages.complete;
+  default:
+    return '';
   }
 } 

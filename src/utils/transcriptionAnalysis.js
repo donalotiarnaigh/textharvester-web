@@ -139,18 +139,18 @@ function validateField(field, value) {
   if (value === null || value === undefined) return false;
 
   switch (field) {
-    case 'memorial_number':
-      return Number.isInteger(Number(value));
-    case 'year_of_death':
-      const year = Number(value);
-      return Number.isInteger(year) && year >= 1500 && year <= new Date().getFullYear();
-    case 'first_name':
-    case 'last_name':
-      return typeof value === 'string' && value.length > 0;
-    case 'inscription':
-      return typeof value === 'string' && value.trim().length > 0;
-    default:
-      return false;
+  case 'memorial_number':
+    return Number.isInteger(Number(value));
+  case 'year_of_death':
+    const year = Number(value);
+    return Number.isInteger(year) && year >= 1500 && year <= new Date().getFullYear();
+  case 'first_name':
+  case 'last_name':
+    return typeof value === 'string' && value.length > 0;
+  case 'inscription':
+    return typeof value === 'string' && value.trim().length > 0;
+  default:
+    return false;
   }
 }
 
@@ -164,16 +164,16 @@ function calculateFieldConfidence(field, value) {
   if (!value) return 0;
 
   switch (field) {
-    case 'inscription':
-      return calculateInscriptionConfidence(value);
-    case 'first_name':
-    case 'last_name':
-      return calculateNameConfidence(value);
-    case 'memorial_number':
-    case 'year_of_death':
-      return validateField(field, value) ? 100 : 0;
-    default:
-      return 0;
+  case 'inscription':
+    return calculateInscriptionConfidence(value);
+  case 'first_name':
+  case 'last_name':
+    return calculateNameConfidence(value);
+  case 'memorial_number':
+  case 'year_of_death':
+    return validateField(field, value) ? 100 : 0;
+  default:
+    return 0;
   }
 }
 

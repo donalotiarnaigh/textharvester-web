@@ -1,4 +1,4 @@
-/* eslint-disable quotes */
+ 
 // modelInfoPanel.js
 
 let clipboard;
@@ -12,12 +12,12 @@ function formatProviderName(provider) {
   if (!provider) return 'Unknown';
   
   switch(provider.toLowerCase()) {
-    case 'openai':
-      return 'OpenAI';
-    case 'anthropic':
-      return 'Anthropic';
-    default:
-      return provider;
+  case 'openai':
+    return 'OpenAI';
+  case 'anthropic':
+    return 'Anthropic';
+  default:
+    return provider;
   }
 }
 
