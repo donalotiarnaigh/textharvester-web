@@ -121,7 +121,7 @@ describe('validateMemorialData', () => {
 
     const result = validateMemorialData(data);
     expect(result.errors).toHaveLength(0);
-    expect(result.value.memorial_number).toBe('HG123');
+    expect(result.value.memorial_number).toBe('123');
     expect(result.value.first_name).toBe('JOHN');
     expect(result.value.last_name).toBe('SMITH');
     expect(result.value.year_of_death).toBe(1900);
@@ -151,6 +151,7 @@ describe('validateMemorialData', () => {
 
     const result = validateMemorialData(data);
     expect(result.errors).toHaveLength(0);
+    expect(result.value.memorial_number).toBe('123');
     expect(result.value.first_name).toBe('');
     expect(result.value.last_name).toBe(null);
     expect(result.value.year_of_death).toBe(null);
@@ -170,7 +171,7 @@ describe('transformMemorialData', () => {
 
     const transformed = transformMemorialData(data);
     
-    expect(transformed.memorial_number).toBe('HG123');
+    expect(transformed.memorial_number).toBe('123');
     expect(transformed.first_name).toBe('JOHN');
     expect(transformed.last_name).toBe('SMITH');
     expect(transformed.year_of_death).toBe(1900);
@@ -188,7 +189,7 @@ describe('transformMemorialData', () => {
 
     const transformed = transformMemorialData(data);
     
-    expect(transformed.memorial_number).toBe('HG123');
+    expect(transformed.memorial_number).toBe('123');
     expect(transformed.first_name).toBe('');  // Returns empty string for first_name
     expect(transformed.last_name).toBe('SMITH');
     expect(transformed.year_of_death).toBe(null);
@@ -205,7 +206,7 @@ describe('transformMemorialData', () => {
 
     const transformed = transformMemorialData(data);
     
-    expect(transformed.memorial_number).toBe('HG123');
+    expect(transformed.memorial_number).toBe('123');
     expect(transformed.first_name).toBe('JOHN');
     expect(transformed.last_name).toBe('SMITH');
     expect(transformed.year_of_death).toBe(undefined);

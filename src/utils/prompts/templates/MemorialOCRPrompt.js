@@ -3,6 +3,7 @@ const { MEMORIAL_FIELDS } = require('../types/memorialFields');
 const { ProcessingError } = require('../../errorTypes');
 const { standardizeNameParsing } = require('../../standardNameParser');
 const { preprocessName } = require('../../nameProcessing');
+const logger = require('../../logger');
 
 /**
  * Standard OCR prompt for memorial inscriptions
@@ -33,7 +34,7 @@ class MemorialOCRPrompt extends BasePrompt {
 Your task is to extract specific fields and return them in JSON format.
 
 CRITICAL: Return ONLY these 5 fields in JSON format, nothing more:
-- memorial_number: The memorial's identifier (STRING)
+- memorial_number: The memorial's unique numeric identifier (INTEGER) - extract ONLY the number, ignore any prefixes like "HG-", "M", "PLOT-"
 - first_name: The first person's first name (STRING, UPPERCASE)
 - last_name: The first person's last name (STRING, UPPERCASE)
 - year_of_death: The first person's year of death only (INTEGER)
@@ -42,7 +43,7 @@ CRITICAL: Return ONLY these 5 fields in JSON format, nothing more:
 Example of EXACT JSON format required:
 
 {
-  "memorial_number": "HG-18",
+  "memorial_number": 18,
   "first_name": "MICHEAL",
   "last_name": "RUANE",
   "year_of_death": 1959,
@@ -55,7 +56,9 @@ IMPORTANT RULES:
 - Do not include 'document_type', 'graveyard_info', or any other metadata
 - For multiple people, use ONLY the first person mentioned
 - Names must be in UPPERCASE
-- Preserve memorial numbers exactly as written
+- Memorial number MUST be an integer (whole number) - if you see "HG-18", extract 18; if you see "M123", extract 123
+- IGNORE page numbers, fractions like "1/2", "2/3" - these are NOT memorial numbers
+- Look for the actual memorial identifier number to the top right of the record page
 - Extract only the year from death dates as INTEGER
 - If any field cannot be determined, use null
 - Preserve original spelling in the inscription text`;
@@ -94,10 +97,31 @@ IMPORTANT RULES:
    * @returns {Object} - Validated and converted data
    */
   validateAndConvert(data) {
+    logger.info('[MemorialOCRPrompt] Raw data input:', JSON.stringify(data, null, 2));
+    
+    // Handle null or undefined data
+    if (!data) {
+      throw new ProcessingError(
+        'No data received from OCR processing - the sheet may be empty or unreadable',
+        'empty_sheet'
+      );
+    }
+
+    // Handle empty object
+    if (Object.keys(data).length === 0) {
+      throw new ProcessingError(
+        'Empty data received from OCR processing - no text could be extracted from the sheet',
+        'empty_sheet'
+      );
+    }
+    
     // First check for required fields
     const requiredFields = this.fields.filter(field => field.required);
     for (const field of requiredFields) {
-      if (!data[field.name] || data[field.name].trim() === '') {
+      const fieldValue = data[field.name];
+      logger.info(`[MemorialOCRPrompt] Checking required field ${field.name}:`, fieldValue, typeof fieldValue);
+      
+      if (!fieldValue || (typeof fieldValue === 'string' && fieldValue.trim() === '')) {
         throw new ProcessingError(
           `${field.name} could not be found - please check if the field is present on the memorial`,
           'validation'
@@ -108,7 +132,7 @@ IMPORTANT RULES:
     // Check if all fields are empty
     const allFieldsEmpty = this.fields.every(field => {
       const value = data[field.name];
-      return !value || value.trim() === '';
+      return !value || (typeof value === 'string' && value.trim() === '');
     });
 
     if (allFieldsEmpty) {
@@ -133,12 +157,21 @@ IMPORTANT RULES:
     for (const field of this.fields) {
       if (field.name !== 'first_name' && field.name !== 'last_name') {
         const value = data[field.name];
+        logger.info(`[MemorialOCRPrompt] Processing field ${field.name}:`, value, typeof value);
+        
         if (value !== undefined) {
-          result[field.name] = this.validateField(field.name, value);
+          try {
+            result[field.name] = this.validateField(field.name, value);
+            logger.info(`[MemorialOCRPrompt] Validated ${field.name}:`, result[field.name]);
+          } catch (error) {
+            logger.error(`[MemorialOCRPrompt] Validation error for ${field.name}:`, error.message);
+            throw error;
+          }
         }
       }
     }
 
+    logger.info('[MemorialOCRPrompt] Final result:', JSON.stringify(result, null, 2));
     return result;
   }
 }

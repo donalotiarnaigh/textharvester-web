@@ -37,6 +37,10 @@ async function processFile(filePath, options = {}) {
     // Process the image using the selected provider
     const rawExtractedData = await provider.processImage(base64Image, promptText);
     
+    // Log the raw API response for debugging
+    logger.info(`Raw ${providerName} API response for ${filePath}:`);
+    logger.info(JSON.stringify(rawExtractedData, null, 2));
+    
     try {
       // Validate and convert the data according to our type definitions
       const extractedData = promptInstance.validateAndConvert(rawExtractedData);

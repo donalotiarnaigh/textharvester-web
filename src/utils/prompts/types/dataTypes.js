@@ -132,7 +132,12 @@ class StringType extends DataType {
           break;
         case 'identifier':
           if (!value.match(/^[A-Za-z0-9\-_]+$/)) {
-            errors.push('Invalid identifier format');
+            errors.push(`Invalid identifier format: "${value}" (only letters, numbers, hyphens, and underscores allowed)`);
+          }
+          break;
+        case 'memorial_identifier':
+          if (!value.match(/^\d+$/)) {
+            errors.push(`Invalid memorial identifier: "${value}" (must be a numeric identifier)`);
           }
           break;
       }
@@ -155,22 +160,23 @@ class IntegerType extends DataType {
       return null;
     }
     
-    // Handle non-numeric values
-    if (typeof value !== 'number') {
-      throw new Error(`Cannot convert ${typeof value} "${value}" to integer`);
-    }
-    
-    // Check if it's already an integer
+    // Only accept actual integers
     if (!Number.isInteger(value)) {
-      throw new Error(`Value "${value}" must be an integer`);
+      throw new Error(`Cannot convert value "${value}" to integer`);
     }
     
-    // Validate range if specified
-    if (metadata.min !== undefined && value < metadata.min) {
-      throw new Error(`Value must be greater than or equal to ${metadata.min}`);
-    }
-    if (metadata.max !== undefined && value > metadata.max) {
-      throw new Error(`Value must be less than or equal to ${metadata.max}`);
+    // Validate range if specified - use same logic as validateMetadata
+    if (metadata.min !== undefined && metadata.max !== undefined) {
+      if (value < metadata.min || value > metadata.max) {
+        throw new Error(`Value must be between ${metadata.min} and ${metadata.max}`);
+      }
+    } else {
+      if (metadata.min !== undefined && value < metadata.min) {
+        throw new Error(`Value must be greater than or equal to ${metadata.min}`);
+      }
+      if (metadata.max !== undefined && value > metadata.max) {
+        throw new Error(`Value must be less than or equal to ${metadata.max}`);
+      }
     }
     
     return value;
@@ -183,11 +189,19 @@ class IntegerType extends DataType {
       return errors;
     }
 
-    if (metadata.min !== undefined && value < metadata.min) {
-      errors.push(`Value must be greater than or equal to ${metadata.min}`);
-    }
-    if (metadata.max !== undefined && value > metadata.max) {
-      errors.push(`Value must be less than or equal to ${metadata.max}`);
+    // If both min and max are specified, use "between" message
+    if (metadata.min !== undefined && metadata.max !== undefined) {
+      if (value < metadata.min || value > metadata.max) {
+        errors.push(`Value must be between ${metadata.min} and ${metadata.max}`);
+      }
+    } else {
+      // Otherwise use individual messages
+      if (metadata.min !== undefined && value < metadata.min) {
+        errors.push(`Value must be greater than or equal to ${metadata.min}`);
+      }
+      if (metadata.max !== undefined && value > metadata.max) {
+        errors.push(`Value must be less than or equal to ${metadata.max}`);
+      }
     }
 
     return errors;
@@ -206,25 +220,26 @@ class FloatType extends DataType {
     if (value === null || value === undefined) {
       return null;
     }
-    let num = parseFloat(value);
-    if (isNaN(num)) {
+    
+    // Only accept actual numbers
+    if (typeof value !== 'number' || isNaN(value)) {
       throw new Error(`Cannot convert value "${value}" to float`);
     }
 
     // Apply min/max constraints before precision
-    if (metadata.min !== undefined && num < metadata.min) {
+    if (metadata.min !== undefined && value < metadata.min) {
       throw new Error(`Value must be between ${metadata.min} and ${metadata.max}`);
     }
-    if (metadata.max !== undefined && num > metadata.max) {
+    if (metadata.max !== undefined && value > metadata.max) {
       throw new Error(`Value must be between ${metadata.min} and ${metadata.max}`);
     }
 
     // Apply precision after constraints
     if (metadata.precision !== undefined) {
       const multiplier = Math.pow(10, metadata.precision);
-      num = Math.round(num * multiplier) / multiplier;
+      value = Math.round(value * multiplier) / multiplier;
     }
-    return num;
+    return value;
   }
 
   validateMetadata(value, metadata) {
@@ -261,10 +276,13 @@ class BooleanType extends DataType {
     if (value === null || value === undefined) {
       return null;
     }
-    if (typeof value === 'boolean') {
-      return value;
+    
+    // Only accept actual booleans
+    if (typeof value !== 'boolean') {
+      throw new Error(`Cannot convert value "${value}" to boolean`);
     }
-    throw new Error(`Cannot convert value "${value}" to boolean`);
+    
+    return value;
   }
 
   validateMetadata(value, metadata) {
@@ -294,14 +312,13 @@ class DateType extends DataType {
     if (value === null || value === undefined) {
       return null;
     }
-    if (value instanceof Date) {
-      return value;
-    }
-    const date = new Date(value);
-    if (isNaN(date.getTime())) {
+    
+    // Only accept actual Date objects
+    if (!(value instanceof Date) || isNaN(value.getTime())) {
       throw new Error(`Cannot convert value "${value}" to date`);
     }
-    return date;
+    
+    return value;
   }
 
   validateMetadata(value, metadata) {

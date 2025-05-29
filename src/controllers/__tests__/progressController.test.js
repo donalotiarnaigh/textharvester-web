@@ -1,4 +1,4 @@
-const { mockRequest, mockResponse } = require('node-mocks-http');
+const httpMocks = require('node-mocks-http');
 const { getProgress, verifyCompletion } = require('../progressController');
 const { getProcessingProgress, verifyProcessingCompletion } = require('../../utils/fileQueue');
 
@@ -9,8 +9,8 @@ describe('Progress Controller', () => {
   let mockRes;
 
   beforeEach(() => {
-    mockReq = mockRequest();
-    mockRes = mockResponse();
+    mockReq = httpMocks.createRequest();
+    mockRes = httpMocks.createResponse();
     jest.clearAllMocks();
   });
 

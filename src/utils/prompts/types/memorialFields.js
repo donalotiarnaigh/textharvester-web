@@ -78,10 +78,40 @@ const NAME_PATTERNS = {
  * Definitions for all memorial record fields
  */
 const MEMORIAL_FIELDS = [
-  new MemorialField('memorial_number', new StringType(), false, {
-    format: 'identifier',
+  new MemorialField('memorial_number', new StringType(), true, {
+    format: 'memorial_identifier',
     maxLength: 50,
-    transform: (value) => value === null ? null : String(value).trim()
+    transform: (value) => {
+      if (value === null || value === undefined) {
+        return null;
+      }
+      
+      // Convert to string and trim
+      let processed = String(value).trim();
+      
+      // If it's already a pure integer, convert it to string
+      if (typeof value === 'number' && Number.isInteger(value)) {
+        return String(value);
+      }
+      
+      // If it's a string that looks like a pure number, keep it as is
+      if (/^\d+$/.test(processed)) {
+        return processed;
+      }
+      
+      // If it contains prefixes like "HG-18", "M123", extract the number
+      const match = processed.match(/([A-Za-z]*[-_]?)(\d+)$/);
+      if (match) {
+        return match[2]; // Return just the numeric part
+      }
+      
+      // If it looks like a fraction (page number), throw error
+      if (/^\d+\/\d+$/.test(processed)) {
+        throw new Error(`Memorial number "${processed}" appears to be a page number or fraction - please verify the actual memorial identifier`);
+      }
+      
+      return processed;
+    }
   }),
   new MemorialField('first_name', new StringType(), false, {
     format: 'name',

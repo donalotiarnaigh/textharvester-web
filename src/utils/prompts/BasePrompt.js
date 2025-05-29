@@ -71,14 +71,76 @@ class BasePrompt {
       return result.value;
     }
 
-    // For object format, use the original validation logic
+    // Handle null/undefined values
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    // For object format, handle conversion before validation
     const fieldType = typeof field.type === 'object' ? field.type.name : field.type;
-    const result = dataTypes.validateValue(value, fieldType, field.metadata);
+    let convertedValue = value;
+
+    // Convert string values to appropriate types
+    if (typeof value === 'string' && value.trim() !== '') {
+      switch (fieldType) {
+        case 'integer':
+          const intValue = parseInt(value.trim(), 10);
+          if (!isNaN(intValue) && intValue.toString() === value.trim()) {
+            convertedValue = intValue;
+          }
+          break;
+        case 'float':
+          const floatValue = parseFloat(value.trim());
+          if (!isNaN(floatValue)) {
+            convertedValue = floatValue;
+          }
+          break;
+        case 'boolean':
+          const lowerValue = value.toLowerCase().trim();
+          if (lowerValue === 'true') {
+            convertedValue = true;
+          } else if (lowerValue === 'false') {
+            convertedValue = false;
+          }
+          break;
+        case 'date':
+          const dateValue = new Date(value);
+          if (!isNaN(dateValue.getTime())) {
+            convertedValue = dateValue;
+          }
+          break;
+      }
+    }
+
+    const result = dataTypes.validateValue(convertedValue, fieldType, field.metadata);
     
     if (result.errors.length > 0) {
-      const errorMessages = result.errors.map(error => 
-        error.replace('Value', fieldName.charAt(0).toUpperCase() + fieldName.slice(1))
-      );
+      const errorMessages = result.errors.map(error => {
+        // Transform error messages to match expected format
+        let transformedError = error.replace('Value', fieldName.charAt(0).toUpperCase() + fieldName.slice(1));
+        
+        // Fix specific error message formats
+        if (transformedError.includes('Invalid integer value:')) {
+          // Extract the value from the original error message
+          const valueMatch = transformedError.match(/Invalid integer value: (.+)/);
+          const value = valueMatch ? valueMatch[1] : 'unknown';
+          transformedError = `Cannot convert value ${value} to integer`;
+        }
+        if (transformedError.includes('Invalid float value:')) {
+          // Extract the value from the original error message
+          const valueMatch = transformedError.match(/Invalid float value: (.+)/);
+          const value = valueMatch ? valueMatch[1] : 'unknown';
+          transformedError = `Cannot convert value ${value} to float`;
+        }
+        if (transformedError.includes('Invalid boolean value:')) {
+          transformedError = transformedError.replace('Invalid boolean value:', 'Invalid boolean value');
+        }
+        if (transformedError.includes('Invalid date value:')) {
+          transformedError = transformedError.replace('Invalid date value:', 'Invalid date value');
+        }
+        
+        return transformedError;
+      });
       throw new Error(errorMessages[0]);
     }
 
