@@ -71,13 +71,57 @@ class FileProcessor {
 
       // Mark as complete if not cancelled
       if (!this._isCancelled(fileId)) {
-        this.stateManager.updateProgress(fileId, 'validation', 100);
+        await this.stateManager.updateProgress(fileId, 'validation', 100);
+        const fileState = this.stateManager.state.files.get(fileId);
+        if (fileState) {
+          fileState.status = 'complete';
+        }
       }
     } catch (error) {
       this.stateManager.recordError(fileId, error);
     } finally {
       // Clean up any remaining intervals
       this._cleanupProgressInterval(fileId);
+    }
+  }
+
+  /**
+   * Track progress for an operation with periodic updates
+   * @param {string} fileId File identifier
+   * @param {Function} operation Async operation to execute
+   * @param {Function} progressCallback Callback for progress updates
+   * @returns {Promise<any>} Operation result
+   * @private
+   */
+  async _trackProgress(fileId, operation, progressCallback) {
+    // Start progress tracking
+    const startTime = Date.now();
+    let progressValue = 0;
+    
+    // Create a progress interval that simulates progress
+    const interval = setInterval(() => {
+      if (!this._isCancelled(fileId)) {
+        progressValue = Math.min(progressValue + 20, 95); // Progress towards 95%
+        progressCallback(progressValue);
+      }
+    }, 50); // Update every 50ms
+    
+    this.progressIntervals.set(fileId, interval);
+    
+    try {
+      // Execute the operation
+      const result = await operation();
+      
+      // Complete the progress to 100%
+      if (!this._isCancelled(fileId)) {
+        progressCallback(100);
+      }
+      
+      return result;
+    } finally {
+      // Clean up the interval
+      clearInterval(interval);
+      this.progressIntervals.delete(fileId);
     }
   }
 
