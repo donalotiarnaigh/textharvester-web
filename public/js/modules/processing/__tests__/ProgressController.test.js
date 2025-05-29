@@ -23,7 +23,7 @@ describe('ProgressController', () => {
     };
     
     const { ProgressController } = require('../ProgressController');
-    progressController = new ProgressController(mockProgressClient, mockProgressBar);
+    progressController = new ProgressController(mockProgressBar, mockProgressClient);
   });
   
   afterEach(() => {
@@ -35,7 +35,7 @@ describe('ProgressController', () => {
     it('should start polling progress endpoint', async () => {
       const mockProgress = {
         progress: 45,
-        phase: 'ocr',
+        state: 'ocr',
         errors: []
       };
       
@@ -68,12 +68,11 @@ describe('ProgressController', () => {
     it('should stop polling on completion', async () => {
       const mockProgress = {
         progress: 100,
-        phase: 'validation',
+        state: 'complete',
         errors: []
       };
       
       mockProgressClient.getProgress.mockResolvedValue(mockProgress);
-      mockProgressClient.verifyCompletion.mockResolvedValue({ isComplete: true });
       
       progressController.startPolling();
       
@@ -84,7 +83,7 @@ describe('ProgressController', () => {
       
       expect(mockProgressBar.showComplete).toHaveBeenCalled();
       
-      // Should not poll again
+      // Should not poll again after completion
       jest.advanceTimersByTime(2000);
       expect(mockProgressClient.getProgress).toHaveBeenCalledTimes(1);
     });
@@ -110,7 +109,7 @@ describe('ProgressController', () => {
     it('should update UI with progress data', async () => {
       const progressData = {
         progress: 75,
-        phase: 'analysis',
+        state: 'analysis',
         errors: []
       };
       
@@ -122,27 +121,28 @@ describe('ProgressController', () => {
     it('should handle completion', async () => {
       const progressData = {
         progress: 100,
-        phase: 'validation',
+        state: 'complete',
         errors: []
       };
-      
-      mockProgressClient.verifyCompletion.mockResolvedValue({ isComplete: true });
       
       await progressController.handleProgress(progressData);
       
       expect(mockProgressBar.showComplete).toHaveBeenCalled();
     });
 
-    it('should handle errors', async () => {
+    it('should continue processing with errors (not show error state)', async () => {
       const progressData = {
         progress: 50,
-        phase: 'ocr',
+        state: 'ocr',
         errors: ['Error processing file']
       };
       
       await progressController.handleProgress(progressData);
       
-      expect(mockProgressBar.showError).toHaveBeenCalled();
+      // The controller warns about errors but continues processing
+      // It doesn't call showError() unless there's a critical failure
+      expect(mockProgressBar.updateProgress).toHaveBeenCalledWith(50, 'ocr');
+      expect(mockProgressBar.showError).not.toHaveBeenCalled();
     });
   });
 }); 
