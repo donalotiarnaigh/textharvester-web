@@ -238,12 +238,17 @@ describe('Memorial Record Transcription Accuracy Tests', () => {
       expect(analysis.baselineComparison.regressions).toBeInstanceOf(Array);
       
       // Each improvement/regression should have detailed information
-      if (analysis.baselineComparison.improvements.length > 0) {
-        const improvement = analysis.baselineComparison.improvements[0];
+      const improvements = analysis.baselineComparison.improvements;
+      
+      // Always verify the structure exists
+      expect(improvements).toBeDefined();
+      
+      // If there are improvements, verify their structure
+      improvements.forEach(improvement => {
         expect(improvement).toHaveProperty('field');
         expect(improvement).toHaveProperty('pageNumber');
         expect(improvement).toHaveProperty('percentageImprovement');
-      }
+      });
     });
   });
 

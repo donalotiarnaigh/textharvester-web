@@ -19,11 +19,11 @@ describe('Provider Exports', () => {
       const config = getProviderConfig(SUPPORTED_PROVIDERS.OPENAI);
       expect(config).toBeDefined();
       expect(config.type).toBeDefined();
-      if (typeof config.type === 'object') {
-        expect(config.type.name).toBe(SUPPORTED_PROVIDERS.OPENAI);
-      } else {
-        expect(config.type).toBe(SUPPORTED_PROVIDERS.OPENAI);
-      }
+      
+      // Handle both string and object type formats
+      const providerType = typeof config.type === 'object' ? config.type.name : config.type;
+      expect(providerType).toBe(SUPPORTED_PROVIDERS.OPENAI);
+      
       expect(typeof config.model).toBe('string');
       expect(typeof config.maxTokens).toBe('number');
       expect(typeof config.temperature).toBe('number');
@@ -33,11 +33,11 @@ describe('Provider Exports', () => {
       const config = getProviderConfig(SUPPORTED_PROVIDERS.ANTHROPIC);
       expect(config).toBeDefined();
       expect(config.type).toBeDefined();
-      if (typeof config.type === 'object') {
-        expect(config.type.name).toBe(SUPPORTED_PROVIDERS.ANTHROPIC);
-      } else {
-        expect(config.type).toBe(SUPPORTED_PROVIDERS.ANTHROPIC);
-      }
+      
+      // Handle both string and object type formats
+      const providerType = typeof config.type === 'object' ? config.type.name : config.type;
+      expect(providerType).toBe(SUPPORTED_PROVIDERS.ANTHROPIC);
+      
       expect(typeof config.model).toBe('string');
       expect(typeof config.maxTokens).toBe('number');
       expect(typeof config.temperature).toBe('number');

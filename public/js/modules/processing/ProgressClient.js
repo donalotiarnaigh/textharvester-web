@@ -147,7 +147,7 @@ export class ProgressClient {
         console.warn('[ProgressClient] Server returned negative progress, setting to 0:', progressValue);
         progressValue = 0;
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('[ProgressClient] Failed to parse progress value:', data.progress);
       progressValue = 0;
     }

@@ -3,7 +3,7 @@
  */
 
 // Mock clipboard.js
-/* eslint-disable-next-line no-redeclare */
+ 
 global.ClipboardJS = jest.fn().mockImplementation(() => ({
   on: jest.fn((event, callback) => {
     if (event === 'success') {

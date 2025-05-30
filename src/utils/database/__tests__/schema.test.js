@@ -12,8 +12,10 @@ describe.skip('Database Schema', () => {
     db = new sqlite3.Database(':memory:');
   });
 
-  afterEach((done) => {
-    db.close(done);
+  afterEach(() => {
+    return new Promise((resolve) => {
+      db.close(resolve);
+    });
   });
 
   describe('initializeDatabase', () => {
@@ -151,8 +153,10 @@ describe('Database Schema Constraints', () => {
     await initializeDatabase(db);
   });
 
-  afterEach((done) => {
-    db.close(done);
+  afterEach(() => {
+    return new Promise((resolve) => {
+      db.close(resolve);
+    });
   });
 
   const insertMemorial = (data) => {

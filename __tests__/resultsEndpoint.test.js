@@ -141,11 +141,13 @@ describe('Results Endpoint', () => {
       const responseData = res.json.mock.calls[0][0];
       
       // Verify data types are converted properly in the memorials array
-      if (responseData.memorials && responseData.memorials.length > 0) {
-        const result = responseData.memorials[0];
-        expect(typeof result.memorial_number).toBe('number');
-        expect(typeof result.year_of_death).toBe('number');
-      }
+      expect(responseData.memorials).toBeDefined();
+      expect(Array.isArray(responseData.memorials)).toBe(true);
+      expect(responseData.memorials.length).toBeGreaterThan(0);
+      
+      const result = responseData.memorials[0];
+      expect(typeof result.memorial_number).toBe('number');
+      expect(typeof result.year_of_death).toBe('number');
     });
   });
 }); 

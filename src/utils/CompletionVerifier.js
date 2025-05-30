@@ -144,14 +144,15 @@ class CompletionVerifier {
    * @private
    */
   async _checkTemporaryFiles(_fileId) {
+    let result = [];
     try {
       // Implementation depends on your file storage system
       // This is a placeholder that should be implemented based on your storage backend
-      return [];
+      result = await Promise.resolve([]);
     } catch (error) {
       console.error('Temporary files check failed:', error);
-      return [];
     }
+    return result;
   }
 }
 

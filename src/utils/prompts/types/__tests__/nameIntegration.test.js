@@ -77,12 +77,6 @@ describe('Name Processing Integration', () => {
       // Use processFullName which now handles edge cases properly
       const components = processFullName(name);
       
-      // For the "Smith" case, last_name should be populated and first_name can be empty
-      if (name === 'Smith') {
-        expect(components.last_name).toBe('SMITH');
-        expect(components.first_name).toBe('');
-      }
-      
       const data = {
         memorial_number: 'HG123',
         ...components,
@@ -93,15 +87,22 @@ describe('Name Processing Integration', () => {
       expect(() => validateMemorialData(data)).not.toThrow();
     });
     
-    // Special handling for the initial case using the field's transform method
-    const firstNameField = getField('first_name');
-    const initialData = {
-      memorial_number: 'HG123',
-      first_name: firstNameField.transform('J.'),  // Use field's transform method
-      last_name: 'UNKNOWN'  // Supply a default last name
-    };
+    // Test the specific "Smith" case separately
+    const smithComponents = processFullName('Smith');
+    expect(smithComponents.last_name).toBe('SMITH');
+    expect(smithComponents.first_name).toBe('');
     
-    expect(() => validateMemorialData(initialData)).not.toThrow();
+    edgeCases.forEach(name => {
+      // Special handling for the initial case using the field's transform method
+      const firstNameField = getField('first_name');
+      const initialData = {
+        memorial_number: 'HG123',
+        first_name: firstNameField.transform('J.'),  // Use field's transform method
+        last_name: 'UNKNOWN'  // Supply a default last name
+      };
+      
+      expect(() => validateMemorialData(initialData)).not.toThrow();
+    });
     
     // Special handling for empty/null names
     const emptyData = {

@@ -95,43 +95,71 @@ describe('Provider Configuration Integration', () => {
       expect(() => {
         config.formatSystemPrompt({});
       }).toThrow('Task is required');
-      
-      // Test response format validation if it exists
-      if (typeof config.validateResponseFormat === 'function' && config.responseFormat) {
-        const originalType = config.responseFormat.type;
-        try {
-          config.responseFormat.type = 'invalid';
-          try {
-            config.validateResponseFormat();
-          } catch (error) {
-            expect(error).toBeDefined();
-          }
-        } finally {
-          // Restore original value
-          config.responseFormat.type = originalType;
-        }
-      }
     });
 
-    it('should handle model validation errors if validation exists', () => {
+    it('should handle response format validation if available', () => {
+      const config = getProviderConfig(SUPPORTED_PROVIDERS.OPENAI);
+      
+      // Always verify basic config structure
+      expect(config).toBeDefined();
+      
+      // Test response format validation functionality if available
+      const hasResponseFormatValidation = typeof config.validateResponseFormat === 'function' && config.responseFormat;
+      expect(typeof hasResponseFormatValidation).toBe('boolean');
+      
+      if (!hasResponseFormatValidation) {
+        // Skip test if validation not available
+        return;
+      }
+      
+      const originalType = config.responseFormat.type;
+      let validationError;
+      
+      try {
+        config.responseFormat.type = 'invalid';
+        try {
+          config.validateResponseFormat();
+        } catch (error) {
+          validationError = error;
+        }
+      } finally {
+        config.responseFormat.type = originalType;
+      }
+      
+      expect(validationError).toBeDefined();
+    });
+
+    it('should handle model validation if available', () => {
       const config = getProviderConfig(SUPPORTED_PROVIDERS.ANTHROPIC);
       
-      // Only test validateModel if it exists
-      if (typeof config.validateModel === 'function') {
-        const originalModel = config.model;
-        try {
-          config.model = 'invalid-model';
-          
-          try {
-            config.validateModel();
-          } catch (error) {
-            expect(error).toBeDefined();
-          }
-        } finally {
-          // Restore original value
-          config.model = originalModel;
-        }
+      // Always verify basic config structure  
+      expect(config).toBeDefined();
+      expect(config.model).toBeDefined();
+      
+      // Test model validation functionality if available
+      const hasModelValidation = typeof config.validateModel === 'function';
+      expect(typeof hasModelValidation).toBe('boolean');
+      
+      if (!hasModelValidation) {
+        // Skip test if validation not available
+        return;
       }
+      
+      const originalModel = config.model;
+      let validationError;
+      
+      try {
+        config.model = 'invalid-model';
+        try {
+          config.validateModel();
+        } catch (error) {
+          validationError = error;
+        }
+      } finally {
+        config.model = originalModel;
+      }
+      
+      expect(validationError).toBeDefined();
     });
   });
 }); 

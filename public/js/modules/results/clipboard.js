@@ -1,6 +1,5 @@
 /* eslint-disable quotes */
 // clipboard.js
-/* global ClipboardJS */
 
 // Function to display copy success message
 export function showCopySuccess() {

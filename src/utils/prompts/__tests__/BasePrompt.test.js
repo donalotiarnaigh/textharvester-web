@@ -454,6 +454,7 @@ describe('BasePrompt', () => {
     });
 
     it('should provide detailed error messages', () => {
+      let caughtError;
       try {
         prompt.validateAndConvert({
           name: 'a'.repeat(101),
@@ -462,14 +463,17 @@ describe('BasePrompt', () => {
           score: 150
         });
       } catch (error) {
-        expect(error.details).toBeDefined();
-        expect(error.details).toEqual([
-          'Name exceeds maximum length of 100 characters',
-          'Age must be between 0 and 150',
-          'Invalid email format',
-          'Score must be between 0 and 100'
-        ]);
+        caughtError = error;
       }
+      
+      expect(caughtError).toBeDefined();
+      expect(caughtError.details).toBeDefined();
+      expect(caughtError.details).toEqual([
+        'Name exceeds maximum length of 100 characters',
+        'Age must be between 0 and 150',
+        'Invalid email format',
+        'Score must be between 0 and 100'
+      ]);
     });
 
     it('should handle type coercion with metadata', () => {
