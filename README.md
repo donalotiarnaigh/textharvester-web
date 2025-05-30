@@ -27,15 +27,15 @@ CREATE TABLE memorials (
     memorial_number INTEGER,
     first_name TEXT,
     last_name TEXT,
-    year_of_death INTEGER,
+    year_of_death INTEGER CONSTRAINT valid_year CHECK (year_of_death IS NULL OR (year_of_death > 1500 AND year_of_death <= 2100 AND typeof(year_of_death) = 'integer')),
     inscription TEXT,
     file_name TEXT NOT NULL,
     ai_provider TEXT,
     model_version TEXT,
+    prompt_template TEXT,
     prompt_version TEXT,
-    processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT valid_year CHECK (year_of_death > 1500 AND year_of_death < strftime('%Y', 'now', '+1 year'))
-)
+    processed_date DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
 -- Indexes for optimized queries
 CREATE INDEX idx_memorial_number ON memorials(memorial_number);
@@ -45,9 +45,13 @@ CREATE INDEX idx_year ON memorials(year_of_death);
 
 ### Data Types and Constraints
 - `memorial_number`: Integer for consistent numeric handling
-- `year_of_death`: Integer with validation (must be between 1500 and current year + 1)
+- `year_of_death`: Integer with validation (must be between 1500 and 2100, allows NULL)
 - `file_name`: Required field (NOT NULL)
+- `ai_provider`: Tracks which AI service was used (e.g., 'openai', 'anthropic')
+- `model_version`: Records the specific model version used
+- `prompt_template`: Stores the prompt template used for extraction
 - `prompt_version`: Tracks the version of the prompt used for extraction
+- `processed_date`: Timestamp of when the record was processed
 - Optimized indexes for common search patterns
 
 ## How It Works
