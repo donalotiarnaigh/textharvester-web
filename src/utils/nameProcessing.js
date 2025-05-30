@@ -109,40 +109,59 @@ function handleInitials(text) {
 }
 
 /**
- * Determines if text represents initials
+ * Determines if text represents initials using pattern-based detection
+ * 
+ * This function uses 5 distinct patterns to accurately identify initials:
+ * 1. Single letter detection (A → true)
+ * 2. Pre-formatted detection (J.R. → true) 
+ * 3. Spaced initials detection (J R → true, but J A M E S → false)
+ * 4. Short non-vowel pattern (BC → true, but AEI → false)
+ * 5. Reject everything else (JAMES, DAVID → false)
+ * 
+ * This replaces the previous common names list approach and fixes Issue #8
+ * where names like "JAMES" were incorrectly treated as initials.
+ * 
  * @param {string} text - The text to check
  * @returns {boolean} Whether the text appears to be initials
  */
 handleInitials.isInitials = function(text) {
   if (!text || typeof text !== 'string') return false;
   
-  // Clean the text for checking
-  const clean = text.replace(/[.\s]/g, '').toUpperCase();
+  // Clean the text for checking, preserving original for pattern matching
+  const originalText = text.trim();
+  const clean = originalText.replace(/[.\s]/g, '').toUpperCase();
   
-  // Too long to be initials
-  if (clean.length > 5) return false;
+  // Ensure all characters are letters (supports international characters)
+  if (!/^[A-Za-zÀ-ÖØ-öø-ÿ]+$/.test(clean)) return false;
   
-  // Check if all characters are letters
-  if (!/^[A-Z]+$/.test(clean)) return false;
+  // Pattern 1: Single letter detection
+  // Examples: "A" → true, "J" → true
+  if (clean.length === 1) return true;
   
-  // If a single letter or 2-3 letters, likely initials
-  if (clean.length <= 3) return true;
+  // Pattern 2: Pre-formatted detection - already contains periods
+  // Examples: "J.R." → true, "A.B.C." → true, "j.r." → true
+  if (/^[A-Z](\.[A-Z])+\.?$/i.test(originalText)) return true;
   
-  // For 4-5 letters, check against common names to avoid false positives
-  const commonNames = [
-    'JOHN', 'MARY', 'JANE', 'MARK', 'ANNA', 'PAUL', 'LISA', 'DAVE', 'MIKE', 'ALEX',
-    'ERIC', 'ANNE', 'ANDY', 'BETH', 'BILL', 'CARL', 'CATH', 'DANA', 'DOUG', 'ELLA',
-    'EMMA', 'GARY', 'GREG', 'HANK', 'JACK', 'JILL', 'JOSH', 'JUDY', 'KATE', 'KYLE',
-    'LUKE', 'MATT', 'NICK', 'NOAH', 'OWEN', 'PETE', 'ROSE', 'RUTH', 'RYAN', 'SARA',
-    'SEAN', 'SETH', 'TARA', 'TINA', 'TODD', 'TONY', 'WILL', 'ZACK', 'ADAM', 'ALAN',
-    'SMITH', 'PETER', 'BUTLER', 'JONES', 'DAVID', 'CHRIS', 'FRANK', 'HELEN', 'LAURA',
-    'SCOTT', 'SARAH', 'KELLY', 'KEVIN', 'LINDA', 'MARIA', 'NANCY'
-  ];
+  // Pattern 3: Spaced initials detection - space-separated single letters
+  // Examples: "J R" → true, "A B C" → true
+  // But reject spaced full names: "J A M E S" → false (5+ chars when spaces removed)
+  if (/^[A-Z](\s+[A-Z])+$/i.test(originalText)) {
+    if (clean.length >= 5) return false; // Reject likely names
+    return true;
+  }
   
-  if (commonNames.includes(clean)) return false;
+  // Pattern 4: Short non-vowel pattern detection (2-3 consecutive letters)
+  // Examples: "BC" → true, "XYZ" → true
+  // But reject vowel clusters that indicate names: "AEI" → false, "IOE" → false
+  if (clean.length <= 3) {
+    if (/[AEIOU]{2}/i.test(clean)) return false; // Vowel clusters = likely names
+    return true;
+  }
   
-  // Otherwise assume it's initials
-  return true;
+  // Pattern 5: Reject everything else (4+ letter words)
+  // This is the key fix for Issue #8:
+  // Examples: "JAMES" → false, "DAVID" → false, "PETER" → false
+  return false;
 };
 
 /**

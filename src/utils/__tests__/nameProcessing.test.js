@@ -174,6 +174,75 @@ describe('Name Processing Utilities', () => {
       expect(handleInitials.isInitials('JR')).toBe(true);
       expect(handleInitials.isInitials('John')).toBe(false);
     });
+
+    // NEW TDD TESTS: Edge cases for pattern-based detection
+    it('should correctly identify Issue #8 cases (common names vs initials)', () => {
+      // Issue #8: These should NOT be treated as initials
+      expect(handleInitials.isInitials('JAMES')).toBe(false);
+      expect(handleInitials.isInitials('DAVID')).toBe(false);
+      expect(handleInitials.isInitials('PETER')).toBe(false);
+      expect(handleInitials.isInitials('BURKE')).toBe(false);
+      
+      // Mixed case variants should also return false
+      expect(handleInitials.isInitials('James')).toBe(false);
+      expect(handleInitials.isInitials('jAmEs')).toBe(false);
+    });
+
+    it('should handle vowel patterns correctly', () => {
+      // Vowel clusters indicate names, not initials
+      expect(handleInitials.isInitials('AEI')).toBe(false);
+      expect(handleInitials.isInitials('IOE')).toBe(false);
+      expect(handleInitials.isInitials('EAU')).toBe(false);
+      
+      // Non-vowel patterns of 2-3 letters should be initials
+      expect(handleInitials.isInitials('BCF')).toBe(true);
+      expect(handleInitials.isInitials('XYZ')).toBe(true);
+      expect(handleInitials.isInitials('TM')).toBe(true);
+    });
+
+    it('should handle length-based detection correctly', () => {
+      // 4+ letter combinations should not be initials (except pre-formatted)
+      expect(handleInitials.isInitials('ABCD')).toBe(false);
+      expect(handleInitials.isInitials('WXYZ')).toBe(false);
+      expect(handleInitials.isInitials('LMNOP')).toBe(false);
+      
+      // But 2-3 letters without vowel patterns should be initials
+      expect(handleInitials.isInitials('BC')).toBe(true);
+      expect(handleInitials.isInitials('XYZ')).toBe(true);
+    });
+
+    it('should handle spaced letters appropriately', () => {
+      // Spaced single letters should be initials
+      expect(handleInitials.isInitials('J R')).toBe(true);
+      expect(handleInitials.isInitials('A B C')).toBe(true);
+      expect(handleInitials.isInitials('X Y Z')).toBe(true);
+      
+      // But spaced full names should not
+      expect(handleInitials.isInitials('J A M E S')).toBe(false);
+    });
+
+    it('should handle international characters correctly', () => {
+      // International names should not be treated as initials
+      expect(handleInitials.isInitials('José')).toBe(false);
+      expect(handleInitials.isInitials('François')).toBe(false);
+      expect(handleInitials.isInitials('Müller')).toBe(false);
+      
+      // These should return null when passed to handleInitials()
+      expect(handleInitials('José')).toBeNull();
+      expect(handleInitials('François')).toBeNull();
+    });
+
+    it('should maintain existing behavior for edge cases', () => {
+      // Already formatted initials should be preserved
+      expect(handleInitials.isInitials('J.R.T.')).toBe(true);
+      expect(handleInitials('J.R.T.')).toBe('J.R.T.');
+      
+      // Empty/null inputs
+      expect(handleInitials.isInitials('')).toBe(false);
+      expect(handleInitials.isInitials(null)).toBe(false);
+      expect(handleInitials('')).toBeNull();
+      expect(handleInitials(null)).toBeNull();
+    });
   });
 
   describe('preprocessName', () => {

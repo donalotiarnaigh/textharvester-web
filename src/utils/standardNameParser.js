@@ -6,20 +6,6 @@ const { detectPrefix, detectSuffix, preprocessName, handleInitials, extractNames
 // detectPrefix and detectSuffix are used indirectly through preprocessName
 
 /**
- * Common names that should not be treated as initials
- * This helps fix Issue #8 where names like "JAMES" were incorrectly formatted as "J.A.M.E.S."
- */
-const COMMON_NAMES = [
-  'JOHN', 'MARY', 'JANE', 'MARK', 'ANNA', 'PAUL', 'LISA', 'DAVE', 'MIKE', 'ALEX',
-  'ERIC', 'ANNE', 'ANDY', 'BETH', 'BILL', 'CARL', 'CATH', 'DANA', 'DOUG', 'ELLA',
-  'EMMA', 'GARY', 'GREG', 'HANK', 'JACK', 'JILL', 'JOSH', 'JUDY', 'KATE', 'KYLE',
-  'LUKE', 'MATT', 'NICK', 'NOAH', 'OWEN', 'PETE', 'ROSE', 'RUTH', 'RYAN', 'SARA',
-  'SEAN', 'SETH', 'TARA', 'TINA', 'TODD', 'TONY', 'WILL', 'ZACK', 'ADAM', 'ALAN',
-  'JAMES', 'SMITH', 'PETER', 'BUTLER', 'JONES', 'DAVID', 'CHRIS', 'FRANK', 'HELEN', 'LAURA',
-  'SCOTT', 'SARAH', 'KELLY', 'KEVIN', 'LINDA', 'MARIA', 'NANCY', 'ROBERT', 'THOMAS', 'WILLIAM'
-];
-
-/**
  * Format initials based on provider preferences
  * @param {string} text - Text that might contain initials
  * @param {Object} options - Provider-specific options
@@ -31,18 +17,7 @@ function formatInitials(text, options = {}) {
   // Clean the text for checking
   const cleanText = text.trim().toUpperCase();
   
-  // Skip processing for common names (fixes Issue #8)
-  if (COMMON_NAMES.includes(cleanText)) {
-    return cleanText;
-  }
-  
-  // Check if this might be initials with spaces
-  if (/^[A-Z](\s+[A-Z])+$/.test(cleanText) && options.preserveInitials !== false) {
-    // Format as period-separated initials
-    return cleanText.replace(/\s+/g, '.') + '.';
-  }
-  
-  // If it looks like initials and options don't prevent it
+  // Use the pattern-based initials detection (fixes Issue #8)
   if (handleInitials.isInitials(cleanText) && options.preserveInitials !== false) {
     return handleInitials(cleanText);
   }
