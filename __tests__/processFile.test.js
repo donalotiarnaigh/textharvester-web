@@ -43,7 +43,7 @@ jest.mock('../src/utils/database', () => ({
 jest.mock('../src/utils/modelProviders', () => {
   const OpenAIProvider = jest.fn().mockImplementation(() => ({
     processImage: mockOpenAICreateMethod,
-    getModelVersion: () => 'gpt-4o'
+    getModelVersion: () => 'gpt-5'
   }));
 
   const AnthropicProvider = jest.fn().mockImplementation(() => ({
@@ -96,7 +96,7 @@ describe('processFile', () => {
     const result = await processFile('test.jpg', { provider: 'openai' });
     expect(result).toBeDefined();
     expect(result.ai_provider).toBe('openai');
-    expect(result.model_version).toBe('gpt-4o');
+    expect(result.model_version).toBe('gpt-5');
     expect(mockOpenAICreateMethod).toHaveBeenCalled();
     expect(mockAnthropicCreateMethod).not.toHaveBeenCalled();
   });

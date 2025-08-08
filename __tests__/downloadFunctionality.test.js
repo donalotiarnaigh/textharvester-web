@@ -28,7 +28,7 @@ describe('Download Functionality', () => {
         inscription: 'Test inscription',
         file_name: 'test.jpg',
         ai_provider: 'openai',
-        model_version: 'gpt-4o',
+        model_version: 'gpt-5',
         prompt_version: '1.0.0',
         processed_date: '2024-03-20T10:00:00.000Z'
       }];
@@ -38,7 +38,7 @@ describe('Download Functionality', () => {
 
       const data = JSON.parse(res._getData());
       expect(data[0]).toHaveProperty('ai_provider', 'openai');
-      expect(data[0]).toHaveProperty('model_version', 'gpt-4o');
+      expect(data[0]).toHaveProperty('model_version', 'gpt-5');
       expect(data[0]).toHaveProperty('prompt_version', '1.0.0');
     });
 
@@ -91,7 +91,7 @@ describe('Download Functionality', () => {
         inscription: 'Test inscription',
         file_name: 'test.jpg',
         ai_provider: 'openai',
-        model_version: 'gpt-4o',
+        model_version: 'gpt-5',
         prompt_version: '1.0.0',
         processed_date: '2024-03-20T10:00:00.000Z'
       }];

@@ -4,16 +4,16 @@ describe('OpenAIConfig', () => {
   describe('constructor', () => {
     it('should create a valid OpenAI configuration', () => {
       const config = new OpenAIConfig();
-      expect(config.model).toBe('gpt-4');
+      expect(config.model).toBe('gpt-5');
       expect(config.maxTokens).toBe(2000);
       expect(config.temperature).toBe(0.7);
     });
 
     it('should accept custom model', () => {
       const config = new OpenAIConfig({
-        model: 'gpt-4-turbo'
+        model: 'gpt-5-mini'
       });
-      expect(config.model).toBe('gpt-4-turbo');
+      expect(config.model).toBe('gpt-5-mini');
     });
 
     it('should throw error for unsupported model', () => {
@@ -28,7 +28,7 @@ describe('OpenAIConfig', () => {
       const config = new OpenAIConfig();
       const params = config.getApiParams();
       expect(params).toEqual({
-        model: 'gpt-4',
+        model: 'gpt-5',
         max_tokens: 2000,
         temperature: 0.7,
         response_format: {

@@ -12,9 +12,9 @@ describe('jsonToCsv', () => {
         file_name: 'test1.jpg',
         processed_date: '2024-03-05',
         ai_provider: 'openai',
-        model_version: 'gpt-4o',
-        prompt_version: '1.0'
-      },
+                 model_version: 'gpt-5',
+         prompt_version: '1.0'
+       },
       {
         memorial_number: '002',
         first_name: 'Jane',
@@ -31,7 +31,7 @@ describe('jsonToCsv', () => {
 
     const expectedCsv = 
       'memorial_number,first_name,last_name,year_of_death,inscription,file_name,ai_provider,model_version,prompt_version,processed_date\n' +
-      '001,John,Doe,1990,Rest In Peace,test1.jpg,openai,gpt-4o,1.0,2024-03-05\n' +
+      '001,John,Doe,1990,Rest In Peace,test1.jpg,openai,gpt-5,1.0,2024-03-05\n' +
       '002,Jane,Smith,1995,Forever Remembered,test2.jpg,anthropic,claude-3-7-sonnet-20250219,1.0,2024-03-05\n';
 
     const resultCsv = jsonToCsv(jsonData);
@@ -77,15 +77,15 @@ describe('jsonToCsv', () => {
         inscription: 'Rest, In Peace',
         file_name: 'test1.jpg',
         processed_date: '2024-03-05',
-        ai_provider: 'openai',
-        model_version: 'gpt-4o',
-        prompt_version: '1.0'
+                 ai_provider: 'openai',
+         model_version: 'gpt-5',
+         prompt_version: '1.0'
       }
     ];
 
     const expectedCsv = 
       'memorial_number,first_name,last_name,year_of_death,inscription,file_name,ai_provider,model_version,prompt_version,processed_date\n' +
-      '001,"John, Jr.",Doe,1990,"Rest, In Peace",test1.jpg,openai,gpt-4o,1.0,2024-03-05\n';
+      '001,"John, Jr.",Doe,1990,"Rest, In Peace",test1.jpg,openai,gpt-5,1.0,2024-03-05\n';
 
     const resultCsv = jsonToCsv(jsonData);
     expect(resultCsv).toEqual(expectedCsv);
