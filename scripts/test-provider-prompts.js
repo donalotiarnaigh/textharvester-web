@@ -108,7 +108,7 @@ async function testOpenAI(base64Image) {
     // Initialize provider
     const config = {
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-      OPENAI_MODEL: 'gpt-4o-2024-11-20',
+      OPENAI_MODEL: 'gpt-5',
       MAX_TOKENS: 2000
     };
     

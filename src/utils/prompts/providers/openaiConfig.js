@@ -12,7 +12,7 @@ class OpenAIConfig extends ProviderConfig {
   constructor(options = {}) {
     super(PROVIDER_TYPES.OPENAI);
     
-    this.model = options.model || 'gpt-4';
+         this.model = options.model || 'gpt-5';
     if (!this.isSupportedModel(this.model)) {
       throw new Error('Unsupported OpenAI model');
     }
@@ -20,6 +20,11 @@ class OpenAIConfig extends ProviderConfig {
 
   isSupportedModel(model) {
     return [
+      'gpt-5',
+      'gpt-5-mini',
+      'gpt-4o',
+      'gpt-4o-mini',
+      'gpt-4-vision-preview',
       'gpt-4',
       'gpt-4-turbo',
       'gpt-3.5-turbo'
