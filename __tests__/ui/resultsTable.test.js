@@ -198,7 +198,7 @@ describe('Results Table UI', () => {
       ai_provider: 'openai',
       prompt_template: 'memorial_ocr',
       prompt_version: '1.0.0',
-      model_version: 'gpt-4o',
+      model_version: 'gpt-5-2025-08-07',
       processed_date: '2024-03-20T10:00:00.000Z'
     }];
 

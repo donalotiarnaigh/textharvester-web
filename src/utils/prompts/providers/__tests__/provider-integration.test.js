@@ -72,6 +72,7 @@ describe('Provider Configuration Integration', () => {
 
   describe('Provider Detection with Real Models', () => {
     const realModelScenarios = [
+      { model: 'gpt-5-2025-08-07', expected: SUPPORTED_PROVIDERS.OPENAI },
       { model: 'gpt-4-vision-preview', expected: SUPPORTED_PROVIDERS.OPENAI },
       { model: 'gpt-4-1106-vision-preview', expected: SUPPORTED_PROVIDERS.OPENAI },
       { model: 'claude-3-opus-20240229', expected: SUPPORTED_PROVIDERS.ANTHROPIC },
