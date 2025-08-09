@@ -20,7 +20,7 @@ describe('OpenAIProvider', () => {
   beforeEach(() => {
     mockConfig = {
       OPENAI_API_KEY: 'test-key',
-      OPENAI_MODEL: 'gpt-4-vision-preview',
+      OPENAI_MODEL: 'gpt-5',
       MAX_TOKENS: 4000,
       TEMPERATURE: 0.2
     };
@@ -61,12 +61,12 @@ describe('OpenAIProvider', () => {
     });
 
     it('should use provided model from config', () => {
-      expect(provider.model).toBe('gpt-4-vision-preview');
+      expect(provider.model).toBe('gpt-5');
     });
 
     it('should use default model if not specified', () => {
       const defaultProvider = new OpenAIProvider({});
-      expect(defaultProvider.model).toBe('gpt-4-vision-preview');
+      expect(defaultProvider.model).toBe('gpt-5');
     });
 
     it('should use provided max tokens from config', () => {
@@ -90,7 +90,7 @@ describe('OpenAIProvider', () => {
 
   describe('getModelVersion', () => {
     it('should return current model version', () => {
-      expect(provider.getModelVersion()).toBe('gpt-4-vision-preview');
+      expect(provider.getModelVersion()).toBe('gpt-5');
     });
   });
 
@@ -102,7 +102,7 @@ describe('OpenAIProvider', () => {
       await provider.processImage(testImage, testPrompt);
       
       expect(provider.client.chat.completions.create).toHaveBeenCalledWith({
-        model: 'gpt-4-vision-preview',
+        model: 'gpt-5',
         messages: [
           {
             role: 'system',
