@@ -83,7 +83,7 @@ async function insertSampleData(db) {
       inscription: 'Beloved father and husband',
       file_name: 'memorial123.jpg',
       ai_provider: 'openai',
-      model_version: 'gpt-4o',
+      model_version: 'gpt-5-2025-08-07',
       prompt_version: '1.0.0'
     },
     {
