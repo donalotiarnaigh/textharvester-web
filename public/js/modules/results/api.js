@@ -13,3 +13,5 @@ export function fetchResultsData(jsonDataElement) {
       jsonDataElement.textContent = "Error loading results.";
     });
 }
+
+

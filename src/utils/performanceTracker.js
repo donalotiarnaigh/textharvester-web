@@ -69,14 +69,14 @@ class PerformanceTracker {
       // Track metrics for analytics
       logger.trackMetrics('api_performance', performanceData);
 
-          // Store in singleton instance for real-time access
-    const instance = PerformanceTracker.getInstance();
-    instance.addMetric(performanceData);
-    
-    // Check for performance alerts
-    instance.alerts.checkMetric(performanceData);
+      // Store in singleton instance for real-time access
+      const instance = PerformanceTracker.getInstance();
+      instance.addMetric(performanceData);
+      
+      // Check for performance alerts
+      instance.alerts.checkMetric(performanceData);
 
-    return result;
+      return result;
     } catch (error) {
       const endTime = Date.now();
       const responseTime = endTime - startTime;

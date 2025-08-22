@@ -46,7 +46,7 @@ describe('Results Page with Error Summary', () => {
       </div>
       
       <button id="downloadButton" disabled>Download JSON</button>
-      <button id="downloadPrettyButton" disabled>Download Pretty JSON</button>
+      
       <button id="downloadCsvButton" disabled>Download CSV</button>
     `;
     

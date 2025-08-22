@@ -9,7 +9,7 @@ const logger = require('./logger');
  */
 async function main() {
   if (process.argv.length < 4) {
-    console.log('Usage: node processWithProvider.js <provider> <path-to-file>');
+    console.log('Usage: node scripts/process-with-provider.js <provider> <path-to-file>');
     console.log('Available providers: openai, anthropic');
     process.exit(1);
   }

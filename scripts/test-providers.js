@@ -75,7 +75,7 @@ async function testAllProviders(imagePath) {
  */
 async function main() {
   if (process.argv.length < 3) {
-    console.log('Usage: node testProviders.js <path-to-image>');
+    console.log('Usage: node scripts/test-providers.js <path-to-image>');
     process.exit(1);
   }
   

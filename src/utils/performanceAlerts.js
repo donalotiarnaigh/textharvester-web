@@ -161,8 +161,7 @@ class PerformanceAlerts {
     this.lastAlerts.set(alertKey, now);
     
     // Log the alert
-    const logLevel = alert.severity === 'severe' ? 'error' : 
-                    alert.severity === 'critical' ? 'error' : 'warn';
+    const logLevel = (alert.severity === 'severe' || alert.severity === 'critical') ? 'error' : 'warn';
     
     logger[logLevel](`[PERF ALERT] ${alert.severity.toUpperCase()}: ${alert.message}`, {
       type: alert.type,

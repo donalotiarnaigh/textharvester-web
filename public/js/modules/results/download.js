@@ -20,8 +20,7 @@ export function validateFilenameInput(filenameInput) {
       !isValidFilename || !this.value;
     document.getElementById("downloadCsvButton").disabled =
       !isValidFilename || !this.value;
-    document.getElementById("downloadPrettyButton").disabled =
-      !isValidFilename || !this.value;
+    // Pretty JSON button removed
 
     if (isValidFilename || this.value === "") {
       this.classList.remove("is-invalid");

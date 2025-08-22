@@ -2,8 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const { 
   enqueueFiles, 
-  dequeueFile, 
-  resetFileProcessingState, 
   getProcessingProgress,
   getProcessedResults 
 } = require('../fileQueue');
@@ -42,7 +40,6 @@ describe('Enhanced File Queue with Error Handling', () => {
   beforeEach(() => {
     // Reset mocks
     jest.clearAllMocks();
-    resetFileProcessingState();
     
     // Default mock implementation
     processFile.mockImplementation(async (filePath) => {

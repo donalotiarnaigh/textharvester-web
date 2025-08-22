@@ -138,6 +138,5 @@ module.exports = {
   getProcessingStatus,
   downloadResultsJSON,
   downloadResultsCSV,
-  sanitizeFilename,
   getResults,
 };

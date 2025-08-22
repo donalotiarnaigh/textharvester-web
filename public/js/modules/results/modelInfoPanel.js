@@ -26,10 +26,7 @@ function formatProviderName(provider) {
  * @param {string} dateString ISO date string
  * @returns {string} Formatted date string
  */
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString();
-}
+import { formatDate } from './date.js';
 
 /**
  * Update the model info panel with new data

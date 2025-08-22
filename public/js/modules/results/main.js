@@ -1,31 +1,11 @@
 /* eslint-disable quotes */
 // main.js
 
-import { initializeClipboard } from "./clipboard.js";
-import {
-  validateFilenameInput,
-  downloadJsonResults,
-  downloadCsvResults,
-} from "./download.js";
-import { getQueryParam } from "./utils.js";
-import { fetchResultsData } from "./api.js";
-
 /**
  * Main module for the results page
  */
 
-// Function to format date
-function formatDate(dateString) {
-  if (!dateString) return 'N/A';
-  
-  const date = new Date(dateString);
-  
-  // Check if date is invalid
-  if (isNaN(date.getTime())) return 'N/A';
-  
-  // Format the date string
-  return date.toLocaleString();
-}
+import { formatDateTime as formatDate } from './date.js';
 
 // Function to display error summary
 function displayErrorSummary(errors) {
@@ -140,7 +120,6 @@ function displayModalDetails(memorial) {
 // Function to enable download buttons
 function enableDownloadButtons() {
   document.getElementById('downloadButton').disabled = false;
-  document.getElementById('downloadPrettyButton').disabled = false;
   document.getElementById('downloadCsvButton').disabled = false;
 }
 
