@@ -45,15 +45,14 @@ async function processFile(filePath, options = {}) {
     });
     
     // Log the raw API response for debugging
-    logger.info(`Raw ${providerName} API response for ${filePath}:`);
-    logger.info(JSON.stringify(rawExtractedData, null, 2));
+    logger.debugPayload(`Raw ${providerName} API response for ${filePath}:`, rawExtractedData);
     
     try {
       // Validate and convert the data according to our type definitions
       const extractedData = promptInstance.validateAndConvert(rawExtractedData);
       
-      logger.info(`${providerName} API response for ${filePath}`);
-      logger.info(JSON.stringify(extractedData, null, 2));
+      logger.info(`${providerName} API response processed successfully for ${filePath}`);
+      logger.debugPayload(`Processed ${providerName} data for ${filePath}:`, extractedData);
       
       // Add metadata to the extracted data
       extractedData.fileName = path.basename(filePath);

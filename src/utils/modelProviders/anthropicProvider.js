@@ -3,6 +3,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const BaseVisionProvider = require('./baseProvider');
 const { promptManager } = require('../prompts/templates/providerTemplates');
 const PerformanceTracker = require('../performanceTracker');
+const logger = require('../logger');
 
 /**
  * Anthropic-specific implementation for vision models
@@ -123,11 +124,28 @@ class AnthropicProvider extends BaseVisionProvider {
       try {
         return JSON.parse(jsonContent);
       } catch (jsonError) {
-        console.error('JSON parsing error:', jsonError, 'Content:', jsonContent);
+        logger.error(`Anthropic JSON parsing failed for model ${this.model}`, jsonError, {
+          phase: 'response_parsing',
+          operation: 'processImage',
+          contentPreview: jsonContent.substring(0, 200)
+        });
+        logger.debugPayload('Anthropic JSON parsing error details:', {
+          model: this.model,
+          jsonContent: jsonContent,
+          error: jsonError.message
+        });
         throw new Error(`Failed to parse JSON response: ${jsonError.message}`);
       }
     } catch (error) {
-      console.error('Anthropic API error:', error);
+      logger.error(`Anthropic API error for model ${this.model}`, error, {
+        phase: 'api_call',
+        operation: 'processImage'
+      });
+      logger.debugPayload('Anthropic API error details:', {
+        model: this.model,
+        error: error.message,
+        stack: error.stack
+      });
       throw new Error(`Anthropic processing failed: ${error.message}`);
     }
   }

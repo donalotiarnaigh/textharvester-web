@@ -15,7 +15,17 @@
     "errorLogFile": "./logs/error.log",
     "combinedLogFile": "./logs/combined.log",
     "maxFiles": "14d",
-    "maxSize": "20m"
+    "maxSize": "20m",
+    "verboseMode": false,
+    "payloadTruncation": {
+      "enabled": true,
+      "maxLength": 500
+    },
+    "samplingRate": {
+      "enabled": true,
+      "performanceMetrics": 0.1,
+      "payloadLogging": 0.05
+    }
   },
   "openAI": {
     "model": "gpt-5",
