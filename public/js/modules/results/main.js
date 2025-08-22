@@ -2,10 +2,18 @@
 // main.js
 
 /**
- * Main module for the results page
+ * Main module for the results page with expandable rows
  */
 
 import { formatDateTime as formatDate } from './date.js';
+import { tableEnhancements } from './tableEnhancements.js';
+
+// Track expanded rows
+const expandedRows = new Set();
+
+// Expose globally for table enhancements
+window.expandedRows = expandedRows;
+window.toggleRow = toggleRow;
 
 // Function to display error summary
 function displayErrorSummary(errors) {
@@ -53,13 +61,139 @@ function displayErrorSummary(errors) {
   });
 }
 
-// Function to display memorial data
+// Function to create expandable detail row
+function createDetailRow(memorial, colSpan) {
+  const detailRow = document.createElement('tr');
+  detailRow.className = 'detail-row';
+  detailRow.style.display = 'none';
+  detailRow.id = `detail-${memorial.memorial_number}`;
+  
+  detailRow.innerHTML = `
+    <td colspan="${colSpan}">
+      <div class="detail-content p-3">
+        <div class="row">
+          <div class="col-12">
+            <h5 class="mb-3">
+              ${memorial.memorial_number} - ${memorial.first_name || ''} ${memorial.last_name || ''}
+            </h5>
+          </div>
+        </div>
+        
+        <div class="card mb-3">
+          <div class="card-header bg-light">
+            <strong>Inscription</strong>
+          </div>
+          <div class="card-body">
+            <p class="inscription-text">${memorial.inscription || 'No inscription available'}</p>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="detail-info">
+              <h6>Processing Information</h6>
+              <dl class="row">
+                <dt class="col-sm-4">Model:</dt>
+                <dd class="col-sm-8">${memorial.ai_provider || 'N/A'}</dd>
+                
+                <dt class="col-sm-4">Template:</dt>
+                <dd class="col-sm-8">${memorial.prompt_template || 'N/A'}</dd>
+                
+                <dt class="col-sm-4">Version:</dt>
+                <dd class="col-sm-8">${memorial.prompt_version || 'N/A'}</dd>
+                
+                <dt class="col-sm-4">Source File:</dt>
+                <dd class="col-sm-8">${memorial.fileName || 'N/A'}</dd>
+              </dl>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <div class="detail-info">
+              <h6>Additional Details</h6>
+              <dl class="row">
+                <dt class="col-sm-4">Processed:</dt>
+                <dd class="col-sm-8">${formatDate(memorial.processed_date)}</dd>
+                
+                <dt class="col-sm-4">Year of Death:</dt>
+                <dd class="col-sm-8">${memorial.year_of_death || 'N/A'}</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-3">
+          <button class="btn btn-sm btn-secondary close-detail" data-memorial="${memorial.memorial_number}">
+            <i class="fas fa-chevron-up"></i> Close Details
+          </button>
+          <button class="btn btn-sm btn-info copy-inscription ml-2" data-inscription="${(memorial.inscription || '').replace(/"/g, '&quot;')}">
+            <i class="fas fa-copy"></i> Copy Inscription
+          </button>
+        </div>
+      </div>
+    </td>
+  `;
+  
+  return detailRow;
+}
+
+// Function to toggle row expansion
+function toggleRow(memorialNumber) {
+  const detailRow = document.getElementById(`detail-${memorialNumber}`);
+  const toggleBtn = document.querySelector(`[data-toggle-memorial="${memorialNumber}"]`);
+  
+  if (!detailRow) return;
+  
+  if (expandedRows.has(memorialNumber)) {
+    // Collapse the row
+    detailRow.style.display = 'none';
+    expandedRows.delete(memorialNumber);
+    
+    // Update toggle button
+    if (toggleBtn) {
+      toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+      toggleBtn.classList.remove('btn-secondary');
+      toggleBtn.classList.add('btn-outline-secondary');
+    }
+    
+    // Remove highlight from parent row
+    const parentRow = detailRow.previousElementSibling;
+    if (parentRow) {
+      parentRow.classList.remove('table-active');
+    }
+  } else {
+    // Expand the row
+    detailRow.style.display = 'table-row';
+    expandedRows.add(memorialNumber);
+    
+    // Update toggle button
+    if (toggleBtn) {
+      toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
+      toggleBtn.classList.remove('btn-outline-secondary');
+      toggleBtn.classList.add('btn-secondary');
+    }
+    
+    // Add highlight to parent row
+    const parentRow = detailRow.previousElementSibling;
+    if (parentRow) {
+      parentRow.classList.add('table-active');
+    }
+    
+    // Smooth scroll to ensure detail is visible
+    setTimeout(() => {
+      detailRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+  }
+}
+
+// Function to display memorial data with expandable rows
 function displayMemorials(memorials) {
   const tableBody = document.getElementById('resultsTableBody');
   const emptyState = document.getElementById('emptyState');
   
-  // Clear existing content
+  // Clear existing content and reset expanded rows
   tableBody.innerHTML = '';
+  expandedRows.clear();
   
   // Check if there are any memorials
   if (!memorials || memorials.length === 0) {
@@ -74,19 +208,21 @@ function displayMemorials(memorials) {
     emptyState.classList.add('d-none');
   }
   
-  // Create a row for each memorial
+  // Create rows for each memorial
   memorials.forEach(memorial => {
+    // Create main row
     const row = document.createElement('tr');
+    row.className = 'memorial-row';
+    row.style.cursor = 'pointer';
     
-    // Properly escape the memorial data for HTML attributes
-    const memorialDataEscaped = JSON.stringify(memorial)
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-    
-    // Populate row with memorial data
     row.innerHTML = `
+      <td class="text-center">
+        <button class="btn btn-sm btn-outline-secondary expand-toggle" 
+          data-toggle-memorial="${memorial.memorial_number}"
+          title="Click to expand/collapse details">
+          <i class="fas fa-chevron-down"></i>
+        </button>
+      </td>
       <td>${memorial.memorial_number || 'N/A'}</td>
       <td>${memorial.first_name || ''} ${memorial.last_name || ''}</td>
       <td>${memorial.year_of_death || 'N/A'}</td>
@@ -94,27 +230,21 @@ function displayMemorials(memorials) {
       <td>${memorial.prompt_template || 'N/A'}</td>
       <td>${memorial.prompt_version || 'N/A'}</td>
       <td>${formatDate(memorial.processed_date)}</td>
-      <td>
-        <button class="btn btn-sm btn-info view-inscription" 
-          data-memorial="${memorialDataEscaped}">
-          <i class="fas fa-eye"></i> View
-        </button>
-      </td>
     `;
     
     tableBody.appendChild(row);
+    
+    // Create detail row (initially hidden)
+    const detailRow = createDetailRow(memorial, 8); // 8 columns total
+    tableBody.appendChild(detailRow);
+    
+    // Add click handler to the row (excluding the toggle button)
+    row.addEventListener('click', (e) => {
+      if (!e.target.closest('.expand-toggle')) {
+        toggleRow(memorial.memorial_number);
+      }
+    });
   });
-}
-
-// Function to display modal details
-function displayModalDetails(memorial) {
-  document.getElementById('modalMemorialInfo').textContent = `${memorial.memorial_number} - ${memorial.first_name || ''} ${memorial.last_name || ''}`;
-  document.getElementById('modalInscription').textContent = memorial.inscription || 'No inscription available';
-  document.getElementById('modalModel').textContent = memorial.ai_provider || 'N/A';
-  document.getElementById('modalTemplate').textContent = memorial.prompt_template || 'N/A';
-  document.getElementById('modalVersion').textContent = memorial.prompt_version || 'N/A';
-  document.getElementById('modalFileName').textContent = memorial.fileName || 'N/A';
-  document.getElementById('modalProcessDate').textContent = formatDate(memorial.processed_date);
 }
 
 // Function to enable download buttons
@@ -146,8 +276,9 @@ export async function loadResults() {
     displayMemorials(data.memorials);
     displayErrorSummary(data.errors);
     
-    // Enable download buttons if there are results
+    // Initialize table enhancements
     if (data.memorials && data.memorials.length > 0) {
+      tableEnhancements.init(data.memorials);
       enableDownloadButtons();
     }
     
@@ -188,44 +319,58 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Initialize clipboard functionality
   new ClipboardJS('.copy-info');
+  
+  // Listen for filtered memorials event
+  document.addEventListener('memorials-filtered', (event) => {
+    displayMemorials(event.detail.memorials);
+  });
 });
 
-// Add event delegation for modal view buttons - outside DOMContentLoaded to avoid nesting
+// Event delegation for dynamic elements
 document.addEventListener('click', function(event) {
-  const button = event.target.closest('.view-inscription');
-  if (button) {
-    console.log('View button clicked:', button);
+  // Handle expand toggle button clicks
+  if (event.target.closest('.expand-toggle')) {
     event.preventDefault();
     event.stopPropagation();
+    const button = event.target.closest('.expand-toggle');
+    const memorialNumber = button.getAttribute('data-toggle-memorial');
+    toggleRow(memorialNumber);
+  }
+  
+  // Handle close detail button clicks
+  if (event.target.closest('.close-detail')) {
+    event.preventDefault();
+    const button = event.target.closest('.close-detail');
+    const memorialNumber = button.getAttribute('data-memorial');
+    toggleRow(memorialNumber);
+  }
+  
+  // Handle copy inscription button clicks
+  if (event.target.closest('.copy-inscription')) {
+    event.preventDefault();
+    const button = event.target.closest('.copy-inscription');
+    const inscription = button.getAttribute('data-inscription');
     
-    try {
-      const memorialData = button.getAttribute('data-memorial');
-      console.log('Memorial data attribute (raw):', memorialData);
-      
-      if (!memorialData) {
-        console.error('No memorial data found on button');
-        return;
-      }
-      
-      // Decode HTML entities back to valid JSON
-      const decodedData = memorialData
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>');
-      
-      console.log('Memorial data attribute (decoded):', decodedData);
-      
-      const memorial = JSON.parse(decodedData);
-      console.log('Parsed memorial:', memorial);
-      
-      // Populate modal content first
-      displayModalDetails(memorial);
-      
-      // Then show the modal
-      $('#inscriptionModal').modal('show');
-    } catch (error) {
-      console.error('Error displaying modal:', error);
-    }
+    // Create temporary textarea for copying
+    const textarea = document.createElement('textarea');
+    textarea.value = inscription.replace(/&quot;/g, '"');
+    textarea.style.position = 'absolute';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    
+    // Show feedback
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    button.classList.add('btn-success');
+    button.classList.remove('btn-info');
+    
+    setTimeout(() => {
+      button.innerHTML = originalText;
+      button.classList.remove('btn-success');
+      button.classList.add('btn-info');
+    }, 2000);
   }
 });
