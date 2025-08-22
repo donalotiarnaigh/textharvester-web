@@ -1,19 +1,19 @@
 // Model information
 const modelInfo = {
   'openai': {
-    name: 'OpenAI GPT-4o',
+    name: 'OpenAI GPT-5',
     messages: {
-      processing: 'Processing with OpenAI GPT-4o',
-      error: 'Error processing with OpenAI GPT-4o - retrying',
-      complete: 'Processing complete with OpenAI GPT-4o'
+      processing: 'Processing with OpenAI GPT-5',
+      error: 'Error processing with OpenAI GPT-5 - retrying',
+      complete: 'Processing complete with OpenAI GPT-5'
     }
   },
   'anthropic': {
-    name: 'Anthropic Claude 3.7',
+    name: 'Anthropic Claude 4 Sonnet',
     messages: {
-      processing: 'Processing with Anthropic Claude',
-      error: 'Error processing with Anthropic Claude - retrying',
-      complete: 'Processing complete with Anthropic Claude'
+      processing: 'Processing with Anthropic Claude 4 Sonnet',
+      error: 'Error processing with Anthropic Claude 4 Sonnet - retrying',
+      complete: 'Processing complete with Anthropic Claude 4 Sonnet'
     }
   }
 };

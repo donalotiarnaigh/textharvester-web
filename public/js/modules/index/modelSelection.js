@@ -4,12 +4,12 @@
 // Model information for tooltips
 const modelInfo = {
   "openai": {
-    name: "OpenAI GPT-4o",
-    description: "GPT-4o Vision Model"
+    name: "OpenAI GPT-5",
+    description: "GPT-5 Vision Model"
   },
   "anthropic": {
-    name: "Anthropic Claude 3.7 Sonnet",
-    description: "Claude 3.7 Sonnet Vision Model"
+    name: "Anthropic Claude 4 Sonnet",
+    description: "Claude 4 Sonnet Vision Model"
   }
 };
 
@@ -26,8 +26,8 @@ export const initModelSelection = () => {
         <div class="form-group mb-0">
           <label for="modelSelect" class="card-title d-block mb-2">AI Model</label>
           <select class="form-control" id="modelSelect">
-            <option value="openai">OpenAI GPT-4o</option>
-            <option value="anthropic">Anthropic Claude 3.7</option>
+            <option value="openai">OpenAI GPT-5</option>
+            <option value="anthropic">Anthropic Claude 4 Sonnet</option>
           </select>
           <small class="model-info"></small>
         </div>
