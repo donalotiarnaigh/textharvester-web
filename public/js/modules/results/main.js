@@ -1,15 +1,6 @@
 /* eslint-disable quotes */
 // main.js
 
-import { initializeClipboard } from "./clipboard.js";
-import {
-  validateFilenameInput,
-  downloadJsonResults,
-  downloadCsvResults,
-} from "./download.js";
-import { getQueryParam } from "./utils.js";
-import { fetchResultsData } from "./api.js";
-
 /**
  * Main module for the results page
  */
