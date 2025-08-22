@@ -23,8 +23,8 @@ function createProvider(customConfig = {}) {
   // Merge custom config with default config
   const mergedConfig = { ...config, ...customConfig };
   
-  // Get provider from environment variable, config, or default to OpenAI
-  const provider = process.env.AI_PROVIDER || mergedConfig.AI_PROVIDER || 'openai';
+  // Get provider from config, environment variable, or default to OpenAI
+  const provider = mergedConfig.AI_PROVIDER || process.env.AI_PROVIDER || 'openai';
   
   switch (provider.toLowerCase()) {
   case 'openai':
