@@ -18,8 +18,14 @@
     "maxSize": "20m"
   },
   "openAI": {
-    "model": "gpt-4o",
-    "maxTokens": 3000,
+    "model": "gpt-5",
+    "maxTokens": 4000,
+    "localCache": true,
+    "cacheExpiry": 604800000
+  },
+  "anthropic": {
+    "model": "claude-4-sonnet-20250514",
+    "maxTokens": 4000,
     "localCache": true,
     "cacheExpiry": 604800000
   },

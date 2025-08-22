@@ -12,7 +12,7 @@ class AnthropicConfig extends ProviderConfig {
   constructor(options = {}) {
     super(PROVIDER_TYPES.ANTHROPIC);
     
-    this.model = options.model || 'claude-3-opus';
+    this.model = options.model || 'claude-4-sonnet-20250514';
     if (!this.isSupportedModel(this.model)) {
       throw new Error('Unsupported Anthropic model');
     }
@@ -22,7 +22,8 @@ class AnthropicConfig extends ProviderConfig {
     return [
       'claude-3-opus',
       'claude-3-sonnet',
-      'claude-3-haiku'
+      'claude-3-haiku',
+      'claude-4-sonnet-20250514'
     ].includes(model);
   }
 

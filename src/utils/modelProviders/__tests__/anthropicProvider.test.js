@@ -18,7 +18,7 @@ describe('AnthropicProvider', () => {
   beforeEach(() => {
     mockConfig = {
       ANTHROPIC_API_KEY: 'test-key',
-      ANTHROPIC_MODEL: 'claude-3-sonnet-20240229',
+      ANTHROPIC_MODEL: 'claude-4-sonnet-20250514',
       MAX_TOKENS: 4000,
       TEMPERATURE: 0.2
     };
@@ -60,12 +60,12 @@ describe('AnthropicProvider', () => {
     });
 
     it('should use provided model from config', () => {
-      expect(provider.model).toBe('claude-3-sonnet-20240229');
+      expect(provider.model).toBe('claude-4-sonnet-20250514');
     });
 
     it('should use default model if not specified', () => {
       const defaultProvider = new AnthropicProvider({});
-      expect(defaultProvider.model).toBe('claude-3-7-sonnet-20250219');
+      expect(defaultProvider.model).toBe('claude-4-sonnet-20250514');
     });
 
     it('should use provided max tokens from config', () => {
@@ -74,7 +74,7 @@ describe('AnthropicProvider', () => {
 
     it('should use default max tokens if not specified', () => {
       const defaultProvider = new AnthropicProvider({});
-      expect(defaultProvider.maxTokens).toBe(3000);
+      expect(defaultProvider.maxTokens).toBe(4000);
     });
 
     it('should use provided temperature from config', () => {
@@ -89,7 +89,7 @@ describe('AnthropicProvider', () => {
 
   describe('getModelVersion', () => {
     it('should return current model version', () => {
-      expect(provider.getModelVersion()).toBe('claude-3-sonnet-20240229');
+      expect(provider.getModelVersion()).toBe('claude-4-sonnet-20250514');
     });
   });
 
@@ -101,7 +101,7 @@ describe('AnthropicProvider', () => {
       await provider.processImage(testImage, testPrompt);
       
       expect(provider.client.messages.create).toHaveBeenCalledWith({
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-4-sonnet-20250514',
         max_tokens: 4000,
         temperature: 0.2,
         system: 'Return a JSON object with the extracted text details.',

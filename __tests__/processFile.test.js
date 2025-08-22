@@ -43,12 +43,12 @@ jest.mock('../src/utils/database', () => ({
 jest.mock('../src/utils/modelProviders', () => {
   const OpenAIProvider = jest.fn().mockImplementation(() => ({
     processImage: mockOpenAICreateMethod,
-    getModelVersion: () => 'gpt-4o'
+    getModelVersion: () => 'gpt-5'
   }));
 
   const AnthropicProvider = jest.fn().mockImplementation(() => ({
     processImage: mockAnthropicCreateMethod,
-    getModelVersion: () => 'claude-3-7-sonnet-20250219'
+    getModelVersion: () => 'claude-4-sonnet-20250514'
   }));
 
   return {
@@ -96,7 +96,7 @@ describe('processFile', () => {
     const result = await processFile('test.jpg', { provider: 'openai' });
     expect(result).toBeDefined();
     expect(result.ai_provider).toBe('openai');
-    expect(result.model_version).toBe('gpt-4o');
+    expect(result.model_version).toBe('gpt-5');
     expect(mockOpenAICreateMethod).toHaveBeenCalled();
     expect(mockAnthropicCreateMethod).not.toHaveBeenCalled();
   });
@@ -105,7 +105,7 @@ describe('processFile', () => {
     const result = await processFile('test.jpg', { provider: 'anthropic' });
     expect(result).toBeDefined();
     expect(result.ai_provider).toBe('anthropic');
-    expect(result.model_version).toBe('claude-3-7-sonnet-20250219');
+    expect(result.model_version).toBe('claude-4-sonnet-20250514');
     expect(mockAnthropicCreateMethod).toHaveBeenCalled();
     expect(mockOpenAICreateMethod).not.toHaveBeenCalled();
   });

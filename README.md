@@ -7,8 +7,8 @@ Welcome to the Text Harvester, a community-driven web application designed to pr
 - **Drag-and-Drop File Upload**: Drag and drop JPEG images into the drop zone for processing, or click to select individual files or entire folders.
 - **Progress Monitoring**: Real-time updates on the status of your uploads and OCR processing.
 - **Multiple AI Providers**: Support for different vision AI models:
-  - OpenAI GPT-4o (default)
-  - Anthropic Claude 3.7 Sonnet
+  - OpenAI GPT-5 (default)
+  - Anthropic Claude 4 Sonnet
 - **Results Management**: 
   - Choose to replace existing results or add to them
   - Download extracted text data in JSON or CSV formats
@@ -113,8 +113,8 @@ To run the Historic Graves Text Harvester locally, follow these steps:
 - **SQLite**: Persistent data storage
 - **Multer**: File upload handling
 - **AI Vision Models**: 
-  - OpenAI GPT-4o
-  - Anthropic Claude 3.7 Sonnet
+  - OpenAI GPT-5
+  - Anthropic Claude 4 Sonnet
 - **Node.js**: Runtime environment
 
 ## Data Management

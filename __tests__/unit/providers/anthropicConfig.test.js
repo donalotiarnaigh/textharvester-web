@@ -4,7 +4,7 @@ describe('AnthropicConfig', () => {
   describe('constructor', () => {
     it('should create a valid Anthropic configuration', () => {
       const config = new AnthropicConfig();
-      expect(config.model).toBe('claude-3-opus');
+      expect(config.model).toBe('claude-4-sonnet-20250514');
       expect(config.maxTokens).toBe(2000);
       expect(config.temperature).toBe(0.7);
     });
@@ -28,7 +28,7 @@ describe('AnthropicConfig', () => {
       const config = new AnthropicConfig();
       const params = config.getApiParams();
       expect(params).toEqual({
-        model: 'claude-3-opus',
+        model: 'claude-4-sonnet-20250514',
         max_tokens: 2000,
         temperature: 0.7,
         response_format: {
