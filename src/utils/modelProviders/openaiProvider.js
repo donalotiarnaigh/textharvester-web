@@ -68,7 +68,7 @@ class OpenAIProvider extends BaseVisionProvider {
           },
         ],
         response_format: { type: 'json_object' },
-        max_tokens: this.maxTokens,
+        max_completion_tokens: this.maxTokens,
         temperature: this.temperature
       };
 
