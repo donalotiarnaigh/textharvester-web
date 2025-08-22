@@ -22,3 +22,5 @@ export function initializeClipboard(jsonDataElement) {
 
   clipboard.on("success", showCopySuccess);
 }
+
+
