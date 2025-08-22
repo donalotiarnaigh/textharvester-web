@@ -5,18 +5,7 @@
  * Main module for the results page
  */
 
-// Function to format date
-function formatDate(dateString) {
-  if (!dateString) return 'N/A';
-  
-  const date = new Date(dateString);
-  
-  // Check if date is invalid
-  if (isNaN(date.getTime())) return 'N/A';
-  
-  // Format the date string
-  return date.toLocaleString();
-}
+import { formatDateTime as formatDate } from './date.js';
 
 // Function to display error summary
 function displayErrorSummary(errors) {
