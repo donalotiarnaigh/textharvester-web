@@ -38,7 +38,7 @@ class OpenAIProvider extends BaseVisionProvider {
   async processImage(base64Image, prompt, options = {}) {
     try {
       // Format prompt if template is provided
-      let systemPrompt = 'Return a JSON object with the extracted text details.';
+      let systemPrompt = options.systemPrompt || 'Return a JSON object with the extracted text details.';
       let userPrompt = prompt;
 
       if (options.promptTemplate) {

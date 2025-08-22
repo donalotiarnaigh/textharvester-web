@@ -32,10 +32,17 @@ async function processFile(filePath, options = {}) {
     
     // Get the appropriate prompt for this provider
     const promptInstance = getPrompt(providerName, promptTemplate, promptVersion);
-    const promptText = promptInstance.getProviderPrompt(providerName);
+    const promptConfig = promptInstance.getProviderPrompt(providerName);
+    
+    // Extract the user prompt (the actual prompt text) and pass systemPrompt via options
+    const userPrompt = typeof promptConfig === 'string' ? promptConfig : promptConfig.userPrompt;
+    const systemPrompt = typeof promptConfig === 'object' ? promptConfig.systemPrompt : undefined;
     
     // Process the image using the selected provider
-    const rawExtractedData = await provider.processImage(base64Image, promptText);
+    const rawExtractedData = await provider.processImage(base64Image, userPrompt, {
+      systemPrompt: systemPrompt,
+      promptTemplate: promptInstance
+    });
     
     // Log the raw API response for debugging
     logger.info(`Raw ${providerName} API response for ${filePath}:`);
