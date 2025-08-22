@@ -20,11 +20,11 @@ const initDropzone = () => {
 
   Dropzone.options.uploadForm = {
     acceptedFiles: ".jpg, .jpeg, .pdf",
-    maxFiles: 1000,
+    maxFiles: 100,
     autoProcessQueue: false, // Manual processing
-    parallelUploads: 1000, // Handle large uploads
+    parallelUploads: 100, // Align with backend limit
     dictInvalidFileType: "Only .jpeg, .jpg, and .pdf files are allowed.",
-    dictMaxFilesExceeded: "Maximum of 1,000 files allowed.",
+    dictMaxFilesExceeded: "Maximum of 100 files allowed.",
     init: function () {
       var dropzoneInstance = this;
       handleFileUpload(dropzoneInstance);
