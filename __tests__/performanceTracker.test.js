@@ -8,7 +8,8 @@ const PerformanceTracker = require('../src/utils/performanceTracker');
 jest.mock('../src/utils/logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
-  trackMetrics: jest.fn()
+  trackMetrics: jest.fn(),
+  debugPayload: jest.fn()
 }));
 
 describe('PerformanceTracker', () => {
