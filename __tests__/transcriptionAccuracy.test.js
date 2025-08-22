@@ -14,7 +14,8 @@ jest.mock('fs', () => ({
 jest.mock('../src/utils/logger', () => ({
   error: jest.fn(),
   info: jest.fn(),
-  debug: jest.fn()
+  debug: jest.fn(),
+  debugPayload: jest.fn()
 }));
 
 describe('Memorial Record Transcription Accuracy Tests', () => {

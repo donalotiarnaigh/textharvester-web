@@ -9,13 +9,21 @@ class PerformanceTracker {
   constructor() {
     this.metrics = new Map();
     this.recentMetrics = [];
-    this.maxRecentMetrics = 100; // Keep last 100 metrics for quick access
+    this.maxRecentMetrics = 50; // Reduced from 100 to limit memory usage
     this.alerts = new PerformanceAlerts();
     
     // Auto-cleanup configuration
     this.cleanupInterval = null;
-    this.dataRetentionHours = 24; // Keep data for 24 hours
+    this.dataRetentionHours = 12; // Reduced from 24 hours to 12 hours
     this.startAutoCleanup();
+    
+    // Sampling configuration
+    this.samplingConfig = {
+      enabled: true,
+      successLogRate: 0.1, // Log 10% of successful calls
+      errorLogRate: 1.0, // Log all errors
+      metricsTrackingRate: 1.0 // Track all metrics but sample logging
+    };
   }
 
   /**
@@ -32,7 +40,11 @@ class PerformanceTracker {
     const startMemory = process.memoryUsage();
     const trackingId = `${provider}-${model}-${Date.now()}`;
 
-    logger.info(`[PERF] Starting ${operation} with ${provider}/${model} (ID: ${trackingId})`);
+    // Sample logging for API call start
+    const instance = PerformanceTracker.getInstance();
+    if (instance._shouldLogOperation('start')) {
+      logger.info(`[PERF] Starting ${operation} with ${provider}/${model} (ID: ${trackingId})`);
+    }
 
     try {
       const result = await fn();
@@ -57,20 +69,21 @@ class PerformanceTracker {
         metadata
       };
 
-      // Log performance data
-      logger.info(`[PERF] ${operation} completed successfully`, {
-        provider,
-        model,
-        responseTime: `${responseTime}ms`,
-        memoryDelta: `${Math.round(memoryDelta / 1024 / 1024 * 100) / 100}MB`,
-        trackingId
-      });
+      // Sample logging for successful operations
+      if (instance._shouldLogOperation('success')) {
+        logger.info(`[PERF] ${operation} completed successfully`, {
+          provider,
+          model,
+          responseTime: `${responseTime}ms`,
+          memoryDelta: `${Math.round(memoryDelta / 1024 / 1024 * 100) / 100}MB`,
+          trackingId
+        });
+      }
 
-      // Track metrics for analytics
+      // Always track metrics (sampling handled in logger.trackMetrics)
       logger.trackMetrics('api_performance', performanceData);
 
       // Store in singleton instance for real-time access
-      const instance = PerformanceTracker.getInstance();
       instance.addMetric(performanceData);
       
       // Check for performance alerts
@@ -94,6 +107,7 @@ class PerformanceTracker {
         metadata
       };
 
+      // Always log errors (no sampling for errors)
       logger.error(`[PERF] ${operation} failed`, {
         provider,
         model,
@@ -104,7 +118,6 @@ class PerformanceTracker {
 
       // Track failed metrics
       logger.trackMetrics('api_performance', performanceData);
-      const instance = PerformanceTracker.getInstance();
       instance.addMetric(performanceData);
       
       // Check for performance alerts on failures too
@@ -129,7 +142,7 @@ class PerformanceTracker {
    * @param {Object} metric - The performance metric to add
    */
   addMetric(metric) {
-    // Add to recent metrics (sliding window)
+    // Add to recent metrics (sliding window) - now with smaller limit
     this.recentMetrics.push(metric);
     if (this.recentMetrics.length > this.maxRecentMetrics) {
       this.recentMetrics.shift();
@@ -176,8 +189,8 @@ class PerformanceTracker {
         responseTime: metric.responseTime
       });
       
-      // Keep only last 10 errors
-      if (stats.recentErrors.length > 10) {
+      // Keep only last 5 errors (reduced from 10)
+      if (stats.recentErrors.length > 5) {
         stats.recentErrors.shift();
       }
     }
@@ -435,6 +448,43 @@ class PerformanceTracker {
         this.stopAutoCleanup();
       }
     }
+  }
+
+  /**
+   * Update sampling configuration
+   * @param {Object} config - Sampling configuration
+   */
+  updateSamplingConfig(config) {
+    this.samplingConfig = { ...this.samplingConfig, ...config };
+    logger.info('[PERF] Sampling configuration updated', this.samplingConfig);
+  }
+
+  /**
+   * Get current sampling configuration
+   * @returns {Object} Current sampling configuration
+   */
+  getSamplingConfig() {
+    return { ...this.samplingConfig };
+  }
+
+  /**
+   * Determine if we should log this operation based on sampling
+   * @private
+   * @param {string} type - Operation type ('start', 'success', 'error')
+   * @returns {boolean}
+   */
+  _shouldLogOperation(type) {
+    if (!this.samplingConfig.enabled) return true;
+    
+    if (type === 'error') {
+      return Math.random() < this.samplingConfig.errorLogRate;
+    }
+    
+    if (type === 'success' || type === 'start') {
+      return Math.random() < this.samplingConfig.successLogRate;
+    }
+    
+    return true;
   }
 
   /**

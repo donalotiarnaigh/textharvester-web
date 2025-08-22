@@ -3,6 +3,7 @@ const OpenAI = require('openai');
 const BaseVisionProvider = require('./baseProvider');
 const { promptManager } = require('../prompts/templates/providerTemplates');
 const PerformanceTracker = require('../performanceTracker');
+const logger = require('../logger');
 
 /**
  * OpenAI-specific implementation for vision models
@@ -104,10 +105,23 @@ class OpenAIProvider extends BaseVisionProvider {
       try {
         return JSON.parse(content);
       } catch (parseError) {
+        logger.error(`OpenAI JSON parsing failed for model ${this.model}`, parseError, {
+          phase: 'response_parsing',
+          operation: 'processImage',
+          contentPreview: content.substring(0, 200)
+        });
         throw new Error(`OpenAI processing failed: ${parseError.message}`);
       }
     } catch (error) {
-      console.error('OpenAI API error:', error);
+      logger.error(`OpenAI API error for model ${this.model}`, error, {
+        phase: 'api_call',
+        operation: 'processImage'
+      });
+      logger.debugPayload('OpenAI API error details:', {
+        model: this.model,
+        error: error.message,
+        stack: error.stack
+      });
       throw new Error(`OpenAI processing failed: ${error.message}`);
     }
   }

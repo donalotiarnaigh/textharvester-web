@@ -11,7 +11,8 @@ const { validateAndConvertRecords } = require('../../utils/dataValidation');
 jest.mock('../../utils/logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
-  warn: jest.fn()
+  warn: jest.fn(),
+  debugPayload: jest.fn()
 }));
 
 jest.mock('../../utils/fileQueue', () => ({

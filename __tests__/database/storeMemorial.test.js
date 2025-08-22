@@ -3,7 +3,8 @@ const sqlite3 = require('sqlite3').verbose();
 // Mock the logger
 jest.mock('../../src/utils/logger', () => ({
   error: jest.fn(),
-  info: jest.fn()
+  info: jest.fn(),
+  debugPayload: jest.fn()
 }));
 
 describe('storeMemorial Function', () => {

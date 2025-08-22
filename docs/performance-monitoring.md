@@ -1,179 +1,170 @@
-# Performance Monitoring System
+# Performance Monitoring
+
+This document describes the performance monitoring and logging system for the Text Harvester application.
 
 ## Overview
 
-The performance monitoring system tracks API response times, memory usage, and system metrics to help identify performance bottlenecks and monitor the health of the TextHarvester application.
+The application includes comprehensive performance tracking and logging capabilities with configurable verbosity levels and sampling to balance observability with performance.
 
-## Phase 1 Implementation (Completed)
+## Logging Configuration
 
-### Features
+### Verbose Mode
 
-1. **API Response Time Tracking**: Monitors all OpenAI and Anthropic API calls
-2. **Memory Usage Monitoring**: Tracks memory deltas for each API call
-3. **Error Tracking**: Records failed API calls with error details
-4. **Performance Statistics**: Calculates averages, min/max response times, success rates
-5. **Provider Comparison**: Compares performance between different AI providers and models
-6. **Real-time Metrics**: Provides live performance data via API endpoints
+By default, the application uses sampled logging to reduce I/O overhead and protect sensitive data. You can enable verbose mode for debugging when needed.
 
-### API Endpoints
+#### Enabling Verbose Mode
 
-#### GET `/api/performance/stats`
-Returns performance statistics for all providers and models.
+**Method 1: Environment Variable**
+```bash
+VERBOSE_LOGGING=true npm start
+```
 
-**Query Parameters:**
-- `provider` (optional): Filter by provider (openai, anthropic)
-- `model` (optional): Filter by specific model
-
-**Response:**
+**Method 2: Configuration File**
+Edit `config.json`:
 ```json
 {
-  "success": true,
-  "stats": {
-    "openai-gpt-5": {
-      "provider": "openai",
-      "model": "gpt-5",
-      "totalCalls": 10,
-      "successfulCalls": 9,
-      "failedCalls": 1,
-      "averageResponseTime": 45230,
-      "minResponseTime": 32100,
-      "maxResponseTime": 68400,
-      "successRate": 90,
-      "lastCall": "2025-08-22T14:30:00Z"
+  "logging": {
+    "verboseMode": true
+  }
+}
+```
+
+**Method 3: Runtime (via logger)**
+```javascript
+const logger = require('./src/utils/logger');
+logger.setVerboseMode(true);
+```
+
+#### What Verbose Mode Enables
+
+- **Full Payload Logging**: Raw API responses and requests are logged without truncation
+- **Debug Messages**: All debug-level messages are displayed
+- **Complete Error Details**: Full error stacks and context information
+- **Unsampled Logging**: All performance metrics and API calls are logged
+
+### Sampling Configuration
+
+When verbose mode is disabled, the system uses sampling to reduce log volume:
+
+```json
+{
+  "logging": {
+    "samplingRate": {
+      "enabled": true,
+      "performanceMetrics": 0.1,  // Log 10% of performance metrics
+      "payloadLogging": 0.05      // Log 5% of raw payloads
     }
   }
 }
 ```
 
-#### GET `/api/performance/recent`
-Returns recent performance metrics (last N calls).
+### Payload Truncation
 
-**Query Parameters:**
-- `limit` (optional): Number of recent metrics to return (default: 20)
+Large payloads are automatically truncated to prevent log files from growing too large:
 
-#### GET `/api/performance/summary`
-Returns a comprehensive performance summary with provider comparisons.
-
-#### GET `/api/performance/system`
-Returns current system metrics (memory, CPU, uptime).
-
-#### GET `/api/performance/dashboard`
-Returns combined dashboard data for monitoring interfaces.
-
-#### POST `/api/performance/clear`
-Clears all performance metrics (useful for testing).
-
-### Usage Examples
-
-#### Monitor API Performance in Real-time
-
-```bash
-# Get current performance stats
-curl http://localhost:3000/api/performance/stats
-
-# Get OpenAI-specific stats
-curl "http://localhost:3000/api/performance/stats?provider=openai"
-
-# Get recent metrics
-curl "http://localhost:3000/api/performance/recent?limit=10"
-
-# Get performance summary
-curl http://localhost:3000/api/performance/summary
+```json
+{
+  "logging": {
+    "payloadTruncation": {
+      "enabled": true,
+      "maxLength": 500  // Maximum characters before truncation
+    }
+  }
+}
 ```
 
-#### Programmatic Usage
+## Performance Tracking
 
+### Bounded Metrics Storage
+
+The system automatically manages memory usage by limiting stored metrics:
+
+- **Recent Metrics**: Last 50 API calls (reduced from 100)
+- **Metric History**: Last 500 entries per metric type (reduced from 1000)
+- **Error History**: Last 5 errors per provider/model (reduced from 10)
+- **Data Retention**: 12 hours (reduced from 24 hours)
+
+### Performance Alerts
+
+The system monitors performance and generates alerts for:
+
+- **Response Time**: Warning at 10s, Critical at 30s, Severe at 60s
+- **Success Rate**: Warning below 95%, Critical below 90%, Severe below 80%
+- **Memory Usage**: Warning at 10MB, Critical at 50MB, Severe at 100MB
+
+### Accessing Performance Data
+
+#### Via Logger Analytics
+```javascript
+const logger = require('./src/utils/logger');
+const analytics = logger.getAnalytics();
+console.log(analytics.configuration); // Current logging configuration
+```
+
+#### Via Performance Tracker
 ```javascript
 const PerformanceTracker = require('./src/utils/performanceTracker');
-
-// Track an API call manually
-const result = await PerformanceTracker.trackAPICall(
-  'openai',
-  'gpt-5', 
-  'processImage',
-  async () => {
-    // Your API call here
-    return await apiClient.call();
-  },
-  { imageSize: 1024000, promptLength: 500 } // metadata
-);
-
-// Get current stats
 const tracker = PerformanceTracker.getInstance();
+
+// Get current statistics
 const stats = tracker.getStats();
-console.log('Performance Stats:', stats);
 
-// Generate summary report
+// Get recent metrics
+const recent = tracker.getRecentMetrics(20);
+
+// Get performance summary
 const summary = tracker.generateSummary();
-console.log('Summary:', summary);
 ```
 
-### Performance Metrics Tracked
+## Key Metrics Preserved
 
-#### API Call Metrics
-- **Response Time**: Time from request start to completion (milliseconds)
-- **Memory Delta**: Memory usage change during the API call (bytes)
-- **Success/Failure Rate**: Percentage of successful vs failed calls
-- **Error Details**: Error messages and types for failed calls
-- **Metadata**: Image size, prompt length, model parameters
+Even with reduced logging verbosity, the following key metrics are always captured:
 
-#### Aggregated Statistics
-- **Average Response Time**: Mean response time across all calls
-- **Min/Max Response Times**: Fastest and slowest response times
-- **Total Calls**: Count of all API calls made
-- **Success Rate**: Percentage of successful calls
-- **Provider Comparison**: Performance comparison between OpenAI and Anthropic
+1. **API Response Times**: All successful and failed API calls
+2. **Error Rates**: Success/failure ratios by provider and model
+3. **Memory Usage**: Memory deltas for performance tracking
+4. **Processing Times**: End-to-end file processing durations
+5. **Alert Conditions**: All performance threshold violations
 
-### Integration
+## Troubleshooting
 
-The performance tracking is automatically integrated into:
+### When to Enable Verbose Mode
 
-1. **OpenAI Provider** (`src/utils/modelProviders/openaiProvider.js`)
-2. **Anthropic Provider** (`src/utils/modelProviders/anthropicProvider.js`)
-3. **Logger System** (`src/utils/logger.js`)
+Enable verbose mode when:
+- Debugging API integration issues
+- Investigating specific error patterns
+- Analyzing model response quality
+- Troubleshooting performance problems
 
-All API calls are automatically wrapped with performance tracking, so no additional code changes are required for basic monitoring.
+### Performance Impact
 
-### Log Output
+- **Normal Mode**: Minimal I/O overhead, sampled logging
+- **Verbose Mode**: Higher I/O usage, complete logging
+- **Memory Usage**: Bounded by configuration limits
+- **Log File Growth**: Controlled by truncation and sampling
 
-Performance metrics are logged with structured format:
-
-```
-[INFO] [PERF] Starting processImage with openai/gpt-5 (ID: openai-gpt-5-1755875363046)
-[INFO] [PERF] processImage completed successfully {
-  provider: 'openai',
-  model: 'gpt-5', 
-  responseTime: '45230ms',
-  memoryDelta: '2.42MB',
-  trackingId: 'openai-gpt-5-1755875363046'
-}
-[INFO] [METRICS] API Performance: openai/gpt-5 - 45230ms - success
-```
-
-## Expected Results
-
-With this monitoring system, you can now:
-
-1. **Confirm Performance Issues**: Get concrete data on whether GPT-5/Claude-4 are indeed slower
-2. **Compare Providers**: See which provider/model combination performs best
-3. **Track Trends**: Monitor performance over time
-4. **Identify Bottlenecks**: Pinpoint specific performance issues
-5. **Make Data-Driven Decisions**: Choose optimal models based on actual performance data
-
-## Next Steps (Future Phases)
-
-1. **Queue Monitoring**: Track file queue performance and throughput
-2. **System Resource Monitoring**: Monitor CPU, memory, disk usage
-3. **Performance Dashboard**: Web-based real-time monitoring interface
-4. **Alerting System**: Notifications for performance degradation
-5. **Historical Analytics**: Long-term performance trend analysis
-
-## Testing
-
-Run the performance tracker tests:
+### Monitoring Log File Size
 
 ```bash
-npm test __tests__/performanceTracker.test.js
+# Check current log file sizes
+ls -lh logs/
+
+# Monitor log growth in real-time
+tail -f logs/combined.log
 ```
 
-All tests should pass and demonstrate the core functionality of the monitoring system.
+### Adjusting Sampling Rates
+
+Update sampling rates without restarting:
+
+```javascript
+const logger = require('./src/utils/logger');
+logger.updateSamplingRates({
+  performanceMetrics: 0.2,  // Increase to 20%
+  payloadLogging: 0.1       // Increase to 10%
+});
+```
+
+## API Endpoints
+
+The performance data is available through the existing results API and will be displayed in the results.html page without modification to preserve existing functionality.

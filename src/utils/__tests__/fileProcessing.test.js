@@ -16,7 +16,8 @@ jest.mock('fs', () => {
 jest.mock('../logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
-  warn: jest.fn()
+  warn: jest.fn(),
+  debugPayload: jest.fn()
 }));
 
 jest.mock('../database', () => ({
