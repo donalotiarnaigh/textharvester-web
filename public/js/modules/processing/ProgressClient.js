@@ -3,8 +3,7 @@
  */
 export class ProgressClient {
   constructor() {
-    this.lastETag = null;
-    this.lastModified = null;
+    // Simplified client: no cache header management
     this.retryCount = 0;
     this.maxRetries = 3;
     this.retryDelay = 1000;
@@ -18,17 +17,7 @@ export class ProgressClient {
   async getProgress() {
     try {
       console.log('[ProgressClient] Fetching progress...');
-      const headers = new Headers();
-      if (this.lastETag) {
-        headers.append('If-None-Match', this.lastETag);
-        console.log('[ProgressClient] Using ETag:', this.lastETag);
-      }
-      if (this.lastModified) {
-        headers.append('If-Modified-Since', this.lastModified);
-        console.log('[ProgressClient] Using Last-Modified:', this.lastModified);
-      }
-
-      const response = await fetch('/processing-status', { headers });
+      const response = await fetch('/processing-status', {});
       console.log('[ProgressClient] Response status:', response.status);
 
       // Handle 304 Not Modified
@@ -36,14 +25,6 @@ export class ProgressClient {
         console.log('[ProgressClient] No changes (304)');
         return null;
       }
-
-      // Store caching headers
-      this.lastETag = response.headers.get('ETag');
-      this.lastModified = response.headers.get('Last-Modified');
-      console.log('[ProgressClient] Updated cache headers:', { 
-        ETag: this.lastETag, 
-        LastModified: this.lastModified 
-      });
 
       // Reset retry count on successful response
       this.retryCount = 0;
@@ -80,11 +61,7 @@ export class ProgressClient {
   async verifyCompletion() {
     try {
       console.log('[ProgressClient] Verifying completion...');
-      
-      // Force a fresh request by clearing cache headers
-      this.lastETag = null;
-      this.lastModified = null;
-      
+
       const progressData = await this.getProgress();
       console.log('[ProgressClient] Completion check response:', progressData);
       
