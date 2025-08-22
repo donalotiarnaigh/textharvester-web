@@ -137,14 +137,14 @@ The application includes utilities to test and compare different AI providers:
 
 1. **Process a file with a specific provider**:
    ```sh
-   node src/utils/processWithProvider.js openai path/to/image.jpg
+   node scripts/process-with-provider.js openai path/to/image.jpg
    # or
-   node src/utils/processWithProvider.js anthropic path/to/image.jpg
+   node scripts/process-with-provider.js anthropic path/to/image.jpg
    ```
 
 2. **Compare results from all providers**:
    ```sh
-   node src/utils/testProviders.js path/to/image.jpg
+   node scripts/test-providers.js path/to/image.jpg
    ```
 
 3. **Switch the default provider** by changing the `AI_PROVIDER` environment variable in your `.env` file.

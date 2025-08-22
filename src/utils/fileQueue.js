@@ -277,13 +277,9 @@ function cancelProcessing() {
 
 module.exports = {
   enqueueFiles,
-  dequeueFile,
-  checkAndProcessNextFile,
-  resetFileProcessingState,
   getTotalFiles,
   getProcessedFiles,
   getProcessedResults,
   getProcessingProgress,
   cancelProcessing,
-  queueMonitor,
 };

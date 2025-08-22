@@ -192,5 +192,4 @@ const handleFileUpload = async (req, res) => {
 
 module.exports = {
   handleFileUpload,
-  createUniqueName,
 };
