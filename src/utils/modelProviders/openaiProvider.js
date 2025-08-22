@@ -2,6 +2,7 @@ require('openai/shims/node');
 const OpenAI = require('openai');
 const BaseVisionProvider = require('./baseProvider');
 const { promptManager } = require('../prompts/templates/providerTemplates');
+const PerformanceTracker = require('../performanceTracker');
 
 /**
  * OpenAI-specific implementation for vision models
@@ -76,7 +77,23 @@ class OpenAIProvider extends BaseVisionProvider {
         requestPayload.temperature = this.temperature;
       }
 
-      const result = await this.client.chat.completions.create(requestPayload);
+      // Track API performance
+      const result = await PerformanceTracker.trackAPICall(
+        'openai',
+        this.model,
+        'processImage',
+        async () => {
+          return await this.client.chat.completions.create(requestPayload);
+        },
+        {
+          imageSize: base64Image ? Math.round(base64Image.length * 0.75) : 0, // Approximate bytes
+          promptLength: userPrompt ? userPrompt.length : 0,
+          systemPromptLength: systemPrompt ? systemPrompt.length : 0,
+          maxTokens: this.maxTokens,
+          temperature: requestPayload.temperature || 1
+        }
+      );
+      
       const content = result.choices[0].message.content;
       
       // Return raw content if requested

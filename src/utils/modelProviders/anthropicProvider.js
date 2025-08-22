@@ -2,6 +2,7 @@ require('@anthropic-ai/sdk/shims/node');
 const Anthropic = require('@anthropic-ai/sdk');
 const BaseVisionProvider = require('./baseProvider');
 const { promptManager } = require('../prompts/templates/providerTemplates');
+const PerformanceTracker = require('../performanceTracker');
 
 /**
  * Anthropic-specific implementation for vision models
@@ -60,28 +61,43 @@ class AnthropicProvider extends BaseVisionProvider {
         userPrompt = JSON.stringify(userPrompt);
       }
 
-      const result = await this.client.messages.create({
-        model: this.model,
-        max_tokens: this.maxTokens,
-        temperature: this.temperature,
-        system: systemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: userPrompt },
-              { 
-                type: 'image', 
-                source: { 
-                  type: 'base64', 
-                  media_type: 'image/jpeg', 
-                  data: base64Image 
-                } 
+      // Track API performance
+      const result = await PerformanceTracker.trackAPICall(
+        'anthropic',
+        this.model,
+        'processImage',
+        async () => {
+          return await this.client.messages.create({
+            model: this.model,
+            max_tokens: this.maxTokens,
+            temperature: this.temperature,
+            system: systemPrompt,
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: userPrompt },
+                  { 
+                    type: 'image', 
+                    source: { 
+                      type: 'base64', 
+                      media_type: 'image/jpeg', 
+                      data: base64Image 
+                    } 
+                  }
+                ]
               }
             ]
-          }
-        ]
-      });
+          });
+        },
+        {
+          imageSize: base64Image ? Math.round(base64Image.length * 0.75) : 0, // Approximate bytes
+          promptLength: userPrompt ? userPrompt.length : 0,
+          systemPromptLength: systemPrompt ? systemPrompt.length : 0,
+          maxTokens: this.maxTokens,
+          temperature: this.temperature
+        }
+      );
 
       // Extract the text content from the response
       const content = result.content.find(item => item.type === 'text')?.text;

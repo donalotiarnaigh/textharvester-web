@@ -65,18 +65,50 @@ class Logger {
 
   /**
    * Track processing metrics
-   * @param {Object} metrics Processing metrics
+   * @param {string|Object} type - Metric type or legacy metrics object
+   * @param {Object} data - Metric data (when type is string)
    */
-  trackMetrics(metrics) {
-    if (metrics.processingTime) {
-      this.metrics.processingTimes.push(metrics.processingTime);
+  trackMetrics(type, data = null) {
+    // Handle legacy format for backward compatibility
+    if (typeof type === 'object' && data === null) {
+      const metrics = type;
+      if (metrics.processingTime) {
+        this.metrics.processingTimes.push(metrics.processingTime);
+      }
+      if (metrics.success) {
+        this.metrics.successCount++;
+      } else {
+        this.metrics.failureCount++;
+      }
+      this.metrics.totalFiles++;
+      return;
     }
-    if (metrics.success) {
-      this.metrics.successCount++;
-    } else {
-      this.metrics.failureCount++;
+
+    // Handle new structured format
+    if (typeof type === 'string' && data) {
+      // Initialize metrics storage for this type if it doesn't exist
+      if (!this.metrics[type]) {
+        this.metrics[type] = [];
+      }
+
+      // Add timestamp to data
+      const metricEntry = {
+        ...data,
+        timestamp: data.timestamp || new Date().toISOString()
+      };
+
+      this.metrics[type].push(metricEntry);
+
+      // Keep only last 1000 entries per type to prevent memory issues
+      if (this.metrics[type].length > 1000) {
+        this.metrics[type] = this.metrics[type].slice(-1000);
+      }
+
+      // Log performance metrics with structured format
+      if (type === 'api_performance') {
+        this.info(`[METRICS] API Performance: ${data.provider}/${data.model} - ${data.responseTime}ms - ${data.status}`);
+      }
     }
-    this.metrics.totalFiles++;
   }
 
   /**

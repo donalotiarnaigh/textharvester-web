@@ -8,6 +8,7 @@ const {
   cancelProcessing,
   getProcessingProgress,
 } = require('./src/utils/fileQueue');
+const performanceRoutes = require('./src/routes/performanceRoutes');
 
 require('dotenv').config(); // Load environment variables from .env file
 
@@ -43,6 +44,9 @@ app.post('/cancel-processing', (req, res) => {
   cancelProcessing();
   res.send({ status: 'cancelled' });
 });
+
+// Performance monitoring routes
+app.use('/api/performance', performanceRoutes);
 
 app.listen(port, async () => {
   logger.info(`Server is running on http://localhost:${port}`);
