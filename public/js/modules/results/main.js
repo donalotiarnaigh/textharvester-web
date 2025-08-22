@@ -120,7 +120,6 @@ function displayModalDetails(memorial) {
 // Function to enable download buttons
 function enableDownloadButtons() {
   document.getElementById('downloadButton').disabled = false;
-  document.getElementById('downloadPrettyButton').disabled = false;
   document.getElementById('downloadCsvButton').disabled = false;
 }
 
