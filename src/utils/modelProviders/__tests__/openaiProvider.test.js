@@ -122,8 +122,8 @@ describe('OpenAIProvider', () => {
           },
         ],
         response_format: { type: 'json_object' },
-        max_completion_tokens: 4000,
-        temperature: 0.2
+        max_completion_tokens: 4000
+        // Note: temperature is not included for GPT-5 as it only supports default (1)
       });
     });
 

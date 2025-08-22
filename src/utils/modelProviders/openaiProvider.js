@@ -68,9 +68,13 @@ class OpenAIProvider extends BaseVisionProvider {
           },
         ],
         response_format: { type: 'json_object' },
-        max_completion_tokens: this.maxTokens,
-        temperature: this.temperature
+        max_completion_tokens: this.maxTokens
       };
+
+      // GPT-5 only supports default temperature (1), so don't include it
+      if (!this.model.includes('gpt-5')) {
+        requestPayload.temperature = this.temperature;
+      }
 
       const result = await this.client.chat.completions.create(requestPayload);
       const content = result.choices[0].message.content;
