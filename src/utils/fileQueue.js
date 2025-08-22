@@ -3,6 +3,7 @@ const { processFile } = require('./fileProcessing');
 const logger = require('./logger');
 const config = require('../../config.json');
 const path = require('path');
+const QueueMonitor = require('./queueMonitor');
 
 const uploadDir = config.uploadPath;
 if (!fs.existsSync(uploadDir)) {
@@ -16,6 +17,9 @@ let processedFiles = 0;
 let totalFiles = 0;
 let processedResults = []; // Store both successful and error results
 const retryLimits = {};
+
+// Initialize queue monitor
+const queueMonitor = new QueueMonitor();
 
 function enqueueFiles(files) {
   logger.info(`Enqueue operation started at ${new Date().toISOString()}`);
@@ -43,6 +47,9 @@ function enqueueFiles(files) {
   totalFiles = files.length;  // Set total files to new batch size
   processedFiles = 0;        // Reset processed files counter
   processedResults = [];     // Clear any previous results
+  
+  // Record queue metrics
+  queueMonitor.recordEnqueue(fileQueue.length);
   
   logger.info(
     `Enqueued ${files.length} new file(s). Queue length is now: ${fileQueue.length}. Total files to process: ${totalFiles}`
@@ -111,6 +118,11 @@ function checkAndProcessNextFile() {
   const file = dequeueFile();
   if (file) {
     isProcessing = true;
+    const processingStartTime = Date.now();
+    
+    // Record processing start
+    queueMonitor.recordProcessingStart(file.path, fileQueue.length);
+    
     logger.info(
       `Dequeued file for processing: ${file.path} with provider: ${file.provider}. Initiating processing.`
     );
@@ -118,6 +130,12 @@ function checkAndProcessNextFile() {
       .then((result) => {
         // Store result regardless of success or error
         processedResults.push(result);
+        
+        const processingTime = Date.now() - processingStartTime;
+        const success = !result.error;
+        
+        // Record processing completion
+        queueMonitor.recordProcessingComplete(file.path, processingTime, success, fileQueue.length);
         
         if (result.error) {
           logger.info(`File ${file.path} processed with error: ${result.errorMessage}`);
@@ -214,10 +232,21 @@ function getProcessingProgress() {
     hasErrors: errors.length > 0
   });
 
+  // Get queue performance metrics
+  const queueMetrics = queueMonitor.getPerformanceSummary();
+  
   return {
     state,
     progress,
-    errors: errors.length > 0 ? errors : undefined
+    errors: errors.length > 0 ? errors : undefined,
+    queue: {
+      size: queueMetrics.current.queueSize,
+      throughputPerMinute: queueMetrics.current.throughputPerMinute,
+      averageProcessingTime: queueMetrics.current.averageProcessingTime,
+      successRate: queueMetrics.current.successRate,
+      totalProcessed: queueMetrics.totals.processed,
+      totalFailed: queueMetrics.totals.failed
+    }
   };
 }
 
@@ -256,4 +285,5 @@ module.exports = {
   getProcessedResults,
   getProcessingProgress,
   cancelProcessing,
+  queueMonitor,
 };

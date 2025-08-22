@@ -188,6 +188,86 @@
           padding: 1.5rem;
           margin: 2rem 0;
         }
+
+        .metric-value {
+          font-size: 1rem;
+        }
+        
+        .metric-item {
+          min-height: 70px;
+          padding: 0.5rem 0.25rem;
+        }
+      }
+
+      /* Performance metrics styles */
+      .metric-item {
+        padding: 0.75rem 0.5rem;
+        min-height: 80px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .metric-value {
+        font-size: 1.25rem;
+        font-weight: 600;
+        line-height: 1.2;
+        color: #495057;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        text-align: center;
+      }
+
+      .metric-label {
+        font-size: 0.65rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 0.5rem;
+        font-weight: 500;
+        text-align: center;
+        white-space: nowrap;
+        line-height: 1.1;
+      }
+
+      #performance-widget .card {
+        border: 1px solid #dee2e6;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      }
+
+      #performance-widget .metric-item {
+        border-right: 1px solid #f1f3f4;
+        transition: background-color 0.2s ease;
+      }
+
+      #performance-widget .metric-item:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+        cursor: help;
+      }
+
+      #performance-widget .row:last-child .metric-item {
+        border-right: none;
+      }
+
+      #performance-widget .col-4:last-child .metric-item,
+      #performance-widget .col-6:last-child .metric-item {
+        border-right: none;
+      }
+
+      /* Loading animation for placeholder text */
+      .metric-value.loading {
+        opacity: 0.7;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% { opacity: 0.7; }
+        50% { opacity: 1; }
+        100% { opacity: 0.7; }
       }
     </style>
   </head>
@@ -222,6 +302,49 @@
               <div class="progress-wrapper">
                 <div class="progress-bar">
                   <div class="progress-bar__fill"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Performance Metrics Widget -->
+            <div id="performance-widget" class="mt-3">
+              <div class="card">
+                <div class="card-body py-3">
+                  <h6 class="card-title mb-3 text-muted" data-toggle="tooltip" data-placement="right" title="Real-time processing performance statistics">Performance Metrics</h6>
+                  <div class="row text-center">
+                    <div class="col-4">
+                      <div class="metric-item" data-toggle="tooltip" data-placement="top" title="Number of files waiting to be processed">
+                        <div class="metric-value" id="queue-position">-</div>
+                        <div class="metric-label">Queue</div>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="metric-item" data-toggle="tooltip" data-placement="top" title="Estimated time to complete all remaining files">
+                        <div class="metric-value" id="estimated-time">-</div>
+                        <div class="metric-label">Est. Time</div>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="metric-item" data-toggle="tooltip" data-placement="top" title="Average processing time per file">
+                        <div class="metric-value" id="avg-speed">-</div>
+                        <div class="metric-label">Speed</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row text-center mt-2">
+                    <div class="col-6">
+                      <div class="metric-item" data-toggle="tooltip" data-placement="top" title="Percentage of files processed successfully">
+                        <div class="metric-value text-success" id="success-rate">-</div>
+                        <div class="metric-label">Success</div>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="metric-item" data-toggle="tooltip" data-placement="top" title="Files processed per minute in the last 60 seconds">
+                        <div class="metric-value text-info" id="throughput">-</div>
+                        <div class="metric-label">Rate</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -276,6 +399,125 @@
             window.location.href = '/results.html';
           }, 800);
         });
+
+        // Performance widget update function
+        function updatePerformanceWidget(progressData) {
+          // Widget is always visible - just update the content
+          const hasQueueData = progressData && progressData.queue;
+          
+          if (hasQueueData) {
+            // Remove loading classes and update with real data
+            const elements = ['queue-position', 'estimated-time', 'avg-speed', 'success-rate', 'throughput'];
+            elements.forEach(id => {
+              document.getElementById(id).classList.remove('loading');
+            });
+            
+            // Update with real data
+            document.getElementById('queue-position').textContent = 
+              progressData.queue.size || '0';
+            
+            // Update estimated time based on average processing time
+            const avgTime = progressData.queue.averageProcessingTime || 0;
+            const queueSize = progressData.queue.size || 0;
+            const estimatedSeconds = Math.round(avgTime * queueSize);
+            const estimatedText = estimatedSeconds > 0 ? 
+              `${Math.round(estimatedSeconds)}s` : '-';
+            document.getElementById('estimated-time').textContent = estimatedText;
+            
+            // Update average speed
+            const avgSpeed = avgTime > 0 ? `${avgTime}s/file` : '-';
+            document.getElementById('avg-speed').textContent = avgSpeed;
+            
+            // Update success rate
+            const successRate = progressData.queue.successRate || 0;
+            document.getElementById('success-rate').textContent = 
+              successRate > 0 ? `${Math.round(successRate)}%` : '-';
+            
+            // Update throughput
+            const throughput = progressData.queue.throughputPerMinute || 0;
+            document.getElementById('throughput').textContent = 
+              throughput > 0 ? `${throughput.toFixed(1)}` : '-';
+              
+          } else {
+            // Add loading classes for animation
+            const elements = ['queue-position', 'estimated-time', 'avg-speed', 'success-rate', 'throughput'];
+            
+            // Show placeholder data or current state info
+            const isProcessing = progressData && progressData.state === 'processing';
+            const isComplete = progressData && progressData.state === 'complete';
+            
+            if (isProcessing) {
+              elements.forEach(id => {
+                const element = document.getElementById(id);
+                element.classList.add('loading');
+              });
+              document.getElementById('queue-position').textContent = 'Active';
+              document.getElementById('estimated-time').textContent = '...';
+              document.getElementById('avg-speed').textContent = '...';
+              document.getElementById('success-rate').textContent = '...';
+              document.getElementById('throughput').textContent = '...';
+            } else if (isComplete) {
+              elements.forEach(id => {
+                document.getElementById(id).classList.remove('loading');
+              });
+              document.getElementById('queue-position').textContent = '0';
+              document.getElementById('estimated-time').textContent = 'Done';
+              document.getElementById('avg-speed').textContent = 'Final';
+              document.getElementById('success-rate').textContent = '100%';
+              document.getElementById('throughput').textContent = 'Complete';
+            } else {
+              elements.forEach(id => {
+                document.getElementById(id).classList.remove('loading');
+              });
+              document.getElementById('queue-position').textContent = '0';
+              document.getElementById('estimated-time').textContent = '-';
+              document.getElementById('avg-speed').textContent = '-';
+              document.getElementById('success-rate').textContent = '-';
+              document.getElementById('throughput').textContent = '-';
+            }
+          }
+        }
+
+        // Hook into progress updates by overriding the pollProgress method
+        const originalPollProgress = progressController.pollProgress;
+        progressController.pollProgress = async function() {
+          if (!this.isPolling) {
+            return;
+          }
+          
+          try {
+            // Get data directly from the processing-status endpoint to ensure we get queue data
+            const response = await fetch('/processing-status');
+            const rawData = await response.json();
+            
+            // Update performance widget with raw data that includes queue
+            updatePerformanceWidget(rawData);
+            
+            // Also get the normalized data for the progress bar
+            const progressData = await this.client.getProgress();
+            
+            // Call original handleProgress with normalized data
+            await this.handleProgress(progressData);
+          } catch (error) {
+            console.error('[ProgressController] Failed to poll progress:', error);
+            this.progressBar.showError();
+            this.stopPolling();
+          }
+        };
+
+        // Initialize Bootstrap tooltips for performance metrics
+        $(function () {
+          $('[data-toggle="tooltip"]').tooltip();
+        });
+
+        // Initialize widget with default state
+        updatePerformanceWidget({ state: 'waiting', progress: 0 });
+
+        // Load initial data
+        fetch('/processing-status')
+          .then(r => r.json())
+          .then(data => updatePerformanceWidget(data))
+          .catch(err => console.error('Failed to load initial metrics:', err));
 
         // Start polling immediately since processing has already begun
         progressController.startPolling();

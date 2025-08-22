@@ -16,11 +16,13 @@ function getProcessingStatus(req, res) {
   const processedResults = getProcessedResults();
   const errors = processedResults.filter(r => r && r.error);
   
-  // Return the progress data with errors included
+  // Return the full progress data including queue metrics for performance widget
   res.json({
     status: progressData.state,
     progress: progressData.progress,
-    errors: errors.length > 0 ? errors : undefined
+    errors: errors.length > 0 ? errors : undefined,
+    queue: progressData.queue, // Include queue data for performance widget
+    files: progressData.files  // Include files data for compatibility
   });
 }
 

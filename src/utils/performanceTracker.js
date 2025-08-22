@@ -3,12 +3,19 @@
  */
 
 const logger = require('./logger');
+const PerformanceAlerts = require('./performanceAlerts');
 
 class PerformanceTracker {
   constructor() {
     this.metrics = new Map();
     this.recentMetrics = [];
     this.maxRecentMetrics = 100; // Keep last 100 metrics for quick access
+    this.alerts = new PerformanceAlerts();
+    
+    // Auto-cleanup configuration
+    this.cleanupInterval = null;
+    this.dataRetentionHours = 24; // Keep data for 24 hours
+    this.startAutoCleanup();
   }
 
   /**
@@ -62,10 +69,14 @@ class PerformanceTracker {
       // Track metrics for analytics
       logger.trackMetrics('api_performance', performanceData);
 
-      // Store in singleton instance for real-time access
-      PerformanceTracker.getInstance().addMetric(performanceData);
+          // Store in singleton instance for real-time access
+    const instance = PerformanceTracker.getInstance();
+    instance.addMetric(performanceData);
+    
+    // Check for performance alerts
+    instance.alerts.checkMetric(performanceData);
 
-      return result;
+    return result;
     } catch (error) {
       const endTime = Date.now();
       const responseTime = endTime - startTime;
@@ -93,7 +104,11 @@ class PerformanceTracker {
 
       // Track failed metrics
       logger.trackMetrics('api_performance', performanceData);
-      PerformanceTracker.getInstance().addMetric(performanceData);
+      const instance = PerformanceTracker.getInstance();
+      instance.addMetric(performanceData);
+      
+      // Check for performance alerts on failures too
+      instance.alerts.checkMetric(performanceData);
 
       throw error;
     }
@@ -271,11 +286,175 @@ class PerformanceTracker {
   }
 
   /**
+   * Get recent alerts
+   * @param {number} limit - Number of alerts to return
+   * @returns {Array} Recent alerts
+   */
+  getRecentAlerts(limit = 20) {
+    return this.alerts.getRecentAlerts(limit);
+  }
+
+  /**
+   * Get alert statistics
+   * @returns {Object} Alert statistics
+   */
+  getAlertStats() {
+    return this.alerts.getAlertStats();
+  }
+
+  /**
+   * Update alert thresholds
+   * @param {Object} thresholds - New thresholds
+   */
+  updateAlertThresholds(thresholds) {
+    this.alerts.updateThresholds(thresholds);
+  }
+
+  /**
+   * Get current alert thresholds
+   * @returns {Object} Current thresholds
+   */
+  getAlertThresholds() {
+    return this.alerts.getThresholds();
+  }
+
+  /**
+   * Start automatic cleanup of old performance data
+   */
+  startAutoCleanup() {
+    // Clean up every hour
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupOldMetrics();
+    }, 60 * 60 * 1000); // 1 hour
+    
+    logger.info(`[PERF] Auto-cleanup started. Data retention: ${this.dataRetentionHours} hours`);
+  }
+
+  /**
+   * Stop automatic cleanup
+   */
+  stopAutoCleanup() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+      logger.info('[PERF] Auto-cleanup stopped');
+    }
+  }
+
+  /**
+   * Clean up old performance metrics
+   */
+  cleanupOldMetrics() {
+    const cutoffTime = Date.now() - (this.dataRetentionHours * 60 * 60 * 1000);
+    let totalRemoved = 0;
+    
+    // Clean up recent metrics
+    const originalRecentCount = this.recentMetrics.length;
+    this.recentMetrics = this.recentMetrics.filter(metric => {
+      return new Date(metric.timestamp).getTime() > cutoffTime;
+    });
+    const recentRemoved = originalRecentCount - this.recentMetrics.length;
+    totalRemoved += recentRemoved;
+    
+    // Clean up aggregated metrics (reset counters for very old data)
+    for (const [key, stats] of this.metrics.entries()) {
+      if (stats.lastCall && new Date(stats.lastCall).getTime() < cutoffTime) {
+        // If no recent activity, reset the stats but keep the key
+        this.metrics.set(key, {
+          provider: stats.provider,
+          model: stats.model,
+          totalCalls: 0,
+          successfulCalls: 0,
+          failedCalls: 0,
+          totalResponseTime: 0,
+          minResponseTime: Infinity,
+          maxResponseTime: 0,
+          averageResponseTime: 0,
+          totalMemoryDelta: 0,
+          lastCall: null,
+          recentErrors: []
+        });
+      }
+    }
+    
+    // Clean up logger metrics (delegate to logger if it has cleanup)
+    if (logger.metrics && logger.metrics.api_performance) {
+      const originalLoggerCount = logger.metrics.api_performance.length;
+      logger.metrics.api_performance = logger.metrics.api_performance.filter(metric => {
+        return new Date(metric.timestamp).getTime() > cutoffTime;
+      });
+      const loggerRemoved = originalLoggerCount - logger.metrics.api_performance.length;
+      totalRemoved += loggerRemoved;
+    }
+    
+    if (totalRemoved > 0) {
+      logger.info(`[PERF] Cleanup completed: removed ${totalRemoved} old metrics (older than ${this.dataRetentionHours}h)`);
+    }
+  }
+
+  /**
+   * Get cleanup status and configuration
+   * @returns {Object} Cleanup status
+   */
+  getCleanupStatus() {
+    return {
+      enabled: this.cleanupInterval !== null,
+      retentionHours: this.dataRetentionHours,
+      nextCleanup: this.cleanupInterval ? 
+        new Date(Date.now() + 60 * 60 * 1000).toISOString() : null,
+      currentMetricsCount: this.recentMetrics.length,
+      maxMetricsCount: this.maxRecentMetrics
+    };
+  }
+
+  /**
+   * Update cleanup configuration
+   * @param {Object} config - Cleanup configuration
+   */
+  updateCleanupConfig(config) {
+    if (config.retentionHours && config.retentionHours > 0) {
+      this.dataRetentionHours = config.retentionHours;
+      logger.info(`[PERF] Data retention updated to ${this.dataRetentionHours} hours`);
+    }
+    
+    if (config.maxRecentMetrics && config.maxRecentMetrics > 0) {
+      this.maxRecentMetrics = config.maxRecentMetrics;
+      
+      // Trim current metrics if needed
+      if (this.recentMetrics.length > this.maxRecentMetrics) {
+        this.recentMetrics = this.recentMetrics.slice(-this.maxRecentMetrics);
+      }
+      
+      logger.info(`[PERF] Max recent metrics updated to ${this.maxRecentMetrics}`);
+    }
+    
+    if (config.enabled !== undefined) {
+      if (config.enabled && !this.cleanupInterval) {
+        this.startAutoCleanup();
+      } else if (!config.enabled && this.cleanupInterval) {
+        this.stopAutoCleanup();
+      }
+    }
+  }
+
+  /**
    * Clear all metrics (useful for testing)
    */
   clearMetrics() {
     this.metrics.clear();
     this.recentMetrics = [];
+    this.alerts.clearAlertHistory();
+    logger.info('[PERF] All metrics cleared manually');
+  }
+
+  /**
+   * Destroy the performance tracker (cleanup intervals)
+   */
+  destroy() {
+    this.stopAutoCleanup();
+    if (this.alerts && typeof this.alerts.destroy === 'function') {
+      this.alerts.destroy();
+    }
   }
 }
 
