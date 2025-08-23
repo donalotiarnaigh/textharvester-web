@@ -62,6 +62,192 @@ let currentError = null;
 let retryCount = 0;
 const MAX_RETRY_ATTEMPTS = 3;
 
+// HTML Sanitization utilities
+const SanitizeUtils = {
+  /**
+   * Sanitize text content for safe HTML insertion
+   * @param {string} text - Text to sanitize
+   * @returns {string} Sanitized text safe for HTML content
+   */
+  sanitizeText(text) {
+    if (text == null) return '';
+    const stringText = String(text);
+
+    // Escape HTML special characters
+    return stringText
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
+      .replace(/\//g, '&#x2F;');
+  },
+
+  /**
+   * Sanitize text for use in HTML attributes
+   * @param {string} text - Text to sanitize
+   * @returns {string} Sanitized text safe for HTML attributes
+   */
+  sanitizeAttribute(text) {
+    if (text == null) return '';
+    const stringText = String(text);
+
+    // For attributes, we need to escape quotes and other special characters
+    return stringText
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  },
+
+  /**
+   * Sanitize numeric values
+   * @param {number|string} value - Value to sanitize
+   * @returns {string} Sanitized numeric string
+   */
+  sanitizeNumber(value) {
+    if (value == null || value === '') return 'N/A';
+    const num = parseFloat(value);
+    return isNaN(num) ? 'N/A' : String(num);
+  },
+
+  /**
+   * Sanitize memorial number (can be alphanumeric)
+   * @param {string|number} value - Memorial number to sanitize
+   * @returns {string} Sanitized memorial number
+   */
+  sanitizeMemorialNumber(value) {
+    if (value == null || value === '') return 'N/A';
+    // Memorial numbers can be alphanumeric, so treat as text but sanitize
+    return this.sanitizeText(String(value));
+  },
+
+  /**
+   * Sanitize memorial data object for safe HTML insertion
+   * @param {Object} memorial - Memorial data object
+   * @returns {Object} Sanitized memorial data
+   */
+  sanitizeMemorial(memorial) {
+    if (!memorial || typeof memorial !== 'object') return {};
+
+    return {
+      memorial_number: this.sanitizeMemorialNumber(memorial.memorial_number),
+      first_name: this.sanitizeText(memorial.first_name),
+      last_name: this.sanitizeText(memorial.last_name),
+      year_of_death: this.sanitizeNumber(memorial.year_of_death),
+      inscription: this.sanitizeText(memorial.inscription),
+      ai_provider: this.sanitizeText(memorial.ai_provider),
+      prompt_template: this.sanitizeText(memorial.prompt_template),
+      prompt_version: this.sanitizeText(memorial.prompt_version),
+      fileName: this.sanitizeAttribute(memorial.fileName),
+      processed_date: memorial.processed_date // Date objects are safe as they're processed by formatDate
+    };
+  },
+
+  /**
+   * Create safe HTML content from memorial data
+   * @param {Object} memorial - Memorial data object
+   * @param {number} colSpan - Column span for the table cell
+   * @returns {string} Safe HTML string
+   */
+  createSafeDetailHTML(memorial, colSpan) {
+    const safe = this.sanitizeMemorial(memorial);
+
+    return `
+    <td colspan="${colSpan}">
+      <div class="detail-content p-3">
+        <div class="row">
+          <div class="col-12">
+            <h5 class="mb-3">
+              ${safe.memorial_number} - ${safe.first_name} ${safe.last_name}
+            </h5>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-header bg-light">
+            <strong>Inscription</strong>
+          </div>
+          <div class="card-body">
+            <p class="inscription-text">${safe.inscription || 'No inscription available'}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="detail-info">
+              <h6>Processing Information</h6>
+              <dl class="row">
+                <dt class="col-sm-4">Model:</dt>
+                <dd class="col-sm-8">${safe.ai_provider || 'N/A'}</dd>
+
+                <dt class="col-sm-4">Template:</dt>
+                <dd class="col-sm-8">${safe.prompt_template || 'N/A'}</dd>
+
+                <dt class="col-sm-4">Version:</dt>
+                <dd class="col-sm-8">${safe.prompt_version || 'N/A'}</dd>
+
+                <dt class="col-sm-4">Source File:</dt>
+                <dd class="col-sm-8">${safe.fileName || 'N/A'}</dd>
+              </dl>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="detail-info">
+              <h6>Additional Details</h6>
+              <dl class="row">
+                <dt class="col-sm-4">Processed:</dt>
+                <dd class="col-sm-8">${formatDate(memorial.processed_date)}</dd>
+
+                <dt class="col-sm-4">Year of Death:</dt>
+                <dd class="col-sm-8">${safe.year_of_death}</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <button class="btn btn-sm btn-secondary close-detail" data-memorial="${safe.memorial_number}">
+            <i class="fas fa-chevron-up"></i> Close Details
+          </button>
+          <button class="btn btn-sm btn-info copy-inscription ml-2" data-inscription="${safe.inscription.replace(/"/g, '&quot;')}">
+            <i class="fas fa-copy"></i> Copy Inscription
+          </button>
+        </div>
+      </div>
+    </td>
+    `;
+  },
+
+  /**
+   * Create safe HTML for main table row
+   * @param {Object} memorial - Memorial data object
+   * @returns {string} Safe HTML string for main table row
+   */
+  createSafeMainRowHTML(memorial) {
+    const safe = this.sanitizeMemorial(memorial);
+
+    return `
+      <td class="text-center">
+        <button class="btn btn-sm btn-outline-secondary expand-toggle"
+          data-toggle-memorial="${safe.memorial_number}"
+          title="Click to expand/collapse details">
+          <i class="fas fa-chevron-down"></i>
+        </button>
+      </td>
+      <td>${safe.memorial_number}</td>
+      <td>${safe.first_name} ${safe.last_name}</td>
+      <td>${safe.year_of_death}</td>
+      <td>${safe.ai_provider || 'N/A'}</td>
+      <td>${safe.prompt_template || 'N/A'}</td>
+      <td>${safe.prompt_version || 'N/A'}</td>
+      <td>${formatDate(memorial.processed_date)}</td>
+    `;
+  }
+};
+
 // Track expanded rows
 const expandedRows = new Set();
 
@@ -136,31 +322,36 @@ function retryLoadResults() {
   }
 }
 
-// Function to display error summary
+// Function to display error summary with XSS protection
 function displayErrorSummary(errors) {
   const errorSummary = document.getElementById('errorSummary');
   const errorList = document.getElementById('errorList');
-  
+
   // Clear previous content
   errorList.innerHTML = '';
-  
+
   // Hide if no errors
   if (!errors || errors.length === 0) {
     errorSummary.style.display = 'none';
     return;
   }
-  
+
   // Show error summary
   errorSummary.style.display = 'block';
-  
-  // Add each error to the list
+
+  // Add each error to the list with sanitization
   errors.forEach(error => {
     const listItem = document.createElement('li');
     listItem.className = 'list-group-item list-group-item-warning';
-    
-    let message = `<strong>${error.fileName}</strong>: `;
-    
-    // Format message based on error type
+
+    // Sanitize error data to prevent XSS
+    const safeFileName = SanitizeUtils.sanitizeText(error.fileName || 'Unknown file');
+    const safeErrorMessage = SanitizeUtils.sanitizeText(error.errorMessage || 'An unknown error occurred');
+    const safeProvider = SanitizeUtils.sanitizeText(error.ai_provider);
+
+    let message = `<strong>${safeFileName}</strong>: `;
+
+    // Format message based on error type (using sanitized data)
     switch(error.errorType) {
     case 'empty_sheet':
       message += 'Empty or unreadable sheet detected.';
@@ -169,92 +360,32 @@ function displayErrorSummary(errors) {
       message += 'Processing failed after multiple attempts.';
       break;
     default:
-      message += error.errorMessage || 'An unknown error occurred';
+      message += safeErrorMessage;
     }
-    
-    // Add model info if available
+
+    // Add model info if available (sanitized)
     if (error.ai_provider) {
-      message += ` <span class="text-muted">(${error.ai_provider} model)</span>`;
+      message += ` <span class="text-muted">(${safeProvider} model)</span>`;
     }
-    
+
     listItem.innerHTML = message;
     errorList.appendChild(listItem);
   });
 }
 
-// Function to create expandable detail row
+// Function to create expandable detail row with XSS protection
 function createDetailRow(memorial, colSpan) {
   const detailRow = document.createElement('tr');
   detailRow.className = 'detail-row';
   detailRow.style.display = 'none';
-  detailRow.id = `detail-${memorial.memorial_number}`;
-  
-  detailRow.innerHTML = `
-    <td colspan="${colSpan}">
-      <div class="detail-content p-3">
-        <div class="row">
-          <div class="col-12">
-            <h5 class="mb-3">
-              ${memorial.memorial_number} - ${memorial.first_name || ''} ${memorial.last_name || ''}
-            </h5>
-          </div>
-        </div>
-        
-        <div class="card mb-3">
-          <div class="card-header bg-light">
-            <strong>Inscription</strong>
-          </div>
-          <div class="card-body">
-            <p class="inscription-text">${memorial.inscription || 'No inscription available'}</p>
-          </div>
-        </div>
-        
-        <div class="row">
-          <div class="col-md-6">
-            <div class="detail-info">
-              <h6>Processing Information</h6>
-              <dl class="row">
-                <dt class="col-sm-4">Model:</dt>
-                <dd class="col-sm-8">${memorial.ai_provider || 'N/A'}</dd>
-                
-                <dt class="col-sm-4">Template:</dt>
-                <dd class="col-sm-8">${memorial.prompt_template || 'N/A'}</dd>
-                
-                <dt class="col-sm-4">Version:</dt>
-                <dd class="col-sm-8">${memorial.prompt_version || 'N/A'}</dd>
-                
-                <dt class="col-sm-4">Source File:</dt>
-                <dd class="col-sm-8">${memorial.fileName || 'N/A'}</dd>
-              </dl>
-            </div>
-          </div>
-          
-          <div class="col-md-6">
-            <div class="detail-info">
-              <h6>Additional Details</h6>
-              <dl class="row">
-                <dt class="col-sm-4">Processed:</dt>
-                <dd class="col-sm-8">${formatDate(memorial.processed_date)}</dd>
-                
-                <dt class="col-sm-4">Year of Death:</dt>
-                <dd class="col-sm-8">${memorial.year_of_death || 'N/A'}</dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-        
-        <div class="mt-3">
-          <button class="btn btn-sm btn-secondary close-detail" data-memorial="${memorial.memorial_number}">
-            <i class="fas fa-chevron-up"></i> Close Details
-          </button>
-          <button class="btn btn-sm btn-info copy-inscription ml-2" data-inscription="${(memorial.inscription || '').replace(/"/g, '&quot;')}">
-            <i class="fas fa-copy"></i> Copy Inscription
-          </button>
-        </div>
-      </div>
-    </td>
-  `;
-  
+
+  // Sanitize memorial data to prevent XSS
+  const safeMemorial = SanitizeUtils.sanitizeMemorial(memorial);
+  detailRow.id = `detail-${safeMemorial.memorial_number}`;
+
+  // Use the safe HTML generation method
+  detailRow.innerHTML = SanitizeUtils.createSafeDetailHTML(memorial, colSpan);
+
   return detailRow;
 }
 
@@ -331,27 +462,13 @@ function displayMemorials(memorials) {
   
   // Create rows for each memorial
   memorials.forEach(memorial => {
-    // Create main row
+    // Create main row with XSS protection
     const row = document.createElement('tr');
     row.className = 'memorial-row';
     row.style.cursor = 'pointer';
-    
-    row.innerHTML = `
-      <td class="text-center">
-        <button class="btn btn-sm btn-outline-secondary expand-toggle" 
-          data-toggle-memorial="${memorial.memorial_number}"
-          title="Click to expand/collapse details">
-          <i class="fas fa-chevron-down"></i>
-        </button>
-      </td>
-      <td>${memorial.memorial_number || 'N/A'}</td>
-      <td>${memorial.first_name || ''} ${memorial.last_name || ''}</td>
-      <td>${memorial.year_of_death || 'N/A'}</td>
-      <td>${memorial.ai_provider || 'N/A'}</td>
-      <td>${memorial.prompt_template || 'N/A'}</td>
-      <td>${memorial.prompt_version || 'N/A'}</td>
-      <td>${formatDate(memorial.processed_date)}</td>
-    `;
+
+    // Use safe HTML generation to prevent XSS
+    row.innerHTML = SanitizeUtils.createSafeMainRowHTML(memorial);
     
     tableBody.appendChild(row);
     
