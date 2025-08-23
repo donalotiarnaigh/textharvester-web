@@ -8,8 +8,133 @@
 import { formatDateTime as formatDate } from './date.js';
 import { tableEnhancements } from './tableEnhancements.js';
 
+// Error handling utilities
+const ErrorTypes = {
+  NETWORK: 'network',
+  SERVER: 'server',
+  TIMEOUT: 'timeout',
+  PARSE: 'parse',
+  VALIDATION: 'validation',
+  UNKNOWN: 'unknown'
+};
+
+const ErrorMessages = {
+  [ErrorTypes.NETWORK]: {
+    title: 'Connection Error',
+    message: 'Unable to connect to the server. Please check your internet connection and try again.',
+    userAction: 'Check your internet connection and click "Retry" to try again.',
+    canRetry: true
+  },
+  [ErrorTypes.SERVER]: {
+    title: 'Server Error',
+    message: 'The server encountered an error while processing your request.',
+    userAction: 'This might be a temporary issue. Click "Retry" to try again, or contact support if the problem persists.',
+    canRetry: true
+  },
+  [ErrorTypes.TIMEOUT]: {
+    title: 'Request Timeout',
+    message: 'The request took too long to complete.',
+    userAction: 'This might be due to slow internet or server load. Click "Retry" to try again.',
+    canRetry: true
+  },
+  [ErrorTypes.PARSE]: {
+    title: 'Data Error',
+    message: 'Unable to process the received data.',
+    userAction: 'This might be a temporary issue with the data. Click "Retry" to try again.',
+    canRetry: true
+  },
+  [ErrorTypes.VALIDATION]: {
+    title: 'Data Validation Error',
+    message: 'The received data contains validation errors.',
+    userAction: 'Please contact support if this problem persists.',
+    canRetry: false
+  },
+  [ErrorTypes.UNKNOWN]: {
+    title: 'Unexpected Error',
+    message: 'An unexpected error occurred.',
+    userAction: 'Please try refreshing the page. If the problem persists, contact support.',
+    canRetry: true
+  }
+};
+
+// Error state management
+let currentError = null;
+let retryCount = 0;
+const MAX_RETRY_ATTEMPTS = 3;
+
 // Track expanded rows
 const expandedRows = new Set();
+
+// Error handling functions
+function classifyError(error) {
+  if (error.name === 'TypeError' && error.message.includes('fetch')) {
+    return ErrorTypes.NETWORK;
+  }
+
+  if (error.name === 'SyntaxError' && error.message.includes('JSON')) {
+    return ErrorTypes.PARSE;
+  }
+
+  if (error.message && error.message.includes('timeout')) {
+    return ErrorTypes.TIMEOUT;
+  }
+
+  if (error.status >= 500) {
+    return ErrorTypes.SERVER;
+  }
+
+  if (error.status >= 400 && error.status < 500) {
+    return ErrorTypes.VALIDATION;
+  }
+
+  return ErrorTypes.UNKNOWN;
+}
+
+function showErrorState(error, canRetry = true) {
+  const tableBody = document.getElementById('resultsTableBody');
+  const loadingState = document.getElementById('loadingState');
+  const emptyState = document.getElementById('emptyState');
+
+  // Hide loading and empty states
+  if (loadingState) loadingState.style.display = 'none';
+  if (emptyState) emptyState.classList.add('d-none');
+
+  if (!tableBody) return;
+
+  const errorType = classifyError(error);
+  const errorInfo = ErrorMessages[errorType];
+
+  const retryButton = canRetry && retryCount < MAX_RETRY_ATTEMPTS ?
+    `<button class="btn btn-primary btn-sm" onclick="retryLoadResults()">Retry (${MAX_RETRY_ATTEMPTS - retryCount} attempts left)</button>` : '';
+
+  tableBody.innerHTML = `
+    <tr>
+      <td colspan="8" class="text-center py-5">
+        <div class="alert alert-danger" role="alert">
+          <h5 class="alert-heading">
+            <i class="fas fa-exclamation-triangle"></i> ${errorInfo.title}
+          </h5>
+          <p class="mb-3">${errorInfo.message}</p>
+          <p class="mb-3 text-muted">${errorInfo.userAction}</p>
+          <div class="d-flex gap-2 justify-content-center">
+            ${retryButton}
+            <button class="btn btn-secondary btn-sm" onclick="window.location.reload()">Refresh Page</button>
+          </div>
+          ${retryCount > 0 ? `<small class="text-muted d-block mt-2">Retry attempts: ${retryCount}/${MAX_RETRY_ATTEMPTS}</small>` : ''}
+        </div>
+      </td>
+    </tr>
+  `;
+
+  currentError = { error, errorType, canRetry };
+}
+
+function retryLoadResults() {
+  if (currentError && retryCount < MAX_RETRY_ATTEMPTS) {
+    retryCount++;
+    loadResults();
+  }
+}
 
 // Function to display error summary
 function displayErrorSummary(errors) {
@@ -249,52 +374,78 @@ function enableDownloadButtons() {
   document.getElementById('downloadCsvButton').disabled = false;
 }
 
-// Function to load results data
+// Function to load results data with comprehensive error handling
 export async function loadResults() {
+  const loadingState = document.getElementById('loadingState');
+
   try {
-    const loadingState = document.getElementById('loadingState');
-    
     // Show loading state
     if (loadingState) {
       loadingState.style.display = 'block';
     }
-    
-    // Fetch results from API
-    const response = await fetch('/results-data');
+
+    // Reset error state for new attempts
+    if (retryCount === 0) {
+      currentError = null;
+    }
+
+    // Fetch results from API with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    const response = await fetch('/results-data', {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+
+    clearTimeout(timeoutId);
+
+    // Check if response is ok
+    if (!response.ok) {
+      const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+      error.status = response.status;
+      throw error;
+    }
+
+    // Parse JSON response
     const data = await response.json();
-    
+
     // Hide loading state
     if (loadingState) {
       loadingState.style.display = 'none';
     }
-    
+
+    // Reset retry count on success
+    retryCount = 0;
+
     // Display memorials and error summary
     displayMemorials(data.memorials);
     displayErrorSummary(data.errors);
-    
+
     // Initialize table enhancements
     if (data.memorials && data.memorials.length > 0) {
       tableEnhancements.init(data.memorials);
       enableDownloadButtons();
     }
-    
+
     return data;
+
   } catch (error) {
+    // Log the error for debugging
     console.error('Error loading results:', error);
-    
-    // Hide loading state
-    const loadingState = document.getElementById('loadingState');
-    if (loadingState) {
-      loadingState.style.display = 'none';
-    }
-    
-    // Show error message
-    const tableBody = document.getElementById('resultsTableBody');
-    if (tableBody) {
-      tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading results. Please try again later.</td></tr>';
-    }
-    
-    throw error;
+
+    // Determine if this is a retryable error
+    const errorType = classifyError(error);
+    const canRetry = ErrorMessages[errorType].canRetry && retryCount < MAX_RETRY_ATTEMPTS;
+
+    // Show appropriate error state
+    showErrorState(error, canRetry);
+
+    // Don't throw the error - we've handled it with the UI
+    return null;
   }
 }
 
@@ -373,3 +524,6 @@ document.addEventListener('click', function(event) {
 
 // Export functions and state for use by other modules
 export { expandedRows, toggleRow };
+
+// Expose retry function globally for HTML button onclick handlers
+window.retryLoadResults = retryLoadResults;
