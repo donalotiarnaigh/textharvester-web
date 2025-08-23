@@ -7,6 +7,7 @@
 
 import { formatDateTime as formatDate } from './date.js';
 import { tableEnhancements } from './tableEnhancements.js';
+import { updateModelInfoPanel } from './modelInfoPanel.js';
 
 // Error handling utilities
 const ErrorTypes = {
@@ -569,6 +570,15 @@ export async function loadResults() {
     // Display memorials and error summary
     displayMemorials(data.memorials);
     displayErrorSummary(data.errors);
+
+    // Update model info panel with data from the first memorial (or aggregate)
+    if (data.memorials && data.memorials.length > 0) {
+      // Use the most recent memorial's data for the model info panel
+      const latestMemorial = data.memorials.reduce((latest, current) =>
+        new Date(current.processed_date) > new Date(latest.processed_date) ? current : latest
+      );
+      updateModelInfoPanel(latestMemorial);
+    }
 
     // Initialize table enhancements
     if (data.memorials && data.memorials.length > 0) {
