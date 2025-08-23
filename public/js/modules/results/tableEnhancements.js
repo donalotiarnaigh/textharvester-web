@@ -2,6 +2,8 @@
  * Table enhancement module for sorting and filtering
  */
 
+import { expandedRows, toggleRow } from './main.js';
+
 export class TableEnhancements {
   constructor() {
     this.memorials = [];
@@ -258,8 +260,8 @@ export class TableEnhancements {
   expandAll() {
     document.querySelectorAll('.detail-row').forEach(row => {
       const memorialNumber = row.id.replace('detail-', '');
-      if (!window.expandedRows.has(memorialNumber)) {
-        window.toggleRow(memorialNumber);
+      if (!expandedRows.has(memorialNumber)) {
+        toggleRow(memorialNumber);
       }
     });
   }
@@ -270,8 +272,8 @@ export class TableEnhancements {
   collapseAll() {
     document.querySelectorAll('.detail-row').forEach(row => {
       const memorialNumber = row.id.replace('detail-', '');
-      if (window.expandedRows.has(memorialNumber)) {
-        window.toggleRow(memorialNumber);
+      if (expandedRows.has(memorialNumber)) {
+        toggleRow(memorialNumber);
       }
     });
   }

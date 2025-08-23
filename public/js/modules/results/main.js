@@ -11,10 +11,6 @@ import { tableEnhancements } from './tableEnhancements.js';
 // Track expanded rows
 const expandedRows = new Set();
 
-// Expose globally for table enhancements
-window.expandedRows = expandedRows;
-window.toggleRow = toggleRow;
-
 // Function to display error summary
 function displayErrorSummary(errors) {
   const errorSummary = document.getElementById('errorSummary');
@@ -374,3 +370,6 @@ document.addEventListener('click', function(event) {
     }, 2000);
   }
 });
+
+// Export functions and state for use by other modules
+export { expandedRows, toggleRow };
