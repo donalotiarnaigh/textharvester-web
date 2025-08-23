@@ -90,9 +90,9 @@ describe('Results Page with Error Summary', () => {
     // Call loadResults function
     await loadResults();
     
-    // Verify memorials were displayed in the table
+    // Verify memorials were displayed in the table (expandable rows = 2 elements per memorial)
     const tableBody = document.getElementById('resultsTableBody');
-    expect(tableBody.children.length).toBe(1);
+    expect(tableBody.children.length).toBe(2); // main row + detail row
     expect(tableBody.innerHTML).toContain('HG-123');
     expect(tableBody.innerHTML).toContain('JOHN');
     expect(tableBody.innerHTML).toContain('DOE');
@@ -139,9 +139,9 @@ describe('Results Page with Error Summary', () => {
     const errorSummary = document.getElementById('errorSummary');
     expect(errorSummary.style.display).toBe('none');
     
-    // Verify memorial was displayed
+    // Verify memorial was displayed (expandable rows = 2 elements per memorial)
     const tableBody = document.getElementById('resultsTableBody');
-    expect(tableBody.children.length).toBe(1);
+    expect(tableBody.children.length).toBe(2); // main row + detail row
   });
   
   it('should display appropriate message when only errors are present', async () => {
@@ -196,15 +196,18 @@ describe('Results Page with Error Summary', () => {
     // Import and use the actual loadResults function
     const { loadResults } = require('../modules/results/main.js');
     
-    // Call loadResults function and expect it to throw
-    await expect(loadResults()).rejects.toThrow('Failed to fetch');
-    
+    // Call loadResults function and expect it to return null (graceful error handling)
+    const result = await loadResults();
+    expect(result).toBeNull();
+
     // Verify error was logged
     expect(console.error).toHaveBeenCalledWith('Error loading results:', expect.any(Error));
     
-    // Verify table shows error message
+    // Verify table shows enhanced error message with retry button
     const tableBody = document.getElementById('resultsTableBody');
-    expect(tableBody.innerHTML).toContain('Error loading results');
+    expect(tableBody.innerHTML).toContain('Unexpected Error');
+    expect(tableBody.innerHTML).toContain('Retry');
+    expect(tableBody.innerHTML).toContain('Refresh Page');
     
     // Restore console.error
     console.error = originalConsoleError;
