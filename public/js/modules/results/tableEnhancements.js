@@ -198,8 +198,11 @@ export class TableEnhancements {
       }
 
       // Year filter
-      if (this.filters.year && memorial.year_of_death !== this.filters.year) {
-        return false;
+      if (this.filters.year) {
+        const filterYear = parseInt(this.filters.year, 10);
+        if (!isNaN(filterYear) && memorial.year_of_death !== filterYear) {
+          return false;
+        }
       }
 
       return true;
