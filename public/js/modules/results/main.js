@@ -467,22 +467,50 @@ function displayMemorials(memorials) {
     row.className = 'memorial-row';
     row.style.cursor = 'pointer';
 
+    // Sanitize memorial data for safe use
+    const safeMemorial = SanitizeUtils.sanitizeMemorial(memorial);
+
+    // Store memorial number as data attribute for event delegation
+    row.setAttribute('data-memorial-number', safeMemorial.memorial_number);
+
     // Use safe HTML generation to prevent XSS
     row.innerHTML = SanitizeUtils.createSafeMainRowHTML(memorial);
-    
+
     tableBody.appendChild(row);
-    
+
     // Create detail row (initially hidden)
     const detailRow = createDetailRow(memorial, 8); // 8 columns total
     tableBody.appendChild(detailRow);
-    
-    // Add click handler to the row (excluding the toggle button)
-    row.addEventListener('click', (e) => {
-      if (!e.target.closest('.expand-toggle')) {
-        toggleRow(memorial.memorial_number);
-      }
-    });
+
+    // Event handling is now done via delegation on tableBody (no individual listeners)
   });
+}
+
+// Function to setup event delegation for memorial rows (prevents memory leaks)
+function setupEventDelegation() {
+  const tableBody = document.getElementById('resultsTableBody');
+
+  if (!tableBody) return;
+
+  // Remove any existing delegated listener to prevent duplicates
+  tableBody.removeEventListener('click', handleTableClick);
+
+  // Add delegated event listener
+  tableBody.addEventListener('click', handleTableClick);
+}
+
+// Delegated event handler for table clicks
+function handleTableClick(event) {
+  const target = event.target;
+
+  // Handle memorial row clicks (for expanding/collapsing)
+  const memorialRow = target.closest('tr.memorial-row');
+  if (memorialRow && !target.closest('.expand-toggle')) {
+    const memorialNumber = memorialRow.getAttribute('data-memorial-number');
+    if (memorialNumber) {
+      toggleRow(memorialNumber);
+    }
+  }
 }
 
 // Function to enable download buttons
@@ -584,6 +612,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize clipboard functionality
   new ClipboardJS('.copy-info');
   
+  // Setup event delegation once on page load (prevents memory leaks)
+  setupEventDelegation();
+
   // Listen for filtered memorials event
   document.addEventListener('memorials-filtered', (event) => {
     displayMemorials(event.detail.memorials);
