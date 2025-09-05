@@ -1,4 +1,4 @@
-### Monument Photo OCR — Current State Analysis and Implementation Plan
+### Monument Photo OCR — Phase 0 Plan and Current State
 
 #### Context
 Community groups currently photograph monuments and complete paper record sheets. The app ingests PDFs or images of these record sheets and extracts structured text for upload to the Historic Graves website. We now want to support extracting inscriptions directly from photos of the monuments themselves, using record sheets as supplementary context.
@@ -38,142 +38,84 @@ Community groups currently photograph monuments and complete paper record sheets
 
 ---
 
-## 2) Goal: OCR Directly from Monument Photos
+## 2) Goal (Phase 0): OCR Directly from Monument Photos
 
 Enable users to upload monument photos and extract structured memorial data (names, inscription, death dates, etc.) without relying on record-sheet images. Record sheets remain optional supplementary inputs.
 
-### Key Requirements
-- Accept raw monument photos (mixed orientations, lighting, partial occlusions, weathered stone).
-- Pre-process images for OCR robustness (auto-rotate, enhance contrast, denoise, deblur, deskew).
-- Optionally detect text regions and run targeted OCR on those regions.
-- Extract structured fields consistently with current schema and exports.
-- Support multiple photos per monument with field merging/fusion.
-- Provide visual QA (overlays) and simple verification/editing workflow.
-- Keep provider abstraction (OpenAI/Anthropic), with monument-focused prompts.
+### Scope (Phase 0 Only)
+- Single-call LLM OCR on the full image with a monument-specific prompt.
+- Minimal UI additions: mode selector and instructions for “Monument Photos”.
+- Add `source_type=monument_photo` through the pipeline and DB for attribution.
+- Maintain current CSV/JSON export format and results display.
+
+### Explicit Non-goals (Deferred)
+- No image pre-processing (deskew/denoise/contrast), no text-region detection, no overlays.
+- No multi-image fusion for a single monument.
+- No new tables for images/segments; keep schema changes to a single optional field.
 
 ---
 
-## 3) Proposed Architecture Changes
+## 3) Implementation (Phase 0 Only)
 
 ### 3.1 Frontend (UI/UX)
-- Upload mode selector: "Record Sheet" (existing) vs "Monument Photos" (new). Persist choice in local storage.
-- Preview pane for monument mode:
-  - Show auto-detected text regions as optional overlays (if available).
-  - Allow manual crop to hint the model (optional P2).
-- Results page enhancements:
-  - Show original image with optional overlays/bounding boxes for extracted text regions.
-  - Display alternative candidates for ambiguous fields (P2) and indicate extraction source (full image vs region).
-  - Keep Model Info Panel; add `source_type` (record_sheet | monument_photo).
+- Add a mode selector on the upload page: "Record Sheet" (default) and "Monument Photos".
+- Persist selection in `localStorage` and include it in upload requests.
+- Update copy to set expectations: best results with high-contrast, front-facing photos.
+- Results page: keep current layout; enhance Model Info panel to display `source_type`.
 
-### 3.2 Backend Processing Pipeline
-- Pre-processing (P1) using `sharp` and, optionally, OpenCV bindings:
-  - Auto-rotate using EXIF; deskew heuristics; contrast (CLAHE-like), adaptive thresholding, denoise.
-  - Generate downscaled preview and, optionally, region crops.
-- Text-region detection (P2):
-  - Option A: Lightweight detector (EAST/CRAFT via `opencv4nodejs` or external service), produce bounding boxes.
-  - Option B: Prompt the LLM to suggest regions (coarse) then refine locally.
-- OCR strategy:
-  - P0 Baseline: Single-call LLM on full image with monument-specific prompt; return JSON.
-  - P1: Hybrid — run LLM on cropped regions and fuse field candidates.
-- Aggregation and fusion (P2):
-  - When multiple images or regions are available, prefer highest-quality candidates per field.
-  - Simple heuristics first (e.g., date consistency, string similarity), extensible to learned ranking later.
+### 3.2 Backend Pipeline
+- Accept `source_type` on `POST /upload` and pass through the queue and processing pipeline.
+- Use new monument-specific prompt templates in the provider layer when `source_type=monument_photo`.
+- No image pre-processing; pass the original image to the provider.
+- Store results in `memorials` with an added optional `source_type` field defaulting to `record_sheet` when absent.
 
 ### 3.3 Prompting and Providers
-- New monument-focused prompt templates per provider:
-  - Guidance on reading weathered stone, serif/sans, mixed scripts, abbreviations, Roman numerals, Gaelic/diacritics.
-  - Strict JSON schema with field validations and normalization rules.
-- Provider options remain swappable (OpenAI/Anthropic). Reuse existing provider abstraction.
+- Add monument-focused prompt templates per provider (OpenAI, Anthropic):
+  - Guidance for weathered stone, mixed casing, ligatures, abbreviations, and Roman numerals.
+  - Strict JSON schema matching current DB fields; normalize dates to YYYY or NULL; treat unreadable fields as NULL.
+  - Instruct model to avoid hallucinating memorial numbers or names not clearly present.
+- Wire selection logic: when `source_type=monument_photo`, use monument prompts; otherwise, keep existing record-sheet prompts.
 
-### 3.4 Data Model Extensions (SQLite)
-Keep backward compatibility; avoid reintroducing a single global confidence score. Instead, add structured provenance.
+### 3.4 Data Model (SQLite)
+- Backward-compatible change: add nullable `source_type TEXT` to `memorials`.
+- Migration script: adds the column if missing and sets default value `record_sheet` for legacy rows.
+- Exports unchanged; results include the new field when present.
 
-- New table: `images`
-  - `id INTEGER PK`, `file_name TEXT NOT NULL`, `width INTEGER`, `height INTEGER`, `exif_lat REAL`, `exif_lng REAL`, `processed_date DATETIME`.
-
-- New table: `memorial_images` (many-to-many)
-  - `memorial_id INTEGER`, `image_id INTEGER`.
-
-- New table: `ocr_segments`
-  - `id INTEGER PK`, `image_id INTEGER`, `bbox TEXT` (JSON: `[x,y,w,h]`), `field TEXT` (e.g., `first_name`, `last_name`, `inscription`, `death_date`), `text TEXT`, `provenance TEXT` (JSON blob: `{ provider, model_version, prompt_version }`), `created_at DATETIME`.
-
-- Extend `memorials` with:
-  - `source_type TEXT` (`record_sheet` | `monument_photo`).
-  - (Optional) `source_notes TEXT` for operator notes.
-
-- Exports: keep current CSV/JSON; optionally ship an annex JSON with image/segment overlays.
-
-### 3.5 APIs and Jobs
-- Extend `/upload` to accept `source_type` and mode-specific options (e.g., enable_preprocessing, enable_region_detection).
-- Add `/images/:id/segments` to fetch overlays for the UI.
-- Use existing queue; add concurrency limit and memory guardrails for region crops.
-
-### 3.6 Observability and QA
-- Log pre-processing transforms and detected regions.
-- Track provider latency and token usage for cost monitoring.
-- Add a simple verification UI state: pending → verified → exported.
+### 3.5 Configuration and Flags
+- Environment flag `FEATURE_MONUMENT_OCR_PHASE0=true|false` (default false).
+- When disabled, the UI hides the mode selector and backend ignores `source_type=monument_photo`.
 
 ---
 
-## 4) Phased Implementation Plan
-
-### Phase 0 — Baseline Monument OCR (LLM-only)
-- Add monument-specific prompt template(s) for OpenAI/Anthropic.
-- Add `source_type=monument_photo` through the pipeline and DB.
-- Minimal UI change: mode selector and instructions.
-- Acceptance:
-  - Upload 10–20 sample monument images; achieve parseable JSON with fields populated in ≥70% cases.
-  - No regressions on record-sheet flow; tests green.
-
-### Phase 1 — Pre-processing Enhancements
-- Implement auto-rotate, contrast boost, denoise, and scale normalization in a pre-processing step.
-- Feature flag to toggle pre-processing on/off.
-- Acceptance:
-  - Measurable improvement on a fixed sample set vs Phase 0.
-
-### Phase 2 — Region Detection and Overlay UI
-- Integrate lightweight text-region detection to produce bounding boxes.
-- Call providers on region crops where beneficial; add overlay rendering in results page.
-- Add `ocr_segments` persistence.
-- Acceptance:
-  - Overlay accuracy subjectively useful in ≥70% images; improved extraction fidelity on targeted fields.
-
-### Phase 3 — Multi-Image Fusion and Verification
-- Allow multiple photos per monument; implement simple field-level fusion and a verify/edit step.
-- Add `images`, `memorial_images` relations and update exports.
-- Acceptance:
-  - Fusion reduces missing/incorrect fields on multi-image sets; verification flow usable end-to-end.
-
-### Phase 4 — Integration and Hardening
-- Document API/CLI for batch ingestion; optional push to Historic Graves site.
-- Robust error handling, rate limiting, retries, and back-pressure in queue.
-- Performance/cost dashboards.
+## 4) Acceptance Criteria (Phase 0)
+- Upload 10–20 representative monument photos; app returns valid JSON mapped to DB fields in ≥70% of cases.
+- No regressions on the record-sheet workflow; all tests pass.
+- `source_type` is persisted and visible in the Model Info panel and `/results-data`.
+- Feature flag off: behavior matches current app; flag on: monument mode available and functional.
 
 ---
 
-## 5) Testing Strategy
-- Unit tests: pre-processing functions, prompt formatters, validators, DB mappers.
-- Integration tests: upload → queue → provider mock → DB → results APIs.
-- Provider tests use deterministic fixtures and mocks (existing `__mocks__` pattern) to avoid live API variability.
-- Golden-sample regression suite with representative monument photos.
+## 5) Testing Strategy (Phase 0)
+- Unit tests: prompt selection logic, monument prompt formatting/validation, DB column presence and persistence.
+- Integration tests: upload with `source_type=monument_photo` → queue → mocked provider response → DB → `/results-data`.
+- UI tests: mode selector visibility (flag on/off), selected mode persisted, Model Info shows `source_type`.
+- Golden-sample fixtures: representative monument photos with mocked provider outputs.
 
 ---
 
-## 6) Risks and Mitigations
-- Variability in lighting/weathering → mitigate with robust pre-processing and optional region detection.
-- Provider non-determinism → use mocks for tests; sample multiple runs for QA.
-- Cost and latency → region cropping, batching, and caching; configurable providers.
-- Schema complexity → keep BC with current exports; introduce new tables incrementally.
+## 6) Risks and Mitigations (Phase 0)
+- Variability in lighting/weathering → communicate best practices in UI; rely on robust prompts; defer preprocessing.
+- Provider non-determinism → use strict JSON response format and mocks for tests.
+- Schema risk → single nullable column; migration scripts reversible; defaults preserve legacy behavior.
 
 ---
 
-## 7) Work Items (Initial Backlog)
-- Add monument prompt templates for OpenAI/Anthropic and wire through `fileProcessing`.
-- Add `source_type` support end-to-end; DB migration for new column.
-- Frontend: mode selector, updated copy for monument mode.
-- Pre-processing module (P1): rotate/deskew, contrast, denoise; feature flag.
-- Region detection (P2): integrate detector; overlay rendering; `ocr_segments` table.
-- Multi-image support (P3): `images`, `memorial_images`, fusion logic; verification view.
+## 7) Work Items (Phase 0 Only)
+- Prompts: Add monument templates for OpenAI/Anthropic; plug into provider selection.
+- Backend: Thread `source_type` through `/upload` → queue → processing; set prompt based on mode.
+- Database: Migration to add `memorials.source_type` (nullable, default `record_sheet`).
+- Frontend: Mode selector and instructions; Model Info shows `source_type`.
+- Config: `FEATURE_MONUMENT_OCR_PHASE0` env flag; UI/BE gating.
 
 ---
 
