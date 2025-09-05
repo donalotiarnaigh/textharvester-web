@@ -1,126 +1,144 @@
-### Monument Photo OCR — Phase 0 Plan and Current State
+### Technical Design: Monument Photo OCR (Phase 0)
 
-#### Context
-Community groups currently photograph monuments and complete paper record sheets. The app ingests PDFs or images of these record sheets and extracts structured text for upload to the Historic Graves website. We now want to support extracting inscriptions directly from photos of the monuments themselves, using record sheets as supplementary context.
-
----
-
-## 1) Current State Summary
-
-- **Purpose**: Extract structured data from record-sheet images using AI vision models and store results in SQLite for export (CSV/JSON) and review.
-- **Key flows**:
-  - Upload (JPEG/PDF) → Queue → Provider prompt → AI response → Validation/Conversion → DB store → Results UI → Export.
-- **Endpoints** (`server.js`):
-  - `POST /upload` (file ingestion)
-  - `GET /results-data`, `GET /download-json`, `GET /download-csv`
-  - `GET /processing-status`, `GET /progress`, `POST /cancel-processing`
-  - `app.use('/api/performance', performanceRoutes)`
-- **Processing**:
-  - PDFs are converted to JPEGs (`utils/pdfConverter`).
-  - Files are queued (`utils/fileQueue`), then processed (`utils/fileProcessing` → provider in `utils/modelProviders/*`).
-  - Prompts/templates are modular and provider-specific (`utils/prompts/templates`).
-  - Providers supported: OpenAI GPT‑5, Anthropic Claude 4 Sonnet.
-  - Logging, sampling and payload truncation via `utils/logger` with performance tracking.
-- **Data model** (SQLite): single `memorials` table (see README):
-  - `memorial_number, first_name, last_name, year_of_death, inscription, file_name, ai_provider, model_version, prompt_template, prompt_version, processed_date`.
-  - Optimized indexes on number, name, year.
-- **UI**:
-  - Upload page optimized for record sheets (drag/drop, folder support, replace vs append).
-  - Results page with downloads (CSV/JSON) and a model info panel.
-
-### Current Limitations (relative to Monument Photo OCR)
-- Prompts are tuned for record sheets; stone inscriptions differ (lighting, weathering, background clutter, layout).
-- No dedicated pre-processing for photos (orientation, dewarp, contrast normalization, denoise, thresholding).
-- No explicit text-region detection/segmentation or bounding box overlays in the UI.
-- Single-image assumptions per record; limited support for multi-photo fusion for a single monument.
-- Schema does not track image regions, multiple source images per memorial, or per-region extraction metadata.
-- No human-in-the-loop verification workflow (field-level acceptance, alternative candidates, uncertainty flags).
+#### Overview
+Enable OCR directly from monument photos in addition to record-sheet images. Phase 0 delivers the baseline capability with minimal surface area changes and complete backward compatibility.
 
 ---
 
-## 2) Goal (Phase 0): OCR Directly from Monument Photos
+## 1. Goals and Non‑Goals
 
-Enable users to upload monument photos and extract structured memorial data (names, inscription, death dates, etc.) without relying on record-sheet images. Record sheets remain optional supplementary inputs.
+### Goals
+- Allow users to upload monument photos and extract structured memorial data (names, year_of_death, inscription) via the existing pipeline.
+- Maintain existing provider abstraction and results/export flows.
+- Introduce a minimal, reversible schema extension to attribute results to their source type.
+- Gate the feature behind a runtime flag for safe rollout.
 
-### Scope (Phase 0 Only)
-- Single-call LLM OCR on the full image with a monument-specific prompt.
-- Minimal UI additions: mode selector and instructions for “Monument Photos”.
-- Add `source_type=monument_photo` through the pipeline and DB for attribution.
-- Maintain current CSV/JSON export format and results display.
-
-### Explicit Non-goals (Deferred)
-- No image pre-processing (deskew/denoise/contrast), no text-region detection, no overlays.
-- No multi-image fusion for a single monument.
-- No new tables for images/segments; keep schema changes to a single optional field.
+### Non‑Goals (Phase 0)
+- No image pre‑processing (deskew/denoise/contrast), no text‑region detection, no overlays.
+- No multi‑image fusion for a single memorial.
+- No new relational tables beyond a single nullable column on `memorials`.
 
 ---
 
-## 3) Implementation (Phase 0 Only)
-
-### 3.1 Frontend (UI/UX)
-- Add a mode selector on the upload page: "Record Sheet" (default) and "Monument Photos".
-- Persist selection in `localStorage` and include it in upload requests.
-- Update copy to set expectations: best results with high-contrast, front-facing photos.
-- Results page: keep current layout; enhance Model Info panel to display `source_type`.
-
-### 3.2 Backend Pipeline
-- Accept `source_type` on `POST /upload` and pass through the queue and processing pipeline.
-- Use new monument-specific prompt templates in the provider layer when `source_type=monument_photo`.
-- No image pre-processing; pass the original image to the provider.
-- Store results in `memorials` with an added optional `source_type` field defaulting to `record_sheet` when absent.
-
-### 3.3 Prompting and Providers
-- Add monument-focused prompt templates per provider (OpenAI, Anthropic):
-  - Guidance for weathered stone, mixed casing, ligatures, abbreviations, and Roman numerals.
-  - Strict JSON schema matching current DB fields; normalize dates to YYYY or NULL; treat unreadable fields as NULL.
-  - Instruct model to avoid hallucinating memorial numbers or names not clearly present.
-- Wire selection logic: when `source_type=monument_photo`, use monument prompts; otherwise, keep existing record-sheet prompts.
-
-### 3.4 Data Model (SQLite)
-- Backward-compatible change: add nullable `source_type TEXT` to `memorials`.
-- Migration script: adds the column if missing and sets default value `record_sheet` for legacy rows.
-- Exports unchanged; results include the new field when present.
-
-### 3.5 Configuration and Flags
-- Environment flag `FEATURE_MONUMENT_OCR_PHASE0=true|false` (default false).
-- When disabled, the UI hides the mode selector and backend ignores `source_type=monument_photo`.
+## 2. Current System Summary (Reference)
+- Upload → Queue → Provider Prompt → AI Response → Validation/Conversion → SQLite store → Results UI → Export.
+- Key endpoints: `POST /upload`, `GET /results-data`, `GET /download-{json,csv}`, `GET /progress`, `POST /cancel-processing`.
+- Providers: OpenAI GPT‑5, Anthropic Claude 4 Sonnet via modular provider layer and prompt templates.
+- Data: `memorials` table with prompt/model metadata; exports to CSV/JSON; logs and performance tracking in place.
 
 ---
 
-## 4) Acceptance Criteria (Phase 0)
-- Upload 10–20 representative monument photos; app returns valid JSON mapped to DB fields in ≥70% of cases.
-- No regressions on the record-sheet workflow; all tests pass.
-- `source_type` is persisted and visible in the Model Info panel and `/results-data`.
-- Feature flag off: behavior matches current app; flag on: monument mode available and functional.
+## 3. Functional Requirements (Phase 0)
+- Users can select an upload mode: `record_sheet` (default) or `monument_photo`.
+- When `monument_photo` is selected:
+  - The backend uses a monument‑specific prompt template with strict JSON response requirements.
+  - The result is stored with `source_type = 'monument_photo'`.
+  - Results appear in the existing results page and exports without layout changes.
+- When the feature flag is disabled, the UI hides the new mode and the backend ignores any `source_type=monument_photo` values.
 
 ---
 
-## 5) Testing Strategy (Phase 0)
-- Unit tests: prompt selection logic, monument prompt formatting/validation, DB column presence and persistence.
-- Integration tests: upload with `source_type=monument_photo` → queue → mocked provider response → DB → `/results-data`.
-- UI tests: mode selector visibility (flag on/off), selected mode persisted, Model Info shows `source_type`.
-- Golden-sample fixtures: representative monument photos with mocked provider outputs.
+## 4. Architecture Overview
+
+### 4.1 Frontend
+- Add a mode selector on the upload page with two options: "Record Sheet" and "Monument Photos".
+- Persist the selected mode in `localStorage` (key: `uploadMode`) and include it in `POST /upload` as `source_type`.
+- Update copy to set expectations for monument photos (front‑facing, high‑contrast, minimal glare).
+- Results page: extend Model Info panel to display `source_type` when present.
+
+### 4.2 Backend
+- `POST /upload` reads `source_type` from form body and propagates it into queued file items.
+- `fileQueue` and `fileProcessing` pass `source_type` through to the provider selection/prompt logic.
+- Provider layer selects monument prompt templates when `source_type=monument_photo`; otherwise uses the existing record‑sheet prompts.
+- Store `source_type` on the `memorials` row; default to `record_sheet` when absent for backward compatibility.
 
 ---
 
-## 6) Risks and Mitigations (Phase 0)
-- Variability in lighting/weathering → communicate best practices in UI; rely on robust prompts; defer preprocessing.
-- Provider non-determinism → use strict JSON response format and mocks for tests.
-- Schema risk → single nullable column; migration scripts reversible; defaults preserve legacy behavior.
+## 5. Detailed Design
+
+### 5.1 Frontend Changes
+- UI: Add a radio/select control on the upload page for mode selection (default: record sheet).
+- Persistence: Write to/read from `localStorage.uploadMode`.
+- Request: Include `source_type` in `FormData` for `POST /upload`.
+- Results: Display `source_type` in the Model Info panel without altering table structure.
+
+### 5.2 API and Server
+- `POST /upload`
+  - Accept new optional field: `source_type` ∈ {`record_sheet`, `monument_photo`}.
+  - Validate value; fallback to `record_sheet` if missing/invalid.
+  - Inject `source_type` into file queue items alongside `provider`, `promptTemplate`, `promptVersion`.
+- No changes to response schema; existing clients remain compatible.
+
+### 5.3 Processing and Providers
+- `fileProcessing.processFile(...)` receives `options.source_type`.
+- Prompt selection:
+  - If `source_type === 'monument_photo'`, select the monument prompt template for the active provider.
+  - Else, use the existing record‑sheet prompt.
+- Monument prompt template guidelines:
+  - Emphasize extracting only text visibly present; avoid hallucination.
+  - Normalize `year_of_death` to integer (1500–2100) or `null`.
+  - Allow missing `memorial_number` when absent; do not infer.
+  - Return strict JSON mapping to current DB fields.
+
+### 5.4 Data Model
+- Add nullable column to `memorials`:
+  - `source_type TEXT` with expected values `record_sheet` | `monument_photo`.
+- Migration:
+  - Idempotent: add column only if it does not exist.
+  - Backfill: set `record_sheet` where `NULL` (optional; display can treat `NULL` as `record_sheet`).
+- Exports: unchanged; include `source_type` when present.
+
+### 5.5 Configuration and Rollout
+- Env flag: `FEATURE_MONUMENT_OCR_PHASE0=true|false` (default `false`).
+- Frontend hides mode selector when flag is `false` (exposed via bootstrapped config or `/results-data` metadata).
+- Backend ignores `monument_photo` inputs when flag is `false`.
+- Rollout: enable on staging, validate sample set, then enable in production.
+
+### 5.6 Observability
+- Log `source_type` at upload, processing start, and DB store.
+- Continue performance tracking per provider/model; no new metrics required.
+
+### 5.7 Security & Privacy
+- No additional sensitive data beyond existing flows; images are user‑provided and processed as today.
+- Do not log image contents; keep payload truncation for model responses.
+- Respect existing cleanup of temporary files post‑processing.
+
+### 5.8 Failure Modes
+- Missing/invalid `source_type`: default to `record_sheet` and proceed.
+- Provider JSON parse errors: handled by existing validation; return error result as today.
+- Flag disabled but UI sends `monument_photo`: backend coerces to `record_sheet`.
 
 ---
 
-## 7) Work Items (Phase 0 Only)
-- Prompts: Add monument templates for OpenAI/Anthropic; plug into provider selection.
-- Backend: Thread `source_type` through `/upload` → queue → processing; set prompt based on mode.
-- Database: Migration to add `memorials.source_type` (nullable, default `record_sheet`).
-- Frontend: Mode selector and instructions; Model Info shows `source_type`.
-- Config: `FEATURE_MONUMENT_OCR_PHASE0` env flag; UI/BE gating.
+## 6. Acceptance Criteria
+- Upload 10–20 monument photos; receive valid JSON mapped to DB fields in ≥70% of cases.
+- No regressions in record‑sheet flow; all tests pass.
+- `source_type` stored and visible in Model Info and `GET /results-data`.
+- Flag off → legacy behavior; flag on → monument mode available and functional.
 
 ---
 
-### Notes
-- Avoid reintroducing a single numeric confidence field; prefer per-segment provenance and optional quality flags.
-- Ship features behind flags where possible to stage rollouts.
+## 7. Testing Plan
+- Unit: prompt selection logic; monument prompt formatting/validation; DB column migration utility.
+- Integration: `POST /upload` with `source_type=monument_photo` → queue → mocked provider → DB → `GET /results-data`.
+- UI: mode selector visibility (flag on/off), selection persistence, Model Info shows `source_type`.
+- Fixtures: golden samples of monument photos with deterministic mocked outputs.
+
+---
+
+## 8. Implementation Tasks
+- Prompts: add monument templates per provider; wire into prompt manager/provider selection.
+- Backend: propagate `source_type` through upload → queue → processing.
+- Database: migration to add `memorials.source_type` (nullable, default behavior treats NULL as `record_sheet`).
+- Frontend: add mode selector, copy updates, Model Info `source_type` display.
+- Config: implement `FEATURE_MONUMENT_OCR_PHASE0` gating on FE/BE.
+
+---
+
+## 9. Open Questions / Assumptions
+- Languages and diacritics: rely on provider multilingual capability; Phase 0 does not add language selection.
+- Memorial number: treated as optional for monument photos; no inference.
+- Date extraction: only extract if clearly present; no OCR‑based arithmetic or inference.
+
 
 
