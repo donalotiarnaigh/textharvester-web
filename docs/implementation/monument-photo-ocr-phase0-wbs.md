@@ -42,84 +42,593 @@ Baseline support for OCR from monument photos using single-call LLM prompts, min
 ## B) Phase 0 Work Breakdown Structure
 
 ### 1) Feature Flag and Config
-- Add env/config flag `FEATURE_MONUMENT_OCR_PHASE0` (default false)
-  - Surface to frontend (bootstrap JSON or inline script in `index.html`)
-  - Backend guard in `uploadHandler` to coerce `source_type` to `record_sheet` when disabled
-- README/docs: add instructions to enable flag locally and in staging
+**Files to modify:**
+- `config.json` - Add feature flag configuration
+- `public/index.html` - Surface flag to frontend via inline script
+- `src/controllers/uploadHandler.js` - Add backend feature flag guard
+- `README.md` - Document environment variable usage
+
+**Implementation Details:**
+```javascript
+// config.json - Add features section:
+{
+  "features": {
+    "monumentPhotoOCR": false  // Default disabled for safety
+  }
+}
+
+// public/index.html - Add before module imports (line 103):
+<script>
+  window.APP_CONFIG = {
+    features: {
+      monumentPhotoOCR: <%= JSON.stringify(process.env.FEATURE_MONUMENT_OCR_PHASE0 === 'true') %>
+    }
+  };
+</script>
+
+// uploadHandler.js - Add feature flag guard (after line 114):
+const monumentOCREnabled = process.env.FEATURE_MONUMENT_OCR_PHASE0 === 'true';
+const finalSourceType = (monumentOCREnabled && validatedSourceType === 'monument_photo') 
+  ? 'monument_photo' 
+  : 'record_sheet';
+```
 
 ### 2) Frontend: Upload Mode Selector
-- Files: `public/index.html`, `public/js/modules/index/dropzone.js`, `public/js/modules/index/fileUpload.js`
-- Add radio/select control: Record Sheet (default), Monument Photos
-- Persist selection in `localStorage.uploadMode`
-- Include `source_type` in `FormData` (fileUpload.js `sending` handler)
-- Update on-page guidance for monument photos (angle, contrast, glare)
+**Files to modify:**
+- `public/index.html` (line 64) - Replace mode selector placeholder
+- `public/js/modules/index/dropzone.js` - Initialize mode selector component
+- `public/js/modules/index/fileUpload.js` (line 41) - Include `source_type` in FormData
+- **New file:** `public/js/modules/index/modeSelector.js` - Mode selector component
+
+**Implementation Details:**
+```javascript
+// public/index.html - Replace line 64:
+<!-- Mode selector will be inserted here by JavaScript -->
+<div id="mode-selector-container"></div>
+
+// modeSelector.js - New component:
+export function initModeSelector() {
+  if (!window.APP_CONFIG?.features?.monumentPhotoOCR) return;
+  
+  const container = document.getElementById('mode-selector-container');
+  container.innerHTML = `
+    <div class="card mb-3">
+      <div class="card-body py-3">
+        <div class="form-group mb-0">
+          <label class="form-label">Upload Mode</label>
+          <div class="custom-control custom-radio">
+            <input type="radio" id="recordSheet" name="uploadMode" value="record_sheet" class="custom-control-input" checked>
+            <label class="custom-control-label" for="recordSheet">Record Sheet</label>
+          </div>
+          <div class="custom-control custom-radio">
+            <input type="radio" id="monumentPhoto" name="uploadMode" value="monument_photo" class="custom-control-input">
+            <label class="custom-control-label" for="monumentPhoto">Monument Photo</label>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  
+  // Load saved preference
+  const savedMode = localStorage.getItem('uploadMode') || 'record_sheet';
+  document.querySelector(`input[value="${savedMode}"]`).checked = true;
+  
+  // Save on change
+  document.querySelectorAll('input[name="uploadMode"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      localStorage.setItem('uploadMode', e.target.value);
+    });
+  });
+}
+
+// fileUpload.js - Modify sending event (line 41):
+dropzoneInstance.on("sending", function(file, xhr, formData) {
+  const replaceExisting = document.getElementById('replaceExisting').checked;
+  const selectedModel = getSelectedModel();
+  const sourceType = localStorage.getItem('uploadMode') || 'record_sheet';  // NEW
+  
+  formData.append('replaceExisting', replaceExisting.toString());
+  formData.append('aiProvider', selectedModel);
+  formData.append('source_type', sourceType);  // NEW
+});
+
+// dropzone.js - Initialize mode selector (line 12):
+import { initModeSelector } from "./modeSelector.js";
+
+const initDropzone = () => {
+  initModelSelection();
+  initModeSelector();  // NEW
+  // ... rest of existing code
+};
+```
 
 ### 3) Backend: Upload Handling
-- File: `src/controllers/uploadHandler.js`
-- Accept optional `source_type` from form body; validate ∈ {record_sheet, monument_photo}
-- Attach `source_type` to items queued via `enqueueFiles`
-- Ensure PDFs still convert; for images, pass through unchanged
+**Files to modify:**
+- `src/controllers/uploadHandler.js` (lines 106-114, 148-164) - Add source_type validation and threading
+
+**Implementation Details:**
+```javascript
+// uploadHandler.js - Add after line 109 (after selectedModel assignment):
+const sourceType = req.body.source_type || 'record_sheet';
+
+// Validate source_type
+const validSourceTypes = ['record_sheet', 'monument_photo'];
+const validatedSourceType = validSourceTypes.includes(sourceType) ? sourceType : 'record_sheet';
+
+// Feature flag guard
+const monumentOCREnabled = process.env.FEATURE_MONUMENT_OCR_PHASE0 === 'true';
+const finalSourceType = (monumentOCREnabled && validatedSourceType === 'monument_photo') 
+  ? 'monument_photo' 
+  : 'record_sheet';
+
+logger.info(`Source type: ${sourceType} → validated: ${validatedSourceType} → final: ${finalSourceType}`);
+
+// Modify PDF processing (line 148):
+await enqueueFiles(
+  imagePaths.map((imagePath) => ({
+    path: imagePath,
+    mimetype: "image/jpeg",
+    provider: selectedModel,
+    promptTemplate: promptConfig.template,
+    promptVersion: promptConfig.version,
+    source_type: finalSourceType  // NEW
+  }))
+);
+
+// Modify image processing (line 158):
+await enqueueFiles([{
+  ...file,
+  provider: selectedModel,
+  promptTemplate: promptConfig.template,
+  promptVersion: promptConfig.version,
+  source_type: finalSourceType  // NEW
+}]);
+```
 
 ### 4) Processing Pipeline Wiring
-- File: `src/utils/fileProcessing.js`
-- Accept `options.source_type`; propagate to prompt selection
-- Select monument prompt when `source_type=monument_photo`, else existing memorial sheet prompt
-- Keep existing validation/convert/store flow unchanged
+**Files to modify:**
+- `src/utils/fileQueue.js` (lines 37-40, 129) - Thread source_type through queue
+- `src/utils/fileProcessing.js` (lines 16-19, 34) - Accept source_type and select appropriate template
+
+**Implementation Details:**
+```javascript
+// fileQueue.js - Modify enqueue (line 37):
+fileQueue.push({
+  path: filePath,
+  provider: file.provider || 'openai',
+  promptTemplate: file.promptTemplate,      // NEW - thread through
+  promptVersion: file.promptVersion,        // NEW - thread through  
+  source_type: file.source_type || 'record_sheet'  // NEW
+});
+
+// fileQueue.js - Modify processFile call (line 129):
+processFile(file.path, { 
+  provider: file.provider,
+  promptTemplate: file.promptTemplate,      // NEW
+  promptVersion: file.promptVersion,        // NEW
+  source_type: file.source_type            // NEW
+})
+
+// fileProcessing.js - Modify processFile function (line 16):
+async function processFile(filePath, options = {}) {
+  const providerName = options.provider || process.env.AI_PROVIDER || 'openai';
+  const sourceType = options.source_type || 'record_sheet';  // NEW
+  
+  // Select template based on source_type
+  const promptTemplate = sourceType === 'monument_photo' 
+    ? 'monumentPhotoOCR'                    // NEW template for monuments
+    : (options.promptTemplate || 'memorialOCR');  // Existing record sheet template
+  
+  const promptVersion = options.promptVersion || 'latest';
+  
+  logger.info(`Processing ${filePath} with provider: ${providerName}, source: ${sourceType}, template: ${promptTemplate}`);
+  
+  // ... rest of function unchanged
+}
+```
 
 ### 5) Provider Prompt Templates
-- Files: `src/utils/prompts/templates/*`
-- Create monument prompt templates for OpenAI and Anthropic
-  - Strict JSON schema mapping to current DB fields
-  - Guidance: weathered stone, abbreviations, ligatures, Roman numerals
-  - Explicit: do not hallucinate memorial numbers; allow nulls
-- Register in PromptManager; extend tests
+**Files to create:**
+- `src/utils/prompts/templates/MonumentPhotoOCRPrompt.js` - New monument-specific prompt class
+
+**Files to modify:**
+- `src/utils/prompts/templates/providerTemplates.js` - Register monument templates
+- `src/utils/prompts/index.js` - Export new prompt class
+
+**Implementation Details:**
+```javascript
+// MonumentPhotoOCRPrompt.js - New file:
+const { BasePrompt } = require('../BasePrompt');
+const { MEMORIAL_FIELDS } = require('../types/memorialFields');
+
+class MonumentPhotoOCRPrompt extends BasePrompt {
+  constructor(config = {}) {
+    super({
+      name: 'Monument Photo OCR',
+      version: '1.0.0',
+      description: 'Extract memorial data from monument photos',
+      fields: MEMORIAL_FIELDS,
+      ...config
+    });
+  }
+
+  getProviderPrompt(provider) {
+    const basePrompt = `You are an expert in OCR for weathered stone monuments and memorials. 
+    Extract memorial information from this monument photo. Focus on:
+    - Weathered stone text and carved inscriptions
+    - Roman numerals and abbreviated dates (e.g., "MDCCC" = 1800)
+    - Handle abbreviations (e.g., "WM" = William, "JNO" = John)
+    - Do NOT hallucinate memorial numbers if not clearly visible
+    - Allow null values for missing or unreadable information
+    - Pay attention to ligatures and old-style lettering`;
+    
+    if (provider === 'openai') {
+      return {
+        systemPrompt: basePrompt,
+        userPrompt: "Extract the memorial data as JSON with these exact fields: memorial_number, first_name, last_name, year_of_death, inscription"
+      };
+    } else if (provider === 'anthropic') {
+      return `${basePrompt}\n\nReturn only valid JSON with these exact fields: memorial_number, first_name, last_name, year_of_death, inscription`;
+    }
+    
+    throw new Error(`Unsupported provider: ${provider}`);
+  }
+}
+
+module.exports = { MonumentPhotoOCRPrompt };
+
+// providerTemplates.js - Add monument templates (after line 89):
+const { MonumentPhotoOCRPrompt } = require('./MonumentPhotoOCRPrompt');
+
+const monumentPhotoOCRTemplates = {
+  openai: new MonumentPhotoOCRPrompt({
+    version: '1.0.0',
+    provider: 'openai',
+    fields: MEMORIAL_FIELDS
+  }),
+  anthropic: new MonumentPhotoOCRPrompt({
+    version: '1.0.0',
+    provider: 'anthropic',
+    fields: MEMORIAL_FIELDS
+  })
+};
+
+// Modify getPrompt function (line 98):
+const getPrompt = (provider, templateName, version = 'latest') => {
+  // Handle monument photo OCR template
+  if (templateName === 'monumentPhotoOCR') {
+    const promptInstance = monumentPhotoOCRTemplates[provider];
+    if (!promptInstance) {
+      throw new Error(`No monument photo OCR template found for provider: ${provider}`);
+    }
+    return promptInstance;
+  }
+  
+  // Handle existing memorialOCR template
+  if (templateName === 'memorialOCR') {
+    const promptInstance = memorialOCRTemplates[provider];
+    if (!promptInstance) {
+      throw new Error(`No memorial OCR template found for provider: ${provider}`);
+    }
+    return promptInstance;
+  }
+
+  // ... existing template lookup code
+};
+```
 
 ### 6) Database Migration and Exports
-- Add idempotent migration script `scripts/migrate-add-source-type.js`
-  - ALTER TABLE memorials ADD COLUMN source_type TEXT NULL (skip if exists)
-  - Backfill optional default display: treat NULL as `record_sheet`
-- Ensure `/results-data`, CSV, JSON include `source_type` when present
+**Files to create:**
+- `scripts/migrate-add-source-type.js` - Idempotent migration script
+
+**Files to modify:**
+- `src/controllers/resultsManager.js` - Ensure exports include source_type
+- `package.json` - Add migration script command
+
+**Implementation Details:**
+```javascript
+// scripts/migrate-add-source-type.js - New file:
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+const fs = require('fs');
+
+const dbPath = path.join(__dirname, '..', 'data', 'memorials.db');
+
+function addSourceTypeColumn() {
+  return new Promise((resolve, reject) => {
+    // Check if database file exists
+    if (!fs.existsSync(dbPath)) {
+      console.log('Database file does not exist. Migration not needed.');
+      return resolve();
+    }
+
+    const db = new sqlite3.Database(dbPath);
+    
+    db.serialize(() => {
+      // Check if column already exists
+      db.all("PRAGMA table_info(memorials)", (err, rows) => {
+        if (err) {
+          console.error('Error checking table structure:', err);
+          return reject(err);
+        }
+        
+        const hasSourceType = rows.some(row => row.name === 'source_type');
+        
+        if (!hasSourceType) {
+          console.log('Adding source_type column to memorials table...');
+          db.run("ALTER TABLE memorials ADD COLUMN source_type TEXT", (err) => {
+            if (err) {
+              console.error('Error adding source_type column:', err);
+              return reject(err);
+            }
+            console.log('✓ Successfully added source_type column');
+            resolve();
+          });
+        } else {
+          console.log('✓ source_type column already exists');
+          resolve();
+        }
+      });
+    });
+    
+    db.close((err) => {
+      if (err) console.error('Error closing database:', err);
+    });
+  });
+}
+
+// Run migration if called directly
+if (require.main === module) {
+  addSourceTypeColumn()
+    .then(() => {
+      console.log('Migration completed successfully');
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('Migration failed:', err);
+      process.exit(1);
+    });
+}
+
+module.exports = { addSourceTypeColumn };
+
+// package.json - Add script:
+{
+  "scripts": {
+    "migrate:add-source-type": "node scripts/migrate-add-source-type.js"
+  }
+}
+
+// resultsManager.js - Exports already include all fields by default
+// No changes needed - source_type will be automatically included in:
+// - getResults() - returns all memorial fields
+// - downloadResultsJSON() - includes all fields  
+// - downloadResultsCSV() - includes all fields via jsonToCsv()
+```
 
 ### 7) Results UI Update
-- File: `public/js/modules/results/modelInfoPanel.js`
-- Display `source_type` (fallback to `record_sheet` when absent)
-- No results table changes required
+**Files to modify:**
+- `public/js/modules/results/modelInfoPanel.js` (line 35-54) - Add source_type display
+- `public/results.html` - Add source type field to model info panel
+
+**Implementation Details:**
+```javascript
+// modelInfoPanel.js - Modify updateModelInfoPanel function (line 35):
+function updateModelInfoPanel(data) {
+  if (!data) return;
+
+  // Helper function to safely update DOM elements
+  const safeUpdate = (elementId, value) => {
+    const element = document.getElementById(elementId);
+    if (element) {
+      element.textContent = value;
+    }
+  };
+
+  // Update model information
+  safeUpdate('infoProvider', formatProviderName(data.ai_provider));
+  safeUpdate('infoModelVersion', data.model_version || 'N/A');
+
+  // Update prompt information
+  safeUpdate('infoTemplate', data.prompt_template || 'N/A');
+  safeUpdate('infoPromptVersion', data.prompt_version || 'N/A');
+  safeUpdate('infoProcessedDate', data.processed_date ? formatDate(data.processed_date) : 'N/A');
+  
+  // NEW - Add source type display
+  const sourceType = data.source_type || 'record_sheet';
+  const sourceTypeDisplay = sourceType === 'monument_photo' ? 'Monument Photo' : 'Record Sheet';
+  safeUpdate('infoSourceType', sourceTypeDisplay);
+}
+
+// results.html - Add to model info panel structure:
+<div class="row">
+  <div class="col-sm-4"><strong>Source Type:</strong></div>
+  <div class="col-sm-8" id="infoSourceType">N/A</div>
+</div>
+```
 
 ### 8) Observability
-- Log `source_type` at upload acceptance, queueing, processing start, and DB store points
-- Retain payload truncation and sampling; no additional metrics required
+**Implementation Details:**
+Logging is already in place at key points - just need to include source_type in existing log statements:
+
+```javascript
+// uploadHandler.js (line 163) - Already added:
+logger.info(`Source type: ${sourceType} → validated: ${validatedSourceType} → final: ${finalSourceType}`);
+
+// fileQueue.js (line 43) - Modify existing log:
+logger.info(
+  `File ${index + 1} [${originalName}] enqueued. Path: ${filePath}, Provider: ${file.provider || 'openai'}, Source: ${file.source_type || 'record_sheet'}`
+);
+
+// fileProcessing.js (line 223) - Already added:
+logger.info(`Processing ${filePath} with provider: ${providerName}, source: ${sourceType}, template: ${promptTemplate}`);
+
+// fileProcessing.js (line 58) - Modify existing log:
+extractedData.fileName = path.basename(filePath);
+extractedData.ai_provider = providerName;
+extractedData.model_version = provider.getModelVersion();
+extractedData.prompt_template = promptTemplate;
+extractedData.prompt_version = promptInstance.version;
+extractedData.source_type = sourceType;  // NEW - store in data for DB
+
+logger.info(`OCR text for ${filePath} stored in database with model: ${providerName}, source: ${sourceType}`);
+```
+
+No additional metrics or observability infrastructure needed - existing logging and performance tracking will automatically include the new source_type field.
 
 ### 9) Testing Plan
-- Unit tests
-  - Prompt selection logic keyed by `source_type`
-  - Monument prompt template formatting/validation
-  - Migration script: column exists/created and values persist
-- Integration tests
-  - Upload with `monument_photo` → queue → mocked provider → DB → `/results-data`
-  - Feature flag off: UI hides mode; backend coerces to `record_sheet`
-- UI tests
-  - Mode selector visibility (flag on/off), selection persistence, `FormData` contains `source_type`
-  - Model Info shows `source_type`
+**Unit Tests to Add:**
+```javascript
+// __tests__/monumentPhotoOCRPrompt.test.js - New test file:
+describe('MonumentPhotoOCRPrompt', () => {
+  test('should generate OpenAI prompt with monument-specific guidance', () => {
+    const prompt = new MonumentPhotoOCRPrompt();
+    const result = prompt.getProviderPrompt('openai');
+    expect(result.systemPrompt).toContain('weathered stone');
+    expect(result.systemPrompt).toContain('Roman numerals');
+    expect(result.userPrompt).toContain('memorial_number');
+  });
+  
+  test('should generate Anthropic prompt with monument-specific guidance', () => {
+    const prompt = new MonumentPhotoOCRPrompt();
+    const result = prompt.getProviderPrompt('anthropic');
+    expect(result).toContain('Do NOT hallucinate memorial numbers');
+  });
+});
 
-### 10) Deliverables
-- Code: FE selector + BE handling + prompt templates + migration script
-- Docs: updated tech design, README env flag section
-- Tests: unit, integration, and UI passing
+// __tests__/fileProcessing.test.js - Add source_type tests:
+describe('processFile with source_type', () => {
+  test('should select monument template for monument_photo source', async () => {
+    const result = await processFile('test.jpg', { 
+      source_type: 'monument_photo',
+      provider: 'openai' 
+    });
+    expect(mockGetPrompt).toHaveBeenCalledWith('openai', 'monumentPhotoOCR', 'latest');
+  });
+  
+  test('should select memorial template for record_sheet source', async () => {
+    const result = await processFile('test.jpg', { 
+      source_type: 'record_sheet',
+      provider: 'openai' 
+    });
+    expect(mockGetPrompt).toHaveBeenCalledWith('openai', 'memorialOCR', 'latest');
+  });
+});
+
+// scripts/__tests__/migrate-add-source-type.test.js - Migration tests:
+describe('Source Type Migration', () => {
+  test('should add source_type column if not exists', async () => {
+    await addSourceTypeColumn();
+    // Verify column exists in test database
+  });
+  
+  test('should skip if column already exists', async () => {
+    // Run twice, should not error
+    await addSourceTypeColumn();
+    await addSourceTypeColumn();
+  });
+});
+```
+
+**Integration Tests to Add:**
+```javascript
+// __tests__/integration/monumentPhotoFlow.test.js - New integration test:
+describe('Monument Photo OCR Flow', () => {
+  test('should process monument photo end-to-end', async () => {
+    // POST /upload with source_type=monument_photo
+    // Verify queue contains source_type
+    // Mock provider response
+    // Verify database contains source_type
+    // Verify GET /results-data includes source_type
+  });
+  
+  test('should respect feature flag disabled', async () => {
+    process.env.FEATURE_MONUMENT_OCR_PHASE0 = 'false';
+    // Upload with monument_photo should become record_sheet
+  });
+});
+```
+
+**UI Tests to Add:**
+```javascript
+// __tests__/ui/modeSelector.test.js - New UI test:
+describe('Mode Selector UI', () => {
+  test('should show mode selector when feature flag enabled', () => {
+    window.APP_CONFIG = { features: { monumentPhotoOCR: true } };
+    initModeSelector();
+    expect(document.getElementById('mode-selector-container')).not.toBeEmpty();
+  });
+  
+  test('should hide mode selector when feature flag disabled', () => {
+    window.APP_CONFIG = { features: { monumentPhotoOCR: false } };
+    initModeSelector();
+    expect(document.getElementById('mode-selector-container')).toBeEmpty();
+  });
+  
+  test('should persist selection in localStorage', () => {
+    // Select monument_photo
+    // Verify localStorage.uploadMode = 'monument_photo'
+  });
+});
+```
+
+### 10) Implementation Priority Order
+1. **Feature Flag Setup** (config.json, environment variables)
+2. **Database Migration** (run migration script first)
+3. **Monument Prompt Templates** (create new prompt classes)
+4. **Backend Parameter Handling** (uploadHandler, fileQueue, fileProcessing)
+5. **Frontend Mode Selector** (UI components, localStorage)
+6. **Results UI Updates** (model info panel)
+7. **Testing Suite** (unit, integration, UI tests)
+8. **Documentation** (README updates, environment setup)
+
+### 11) Deliverables
+**Code Changes:**
+- **New Files:** 4 files
+  - `public/js/modules/index/modeSelector.js` - Mode selector component
+  - `src/utils/prompts/templates/MonumentPhotoOCRPrompt.js` - Monument prompt class
+  - `scripts/migrate-add-source-type.js` - Database migration script
+  - `__tests__/monumentPhotoOCRPrompt.test.js` - Unit tests
+- **Modified Files:** 8 files
+  - `config.json` - Feature flag configuration
+  - `public/index.html` - Mode selector container + feature flag
+  - `public/js/modules/index/dropzone.js` - Initialize mode selector
+  - `public/js/modules/index/fileUpload.js` - Include source_type in FormData
+  - `src/controllers/uploadHandler.js` - Validate and thread source_type
+  - `src/utils/fileQueue.js` - Thread source_type through queue
+  - `src/utils/fileProcessing.js` - Template selection based on source_type
+  - `src/utils/prompts/templates/providerTemplates.js` - Register monument templates
+  - `public/js/modules/results/modelInfoPanel.js` - Display source_type
+  - `public/results.html` - Add source type field
+  - `package.json` - Add migration script
+
+**Documentation:**
+- README.md environment variable documentation
+- Updated technical design document
+- Comprehensive testing plan with specific test cases
 
 ---
 
-## C) Detailed Checklist
-- [ ] Flag `FEATURE_MONUMENT_OCR_PHASE0` plumbed FE/BE
-- [ ] UI selector added and persisted
-- [ ] `FormData` includes `source_type`
-- [ ] `/upload` validates and threads `source_type`
-- [ ] Queue items carry `source_type`
-- [ ] Process pipeline selects monument prompt on `monument_photo`
-- [ ] Monument prompts implemented (OpenAI, Anthropic)
-- [ ] Migration adds `memorials.source_type`
-- [ ] Results Model Info shows `source_type`
-- [ ] Exports include `source_type` when present
-- [ ] Unit tests for prompts, migration, selection
-- [ ] Integration/UI tests
-- [ ] Docs updated
+## C) Detailed Implementation Checklist
+- [ ] **Feature Flag:** `FEATURE_MONUMENT_OCR_PHASE0` environment variable plumbed FE/BE
+- [ ] **Config:** Feature flag added to config.json with default false
+- [ ] **Frontend Flag:** Inline script in index.html surfaces flag to client
+- [ ] **Mode Selector:** UI component created with radio buttons (Record Sheet/Monument Photo)
+- [ ] **Mode Persistence:** Selection saved/loaded from localStorage.uploadMode
+- [ ] **FormData:** `source_type` parameter included in upload request
+- [ ] **Upload Validation:** Backend validates source_type ∈ {record_sheet, monument_photo}
+- [ ] **Feature Guard:** Backend coerces monument_photo to record_sheet when flag disabled
+- [ ] **Queue Threading:** source_type propagated through fileQueue.enqueueFiles
+- [ ] **Processing Pipeline:** fileProcessing.processFile accepts and uses source_type
+- [ ] **Template Selection:** Monument template selected when source_type=monument_photo
+- [ ] **Monument Prompts:** MonumentPhotoOCRPrompt class implemented for both providers
+- [ ] **Template Registration:** Monument templates registered in providerTemplates.js
+- [ ] **Database Migration:** migrate-add-source-type.js script created and tested
+- [ ] **Migration Execution:** source_type column added to memorials table
+- [ ] **Results Display:** Model Info panel shows source type with fallback
+- [ ] **Export Compatibility:** CSV/JSON exports include source_type field
+- [ ] **Logging:** source_type included in key log statements
+- [ ] **Unit Tests:** Prompt selection, template validation, migration tests
+- [ ] **Integration Tests:** End-to-end flow with monument_photo source_type
+- [ ] **UI Tests:** Mode selector visibility, persistence, FormData inclusion
+- [ ] **Documentation:** README updated with environment variable instructions
 

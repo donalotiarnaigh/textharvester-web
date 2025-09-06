@@ -53,5 +53,8 @@
   },
   "database": {
     "path": "./data/memorials.db"
+  },
+  "features": {
+    "monumentPhotoOCR": false
   }
 }

@@ -9,6 +9,7 @@ const { convertPdfToJpegs } = require("../utils/pdfConverter");
 const { clearAllMemorials } = require('../utils/database');
 const { getPrompt } = require('../utils/prompts/templates/providerTemplates');
 const { promptManager } = require('../utils/prompts/templates/providerTemplates');
+const { getFinalSourceType } = require('../utils/featureFlags');
 
 function createUniqueName(file) {
   const originalName = path.basename(
@@ -107,11 +108,16 @@ const handleFileUpload = async (req, res) => {
   const selectedModel = req.body.aiProvider || 'openai';
   const promptTemplate = req.body.promptTemplate;
   const promptVersion = req.body.promptVersion;
+  const sourceType = req.body.source_type || 'record_sheet';
+
+  // Process source_type with feature flag validation
+  const finalSourceType = getFinalSourceType(sourceType);
 
   logger.info(`Replace existing setting: ${shouldReplace}`);
   logger.info(`Selected AI model: ${selectedModel}`);
   logger.info(`Prompt template: ${promptTemplate || 'default'}`);
   logger.info(`Prompt version: ${promptVersion || 'latest'}`);
+  logger.info(`Source type: ${sourceType} → final: ${finalSourceType}`);
 
   const files = req.files?.file || [];
   logger.info(`Number of files received: ${files.length}`);
@@ -151,7 +157,8 @@ const handleFileUpload = async (req, res) => {
               mimetype: "image/jpeg",
               provider: selectedModel,
               promptTemplate: promptConfig.template,
-              promptVersion: promptConfig.version
+              promptVersion: promptConfig.version,
+              source_type: finalSourceType
             }))
           );
         } else {
@@ -159,7 +166,8 @@ const handleFileUpload = async (req, res) => {
             ...file,
             provider: selectedModel,
             promptTemplate: promptConfig.template,
-            promptVersion: promptConfig.version
+            promptVersion: promptConfig.version,
+            source_type: finalSourceType
           }]);
         }
       } catch (conversionError) {

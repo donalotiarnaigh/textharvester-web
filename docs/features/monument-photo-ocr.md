@@ -137,7 +137,7 @@ Enable OCR directly from monument photos in addition to record-sheet images. Pha
 
 ## 9. Open Questions / Assumptions
 - Languages and diacritics: rely on provider multilingual capability; Phase 0 does not add language selection.
-- Memorial number: treated as optional for monument photos; no inference.
+- Memorial number: treated as optional for monument photos; no inference. Use file_name as the fallback identifier.
 - Date extraction: only extract if clearly present; no OCR‑based arithmetic or inference.
 
 

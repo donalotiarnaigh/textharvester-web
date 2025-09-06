@@ -5,6 +5,7 @@ const { enqueueFiles } = require('../src/utils/fileQueue');
 const { clearAllMemorials } = require('../src/utils/database');
 const { getPrompt, promptManager } = require('../src/utils/prompts/templates/providerTemplates');
 const logger = require('../src/utils/logger');
+const { getFinalSourceType } = require('../src/utils/featureFlags');
 
 // Mock dependencies
 jest.mock('multer');
@@ -13,6 +14,7 @@ jest.mock('../src/utils/database');
 jest.mock('../src/utils/prompts/templates/providerTemplates');
 jest.mock('../src/utils/logger');
 jest.mock('../src/utils/pdfConverter');
+jest.mock('../src/utils/featureFlags');
 
 describe('Upload Handler', () => {
   let mockReq;
@@ -38,7 +40,9 @@ describe('Upload Handler', () => {
           mimetype: 'image/jpeg'
         }]
       };
+      // Preserve the existing body and add defaults
       req.body = {
+        ...req.body,
         aiProvider: req.body.aiProvider || 'openai',
         promptTemplate: req.body.promptTemplate || 'memorialOCR',
         promptVersion: req.body.promptVersion || 'latest',
@@ -251,6 +255,113 @@ describe('Upload Handler', () => {
         expect.arrayContaining([
           expect.objectContaining({
             path: '/uploads/test.jpg'
+          })
+        ])
+      );
+    });
+  });
+
+  describe('Source Type Feature Flag Integration', () => {
+    beforeEach(() => {
+      // Mock getFinalSourceType
+      getFinalSourceType.mockImplementation((sourceType) => {
+        // Default behavior - can be overridden in individual tests
+        return sourceType === 'monument_photo' ? 'record_sheet' : sourceType;
+      });
+    });
+
+    test('should handle source_type parameter when provided', async () => {
+      // Setup
+      mockReq.body = {
+        aiProvider: 'openai',
+        replaceExisting: 'false',
+        source_type: 'monument_photo'
+      };
+      
+      // Mock feature flag to allow monument_photo
+      getFinalSourceType.mockReturnValue('monument_photo');
+      
+      // Execute
+      await handleFileUpload(mockReq, mockRes);
+      
+      // Assert
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            source_type: 'monument_photo'
+          })
+        ])
+      );
+    });
+
+    test('should default to record_sheet when source_type not provided', async () => {
+      // Setup
+      mockReq.body = {
+        aiProvider: 'openai',
+        replaceExisting: 'false'
+      };
+      
+      getFinalSourceType.mockReturnValue('record_sheet');
+      
+      // Execute
+      await handleFileUpload(mockReq, mockRes);
+      
+      // Assert
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            source_type: 'record_sheet'
+          })
+        ])
+      );
+    });
+
+    test('should coerce monument_photo to record_sheet when feature disabled', async () => {
+      // Setup
+      mockReq.body = {
+        aiProvider: 'openai',
+        replaceExisting: 'false',
+        source_type: 'monument_photo'
+      };
+      
+      // Mock feature flag to coerce monument_photo to record_sheet
+      getFinalSourceType.mockReturnValue('record_sheet');
+      
+      // Execute
+      await handleFileUpload(mockReq, mockRes);
+      
+      // Assert
+      expect(getFinalSourceType).toHaveBeenCalledWith('monument_photo');
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            source_type: 'record_sheet'
+          })
+        ])
+      );
+    });
+
+    test('should process source_type through feature flag system', async () => {
+      // Setup
+      mockReq.body = {
+        aiProvider: 'openai',
+        replaceExisting: 'false',
+        source_type: 'monument_photo'
+      };
+      
+      getFinalSourceType.mockReturnValue('record_sheet');
+      
+      // Execute
+      await handleFileUpload(mockReq, mockRes);
+      
+      // Assert that the feature flag system was called correctly
+      expect(getFinalSourceType).toHaveBeenCalledWith('monument_photo');
+      
+      // Verify the processed source_type was passed to enqueueFiles
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            source_type: 'record_sheet'
           })
         ])
       );
