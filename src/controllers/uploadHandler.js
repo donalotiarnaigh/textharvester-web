@@ -9,7 +9,6 @@ const { convertPdfToJpegs } = require("../utils/pdfConverter");
 const { clearAllMemorials } = require('../utils/database');
 const { getPrompt } = require('../utils/prompts/templates/providerTemplates');
 const { promptManager } = require('../utils/prompts/templates/providerTemplates');
-const { getFinalSourceType } = require('../utils/featureFlags');
 
 function createUniqueName(file) {
   const originalName = path.basename(
@@ -110,8 +109,9 @@ const handleFileUpload = async (req, res) => {
   const promptVersion = req.body.promptVersion;
   const sourceType = req.body.source_type || 'record_sheet';
 
-  // Process source_type with feature flag validation
-  const finalSourceType = getFinalSourceType(sourceType);
+  // Validate source_type
+  const validSourceTypes = ['record_sheet', 'monument_photo'];
+  const finalSourceType = validSourceTypes.includes(sourceType) ? sourceType : 'record_sheet';
 
   logger.info(`Replace existing setting: ${shouldReplace}`);
   logger.info(`Selected AI model: ${selectedModel}`);

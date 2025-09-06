@@ -1,7 +1,7 @@
 ### WBS — Monument Photo OCR (Phase 0)
 
 #### Scope
-Baseline support for OCR from monument photos using single-call LLM prompts, minimal UI changes, `source_type` threading, nullable DB column, and feature-flag gating. No preprocessing, region detection, overlays, or multi-image fusion.
+Baseline support for OCR from monument photos using single-call LLM prompts, minimal UI changes with mode selector, `source_type` threading, and nullable DB column. No preprocessing, region detection, overlays, or multi-image fusion.
 
 ---
 
@@ -41,39 +41,7 @@ Baseline support for OCR from monument photos using single-call LLM prompts, min
 
 ## B) Phase 0 Work Breakdown Structure
 
-### 1) Feature Flag and Config
-**Files to modify:**
-- `config.json` - Add feature flag configuration
-- `public/index.html` - Surface flag to frontend via inline script
-- `src/controllers/uploadHandler.js` - Add backend feature flag guard
-- `README.md` - Document environment variable usage
-
-**Implementation Details:**
-```javascript
-// config.json - Add features section:
-{
-  "features": {
-    "monumentPhotoOCR": false  // Default disabled for safety
-  }
-}
-
-// public/index.html - Add before module imports (line 103):
-<script>
-  window.APP_CONFIG = {
-    features: {
-      monumentPhotoOCR: <%= JSON.stringify(process.env.FEATURE_MONUMENT_OCR_PHASE0 === 'true') %>
-    }
-  };
-</script>
-
-// uploadHandler.js - Add feature flag guard (after line 114):
-const monumentOCREnabled = process.env.FEATURE_MONUMENT_OCR_PHASE0 === 'true';
-const finalSourceType = (monumentOCREnabled && validatedSourceType === 'monument_photo') 
-  ? 'monument_photo' 
-  : 'record_sheet';
-```
-
-### 2) Frontend: Upload Mode Selector
+### 1) Frontend: Upload Mode Selector
 **Files to modify:**
 - `public/index.html` (line 64) - Replace mode selector placeholder
 - `public/js/modules/index/dropzone.js` - Initialize mode selector component
@@ -88,8 +56,6 @@ const finalSourceType = (monumentOCREnabled && validatedSourceType === 'monument
 
 // modeSelector.js - New component:
 export function initModeSelector() {
-  if (!window.APP_CONFIG?.features?.monumentPhotoOCR) return;
-  
   const container = document.getElementById('mode-selector-container');
   container.innerHTML = `
     <div class="card mb-3">
@@ -141,7 +107,7 @@ const initDropzone = () => {
 };
 ```
 
-### 3) Backend: Upload Handling
+### 2) Backend: Upload Handling
 **Files to modify:**
 - `src/controllers/uploadHandler.js` (lines 106-114, 148-164) - Add source_type validation and threading
 
@@ -152,15 +118,9 @@ const sourceType = req.body.source_type || 'record_sheet';
 
 // Validate source_type
 const validSourceTypes = ['record_sheet', 'monument_photo'];
-const validatedSourceType = validSourceTypes.includes(sourceType) ? sourceType : 'record_sheet';
+const finalSourceType = validSourceTypes.includes(sourceType) ? sourceType : 'record_sheet';
 
-// Feature flag guard
-const monumentOCREnabled = process.env.FEATURE_MONUMENT_OCR_PHASE0 === 'true';
-const finalSourceType = (monumentOCREnabled && validatedSourceType === 'monument_photo') 
-  ? 'monument_photo' 
-  : 'record_sheet';
-
-logger.info(`Source type: ${sourceType} → validated: ${validatedSourceType} → final: ${finalSourceType}`);
+logger.info(`Source type: ${sourceType} → final: ${finalSourceType}`);
 
 // Modify PDF processing (line 148):
 await enqueueFiles(
@@ -184,7 +144,7 @@ await enqueueFiles([{
 }]);
 ```
 
-### 4) Processing Pipeline Wiring
+### 3) Processing Pipeline Wiring
 **Files to modify:**
 - `src/utils/fileQueue.js` (lines 37-40, 129) - Thread source_type through queue
 - `src/utils/fileProcessing.js` (lines 16-19, 34) - Accept source_type and select appropriate template
@@ -226,7 +186,7 @@ async function processFile(filePath, options = {}) {
 }
 ```
 
-### 5) Provider Prompt Templates
+### 4) Provider Prompt Templates
 **Files to create:**
 - `src/utils/prompts/templates/MonumentPhotoOCRPrompt.js` - New monument-specific prompt class
 
@@ -316,7 +276,7 @@ const getPrompt = (provider, templateName, version = 'latest') => {
 };
 ```
 
-### 6) Database Migration and Exports
+### 5) Database Migration and Exports
 **Files to create:**
 - `scripts/migrate-add-source-type.js` - Idempotent migration script
 
@@ -405,7 +365,7 @@ module.exports = { addSourceTypeColumn };
 // - downloadResultsCSV() - includes all fields via jsonToCsv()
 ```
 
-### 7) Results UI Update
+### 6) Results UI Update
 **Files to modify:**
 - `public/js/modules/results/modelInfoPanel.js` (line 35-54) - Add source_type display
 - `public/results.html` - Add source type field to model info panel
@@ -446,7 +406,7 @@ function updateModelInfoPanel(data) {
 </div>
 ```
 
-### 8) Observability
+### 7) Observability
 **Implementation Details:**
 Logging is already in place at key points - just need to include source_type in existing log statements:
 
@@ -475,7 +435,7 @@ logger.info(`OCR text for ${filePath} stored in database with model: ${providerN
 
 No additional metrics or observability infrastructure needed - existing logging and performance tracking will automatically include the new source_type field.
 
-### 9) Testing Plan
+### 8) Testing Plan
 **Unit Tests to Add:**
 ```javascript
 // __tests__/monumentPhotoOCRPrompt.test.js - New test file:
@@ -571,26 +531,24 @@ describe('Mode Selector UI', () => {
 });
 ```
 
-### 10) Implementation Priority Order
-1. **Feature Flag Setup** (config.json, environment variables)
-2. **Database Migration** (run migration script first)
-3. **Monument Prompt Templates** (create new prompt classes)
-4. **Backend Parameter Handling** (uploadHandler, fileQueue, fileProcessing)
-5. **Frontend Mode Selector** (UI components, localStorage)
-6. **Results UI Updates** (model info panel)
-7. **Testing Suite** (unit, integration, UI tests)
-8. **Documentation** (README updates, environment setup)
+### 9) Implementation Priority Order
+1. **Database Migration** (run migration script first)
+2. **Monument Prompt Templates** (create new prompt classes)
+3. **Backend Parameter Handling** (uploadHandler, fileQueue, fileProcessing)
+4. **Frontend Mode Selector** (UI components, localStorage)
+5. **Results UI Updates** (model info panel)
+6. **Testing Suite** (unit, integration, UI tests)
+7. **Documentation** (README updates)
 
-### 11) Deliverables
+### 10) Deliverables
 **Code Changes:**
 - **New Files:** 4 files
   - `public/js/modules/index/modeSelector.js` - Mode selector component
   - `src/utils/prompts/templates/MonumentPhotoOCRPrompt.js` - Monument prompt class
   - `scripts/migrate-add-source-type.js` - Database migration script
   - `__tests__/monumentPhotoOCRPrompt.test.js` - Unit tests
-- **Modified Files:** 8 files
-  - `config.json` - Feature flag configuration
-  - `public/index.html` - Mode selector container + feature flag
+- **Modified Files:** 9 files
+  - `public/index.html` - Mode selector container
   - `public/js/modules/index/dropzone.js` - Initialize mode selector
   - `public/js/modules/index/fileUpload.js` - Include source_type in FormData
   - `src/controllers/uploadHandler.js` - Validate and thread source_type
@@ -602,21 +560,16 @@ describe('Mode Selector UI', () => {
   - `package.json` - Add migration script
 
 **Documentation:**
-- README.md environment variable documentation
 - Updated technical design document
 - Comprehensive testing plan with specific test cases
 
 ---
 
 ## C) Detailed Implementation Checklist
-- [ ] **Feature Flag:** `FEATURE_MONUMENT_OCR_PHASE0` environment variable plumbed FE/BE
-- [ ] **Config:** Feature flag added to config.json with default false
-- [ ] **Frontend Flag:** Inline script in index.html surfaces flag to client
 - [ ] **Mode Selector:** UI component created with radio buttons (Record Sheet/Monument Photo)
 - [ ] **Mode Persistence:** Selection saved/loaded from localStorage.uploadMode
 - [ ] **FormData:** `source_type` parameter included in upload request
 - [ ] **Upload Validation:** Backend validates source_type ∈ {record_sheet, monument_photo}
-- [ ] **Feature Guard:** Backend coerces monument_photo to record_sheet when flag disabled
 - [ ] **Queue Threading:** source_type propagated through fileQueue.enqueueFiles
 - [ ] **Processing Pipeline:** fileProcessing.processFile accepts and uses source_type
 - [ ] **Template Selection:** Monument template selected when source_type=monument_photo
@@ -630,5 +583,5 @@ describe('Mode Selector UI', () => {
 - [ ] **Unit Tests:** Prompt selection, template validation, migration tests
 - [ ] **Integration Tests:** End-to-end flow with monument_photo source_type
 - [ ] **UI Tests:** Mode selector visibility, persistence, FormData inclusion
-- [ ] **Documentation:** README updated with environment variable instructions
+- [ ] **Documentation:** Updated technical design document
 
