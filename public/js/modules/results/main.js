@@ -63,6 +63,27 @@ let currentError = null;
 let retryCount = 0;
 const MAX_RETRY_ATTEMPTS = 3;
 
+// Source Type utility functions
+function formatSourceType(sourceType) {
+  if (!sourceType) return 'Unknown';
+  
+  const typeMap = {
+    'record_sheet': 'Record Sheet',
+    'monument_photo': 'Monument Photo'
+  };
+  
+  return typeMap[sourceType] || sourceType.charAt(0).toUpperCase() + sourceType.slice(1);
+}
+
+function getSourceTypeBadgeClass(sourceType) {
+  const classMap = {
+    'record_sheet': 'badge-primary',
+    'monument_photo': 'badge-success'
+  };
+  
+  return classMap[sourceType] || 'badge-secondary';
+}
+
 // HTML Sanitization utilities
 const SanitizeUtils = {
   /**
@@ -142,7 +163,8 @@ const SanitizeUtils = {
       prompt_template: this.sanitizeText(memorial.prompt_template),
       prompt_version: this.sanitizeText(memorial.prompt_version),
       fileName: this.sanitizeAttribute(memorial.fileName),
-      processed_date: memorial.processed_date // Date objects are safe as they're processed by formatDate
+      processed_date: memorial.processed_date, // Date objects are safe as they're processed by formatDate
+      source_type: memorial.source_type // Keep original value for logic, will be sanitized in display functions
     };
   },
 
@@ -180,6 +202,13 @@ const SanitizeUtils = {
             <div class="detail-info">
               <h6>Processing Information</h6>
               <dl class="row">
+                <dt class="col-sm-4">Source Type:</dt>
+                <dd class="col-sm-8">
+                  <span class="badge ${getSourceTypeBadgeClass(safe.source_type)}">
+                    ${formatSourceType(safe.source_type)}
+                  </span>
+                </dd>
+
                 <dt class="col-sm-4">Model:</dt>
                 <dd class="col-sm-8">${safe.ai_provider || 'N/A'}</dd>
 
@@ -241,6 +270,11 @@ const SanitizeUtils = {
       <td>${safe.memorial_number}</td>
       <td>${safe.first_name} ${safe.last_name}</td>
       <td>${safe.year_of_death}</td>
+      <td class="source-type-cell" data-source-type="${safe.source_type || 'unknown'}">
+        <span class="badge ${getSourceTypeBadgeClass(safe.source_type)}">
+          ${formatSourceType(safe.source_type)}
+        </span>
+      </td>
       <td>${safe.ai_provider || 'N/A'}</td>
       <td>${safe.prompt_template || 'N/A'}</td>
       <td>${safe.prompt_version || 'N/A'}</td>
@@ -480,7 +514,7 @@ function displayMemorials(memorials) {
     tableBody.appendChild(row);
 
     // Create detail row (initially hidden)
-    const detailRow = createDetailRow(memorial, 8); // 8 columns total
+    const detailRow = createDetailRow(memorial, 9); // 9 columns total
     tableBody.appendChild(detailRow);
 
     // Event handling is now done via delegation on tableBody (no individual listeners)
