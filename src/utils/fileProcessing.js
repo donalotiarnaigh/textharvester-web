@@ -15,11 +15,17 @@ const { isEmptySheetError } = require('./errorTypes');
  */
 async function processFile(filePath, options = {}) {
   const providerName = options.provider || process.env.AI_PROVIDER || 'openai';
-  const promptTemplate = options.promptTemplate || 'memorialOCR';
-  const promptVersion = options.promptVersion || 'latest';
   const sourceType = options.source_type || 'record_sheet';
   
-  logger.info(`Starting to process file: ${filePath} with provider: ${providerName}`);
+  // Select template based on source_type (unless custom template is provided)
+  const promptTemplate = options.promptTemplate || 
+    (sourceType === 'monument_photo' 
+      ? 'monumentPhotoOCR'                    // NEW template for monuments
+      : 'memorialOCR');                      // Existing record sheet template
+  
+  const promptVersion = options.promptVersion || 'latest';
+  
+  logger.info(`Processing ${path.basename(filePath)} with provider: ${providerName}, source: ${sourceType}, template: ${promptTemplate}`);
   
   try {
     const base64Image = await fs.readFile(filePath, { encoding: 'base64' });

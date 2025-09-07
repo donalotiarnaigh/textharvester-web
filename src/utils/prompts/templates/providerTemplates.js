@@ -3,6 +3,7 @@
  */
 
 const MemorialOCRPrompt = require('./MemorialOCRPrompt');
+const MonumentPhotoOCRPrompt = require('./MonumentPhotoOCRPrompt');
 const ProviderPromptManager = require('../ProviderPromptManager');
 const { MEMORIAL_FIELDS } = require('../types/memorialFields');
 
@@ -88,6 +89,19 @@ const memorialOCRTemplates = {
   })
 };
 
+const monumentPhotoOCRTemplates = {
+  openai: new MonumentPhotoOCRPrompt({
+    version: '1.0.0',
+    provider: 'openai',
+    fields: MEMORIAL_FIELDS
+  }),
+  anthropic: new MonumentPhotoOCRPrompt({
+    version: '1.0.0',
+    provider: 'anthropic',
+    fields: MEMORIAL_FIELDS
+  })
+};
+
 /**
  * Get a prompt template for a provider
  * @param {string} provider The AI provider name
@@ -96,7 +110,16 @@ const memorialOCRTemplates = {
  * @returns {Object} The prompt template
  */
 const getPrompt = (provider, templateName, version = 'latest') => {
-  // Handle the special case for memorialOCR template
+  // Handle monument photo OCR template
+  if (templateName === 'monumentPhotoOCR') {
+    const promptInstance = monumentPhotoOCRTemplates[provider];
+    if (!promptInstance) {
+      throw new Error(`No monument photo OCR template found for provider: ${provider}`);
+    }
+    return promptInstance;
+  }
+  
+  // Handle existing memorialOCR template
   if (templateName === 'memorialOCR') {
     const promptInstance = memorialOCRTemplates[provider];
     if (!promptInstance) {
