@@ -5,11 +5,15 @@
 
 import { handleFileUpload } from "./fileUpload.js";
 import { initModelSelection } from "./modelSelection.js";
+import { initModeSelector } from "./modeSelector.js";
 
 // Ensure Dropzone is defined globally
 const initDropzone = () => {
   // Initialize the model selection UI first
   initModelSelection();
+  
+  // Initialize the mode selector UI
+  initModeSelector();
   
   if (typeof Dropzone === "undefined") {
     console.error(
