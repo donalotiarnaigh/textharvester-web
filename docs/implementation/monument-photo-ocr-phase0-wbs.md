@@ -14,8 +14,13 @@ Baseline support for OCR from monument photos using single-call LLM prompts, min
   - FileQueue and FileProcessing parameter handling
   - Comprehensive test suite (10 TDD tests)
   - All existing functionality preserved (569 total tests passing)
-- **Step 3: Monument Prompt Templates** 🔄 **NEXT**
-- **Step 4: Database Migration** ⏳ **PENDING**
+- **Step 3: Monument Prompt Templates** ✅ **COMPLETED** (commit: 432d92c)
+  - MonumentPhotoOCRPrompt class with monument-specific prompts
+  - Template selection logic based on source_type
+  - Provider registration for OpenAI and Anthropic
+  - Comprehensive test suite (38 tests: 23 for prompt + 15 for selection)
+  - All tests passing (597 total)
+- **Step 4: Database Migration** 🔄 **NEXT**
 - **Step 5: Results UI Updates** ⏳ **PENDING**
 
 ---
@@ -549,34 +554,36 @@ describe('Mode Selector UI', () => {
 ### 9) Implementation Priority Order
 1. ~~**Frontend Mode Selector** (UI components, localStorage)~~ ✅ **COMPLETED**
 2. ~~**Backend Parameter Handling** (uploadHandler, fileQueue, fileProcessing)~~ ✅ **COMPLETED**
-3. **Monument Prompt Templates** (create new prompt classes) 🔄 **NEXT**
-4. **Database Migration** (run migration script first)
+3. ~~**Monument Prompt Templates** (create new prompt classes)~~ ✅ **COMPLETED**
+4. **Database Migration** (run migration script first) 🔄 **NEXT**
 5. **Results UI Updates** (model info panel)
 6. **Testing Suite** (unit, integration, UI tests)
 7. **Documentation** (README updates)
 
 ### 10) Deliverables
 
-**✅ COMPLETED (Steps 1 & 2):**
-- **New Files:** 4 files
+**✅ COMPLETED (Steps 1, 2 & 3):**
+- **New Files:** 6 files
   - `public/js/modules/index/modeSelector.js` - Mode selector component ✅
   - `__tests__/ui/modeSelector.test.js` - UI component tests (13 tests) ✅
   - `__tests__/integration/modeSelector-fileUpload.test.js` - Integration tests (7 tests) ✅
   - `__tests__/unit/source-type-threading.test.js` - Backend threading tests (10 tests) ✅
-- **Modified Files:** 6 files
+  - `src/utils/prompts/templates/MonumentPhotoOCRPrompt.js` - Monument prompt class ✅
+  - `__tests__/unit/MonumentPhotoOCRPrompt.test.js` - Monument prompt tests (23 tests) ✅
+  - `__tests__/unit/monument-template-selection.test.js` - Template selection tests (15 tests) ✅
+- **Modified Files:** 7 files
   - `public/index.html` - Mode selector container ✅
   - `public/js/modules/index/dropzone.js` - Initialize mode selector ✅
   - `public/js/modules/index/fileUpload.js` - Include source_type in FormData ✅
   - `src/controllers/uploadHandler.js` - Validate and thread source_type ✅
   - `src/utils/fileQueue.js` - Thread source_type through queue ✅
-  - `src/utils/fileProcessing.js` - Handle source_type in processing ✅
+  - `src/utils/fileProcessing.js` - Handle source_type in processing + template selection ✅
+  - `src/utils/prompts/templates/providerTemplates.js` - Register monument templates ✅
 
 **⏳ REMAINING:**
-- **New Files:** 2 files
-  - `src/utils/prompts/templates/MonumentPhotoOCRPrompt.js` - Monument prompt class
+- **New Files:** 1 file
   - `scripts/migrate-add-source-type.js` - Database migration script
-- **Modified Files:** 3 files
-  - `src/utils/prompts/templates/providerTemplates.js` - Register monument templates
+- **Modified Files:** 2 files
   - `public/js/modules/results/modelInfoPanel.js` - Display source_type
   - `public/results.html` - Add source type field
 
@@ -593,9 +600,9 @@ describe('Mode Selector UI', () => {
 - [x] **Upload Validation:** Backend validates source_type ∈ {record_sheet, monument_photo} ✅ **COMPLETED**
 - [x] **Queue Threading:** source_type propagated through fileQueue.enqueueFiles ✅ **COMPLETED**
 - [x] **Processing Pipeline:** fileProcessing.processFile accepts and uses source_type ✅ **COMPLETED**
-- [ ] **Template Selection:** Monument template selected when source_type=monument_photo
-- [ ] **Monument Prompts:** MonumentPhotoOCRPrompt class implemented for both providers
-- [ ] **Template Registration:** Monument templates registered in providerTemplates.js
+- [x] **Template Selection:** Monument template selected when source_type=monument_photo ✅ **COMPLETED**
+- [x] **Monument Prompts:** MonumentPhotoOCRPrompt class implemented for both providers ✅ **COMPLETED**
+- [x] **Template Registration:** Monument templates registered in providerTemplates.js ✅ **COMPLETED**
 - [ ] **Database Migration:** migrate-add-source-type.js script created and tested
 - [ ] **Migration Execution:** source_type column added to memorials table
 - [ ] **Results Display:** Model Info panel shows source type with fallback
