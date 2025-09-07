@@ -5,6 +5,7 @@ const { createProvider } = require('./modelProviders');
 const { storeMemorial } = require('./database');
 const { getPrompt } = require('./prompts/templates/providerTemplates');
 const { isEmptySheetError } = require('./errorTypes');
+const { getMemorialNumberForMonument } = require('./filenameParser');
 
 /**
  * Enhances the processFile function with detailed logging for better tracking and debugging.
@@ -55,14 +56,30 @@ async function processFile(filePath, options = {}) {
     logger.debugPayload(`Raw ${providerName} API response for ${filePath}:`, rawExtractedData);
     
     try {
+      // For monument photos, inject memorial number from filename if not provided by OCR
+      const filename = path.basename(filePath);
+      const filenameMemorialNumber = getMemorialNumberForMonument(filename, sourceType);
+      
+      // Enhance raw data with filename-based memorial number for monuments
+      let enhancedData = { ...rawExtractedData };
+      if (sourceType === 'monument_photo' && filenameMemorialNumber) {
+        // Use filename memorial number if OCR didn't provide one or provided null
+        if (!enhancedData.memorial_number || enhancedData.memorial_number === null) {
+          enhancedData.memorial_number = filenameMemorialNumber;
+          logger.info(`[FileProcessing] Injected memorial number from filename: ${filenameMemorialNumber} for ${filename}`);
+        } else {
+          logger.info(`[FileProcessing] OCR provided memorial number: ${enhancedData.memorial_number}, keeping it over filename: ${filenameMemorialNumber}`);
+        }
+      }
+      
       // Validate and convert the data according to our type definitions
-      const extractedData = promptInstance.validateAndConvert(rawExtractedData);
+      const extractedData = promptInstance.validateAndConvert(enhancedData);
       
       logger.info(`${providerName} API response processed successfully for ${filePath}`);
       logger.debugPayload(`Processed ${providerName} data for ${filePath}:`, extractedData);
       
       // Add metadata to the extracted data
-      extractedData.fileName = path.basename(filePath);
+      extractedData.fileName = filename;
       extractedData.ai_provider = providerName;
       extractedData.model_version = provider.getModelVersion();
       extractedData.prompt_template = promptTemplate;

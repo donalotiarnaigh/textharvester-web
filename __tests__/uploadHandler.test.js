@@ -73,8 +73,9 @@ describe('Upload Handler', () => {
           expect.objectContaining({
             path: '/uploads/test.jpg',
             provider: 'openai',
-            promptTemplate: 'memorialOCR',
-            promptVersion: 'latest'
+            // promptTemplate no longer passed - fileProcessing.js selects based on source_type
+            promptVersion: 'latest',
+            source_type: 'record_sheet'
           })
         ])
       );
@@ -95,8 +96,9 @@ describe('Upload Handler', () => {
       expect(enqueueFiles).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
-            promptTemplate: 'memorialOCR',
-            promptVersion: 'latest'
+            // promptTemplate no longer passed - fileProcessing.js selects based on source_type
+            promptVersion: 'latest',
+            source_type: 'record_sheet'
           })
         ])
       );
@@ -218,8 +220,9 @@ describe('Upload Handler', () => {
         expect.arrayContaining([
           expect.objectContaining({
             provider: 'anthropic',
-            promptTemplate: 'customTemplate',
-            promptVersion: '2.0'
+            // promptTemplate no longer passed - fileProcessing.js selects based on source_type
+            promptVersion: '2.0',
+            source_type: 'record_sheet'
           })
         ])
       );

@@ -156,7 +156,7 @@ const handleFileUpload = async (req, res) => {
               path: imagePath,
               mimetype: "image/jpeg",
               provider: selectedModel,
-              promptTemplate: promptConfig.template,
+              // Don't hardcode promptTemplate - let fileProcessing.js select based on source_type
               promptVersion: promptConfig.version,
               source_type: finalSourceType
             }))
@@ -165,7 +165,7 @@ const handleFileUpload = async (req, res) => {
           await enqueueFiles([{
             ...file,
             provider: selectedModel,
-            promptTemplate: promptConfig.template,
+            // Don't hardcode promptTemplate - let fileProcessing.js select based on source_type
             promptVersion: promptConfig.version,
             source_type: finalSourceType
           }]);

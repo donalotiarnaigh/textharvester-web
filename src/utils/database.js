@@ -65,8 +65,9 @@ function storeMemorial(data) {
       ai_provider,
       model_version,
       prompt_template,
-      prompt_version
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      prompt_version,
+      source_type
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   return new Promise((resolve, reject) => {
@@ -80,7 +81,8 @@ function storeMemorial(data) {
       data.ai_provider || null,
       data.model_version || null,
       data.prompt_template || null,
-      data.prompt_version || null
+      data.prompt_version || null,
+      data.source_type || null
     ], function(err) {
       if (err) {
         logger.error('Error storing memorial:', err);

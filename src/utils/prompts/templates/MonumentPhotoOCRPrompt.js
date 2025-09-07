@@ -1,5 +1,6 @@
 const BasePrompt = require('../BasePrompt');
-const { MEMORIAL_FIELDS } = require('../types/memorialFields');
+const { MEMORIAL_FIELDS, MemorialField } = require('../types/memorialFields');
+const { StringType } = require('../types/dataTypes');
 const { ProcessingError } = require('../../errorTypes');
 const { standardizeNameParsing } = require('../../standardNameParser');
 const { preprocessName } = require('../../nameProcessing');
@@ -42,7 +43,7 @@ MONUMENT-SPECIFIC CHALLENGES:
 - Decorative elements (crosses, flowers, symbols) may be present
 
 CRITICAL: Return ONLY these 5 fields in JSON format, nothing more:
-- memorial_number: The memorial's unique numeric identifier (INTEGER) - extract ONLY the number, ignore any prefixes like "HG-", "M", "PLOT-"
+- memorial_number: Set to null (the system will assign this from the filename)
 - first_name: The first person's first name (STRING, UPPERCASE)
 - last_name: The first person's last name (STRING, UPPERCASE) 
 - year_of_death: The first person's year of death only (INTEGER)
@@ -58,7 +59,7 @@ MONUMENT READING GUIDELINES:
 Example of EXACT JSON format required:
 
 {
-  "memorial_number": 18,
+  "memorial_number": null,
   "first_name": "MICHEAL", 
   "last_name": "RUANE",
   "year_of_death": 1959,
@@ -66,7 +67,7 @@ Example of EXACT JSON format required:
 }
 
 IMPORTANT VALIDATION RULES:
-- memorial_number: Must be numeric (integer), not string
+- memorial_number: Always set to null (system will assign from filename)
 - first_name/last_name: Must be UPPERCASE strings
 - year_of_death: Must be integer between 1500-2030, not string
 - inscription: Complete text as it appears on the monument
