@@ -3,6 +3,17 @@
 #### Scope
 Baseline support for OCR from monument photos using single-call LLM prompts, minimal UI changes with mode selector, `source_type` threading, and nullable DB column. No preprocessing, region detection, overlays, or multi-image fusion.
 
+#### Progress Status
+- **Step 1: Frontend Upload Mode Selector** ✅ **COMPLETED** (commit: c1a90fb)
+  - Mode selector UI component with radio buttons
+  - localStorage persistence for user preferences
+  - Integration with file upload workflow
+  - Comprehensive test suite (20 tests)
+- **Step 2: Backend Processing Pipeline** 🔄 **IN PROGRESS**
+- **Step 3: Monument Prompt Templates** ⏳ **PENDING**
+- **Step 4: Database Migration** ⏳ **PENDING**
+- **Step 5: Results UI Updates** ⏳ **PENDING**
+
 ---
 
 ## A) Current State Analysis (References)
@@ -532,32 +543,37 @@ describe('Mode Selector UI', () => {
 ```
 
 ### 9) Implementation Priority Order
-1. **Database Migration** (run migration script first)
-2. **Monument Prompt Templates** (create new prompt classes)
-3. **Backend Parameter Handling** (uploadHandler, fileQueue, fileProcessing)
-4. **Frontend Mode Selector** (UI components, localStorage)
+1. ~~**Frontend Mode Selector** (UI components, localStorage)~~ ✅ **COMPLETED**
+2. **Database Migration** (run migration script first) 🔄 **NEXT**
+3. **Monument Prompt Templates** (create new prompt classes)
+4. **Backend Parameter Handling** (uploadHandler, fileQueue, fileProcessing)
 5. **Results UI Updates** (model info panel)
 6. **Testing Suite** (unit, integration, UI tests)
 7. **Documentation** (README updates)
 
 ### 10) Deliverables
-**Code Changes:**
-- **New Files:** 4 files
-  - `public/js/modules/index/modeSelector.js` - Mode selector component
+
+**✅ COMPLETED (Step 1):**
+- **New Files:** 3 files
+  - `public/js/modules/index/modeSelector.js` - Mode selector component ✅
+  - `__tests__/ui/modeSelector.test.js` - UI component tests (13 tests) ✅
+  - `__tests__/integration/modeSelector-fileUpload.test.js` - Integration tests (7 tests) ✅
+- **Modified Files:** 4 files
+  - `public/index.html` - Mode selector container ✅
+  - `public/js/modules/index/dropzone.js` - Initialize mode selector ✅
+  - `public/js/modules/index/fileUpload.js` - Include source_type in FormData ✅
+  - `src/controllers/uploadHandler.js` - Validate and thread source_type ✅
+
+**⏳ REMAINING:**
+- **New Files:** 2 files
   - `src/utils/prompts/templates/MonumentPhotoOCRPrompt.js` - Monument prompt class
   - `scripts/migrate-add-source-type.js` - Database migration script
-  - `__tests__/monumentPhotoOCRPrompt.test.js` - Unit tests
-- **Modified Files:** 9 files
-  - `public/index.html` - Mode selector container
-  - `public/js/modules/index/dropzone.js` - Initialize mode selector
-  - `public/js/modules/index/fileUpload.js` - Include source_type in FormData
-  - `src/controllers/uploadHandler.js` - Validate and thread source_type
+- **Modified Files:** 5 files
   - `src/utils/fileQueue.js` - Thread source_type through queue
   - `src/utils/fileProcessing.js` - Template selection based on source_type
   - `src/utils/prompts/templates/providerTemplates.js` - Register monument templates
   - `public/js/modules/results/modelInfoPanel.js` - Display source_type
   - `public/results.html` - Add source type field
-  - `package.json` - Add migration script
 
 **Documentation:**
 - Updated technical design document
@@ -566,10 +582,10 @@ describe('Mode Selector UI', () => {
 ---
 
 ## C) Detailed Implementation Checklist
-- [ ] **Mode Selector:** UI component created with radio buttons (Record Sheet/Monument Photo)
-- [ ] **Mode Persistence:** Selection saved/loaded from localStorage.uploadMode
-- [ ] **FormData:** `source_type` parameter included in upload request
-- [ ] **Upload Validation:** Backend validates source_type ∈ {record_sheet, monument_photo}
+- [x] **Mode Selector:** UI component created with radio buttons (Record Sheet/Monument Photo) ✅ **COMPLETED**
+- [x] **Mode Persistence:** Selection saved/loaded from localStorage.uploadMode ✅ **COMPLETED**
+- [x] **FormData:** `source_type` parameter included in upload request ✅ **COMPLETED**
+- [x] **Upload Validation:** Backend validates source_type ∈ {record_sheet, monument_photo} ✅ **COMPLETED**
 - [ ] **Queue Threading:** source_type propagated through fileQueue.enqueueFiles
 - [ ] **Processing Pipeline:** fileProcessing.processFile accepts and uses source_type
 - [ ] **Template Selection:** Monument template selected when source_type=monument_photo
