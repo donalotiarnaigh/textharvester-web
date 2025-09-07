@@ -90,7 +90,10 @@ Handle weathered or damaged monuments with care - it's better to use null or ind
         userPrompt: basePrompt + "\n\nExtract the memorial data as JSON with these exact fields: memorial_number, first_name, last_name, year_of_death, inscription"
       };
     } else if (provider === 'anthropic') {
-      return `${basePrompt}\n\nYou are an expert OCR system specializing in reading weathered stone monuments and headstones. Handle weathered text, carved inscriptions, and partially damaged stone carefully. Return only valid JSON with these exact fields: memorial_number, first_name, last_name, year_of_death, inscription`;
+      return {
+        systemPrompt: `You are Claude, an expert OCR system trained by Anthropic, specializing in reading weathered stone monuments and headstones. You excel at extracting structured data from monument photos, handling challenges like weathered stone, carved text at angles, and partially obscured inscriptions. Focus on accuracy and indicate uncertainty when text is unclear.`,
+        userPrompt: `${basePrompt}\n\nResponse Format:\n- Return valid JSON only\n- All numeric values (year_of_death) MUST be actual integers\n- All text fields must be properly formatted strings\n- Ensure strict adherence to field formats\n- Do not include any explanatory text, only return the JSON object`
+      };
     }
     
     throw new Error(`Unsupported provider: ${provider}`);

@@ -32,6 +32,14 @@ jest.mock('../prompts/templates/providerTemplates', () => ({
   getPrompt: jest.fn()
 }));
 
+jest.mock('../imageProcessor', () => ({
+  analyzeImageForProvider: jest.fn().mockResolvedValue({
+    needsOptimization: false,
+    reasons: []
+  }),
+  optimizeImageForProvider: jest.fn().mockResolvedValue('optimized-base64-data')
+}));
+
 describe('Enhanced File Processing with Error Handling', () => {
   let mockProvider;
   let mockPrompt;

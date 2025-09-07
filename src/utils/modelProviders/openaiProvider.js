@@ -44,9 +44,10 @@ class OpenAIProvider extends BaseVisionProvider {
       let userPrompt = prompt;
 
       if (options.promptTemplate) {
-        const formatted = promptManager.formatPrompt(options.promptTemplate, 'openai');
-        systemPrompt = formatted.systemPrompt;
-        userPrompt = formatted.prompt;
+        // Use the new prompt template system
+        const formatted = options.promptTemplate.getProviderPrompt('openai');
+        systemPrompt = formatted.systemPrompt || systemPrompt;
+        userPrompt = formatted.userPrompt || formatted;
       }
 
       const requestPayload = {

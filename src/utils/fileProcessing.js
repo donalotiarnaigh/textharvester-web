@@ -6,6 +6,7 @@ const { storeMemorial } = require('./database');
 const { getPrompt } = require('./prompts/templates/providerTemplates');
 const { isEmptySheetError } = require('./errorTypes');
 const { getMemorialNumberForMonument } = require('./filenameParser');
+const { optimizeImageForProvider, analyzeImageForProvider } = require('./imageProcessor');
 
 /**
  * Enhances the processFile function with detailed logging for better tracking and debugging.
@@ -29,8 +30,19 @@ async function processFile(filePath, options = {}) {
   logger.info(`Processing ${path.basename(filePath)} with provider: ${providerName}, source: ${sourceType}, template: ${promptTemplate}`);
   
   try {
-    const base64Image = await fs.readFile(filePath, { encoding: 'base64' });
-    logger.info(`File ${filePath} read successfully. Proceeding with OCR processing.`);
+    // Analyze image to see if optimization is needed
+    const analysis = await analyzeImageForProvider(filePath, providerName);
+    
+    let base64Image;
+    if (analysis.needsOptimization) {
+      logger.info(`[ImageProcessor] Image requires optimization: ${analysis.reasons.join(', ')}`);
+      base64Image = await optimizeImageForProvider(filePath, providerName);
+      logger.info(`File ${filePath} optimized and processed successfully. Proceeding with OCR processing.`);
+    } else {
+      // Image is already within limits, read directly
+      base64Image = await fs.readFile(filePath, { encoding: 'base64' });
+      logger.info(`File ${filePath} read successfully (no optimization needed). Proceeding with OCR processing.`);
+    }
 
     // Create provider instance
     const provider = createProvider({

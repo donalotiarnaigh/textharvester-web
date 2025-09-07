@@ -52,9 +52,10 @@ class AnthropicProvider extends BaseVisionProvider {
       }
 
       if (options.promptTemplate) {
-        const formatted = promptManager.formatPrompt(options.promptTemplate, 'anthropic');
-        systemPrompt = formatted.systemPrompt;
-        userPrompt = formatted.prompt;
+        // Use the new prompt template system
+        const formatted = options.promptTemplate.getProviderPrompt('anthropic');
+        systemPrompt = formatted.systemPrompt || systemPrompt;
+        userPrompt = formatted.userPrompt || formatted;
       }
 
       // Ensure userPrompt is a valid string
