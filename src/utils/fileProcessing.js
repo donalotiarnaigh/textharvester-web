@@ -17,6 +17,7 @@ async function processFile(filePath, options = {}) {
   const providerName = options.provider || process.env.AI_PROVIDER || 'openai';
   const promptTemplate = options.promptTemplate || 'memorialOCR';
   const promptVersion = options.promptVersion || 'latest';
+  const sourceType = options.source_type || 'record_sheet';
   
   logger.info(`Starting to process file: ${filePath} with provider: ${providerName}`);
   
@@ -60,6 +61,7 @@ async function processFile(filePath, options = {}) {
       extractedData.model_version = provider.getModelVersion();
       extractedData.prompt_template = promptTemplate;
       extractedData.prompt_version = promptInstance.version;
+      extractedData.source_type = sourceType;
       
       // Store in database
       await storeMemorial(extractedData);
@@ -83,7 +85,8 @@ async function processFile(filePath, options = {}) {
           errorType: error.type || 'empty_sheet',
           errorMessage: error.message,
           ai_provider: providerName,
-          model_version: provider.getModelVersion()
+          model_version: provider.getModelVersion(),
+          source_type: sourceType
         };
         
         // Clean up the file even for empty sheets

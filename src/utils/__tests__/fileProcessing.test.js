@@ -100,7 +100,8 @@ describe('Enhanced File Processing with Error Handling', () => {
       errorType: 'empty_sheet',
       errorMessage: 'No readable text found on the sheet',
       ai_provider: expect.any(String), // Accept any string for the provider
-      model_version: 'mock-model-1.0'
+      model_version: 'mock-model-1.0',
+      source_type: 'record_sheet' // Default source_type
     });
     
     // Should still clean up the file

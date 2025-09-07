@@ -36,7 +36,10 @@ function enqueueFiles(files) {
       : path.basename(filePath);
     fileQueue.push({
       path: filePath,
-      provider: file.provider || 'openai'
+      provider: file.provider || 'openai',
+      promptTemplate: file.promptTemplate,
+      promptVersion: file.promptVersion,
+      source_type: file.source_type || 'record_sheet'
     });
     retryLimits[filePath] = retryLimits[filePath] || 0;
     logger.info(
@@ -126,7 +129,12 @@ function checkAndProcessNextFile() {
     logger.info(
       `Dequeued file for processing: ${file.path} with provider: ${file.provider}. Initiating processing.`
     );
-    processFile(file.path, { provider: file.provider })
+    processFile(file.path, { 
+      provider: file.provider,
+      promptTemplate: file.promptTemplate,
+      promptVersion: file.promptVersion,
+      source_type: file.source_type
+    })
       .then((result) => {
         // Store result regardless of success or error
         processedResults.push(result);
