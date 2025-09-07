@@ -9,11 +9,11 @@ import { initModeSelector } from "./modeSelector.js";
 
 // Ensure Dropzone is defined globally
 const initDropzone = () => {
-  // Initialize the model selection UI first
-  initModelSelection();
-  
-  // Initialize the mode selector UI
+  // Initialize the mode selector UI first (must be before model selection for event listeners)
   initModeSelector();
+  
+  // Initialize the model selection UI
+  initModelSelection();
   
   if (typeof Dropzone === "undefined") {
     console.error(

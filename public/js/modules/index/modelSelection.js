@@ -30,6 +30,9 @@ export const initModelSelection = () => {
             <option value="anthropic">Anthropic Claude 4 Sonnet</option>
           </select>
           <small class="model-info"></small>
+          <div id="anthropic-warning" class="alert alert-warning mt-2" style="display: none;">
+            <strong>Note:</strong> Anthropic Claude is not recommended for monument photos due to accuracy issues with weathered stone text.
+          </div>
         </div>
       </div>
     </div>
@@ -56,6 +59,9 @@ export const initModelSelection = () => {
         updateModelInfo(selectedValue);
       });
     }
+    
+    // Listen for upload mode changes to update model availability
+    setupModeChangeListener();
   }
 };
 
@@ -68,6 +74,64 @@ function updateModelInfo(modelKey) {
   const infoElement = document.querySelector('.model-info');
   if (info && infoElement) {
     infoElement.textContent = info.description;
+  }
+}
+
+/**
+ * Set up listener for upload mode changes to update model availability
+ */
+function setupModeChangeListener() {
+  // Listen for changes to upload mode radio buttons
+  const uploadModeRadios = document.querySelectorAll('input[name="uploadMode"]');
+  uploadModeRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      updateModelAvailability(e.target.value);
+    });
+  });
+  
+  // Check initial state
+  const checkedMode = document.querySelector('input[name="uploadMode"]:checked');
+  if (checkedMode) {
+    updateModelAvailability(checkedMode.value);
+  }
+}
+
+/**
+ * Update model availability based on upload mode
+ * @param {string} uploadMode - The selected upload mode ('record_sheet' or 'monument_photo')
+ */
+function updateModelAvailability(uploadMode) {
+  const modelSelect = document.getElementById('modelSelect');
+  const anthropicOption = modelSelect?.querySelector('option[value="anthropic"]');
+  const anthropicWarning = document.getElementById('anthropic-warning');
+  
+  if (!modelSelect || !anthropicOption) return;
+  
+  if (uploadMode === 'monument_photo') {
+    // Disable Anthropic for monument photos
+    anthropicOption.disabled = true;
+    anthropicOption.textContent = 'Anthropic Claude 4 Sonnet (Not recommended for monuments)';
+    
+    // Show warning
+    if (anthropicWarning) {
+      anthropicWarning.style.display = 'block';
+    }
+    
+    // If Anthropic is currently selected, switch to OpenAI
+    if (modelSelect.value === 'anthropic') {
+      modelSelect.value = 'openai';
+      localStorage.setItem('selectedModel', 'openai');
+      updateModelInfo('openai');
+    }
+  } else {
+    // Enable Anthropic for record sheets
+    anthropicOption.disabled = false;
+    anthropicOption.textContent = 'Anthropic Claude 4 Sonnet';
+    
+    // Hide warning
+    if (anthropicWarning) {
+      anthropicWarning.style.display = 'none';
+    }
   }
 }
 

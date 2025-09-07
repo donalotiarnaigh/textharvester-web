@@ -12,7 +12,7 @@ const logger = require('./logger');
 const PROVIDER_LIMITS = {
   anthropic: {
     maxFileSize: 5 * 1024 * 1024,  // 5MB in bytes
-    maxDimension: 1568,             // Recommended by Anthropic for best performance
+    maxDimension: 2048,             // Increased for better monument OCR (was 1568)
     minDimension: 200               // Minimum to avoid performance degradation
   },
   openai: {
@@ -89,7 +89,7 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
     
     // Configure JPEG compression for OCR quality
     processedImage = processedImage.jpeg({
-      quality: 85,          // Good balance between quality and size for OCR
+      quality: 90,          // Higher quality for monument OCR (was 85)
       progressive: false,   // Better for OCR processing
       mozjpeg: true        // Use mozjpeg encoder for better compression
     });
