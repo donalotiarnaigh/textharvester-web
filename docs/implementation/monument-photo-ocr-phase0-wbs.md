@@ -9,8 +9,12 @@ Baseline support for OCR from monument photos using single-call LLM prompts, min
   - localStorage persistence for user preferences
   - Integration with file upload workflow
   - Comprehensive test suite (20 tests)
-- **Step 2: Backend Processing Pipeline** 🔄 **IN PROGRESS**
-- **Step 3: Monument Prompt Templates** ⏳ **PENDING**
+- **Step 2: Backend Processing Pipeline** ✅ **COMPLETED** (commit: 6979fda)
+  - Complete source_type threading through processing pipeline
+  - FileQueue and FileProcessing parameter handling
+  - Comprehensive test suite (10 TDD tests)
+  - All existing functionality preserved (569 total tests passing)
+- **Step 3: Monument Prompt Templates** 🔄 **NEXT**
 - **Step 4: Database Migration** ⏳ **PENDING**
 - **Step 5: Results UI Updates** ⏳ **PENDING**
 
@@ -544,33 +548,34 @@ describe('Mode Selector UI', () => {
 
 ### 9) Implementation Priority Order
 1. ~~**Frontend Mode Selector** (UI components, localStorage)~~ ✅ **COMPLETED**
-2. **Database Migration** (run migration script first) 🔄 **NEXT**
-3. **Monument Prompt Templates** (create new prompt classes)
-4. **Backend Parameter Handling** (uploadHandler, fileQueue, fileProcessing)
+2. ~~**Backend Parameter Handling** (uploadHandler, fileQueue, fileProcessing)~~ ✅ **COMPLETED**
+3. **Monument Prompt Templates** (create new prompt classes) 🔄 **NEXT**
+4. **Database Migration** (run migration script first)
 5. **Results UI Updates** (model info panel)
 6. **Testing Suite** (unit, integration, UI tests)
 7. **Documentation** (README updates)
 
 ### 10) Deliverables
 
-**✅ COMPLETED (Step 1):**
-- **New Files:** 3 files
+**✅ COMPLETED (Steps 1 & 2):**
+- **New Files:** 4 files
   - `public/js/modules/index/modeSelector.js` - Mode selector component ✅
   - `__tests__/ui/modeSelector.test.js` - UI component tests (13 tests) ✅
   - `__tests__/integration/modeSelector-fileUpload.test.js` - Integration tests (7 tests) ✅
-- **Modified Files:** 4 files
+  - `__tests__/unit/source-type-threading.test.js` - Backend threading tests (10 tests) ✅
+- **Modified Files:** 6 files
   - `public/index.html` - Mode selector container ✅
   - `public/js/modules/index/dropzone.js` - Initialize mode selector ✅
   - `public/js/modules/index/fileUpload.js` - Include source_type in FormData ✅
   - `src/controllers/uploadHandler.js` - Validate and thread source_type ✅
+  - `src/utils/fileQueue.js` - Thread source_type through queue ✅
+  - `src/utils/fileProcessing.js` - Handle source_type in processing ✅
 
 **⏳ REMAINING:**
 - **New Files:** 2 files
   - `src/utils/prompts/templates/MonumentPhotoOCRPrompt.js` - Monument prompt class
   - `scripts/migrate-add-source-type.js` - Database migration script
-- **Modified Files:** 5 files
-  - `src/utils/fileQueue.js` - Thread source_type through queue
-  - `src/utils/fileProcessing.js` - Template selection based on source_type
+- **Modified Files:** 3 files
   - `src/utils/prompts/templates/providerTemplates.js` - Register monument templates
   - `public/js/modules/results/modelInfoPanel.js` - Display source_type
   - `public/results.html` - Add source type field
@@ -586,8 +591,8 @@ describe('Mode Selector UI', () => {
 - [x] **Mode Persistence:** Selection saved/loaded from localStorage.uploadMode ✅ **COMPLETED**
 - [x] **FormData:** `source_type` parameter included in upload request ✅ **COMPLETED**
 - [x] **Upload Validation:** Backend validates source_type ∈ {record_sheet, monument_photo} ✅ **COMPLETED**
-- [ ] **Queue Threading:** source_type propagated through fileQueue.enqueueFiles
-- [ ] **Processing Pipeline:** fileProcessing.processFile accepts and uses source_type
+- [x] **Queue Threading:** source_type propagated through fileQueue.enqueueFiles ✅ **COMPLETED**
+- [x] **Processing Pipeline:** fileProcessing.processFile accepts and uses source_type ✅ **COMPLETED**
 - [ ] **Template Selection:** Monument template selected when source_type=monument_photo
 - [ ] **Monument Prompts:** MonumentPhotoOCRPrompt class implemented for both providers
 - [ ] **Template Registration:** Monument templates registered in providerTemplates.js
