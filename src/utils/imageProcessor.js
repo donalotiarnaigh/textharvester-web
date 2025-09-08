@@ -90,10 +90,10 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
     }
     
     // Configure JPEG compression for OCR quality
-    // For Claude, use more aggressive compression to stay under 5MB
-    const jpegQuality = provider === 'openai' ? 95 : 85;  // More aggressive compression for Claude
+    // For Claude, use less aggressive compression to preserve text readability
+    const jpegQuality = provider === 'openai' ? 95 : 95;  // Same quality as OpenAI for better text readability
     processedImage = processedImage.jpeg({
-      quality: jpegQuality,  // 95% for OpenAI, 85% for Claude
+      quality: jpegQuality,  // 95% for both providers for better text readability
       progressive: false,    // Better for OCR processing
       mozjpeg: true         // Use mozjpeg encoder for better compression
     });
@@ -105,6 +105,13 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
     
     logger.info(`[ImageProcessor] Final image: ${width}x${height}, ${finalSizeKB}KB (${finalSizeMB}MB)`);
     logger.info(`[ImageProcessor] Compression ratio: ${((1 - buffer.length / stats.size) * 100).toFixed(1)}% reduction`);
+    
+    // Save compressed image for debugging (temporary)
+    if (provider === 'anthropic') {
+      const debugPath = path.join(process.cwd(), 'debug_claude_compressed.jpg');
+      await fs.writeFile(debugPath, buffer);
+      logger.info(`[ImageProcessor] Debug: Saved compressed image to ${debugPath}`);
+    }
     
     // Verify size is within limits
     if (buffer.length > providerLimits.maxFileSize) {
