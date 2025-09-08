@@ -192,6 +192,11 @@ async function analyzeImageForProvider(imagePath, provider = 'anthropic') {
       reasons: []
     };
     
+    // Debug logging for Claude optimization issues
+    logger.info(`[ImageProcessor] Analyzing image for ${provider}: ${path.basename(imagePath)}`);
+    logger.info(`[ImageProcessor] File size: ${analysis.originalSizeMB}MB, Dimensions: ${analysis.dimensions}`);
+    logger.info(`[ImageProcessor] Provider limits: ${providerLimits.maxFileSize / (1024 * 1024)}MB file, ${providerLimits.maxDimension}px max dimension`);
+    
     // Check file size
     if (stats.size > providerLimits.maxFileSize) {
       analysis.needsOptimization = true;
@@ -203,6 +208,8 @@ async function analyzeImageForProvider(imagePath, provider = 'anthropic') {
       analysis.needsOptimization = true;
       analysis.reasons.push(`Dimensions ${analysis.dimensions} exceed ${providerLimits.maxDimension}px recommendation`);
     }
+    
+    logger.info(`[ImageProcessor] Analysis result: needsOptimization=${analysis.needsOptimization}, reasons=[${analysis.reasons.join(', ')}]`);
     
     return analysis;
     
