@@ -235,7 +235,8 @@ function getProcessingProgress() {
     });
   }
 
-  const state = progress === 100 ? 'complete' : 'processing';
+  // Only mark complete if progress is 100% AND not currently processing
+  const state = (progress === 100 && !isProcessing) ? 'complete' : 'processing';
   logger.debug('[FileQueue] Progress calculation complete', {
     progress,
     state,

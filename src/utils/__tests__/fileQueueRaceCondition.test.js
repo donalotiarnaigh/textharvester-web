@@ -54,7 +54,9 @@ function createTestableGetProcessingProgress() {
     }
     
     const progress = Math.round((processedFiles / totalFiles) * 100);
-    const state = progress === 100 ? 'complete' : 'processing';
+    
+    // Only mark complete if progress is 100% AND not currently processing
+    const state = (progress === 100 && !isProcessing) ? 'complete' : 'processing';
     
     return {
       state,
@@ -74,16 +76,16 @@ describe('FileQueue Race Condition Bug (Issue #49)', () => {
     setState = testable.setState;
   });
 
-  it('should demonstrate the race condition bug - marking complete when queue is empty but processing active', () => {
+  it('should demonstrate the race condition bug - marking complete when progress is 100% but processing active', () => {
     // Simulate the race condition scenario:
-    // 1. We have 3 files total initially
+    // 1. We have 1 file total
     // 2. 1 file has been processed (processedFiles = 1)
-    // 3. Queue is temporarily empty (totalFiles = 0) 
+    // 3. Progress is 100% (1/1 = 100%)
     // 4. But processing is still active (isProcessing = true)
     
     setState({
-      totalFiles: 0,        // Queue is empty (race condition window)
-      processedFiles: 1,    // One file has been processed
+      totalFiles: 1,        // 1 file total
+      processedFiles: 1,    // 1 file processed (100%)
       isProcessing: true,   // But processing is still active!
     });
     
@@ -92,10 +94,10 @@ describe('FileQueue Race Condition Bug (Issue #49)', () => {
     console.log('Progress with race condition:', progress);
     
     // This test demonstrates the bug that existed before our fix
-    // With the old implementation, this would return 'complete'
-    // With our fix, this should return 'waiting' or 'processing'
-    expect(progress.state).toBe('waiting'); // Our fix prevents the bug
-    expect(progress.progress).toBe(0);
+    // With the old implementation, this would return 'complete' because progress === 100%
+    // With our fix, this should return 'processing' because isProcessing = true
+    expect(progress.state).toBe('processing'); // Our fix prevents the bug
+    expect(progress.progress).toBe(100);
   });
 
   it('should NOT mark as complete when queue is empty but processing is still active (after fix)', () => {
