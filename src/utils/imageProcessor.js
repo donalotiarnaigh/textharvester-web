@@ -64,6 +64,7 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
     
     logger.info(`[ImageProcessor] Original image: ${metadata.width}x${metadata.height}, ${Math.round(metadata.size / 1024)}KB`);
     logger.info(`[ImageProcessor] Original file size: ${(stats.size / (1024 * 1024)).toFixed(2)}MB`);
+    logger.info(`[ImageProcessor] EXIF orientation: ${metadata.orientation || 'not specified'}`);
     
     // Calculate optimal dimensions
     const { width, height } = calculateOptimalDimensions(
@@ -81,6 +82,9 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
     
     // Process the image
     let processedImage = image;
+    
+    // Auto-rotate based on EXIF orientation data
+    processedImage = processedImage.rotate();
     
     if (needsResize) {
       processedImage = processedImage.resize(width, height, {
@@ -111,6 +115,10 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
     
     logger.info(`[ImageProcessor] Final image: ${width}x${height}, ${finalSizeKB}KB (${finalSizeMB}MB)`);
     logger.info(`[ImageProcessor] Compression ratio: ${((1 - buffer.length / stats.size) * 100).toFixed(1)}% reduction`);
+    
+    // Get final metadata to check if rotation occurred
+    const finalMetadata = await sharp(buffer).metadata();
+    logger.info(`[ImageProcessor] Final orientation: ${finalMetadata.orientation || 'not specified'}`);
     
     // Save compressed image for debugging (temporary)
     if (provider === 'anthropic') {
