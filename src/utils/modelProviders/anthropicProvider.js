@@ -63,6 +63,10 @@ class AnthropicProvider extends BaseVisionProvider {
         userPrompt = JSON.stringify(userPrompt);
       }
 
+      // Log the prompt being sent to Claude for debugging
+      logger.info(`[AnthropicProvider] Sending prompt to Claude: ${userPrompt.substring(0, 200)}...`);
+      logger.info(`[AnthropicProvider] System prompt: ${systemPrompt}`);
+
       // Track API performance
       const result = await PerformanceTracker.trackAPICall(
         'anthropic',

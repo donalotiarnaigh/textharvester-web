@@ -57,11 +57,13 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
   logger.info(`[ImageProcessor] Optimizing image for ${provider}: ${path.basename(inputPath)}`);
   
   try {
-    // Get image metadata
+    // Get image metadata and file stats
+    const stats = await fs.stat(inputPath);
     const image = sharp(inputPath);
     const metadata = await image.metadata();
     
     logger.info(`[ImageProcessor] Original image: ${metadata.width}x${metadata.height}, ${Math.round(metadata.size / 1024)}KB`);
+    logger.info(`[ImageProcessor] Original file size: ${(stats.size / (1024 * 1024)).toFixed(2)}MB`);
     
     // Calculate optimal dimensions
     const { width, height } = calculateOptimalDimensions(
@@ -102,6 +104,7 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
     const finalSizeMB = (buffer.length / (1024 * 1024)).toFixed(2);
     
     logger.info(`[ImageProcessor] Final image: ${width}x${height}, ${finalSizeKB}KB (${finalSizeMB}MB)`);
+    logger.info(`[ImageProcessor] Compression ratio: ${((1 - buffer.length / stats.size) * 100).toFixed(1)}% reduction`);
     
     // Verify size is within limits
     if (buffer.length > providerLimits.maxFileSize) {
@@ -127,7 +130,8 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
         .toBuffer();
         
       const aggressiveSizeMB = (aggressiveBuffer.length / (1024 * 1024)).toFixed(2);
-      logger.info(`[ImageProcessor] Aggressive compression result: ${aggressiveWidth}x${aggressiveHeight}, ${aggressiveSizeMB}MB`);
+      const aggressiveCompressionRatio = ((1 - aggressiveBuffer.length / stats.size) * 100).toFixed(1);
+      logger.info(`[ImageProcessor] Aggressive compression result: ${aggressiveWidth}x${aggressiveHeight}, ${aggressiveSizeMB}MB (${aggressiveCompressionRatio}% reduction)`);
       
       if (aggressiveBuffer.length <= providerLimits.maxFileSize) {
         return aggressiveBuffer.toString('base64');
@@ -149,7 +153,8 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
         .toBuffer();
         
       const ultraSizeMB = (ultraAggressiveBuffer.length / (1024 * 1024)).toFixed(2);
-      logger.info(`[ImageProcessor] Ultra-aggressive compression result: ${ultraSizeMB}MB`);
+      const ultraCompressionRatio = ((1 - ultraAggressiveBuffer.length / stats.size) * 100).toFixed(1);
+      logger.info(`[ImageProcessor] Ultra-aggressive compression result: ${ultraSizeMB}MB (${ultraCompressionRatio}% reduction)`);
       
       if (ultraAggressiveBuffer.length <= providerLimits.maxFileSize) {
         return ultraAggressiveBuffer.toString('base64');
