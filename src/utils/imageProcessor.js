@@ -197,10 +197,15 @@ async function analyzeImageForProvider(imagePath, provider = 'anthropic') {
     logger.info(`[ImageProcessor] File size: ${analysis.originalSizeMB}MB, Dimensions: ${analysis.dimensions}`);
     logger.info(`[ImageProcessor] Provider limits: ${providerLimits.maxFileSize / (1024 * 1024)}MB file, ${providerLimits.maxDimension}px max dimension`);
     
-    // Check file size
-    if (stats.size > providerLimits.maxFileSize) {
+    // Check file size - account for base64 encoding overhead (~33% increase)
+    const base64Size = Math.round(stats.size * 1.33); // Base64 encoding increases size by ~33%
+    const base64SizeMB = (base64Size / (1024 * 1024)).toFixed(2);
+    
+    logger.info(`[ImageProcessor] Estimated base64 size: ${base64SizeMB}MB (${base64Size} bytes)`);
+    
+    if (base64Size > providerLimits.maxFileSize) {
       analysis.needsOptimization = true;
-      analysis.reasons.push(`File size ${analysis.originalSizeMB}MB exceeds ${providerLimits.maxFileSize / (1024 * 1024)}MB limit`);
+      analysis.reasons.push(`Base64 encoded size ${base64SizeMB}MB exceeds ${providerLimits.maxFileSize / (1024 * 1024)}MB limit`);
     }
     
     // Check dimensions
