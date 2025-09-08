@@ -17,7 +17,7 @@ const PROVIDER_LIMITS = {
   },
   openai: {
     maxFileSize: 20 * 1024 * 1024,  // 20MB limit for OpenAI
-    maxDimension: 2048,             // Good balance for OpenAI
+    maxDimension: 3072,             // Higher resolution for better monument OCR
     minDimension: 200
   }
 };
@@ -88,10 +88,11 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
     }
     
     // Configure JPEG compression for OCR quality
+    const jpegQuality = provider === 'openai' ? 95 : 90;  // Higher quality for OpenAI
     processedImage = processedImage.jpeg({
-      quality: 90,          // Higher quality for monument OCR (was 85)
-      progressive: false,   // Better for OCR processing
-      mozjpeg: true        // Use mozjpeg encoder for better compression
+      quality: jpegQuality,  // 95% for OpenAI, 90% for Claude
+      progressive: false,    // Better for OCR processing
+      mozjpeg: true         // Use mozjpeg encoder for better compression
     });
     
     // Convert to buffer and check size
