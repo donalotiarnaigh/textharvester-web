@@ -120,12 +120,7 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
     const finalMetadata = await sharp(buffer).metadata();
     logger.info(`[ImageProcessor] Final orientation: ${finalMetadata.orientation || 'not specified'}`);
     
-    // Save compressed image for debugging (temporary)
-    if (provider === 'anthropic') {
-      const debugPath = path.join(process.cwd(), 'debug_claude_compressed.jpg');
-      await fs.writeFile(debugPath, buffer);
-      logger.info(`[ImageProcessor] Debug: Saved compressed image to ${debugPath}`);
-    }
+    // Debug image saving removed - orientation fix confirmed working
     
     // Verify size is within limits
     if (buffer.length > providerLimits.maxFileSize) {
