@@ -42,7 +42,8 @@ function initializeDatabase() {
       model_version TEXT,
       prompt_template TEXT,
       prompt_version TEXT,
-      processed_date DATETIME DEFAULT CURRENT_TIMESTAMP
+      processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+      source_type TEXT
     )
   `;
 
