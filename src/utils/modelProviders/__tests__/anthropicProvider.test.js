@@ -102,7 +102,7 @@ describe('AnthropicProvider', () => {
       
       expect(provider.client.messages.create).toHaveBeenCalledWith({
         model: 'claude-4-sonnet-20250514',
-        max_tokens: 4000,
+        max_tokens: 8000,
         temperature: 0.2,
         system: 'Return a JSON object with the extracted text details.',
         messages: [

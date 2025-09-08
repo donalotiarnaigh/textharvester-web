@@ -16,7 +16,7 @@ class AnthropicProvider extends BaseVisionProvider {
       apiKey: this.config.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
     });
     this.model = this.config.ANTHROPIC_MODEL || this.config.anthropic?.model || 'claude-4-sonnet-20250514';
-    this.maxTokens = this.config.MAX_TOKENS || this.config.anthropic?.maxTokens || 4000;
+    this.maxTokens = this.config.MAX_TOKENS || this.config.anthropic?.maxTokens || 8000;  // Increased for monument photos
     this.temperature = this.config.TEMPERATURE || 0;
   }
 
@@ -126,20 +126,48 @@ class AnthropicProvider extends BaseVisionProvider {
         jsonContent = codeBlockMatch[1].trim();
       }
       
+      // Try to extract JSON from the response if it contains extra text
+      const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonContent = jsonMatch[0];
+      }
+      
+      // Log response length for debugging
+      logger.info(`[AnthropicProvider] Response length: ${content.length} characters`);
+      logger.info(`[AnthropicProvider] JSON content length: ${jsonContent.length} characters`);
+      
       try {
         return JSON.parse(jsonContent);
       } catch (jsonError) {
         logger.error(`Anthropic JSON parsing failed for model ${this.model}`, jsonError, {
           phase: 'response_parsing',
           operation: 'processImage',
-          contentPreview: jsonContent.substring(0, 200)
+          contentLength: content.length,
+          jsonContentLength: jsonContent.length,
+          contentPreview: jsonContent.substring(0, 500)
         });
-        logger.debugPayload('Anthropic JSON parsing error details:', {
-          model: this.model,
-          jsonContent: jsonContent,
-          error: jsonError.message
-        });
-        throw new Error(`Failed to parse JSON response: ${jsonError.message}`);
+        
+        // Try to fix common JSON issues
+        let fixedJson = jsonContent;
+        
+        // Fix unterminated strings by adding closing quotes
+        if (jsonError.message.includes('Unterminated string')) {
+          fixedJson = fixedJson.replace(/"([^"]*)$/, '"$1"');
+        }
+        
+        // Try parsing the fixed JSON
+        try {
+          logger.info(`[AnthropicProvider] Attempting to fix JSON and retry parsing`);
+          return JSON.parse(fixedJson);
+        } catch (retryError) {
+          logger.debugPayload('Anthropic JSON parsing error details:', {
+            model: this.model,
+            originalError: jsonError.message,
+            retryError: retryError.message,
+            jsonContent: jsonContent.substring(0, 1000)
+          });
+          throw new Error(`Failed to parse JSON response: ${jsonError.message}`);
+        }
       }
     } catch (error) {
       logger.error(`Anthropic API error for model ${this.model}`, error, {
