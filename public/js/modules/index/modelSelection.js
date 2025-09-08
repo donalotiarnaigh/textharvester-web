@@ -5,11 +5,11 @@
 const modelInfo = {
   "openai": {
     name: "OpenAI GPT-4o",
-    description: "GPT-4o Vision Model"
+    description: "Excellent for weathered monuments and challenging images"
   },
   "anthropic": {
     name: "Anthropic Claude 4 Sonnet",
-    description: "Claude 4 Sonnet Vision Model"
+    description: "Good for clear images, more conservative with weathered text"
   }
 };
 
@@ -26,12 +26,12 @@ export const initModelSelection = () => {
         <div class="form-group mb-0">
           <label for="modelSelect" class="card-title d-block mb-2">AI Model</label>
           <select class="form-control" id="modelSelect">
-            <option value="openai">OpenAI GPT-4o</option>
+            <option value="openai">OpenAI GPT-4o (recommended)</option>
             <option value="anthropic">Anthropic Claude 4 Sonnet</option>
           </select>
           <small class="model-info"></small>
           <div id="anthropic-warning" class="alert alert-info mt-2" style="display: none;">
-            <strong>Note:</strong> Anthropic Claude has a 5MB file size limit. Large images will be automatically optimized for better OCR quality.
+            <strong>Note:</strong> Anthropic Claude has a 5MB file size limit and may be more conservative with weathered monuments. For best results with challenging images, we recommend GPT-4o.
           </div>
         </div>
       </div>
@@ -112,7 +112,7 @@ function updateModelAvailability(uploadMode) {
     anthropicOption.disabled = false;
     anthropicOption.textContent = 'Anthropic Claude 4 Sonnet';
     
-    // Show info warning about file size limit
+    // Show info warning about file size limit and model characteristics
     if (anthropicWarning) {
       anthropicWarning.style.display = 'block';
     }
