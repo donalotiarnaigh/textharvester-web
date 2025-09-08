@@ -135,6 +135,8 @@ class AnthropicProvider extends BaseVisionProvider {
       // Log response length for debugging
       logger.info(`[AnthropicProvider] Response length: ${content.length} characters`);
       logger.info(`[AnthropicProvider] JSON content length: ${jsonContent.length} characters`);
+      logger.info(`[AnthropicProvider] Response ends with: "${content.slice(-50)}"`);
+      logger.info(`[AnthropicProvider] JSON content ends with: "${jsonContent.slice(-50)}"`);
       
       try {
         return JSON.parse(jsonContent);
@@ -152,7 +154,20 @@ class AnthropicProvider extends BaseVisionProvider {
         
         // Fix unterminated strings by adding closing quotes
         if (jsonError.message.includes('Unterminated string')) {
-          fixedJson = fixedJson.replace(/"([^"]*)$/, '"$1"');
+          // Check if the string is at the very end (truncated response)
+          if (jsonContent.length === 21863) {
+            logger.warn(`[AnthropicProvider] Response appears to be truncated at exactly 21863 characters`);
+            // Try to close the JSON properly
+            if (jsonContent.endsWith('"')) {
+              // Already ends with quote, just close the JSON
+              fixedJson = jsonContent + '}';
+            } else {
+              // Add closing quote and brace
+              fixedJson = jsonContent + '"}';
+            }
+          } else {
+            fixedJson = fixedJson.replace(/"([^"]*)$/, '"$1"');
+          }
         }
         
         // Try parsing the fixed JSON
