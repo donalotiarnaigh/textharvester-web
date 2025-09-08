@@ -90,10 +90,16 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
     }
     
     // Configure JPEG compression for OCR quality
-    // For Claude, use less aggressive compression to preserve text readability
-    const jpegQuality = provider === 'openai' ? 95 : 95;  // Same quality as OpenAI for better text readability
+    // For Claude, use adaptive quality based on file size to stay under 5MB
+    let jpegQuality;
+    if (provider === 'openai') {
+      jpegQuality = 95;  // OpenAI can handle larger files
+    } else {
+      // For Claude, start with high quality but be prepared to reduce
+      jpegQuality = 90;  // Good balance for text readability while staying under 5MB
+    }
     processedImage = processedImage.jpeg({
-      quality: jpegQuality,  // 95% for both providers for better text readability
+      quality: jpegQuality,  // Adaptive quality based on provider
       progressive: false,    // Better for OCR processing
       mozjpeg: true         // Use mozjpeg encoder for better compression
     });
@@ -130,7 +136,7 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
           withoutEnlargement: true
         })
         .jpeg({
-          quality: 70,        // More aggressive compression
+          quality: 80,        // More aggressive compression but still readable
           progressive: false,
           mozjpeg: true
         })
@@ -153,7 +159,7 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
           withoutEnlargement: true
         })
         .jpeg({
-          quality: 60,        // Ultra-aggressive compression
+          quality: 70,        // Ultra-aggressive compression but preserve text
           progressive: false,
           mozjpeg: true
         })
