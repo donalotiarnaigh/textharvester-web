@@ -172,9 +172,10 @@ const SanitizeUtils = {
    * Create safe HTML content from memorial data
    * @param {Object} memorial - Memorial data object
    * @param {number} colSpan - Column span for the table cell
+   * @param {string} uniqueId - Unique identifier for this memorial
    * @returns {string} Safe HTML string
    */
-  createSafeDetailHTML(memorial, colSpan) {
+  createSafeDetailHTML(memorial, colSpan, uniqueId) {
     const safe = this.sanitizeMemorial(memorial);
 
     return `
@@ -239,7 +240,7 @@ const SanitizeUtils = {
         </div>
 
         <div class="mt-3">
-          <button class="btn btn-sm btn-secondary close-detail" data-memorial="${safe.memorial_number}">
+          <button class="btn btn-sm btn-secondary close-detail" data-memorial="${uniqueId}">
             <i class="fas fa-chevron-up"></i> Close Details
           </button>
           <button class="btn btn-sm btn-info copy-inscription ml-2" data-inscription="${safe.inscription.replace(/"/g, '&quot;')}">
@@ -254,15 +255,16 @@ const SanitizeUtils = {
   /**
    * Create safe HTML for main table row
    * @param {Object} memorial - Memorial data object
+   * @param {string} uniqueId - Unique identifier for this memorial
    * @returns {string} Safe HTML string for main table row
    */
-  createSafeMainRowHTML(memorial) {
+  createSafeMainRowHTML(memorial, uniqueId) {
     const safe = this.sanitizeMemorial(memorial);
 
     return `
       <td class="text-center">
         <button class="btn btn-sm btn-outline-secondary expand-toggle"
-          data-toggle-memorial="${safe.memorial_number}"
+          data-toggle-memorial="${uniqueId}"
           title="Click to expand/collapse details">
           <i class="fas fa-chevron-down"></i>
         </button>
@@ -416,25 +418,30 @@ function createDetailRow(memorial, colSpan) {
 
   // Sanitize memorial data to prevent XSS
   const safeMemorial = SanitizeUtils.sanitizeMemorial(memorial);
-  detailRow.id = `detail-${safeMemorial.memorial_number}`;
+  
+  // Use unique ID based on memorial ID (database primary key) instead of memorial_number
+  // This ensures uniqueness even when memorial_number is duplicated across source types
+  const uniqueId = memorial.id || memorial.memorial_id || `memorial-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  detailRow.id = `detail-${uniqueId}`;
+  detailRow.setAttribute('data-memorial-id', uniqueId);
 
   // Use the safe HTML generation method
-  detailRow.innerHTML = SanitizeUtils.createSafeDetailHTML(memorial, colSpan);
+  detailRow.innerHTML = SanitizeUtils.createSafeDetailHTML(memorial, colSpan, uniqueId);
 
   return detailRow;
 }
 
 // Function to toggle row expansion
-function toggleRow(memorialNumber) {
-  const detailRow = document.getElementById(`detail-${memorialNumber}`);
-  const toggleBtn = document.querySelector(`[data-toggle-memorial="${memorialNumber}"]`);
+function toggleRow(memorialId) {
+  const detailRow = document.getElementById(`detail-${memorialId}`);
+  const toggleBtn = document.querySelector(`[data-toggle-memorial="${memorialId}"]`);
   
   if (!detailRow) return;
   
-  if (expandedRows.has(memorialNumber)) {
+  if (expandedRows.has(memorialId)) {
     // Collapse the row
     detailRow.style.display = 'none';
-    expandedRows.delete(memorialNumber);
+    expandedRows.delete(memorialId);
     
     // Update toggle button
     if (toggleBtn) {
@@ -451,7 +458,7 @@ function toggleRow(memorialNumber) {
   } else {
     // Expand the row
     detailRow.style.display = 'table-row';
-    expandedRows.add(memorialNumber);
+    expandedRows.add(memorialId);
     
     // Update toggle button
     if (toggleBtn) {
@@ -505,11 +512,14 @@ function displayMemorials(memorials) {
     // Sanitize memorial data for safe use
     const safeMemorial = SanitizeUtils.sanitizeMemorial(memorial);
 
-    // Store memorial number as data attribute for event delegation
-    row.setAttribute('data-memorial-number', safeMemorial.memorial_number);
+    // Generate unique ID for this memorial (same logic as in createDetailRow)
+    const uniqueId = memorial.id || memorial.memorial_id || `memorial-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Store unique ID as data attribute for event delegation
+    row.setAttribute('data-memorial-id', uniqueId);
 
-    // Use safe HTML generation to prevent XSS
-    row.innerHTML = SanitizeUtils.createSafeMainRowHTML(memorial);
+    // Use safe HTML generation to prevent XSS, passing the unique ID
+    row.innerHTML = SanitizeUtils.createSafeMainRowHTML(memorial, uniqueId);
 
     tableBody.appendChild(row);
 
@@ -541,9 +551,9 @@ function handleTableClick(event) {
   // Handle memorial row clicks (for expanding/collapsing)
   const memorialRow = target.closest('tr.memorial-row');
   if (memorialRow && !target.closest('.expand-toggle')) {
-    const memorialNumber = memorialRow.getAttribute('data-memorial-number');
-    if (memorialNumber) {
-      toggleRow(memorialNumber);
+    const memorialId = memorialRow.getAttribute('data-memorial-id');
+    if (memorialId) {
+      toggleRow(memorialId);
     }
   }
 }
@@ -672,16 +682,16 @@ document.addEventListener('click', function(event) {
     event.preventDefault();
     event.stopPropagation();
     const button = event.target.closest('.expand-toggle');
-    const memorialNumber = button.getAttribute('data-toggle-memorial');
-    toggleRow(memorialNumber);
+    const memorialId = button.getAttribute('data-toggle-memorial');
+    toggleRow(memorialId);
   }
   
   // Handle close detail button clicks
   if (event.target.closest('.close-detail')) {
     event.preventDefault();
     const button = event.target.closest('.close-detail');
-    const memorialNumber = button.getAttribute('data-memorial');
-    toggleRow(memorialNumber);
+    const memorialId = button.getAttribute('data-memorial');
+    toggleRow(memorialId);
   }
   
   // Handle copy inscription button clicks

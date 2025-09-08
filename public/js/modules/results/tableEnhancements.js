@@ -259,9 +259,9 @@ export class TableEnhancements {
    */
   expandAll() {
     document.querySelectorAll('.detail-row').forEach(row => {
-      const memorialNumber = row.id.replace('detail-', '');
-      if (!expandedRows.has(memorialNumber)) {
-        toggleRow(memorialNumber);
+      const memorialId = row.id.replace('detail-', '');
+      if (!expandedRows.has(memorialId)) {
+        toggleRow(memorialId);
       }
     });
   }
@@ -271,9 +271,9 @@ export class TableEnhancements {
    */
   collapseAll() {
     document.querySelectorAll('.detail-row').forEach(row => {
-      const memorialNumber = row.id.replace('detail-', '');
-      if (expandedRows.has(memorialNumber)) {
-        toggleRow(memorialNumber);
+      const memorialId = row.id.replace('detail-', '');
+      if (expandedRows.has(memorialId)) {
+        toggleRow(memorialId);
       }
     });
   }
