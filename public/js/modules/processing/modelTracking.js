@@ -1,11 +1,11 @@
 // Model information
 const modelInfo = {
   'openai': {
-    name: 'OpenAI GPT-5',
+    name: 'OpenAI GPT-4o',
     messages: {
-      processing: 'Processing with OpenAI GPT-5',
-      error: 'Error processing with OpenAI GPT-5 - retrying',
-      complete: 'Processing complete with OpenAI GPT-5'
+      processing: 'Processing with OpenAI GPT-4o',
+      error: 'Error processing with OpenAI GPT-4o - retrying',
+      complete: 'Processing complete with OpenAI GPT-4o'
     }
   },
   'anthropic': {

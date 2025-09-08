@@ -28,7 +28,7 @@
     }
   },
   "openAI": {
-    "model": "gpt-5",
+    "model": "gpt-4o",
     "maxTokens": 4000,
     "localCache": true,
     "cacheExpiry": 604800000

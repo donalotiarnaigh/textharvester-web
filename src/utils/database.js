@@ -33,8 +33,9 @@ function initializeDatabase() {
       last_name TEXT,
       year_of_death TEXT CONSTRAINT valid_year CHECK (
         year_of_death IS NULL OR 
-        (typeof(year_of_death) = 'integer' AND year_of_death > 1500 AND year_of_death <= 2100) OR
-        (typeof(year_of_death) = 'text' AND (year_of_death = '-' OR year_of_death GLOB '*-*'))
+        year_of_death = '-' OR
+        year_of_death GLOB '*-*' OR
+        (CAST(year_of_death AS INTEGER) >= 1500 AND CAST(year_of_death AS INTEGER) <= 2100)
       ),
       inscription TEXT,
       file_name TEXT,
