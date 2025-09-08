@@ -164,7 +164,7 @@ describe('ImageProcessor', () => {
         withoutEnlargement: true
       });
       expect(mockSharpInstance.jpeg).toHaveBeenCalledWith({
-        quality: 90,
+        quality: 85,
         progressive: false,
         mozjpeg: true
       });

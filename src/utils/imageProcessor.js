@@ -88,9 +88,10 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
     }
     
     // Configure JPEG compression for OCR quality
-    const jpegQuality = provider === 'openai' ? 95 : 90;  // Higher quality for OpenAI
+    // For Claude, use more aggressive compression to stay under 5MB
+    const jpegQuality = provider === 'openai' ? 95 : 85;  // More aggressive compression for Claude
     processedImage = processedImage.jpeg({
-      quality: jpegQuality,  // 95% for OpenAI, 90% for Claude
+      quality: jpegQuality,  // 95% for OpenAI, 85% for Claude
       progressive: false,    // Better for OCR processing
       mozjpeg: true         // Use mozjpeg encoder for better compression
     });
@@ -107,27 +108,51 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
       logger.warn(`[ImageProcessor] Image still too large: ${finalSizeMB}MB > ${providerLimits.maxFileSize / (1024 * 1024)}MB`);
       
       // Try more aggressive compression if still too large
-      if (needsResize) {
-        logger.info(`[ImageProcessor] Applying more aggressive compression...`);
+      logger.info(`[ImageProcessor] Applying more aggressive compression...`);
+      
+      // Calculate more aggressive dimensions - reduce to 70% of calculated size
+      const aggressiveWidth = Math.round(width * 0.7);
+      const aggressiveHeight = Math.round(height * 0.7);
+      
+      const aggressiveBuffer = await sharp(inputPath)
+        .resize(aggressiveWidth, aggressiveHeight, {
+          kernel: sharp.kernel.lanczos3,
+          withoutEnlargement: true
+        })
+        .jpeg({
+          quality: 70,        // More aggressive compression
+          progressive: false,
+          mozjpeg: true
+        })
+        .toBuffer();
         
-        const aggressiveBuffer = await sharp(inputPath)
-          .resize(Math.round(width * 0.8), Math.round(height * 0.8), {
-            kernel: sharp.kernel.lanczos3,
-            withoutEnlargement: true
-          })
-          .jpeg({
-            quality: 75,        // More aggressive compression
-            progressive: false,
-            mozjpeg: true
-          })
-          .toBuffer();
-          
-        const aggressiveSizeMB = (aggressiveBuffer.length / (1024 * 1024)).toFixed(2);
-        logger.info(`[ImageProcessor] Aggressive compression result: ${aggressiveSizeMB}MB`);
+      const aggressiveSizeMB = (aggressiveBuffer.length / (1024 * 1024)).toFixed(2);
+      logger.info(`[ImageProcessor] Aggressive compression result: ${aggressiveWidth}x${aggressiveHeight}, ${aggressiveSizeMB}MB`);
+      
+      if (aggressiveBuffer.length <= providerLimits.maxFileSize) {
+        return aggressiveBuffer.toString('base64');
+      }
+      
+      // If still too large, try even more aggressive compression
+      logger.info(`[ImageProcessor] Applying ultra-aggressive compression...`);
+      
+      const ultraAggressiveBuffer = await sharp(inputPath)
+        .resize(Math.round(aggressiveWidth * 0.8), Math.round(aggressiveHeight * 0.8), {
+          kernel: sharp.kernel.lanczos3,
+          withoutEnlargement: true
+        })
+        .jpeg({
+          quality: 60,        // Ultra-aggressive compression
+          progressive: false,
+          mozjpeg: true
+        })
+        .toBuffer();
         
-        if (aggressiveBuffer.length <= providerLimits.maxFileSize) {
-          return aggressiveBuffer.toString('base64');
-        }
+      const ultraSizeMB = (ultraAggressiveBuffer.length / (1024 * 1024)).toFixed(2);
+      logger.info(`[ImageProcessor] Ultra-aggressive compression result: ${ultraSizeMB}MB`);
+      
+      if (ultraAggressiveBuffer.length <= providerLimits.maxFileSize) {
+        return ultraAggressiveBuffer.toString('base64');
       }
       
       throw new Error(`Unable to compress image below ${providerLimits.maxFileSize / (1024 * 1024)}MB limit for ${provider}`);
