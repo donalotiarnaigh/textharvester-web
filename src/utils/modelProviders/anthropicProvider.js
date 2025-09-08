@@ -139,7 +139,15 @@ class AnthropicProvider extends BaseVisionProvider {
       logger.info(`[AnthropicProvider] JSON content ends with: "${jsonContent.slice(-50)}"`);
       
       try {
-        return JSON.parse(jsonContent);
+        const parsedResponse = JSON.parse(jsonContent);
+        
+        // Validate that the response contains actual text, not just dashes
+        if (this.isInvalidResponse(parsedResponse)) {
+          logger.warn(`[AnthropicProvider] Response appears to contain invalid data (likely dashes instead of actual text)`);
+          throw new Error('Invalid response: Claude returned dashes instead of actual text. This may indicate image quality issues or prompt confusion.');
+        }
+        
+        return parsedResponse;
       } catch (jsonError) {
         logger.error(`Anthropic JSON parsing failed for model ${this.model}`, jsonError, {
           phase: 'response_parsing',
@@ -173,7 +181,15 @@ class AnthropicProvider extends BaseVisionProvider {
         // Try parsing the fixed JSON
         try {
           logger.info(`[AnthropicProvider] Attempting to fix JSON and retry parsing`);
-          return JSON.parse(fixedJson);
+          const parsedResponse = JSON.parse(fixedJson);
+          
+          // Validate the fixed response too
+          if (this.isInvalidResponse(parsedResponse)) {
+            logger.warn(`[AnthropicProvider] Fixed response still contains invalid data`);
+            throw new Error('Invalid response: Claude returned dashes instead of actual text. This may indicate image quality issues or prompt confusion.');
+          }
+          
+          return parsedResponse;
         } catch (retryError) {
           logger.debugPayload('Anthropic JSON parsing error details:', {
             model: this.model,
@@ -196,6 +212,59 @@ class AnthropicProvider extends BaseVisionProvider {
       });
       throw new Error(`Anthropic processing failed: ${error.message}`);
     }
+  }
+
+  /**
+   * Check if the response contains invalid data (like dashes instead of actual text)
+   * @param {Object} response The parsed JSON response
+   * @returns {boolean} True if the response appears invalid
+   */
+  isInvalidResponse(response) {
+    if (!response || typeof response !== 'object') {
+      return true;
+    }
+    
+    // Check if inscription field contains mostly dashes
+    if (response.inscription && typeof response.inscription === 'string') {
+      const inscription = response.inscription.trim();
+      
+      // If inscription is very long and contains mostly dashes, it's likely invalid
+      if (inscription.length > 1000) {
+        const dashCount = (inscription.match(/-/g) || []).length;
+        const dashRatio = dashCount / inscription.length;
+        
+        // If more than 80% of the text is dashes, it's likely invalid
+        if (dashRatio > 0.8) {
+          logger.warn(`[AnthropicProvider] Inscription field contains ${dashRatio.toFixed(2)} dashes (${dashCount}/${inscription.length} characters)`);
+          return true;
+        }
+      }
+      
+      // Check for patterns that indicate invalid responses
+      if (inscription.includes('----------|----------|----------')) {
+        logger.warn(`[AnthropicProvider] Inscription contains repeated dash patterns`);
+        return true;
+      }
+    }
+    
+    // Check if name fields contain only dashes
+    if (response.first_name && typeof response.first_name === 'string') {
+      const firstName = response.first_name.trim();
+      if (firstName.length > 10 && /^-+$/.test(firstName)) {
+        logger.warn(`[AnthropicProvider] First name contains only dashes: "${firstName}"`);
+        return true;
+      }
+    }
+    
+    if (response.last_name && typeof response.last_name === 'string') {
+      const lastName = response.last_name.trim();
+      if (lastName.length > 10 && /^-+$/.test(lastName)) {
+        logger.warn(`[AnthropicProvider] Last name contains only dashes: "${lastName}"`);
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   /**

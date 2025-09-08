@@ -74,7 +74,7 @@ describe('AnthropicProvider', () => {
 
     it('should use default max tokens if not specified', () => {
       const defaultProvider = new AnthropicProvider({});
-      expect(defaultProvider.maxTokens).toBe(4000);
+      expect(defaultProvider.maxTokens).toBe(8000);
     });
 
     it('should use provided temperature from config', () => {
@@ -102,7 +102,7 @@ describe('AnthropicProvider', () => {
       
       expect(provider.client.messages.create).toHaveBeenCalledWith({
         model: 'claude-4-sonnet-20250514',
-        max_tokens: 8000,
+        max_tokens: 4000,
         temperature: 0.2,
         system: 'Return a JSON object with the extracted text details.',
         messages: [
