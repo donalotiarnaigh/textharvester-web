@@ -204,10 +204,12 @@ function getProcessingProgress() {
     processedFiles
   });
 
-  // If there are no files at all and we've processed some files previously,
-  // return 100% to trigger redirect
-  if (totalFiles === 0 && processedFiles > 0) {
-    logger.info('[FileQueue] No files in queue but files were processed, marking as complete');
+  // Only mark complete if:
+  // 1. No files in queue AND
+  // 2. Not currently processing AND  
+  // 3. All files have been processed
+  if (totalFiles === 0 && !isProcessing && processedFiles > 0) {
+    logger.info('[FileQueue] All files processed and no active processing, marking as complete');
     return {
       state: 'complete',
       progress: 100
