@@ -191,13 +191,20 @@ Follow genealogical transcription standards - transcribe exactly what is visible
         // If only last_name provided, leave first_name empty
         result.first_name = null;
         result.last_name = rawData.last_name;
-      } else {
-        // Both names provided, process normally
-        const fullName = [rawData.first_name, rawData.last_name].filter(Boolean).join(' ');
-        const processedName = preprocessName(fullName);
-        
-        result.first_name = processedName.firstName || rawData.first_name;
-        result.last_name = processedName.lastName || rawData.last_name;
+      } else if (rawData.first_name && rawData.last_name) {
+        // Both names provided - check if they're the same (duplication issue)
+        if (rawData.first_name === rawData.last_name) {
+          // Duplication detected - use only as first_name
+          result.first_name = rawData.first_name;
+          result.last_name = null;
+        } else {
+          // Different names - process normally
+          const fullName = [rawData.first_name, rawData.last_name].filter(Boolean).join(' ');
+          const processedName = preprocessName(fullName);
+          
+          result.first_name = processedName.firstName || rawData.first_name;
+          result.last_name = processedName.lastName || rawData.last_name;
+        }
       }
     }
 
