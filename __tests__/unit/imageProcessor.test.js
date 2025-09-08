@@ -50,7 +50,7 @@ describe('ImageProcessor', () => {
     it('should have correct limits for Anthropic', () => {
       expect(PROVIDER_LIMITS.anthropic).toEqual({
         maxFileSize: 5 * 1024 * 1024,  // 5MB
-        maxDimension: 1568,
+        maxDimension: 4096,  // Updated to 4096px for better monument OCR
         minDimension: 200
       });
     });
@@ -58,7 +58,7 @@ describe('ImageProcessor', () => {
     it('should have correct limits for OpenAI', () => {
       expect(PROVIDER_LIMITS.openai).toEqual({
         maxFileSize: 20 * 1024 * 1024,  // 20MB
-        maxDimension: 2048,
+        maxDimension: 3072,  // Updated to 3072px for better monument OCR
         minDimension: 200
       });
     });
@@ -107,8 +107,8 @@ describe('ImageProcessor', () => {
         dimensions: '2000x1500',
         needsOptimization: true,
         reasons: [
-          'File size 6.00MB exceeds 5MB limit',
-          'Dimensions 2000x1500 exceed 1568px recommendation'
+          'File size 6.00MB exceeds 5MB limit'
+          // Dimensions 2000x1500 are now within 4096px limit
         ]
       });
     });
@@ -137,13 +137,19 @@ describe('ImageProcessor', () => {
     it('should handle different providers', async () => {
       const result = await analyzeImageForProvider('/test/image.jpg', 'openai');
       
-      expect(result.needsOptimization).toBe(false); // 6MB < 20MB limit for OpenAI and 2000 < 2048
+      expect(result.needsOptimization).toBe(false); // 6MB < 20MB limit for OpenAI and 2000 < 3072
       expect(result.reasons).toEqual([]); // No optimization needed for OpenAI with these dimensions
     });
   });
 
   describe('optimizeImageForProvider', () => {
     it('should optimize image for Anthropic when needed', async () => {
+      // Mock metadata for image that exceeds 4096px limit
+      mockSharpInstance.metadata.mockResolvedValue({
+        width: 5000,
+        height: 4000
+      });
+      
       // Mock a small final buffer (under 5MB)
       const smallBuffer = Buffer.alloc(3 * 1024 * 1024); // 3MB
       smallBuffer.toString = jest.fn().mockReturnValue('optimized-base64-data');
@@ -153,12 +159,12 @@ describe('ImageProcessor', () => {
 
       expect(sharp).toHaveBeenCalledWith('/test/image.jpg');
       expect(mockSharpInstance.metadata).toHaveBeenCalled();
-      expect(mockSharpInstance.resize).toHaveBeenCalledWith(1568, 1176, {
+      expect(mockSharpInstance.resize).toHaveBeenCalledWith(4096, 3277, {
         kernel: 'lanczos3',
         withoutEnlargement: true
       });
       expect(mockSharpInstance.jpeg).toHaveBeenCalledWith({
-        quality: 85,
+        quality: 90,
         progressive: false,
         mozjpeg: true
       });
@@ -185,6 +191,12 @@ describe('ImageProcessor', () => {
     });
 
     it('should apply aggressive compression when initial optimization fails', async () => {
+      // Mock metadata for image that exceeds 4096px limit to trigger resizing
+      mockSharpInstance.metadata.mockResolvedValue({
+        width: 5000,
+        height: 4000
+      });
+      
       // Mock initial compression still too large
       const largeBuffer = Buffer.alloc(7 * 1024 * 1024); // 7MB
       const smallBuffer = Buffer.alloc(4 * 1024 * 1024); // 4MB

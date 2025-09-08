@@ -30,8 +30,8 @@ export const initModelSelection = () => {
             <option value="anthropic">Anthropic Claude 4 Sonnet</option>
           </select>
           <small class="model-info"></small>
-          <div id="anthropic-warning" class="alert alert-warning mt-2" style="display: none;">
-            <strong>Note:</strong> Anthropic Claude is not recommended for monument photos due to accuracy issues with weathered stone text.
+          <div id="anthropic-warning" class="alert alert-info mt-2" style="display: none;">
+            <strong>Note:</strong> Anthropic Claude has a 5MB file size limit. Large images will be automatically optimized for better OCR quality.
           </div>
         </div>
       </div>
@@ -108,20 +108,13 @@ function updateModelAvailability(uploadMode) {
   if (!modelSelect || !anthropicOption) return;
   
   if (uploadMode === 'monument_photo') {
-    // Disable Anthropic for monument photos
-    anthropicOption.disabled = true;
-    anthropicOption.textContent = 'Anthropic Claude 4 Sonnet (Not recommended for monuments)';
+    // Enable Anthropic for monument photos with info warning
+    anthropicOption.disabled = false;
+    anthropicOption.textContent = 'Anthropic Claude 4 Sonnet';
     
-    // Show warning
+    // Show info warning about file size limit
     if (anthropicWarning) {
       anthropicWarning.style.display = 'block';
-    }
-    
-    // If Anthropic is currently selected, switch to OpenAI
-    if (modelSelect.value === 'anthropic') {
-      modelSelect.value = 'openai';
-      localStorage.setItem('selectedModel', 'openai');
-      updateModelInfo('openai');
     }
   } else {
     // Enable Anthropic for record sheets

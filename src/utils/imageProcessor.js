@@ -12,7 +12,7 @@ const logger = require('./logger');
 const PROVIDER_LIMITS = {
   anthropic: {
     maxFileSize: 5 * 1024 * 1024,  // 5MB in bytes
-    maxDimension: 2048,             // Increased for better monument OCR (was 1568)
+    maxDimension: 4096,             // Increased to 4096px for better monument OCR (Claude supports up to 8000px)
     minDimension: 200               // Minimum to avoid performance degradation
   },
   openai: {
