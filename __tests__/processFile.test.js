@@ -28,8 +28,10 @@ jest.mock('@anthropic-ai/sdk', () => {
 jest.mock('fs', () => ({
   promises: {
     readFile: jest.fn().mockResolvedValue('base64imagestring'),
-    unlink: jest.fn().mockResolvedValue(undefined)
+    unlink: jest.fn().mockResolvedValue(undefined),
+    stat: jest.fn().mockResolvedValue({ size: 6 * 1024 * 1024 })
   },
+  stat: jest.fn().mockResolvedValue({ size: 6 * 1024 * 1024 }),
   existsSync: jest.fn().mockReturnValue(true),
   mkdirSync: jest.fn()
 }));

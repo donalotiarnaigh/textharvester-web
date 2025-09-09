@@ -13,7 +13,8 @@ jest.mock('sharp');
 jest.mock('fs', () => ({
   promises: {
     stat: jest.fn()
-  }
+  },
+  stat: jest.fn()
 }));
 jest.mock('../../src/utils/logger');
 
@@ -28,6 +29,10 @@ describe('ImageProcessor', () => {
     // Mock buffer for image data
     mockBuffer = Buffer.from('mock-image-data');
     mockBuffer.toString = jest.fn().mockReturnValue('bW9jay1pbWFnZS1kYXRh'); // base64 mock
+    
+    // Mock fs.stat for both sync and async versions
+    fs.stat = jest.fn().mockResolvedValue({ size: 6 * 1024 * 1024 });
+    require('fs').stat = jest.fn().mockResolvedValue({ size: 6 * 1024 * 1024 });
     
     // Mock sharp instance with method chaining
     mockSharpInstance = {

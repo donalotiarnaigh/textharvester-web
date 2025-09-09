@@ -54,6 +54,7 @@ describe('Monument Template Selection', () => {
     // Mock fs.readFile
     fs.readFile = jest.fn().mockResolvedValue('base64imagedata');
     fs.unlink = jest.fn().mockResolvedValue();
+    fs.stat = jest.fn().mockResolvedValue({ size: 6 * 1024 * 1024 });
 
     // Mock provider
     const mockProvider = {
