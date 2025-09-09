@@ -15,7 +15,7 @@ class OpenAIProvider extends BaseVisionProvider {
     this.client = new OpenAI({
       apiKey: this.config.OPENAI_API_KEY || process.env.OPENAI_API_KEY
     });
-    this.model = this.config.OPENAI_MODEL || this.config.openAI?.model || 'gpt-5';
+    this.model = this.config.OPENAI_MODEL || this.config.openAI?.model || 'gpt-4o';
     this.maxTokens = this.config.MAX_TOKENS || this.config.openAI?.maxTokens || 4000;
     this.temperature = this.config.TEMPERATURE || 0;
   }
@@ -78,10 +78,8 @@ class OpenAIProvider extends BaseVisionProvider {
         max_completion_tokens: this.maxTokens
       };
 
-      // GPT-5 only supports default temperature (1), so don't include it
-      if (!this.model.includes('gpt-5')) {
-        requestPayload.temperature = this.temperature;
-      }
+      // Include temperature for models that support it
+      requestPayload.temperature = this.temperature;
 
         // Calculate timeout with exponential backoff
         const timeout = baseTimeout * attempt;
@@ -166,7 +164,7 @@ class OpenAIProvider extends BaseVisionProvider {
     if (!this.client) {
       throw new Error('OpenAI client not initialized. Check API key configuration.');
     }
-    if (!this.model.includes('vision') && !this.model.includes('gpt-5') && !this.model.includes('gpt-4o')) {
+    if (!this.model.includes('vision') && !this.model.includes('gpt-4o')) {
       throw new Error('Invalid model specified. Must be a vision-capable model.');
     }
     return true;
