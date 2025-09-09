@@ -108,6 +108,7 @@ const handleFileUpload = async (req, res) => {
   const promptTemplate = req.body.promptTemplate;
   const promptVersion = req.body.promptVersion;
   const sourceType = req.body.source_type || 'record_sheet';
+  const intelligentCrop = req.body.intelligentCrop === 'true';
 
   // Validate source_type
   const validSourceTypes = ['record_sheet', 'monument_photo'];
@@ -118,6 +119,7 @@ const handleFileUpload = async (req, res) => {
   logger.info(`Prompt template: ${promptTemplate || 'default'}`);
   logger.info(`Prompt version: ${promptVersion || 'latest'}`);
   logger.info(`Source type: ${sourceType} → final: ${finalSourceType}`);
+  logger.info(`Intelligent crop: ${intelligentCrop}`);
 
   const files = req.files?.file || [];
   logger.info(`Number of files received: ${files.length}`);
@@ -158,16 +160,18 @@ const handleFileUpload = async (req, res) => {
               provider: selectedModel,
               // Don't hardcode promptTemplate - let fileProcessing.js select based on source_type
               promptVersion: promptConfig.version,
-              source_type: finalSourceType
+              source_type: finalSourceType,
+              intelligentCrop
             }))
           );
         } else {
-          await enqueueFiles([{
+          await enqueueFiles([{ 
             ...file,
             provider: selectedModel,
             // Don't hardcode promptTemplate - let fileProcessing.js select based on source_type
             promptVersion: promptConfig.version,
-            source_type: finalSourceType
+            source_type: finalSourceType,
+            intelligentCrop
           }]);
         }
       } catch (conversionError) {

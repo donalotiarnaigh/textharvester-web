@@ -222,4 +222,19 @@ describe('Enhanced File Queue with Error Handling', () => {
       expect(processFile).toHaveBeenCalledTimes(2);
     });
   });
-}); 
+
+  it('should pass intelligentCrop option to processFile', async () => {
+    const files = [
+      { path: 'uploads/file1.jpg', originalname: 'file1.jpg', intelligentCrop: true }
+    ];
+
+    enqueueFiles(files);
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    expect(processFile).toHaveBeenCalledWith(
+      'uploads/file1.jpg',
+      expect.objectContaining({ intelligentCrop: true })
+    );
+  });
+});

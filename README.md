@@ -16,7 +16,7 @@ Welcome to the Text Harvester, a community-driven web application designed to pr
   - Automatic image optimization for different AI providers
   - EXIF orientation correction for monument photos
   - File size optimization for provider limits
-  - Optional monument cropping to reduce background before OCR (disabled by default)
+  - Optional monument cropping to reduce background before OCR (disabled by default, toggle on upload page)
 - **Results Management**: 
   - Choose to replace existing results or add to them
   - Download extracted text data in JSON or CSV formats
@@ -27,7 +27,7 @@ Welcome to the Text Harvester, a community-driven web application designed to pr
 
 ### Monument Cropping Configuration
 
-Monument photo uploads can be pre-cropped before OCR to reduce file size. This feature is disabled by default. Enable it by setting the feature flag and thresholds:
+Monument photo uploads can be pre-cropped before OCR to reduce file size. This feature is disabled by default but can be enabled per session via the **Enable Intelligent Crop** toggle on the upload page. To enable by default and set thresholds, configure the following environment variables:
 
 ```
 MONUMENT_CROPPING_ENABLED=true

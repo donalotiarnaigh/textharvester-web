@@ -101,4 +101,22 @@ describe('Monument cropping integration', () => {
     const usedBase64 = provider.processImage.mock.calls[0][0];
     expect(usedBase64.length).toBe(blankBase64.length);
   });
+
+  test('respects intelligentCrop option when config disabled', async () => {
+    await fs.writeFile(path.join(fixturesDir, 'monument.png'), Buffer.from(originalBase64, 'base64'));
+    jest.doMock('../../config.json', () => ({
+      monumentCropping: { enabled: false, minWidth: 400, minHeight: 400, aspectRatioMin: 0.5, aspectRatioMax: 2 }
+    }), { virtual: true });
+    const { processFile } = require('../../src/utils/fileProcessing');
+    const { createProvider } = require('../../src/utils/modelProviders');
+    await processFile(path.join(fixturesDir, 'monument.png'), {
+      provider: 'anthropic',
+      source_type: 'monument_photo',
+      intelligentCrop: true
+    });
+    const provider = createProvider.mock.results[0].value;
+    const usedBase64 = provider.processImage.mock.calls[0][0];
+    expect(usedBase64.length).toBeLessThan(originalBase64.length);
+  });
+
 });

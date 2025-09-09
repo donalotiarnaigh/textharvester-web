@@ -33,7 +33,10 @@ async function processFile(filePath, options = {}) {
   
   try {
     let workingImage = filePath;
-    if (sourceType === 'monument_photo' && config.monumentCropping?.enabled) {
+    const cropEnabled = Object.prototype.hasOwnProperty.call(options, 'intelligentCrop')
+      ? options.intelligentCrop
+      : config.monumentCropping?.enabled;
+    if (sourceType === 'monument_photo' && cropEnabled) {
       logger.info(`[MonumentCropper] Starting detection for ${filePath}`);
       const cropResult = await detectAndCrop(filePath);
       if (cropResult) {

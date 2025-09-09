@@ -3,6 +3,7 @@
 
 import { getSelectedModel } from "./modelSelection.js";
 import { getCurrentUploadMode } from "./modeSelector.js";
+import { isIntelligentCropEnabled } from "./intelligentCropToggle.js";
 
 export const handleFileUpload = (dropzoneInstance) => {
   console.log("Dropzone initialized"); // Log initialization
@@ -43,11 +44,14 @@ export const handleFileUpload = (dropzoneInstance) => {
     const replaceExisting = document.getElementById('replaceExisting').checked;
     const selectedModel = getSelectedModel();
     const uploadMode = getCurrentUploadMode();
+    const intelligentCrop = isIntelligentCropEnabled();
     console.log('Replace existing checked:', replaceExisting); // Debug log
     console.log('Selected model:', selectedModel); // Debug log
     console.log('Upload mode:', uploadMode); // Debug log
+    console.log('Intelligent crop:', intelligentCrop); // Debug log
     formData.append('replaceExisting', replaceExisting.toString()); // Convert to string
     formData.append('aiProvider', selectedModel);
     formData.append('source_type', uploadMode);
+    formData.append('intelligentCrop', intelligentCrop.toString());
   });
 };

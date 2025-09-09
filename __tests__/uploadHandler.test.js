@@ -346,4 +346,36 @@ describe('Upload Handler', () => {
       );
     });
   });
-}); 
+
+  describe('Intelligent Crop Handling', () => {
+    test('should pass intelligentCrop flag to enqueueFiles when enabled', async () => {
+      mockReq.body = {
+        aiProvider: 'openai',
+        replaceExisting: 'false',
+        intelligentCrop: 'true'
+      };
+
+      await handleFileUpload(mockReq, mockRes);
+
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            intelligentCrop: true
+          })
+        ])
+      );
+    });
+
+    test('should default intelligentCrop to false when not provided', async () => {
+      await handleFileUpload(mockReq, mockRes);
+
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            intelligentCrop: false
+          })
+        ])
+      );
+    });
+  });
+});
