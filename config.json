@@ -1,6 +1,9 @@
 {
   "port": 3000,
-  "supportedFileTypes": ["image/jpeg", "image/jpg"],
+  "supportedFileTypes": [
+    "image/jpeg",
+    "image/jpg"
+  ],
   "uploadPath": "./uploads/",
   "dataStorage": {
     "resultsPath": "./data/results/",
@@ -53,5 +56,12 @@
   },
   "database": {
     "path": "./data/memorials.db"
+  },
+  "monumentCropping": {
+    "enabled": false,
+    "minWidth": 400,
+    "minHeight": 400,
+    "aspectRatioMin": 0.5,
+    "aspectRatioMax": 2.0
   }
 }

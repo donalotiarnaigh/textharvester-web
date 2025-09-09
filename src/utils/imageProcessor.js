@@ -46,24 +46,25 @@ function calculateOptimalDimensions(originalWidth, originalHeight, maxDimension)
 
 /**
  * Optimize image for AI processing based on provider requirements
- * @param {string} inputPath - Path to input image
+ * @param {string|Buffer} input - Path to input image or buffer
  * @param {string} provider - AI provider ('anthropic' or 'openai')
  * @param {Object} options - Processing options
  * @returns {Promise<string>} - Base64 encoded optimized image
  */
-async function optimizeImageForProvider(inputPath, provider = 'anthropic', options = {}) {
+async function optimizeImageForProvider(input, provider = 'anthropic', options = {}) {
   const providerLimits = PROVIDER_LIMITS[provider] || PROVIDER_LIMITS.anthropic;
-  
-  logger.info(`[ImageProcessor] Optimizing image for ${provider}: ${path.basename(inputPath)}`);
-  
+  const isBuffer = Buffer.isBuffer(input);
+
+  logger.info(`[ImageProcessor] Optimizing image for ${provider}: ${isBuffer ? 'buffer' : path.basename(input)}`);
+
   try {
-    // Get image metadata and file stats
-    const stats = await fs.stat(inputPath);
-    const image = sharp(inputPath);
+    // Get image metadata and size
+    const statsSize = isBuffer ? input.length : (await fs.stat(input)).size;
+    const image = sharp(input);
     const metadata = await image.metadata();
     
-    logger.info(`[ImageProcessor] Original image: ${metadata.width}x${metadata.height}, ${Math.round(metadata.size / 1024)}KB`);
-    logger.info(`[ImageProcessor] Original file size: ${(stats.size / (1024 * 1024)).toFixed(2)}MB`);
+    logger.info(`[ImageProcessor] Original image: ${metadata.width}x${metadata.height}, ${Math.round((metadata.size||statsSize) / 1024)}KB`);
+    logger.info(`[ImageProcessor] Original file size: ${(statsSize / (1024 * 1024)).toFixed(2)}MB`);
     logger.info(`[ImageProcessor] EXIF orientation: ${metadata.orientation || 'not specified'}`);
     
     // Calculate optimal dimensions
@@ -114,7 +115,7 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
     const finalSizeMB = (buffer.length / (1024 * 1024)).toFixed(2);
     
     logger.info(`[ImageProcessor] Final image: ${width}x${height}, ${finalSizeKB}KB (${finalSizeMB}MB)`);
-    logger.info(`[ImageProcessor] Compression ratio: ${((1 - buffer.length / stats.size) * 100).toFixed(1)}% reduction`);
+    logger.info(`[ImageProcessor] Compression ratio: ${((1 - buffer.length / statsSize) * 100).toFixed(1)}% reduction`);
     
     // Get final metadata to check if rotation occurred
     const finalMetadata = await sharp(buffer).metadata();
@@ -133,7 +134,7 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
       const aggressiveWidth = Math.round(width * 0.7);
       const aggressiveHeight = Math.round(height * 0.7);
       
-      const aggressiveBuffer = await sharp(inputPath)
+      const aggressiveBuffer = await sharp(input)
         .resize(aggressiveWidth, aggressiveHeight, {
           kernel: sharp.kernel.lanczos3,
           withoutEnlargement: true
@@ -146,7 +147,7 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
         .toBuffer();
         
       const aggressiveSizeMB = (aggressiveBuffer.length / (1024 * 1024)).toFixed(2);
-      const aggressiveCompressionRatio = ((1 - aggressiveBuffer.length / stats.size) * 100).toFixed(1);
+      const aggressiveCompressionRatio = ((1 - aggressiveBuffer.length / statsSize) * 100).toFixed(1);
       logger.info(`[ImageProcessor] Aggressive compression result: ${aggressiveWidth}x${aggressiveHeight}, ${aggressiveSizeMB}MB (${aggressiveCompressionRatio}% reduction)`);
       
       if (aggressiveBuffer.length <= providerLimits.maxFileSize) {
@@ -156,7 +157,7 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
       // If still too large, try even more aggressive compression
       logger.info(`[ImageProcessor] Applying ultra-aggressive compression...`);
       
-      const ultraAggressiveBuffer = await sharp(inputPath)
+      const ultraAggressiveBuffer = await sharp(input)
         .resize(Math.round(aggressiveWidth * 0.8), Math.round(aggressiveHeight * 0.8), {
           kernel: sharp.kernel.lanczos3,
           withoutEnlargement: true
@@ -169,7 +170,7 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
         .toBuffer();
         
       const ultraSizeMB = (ultraAggressiveBuffer.length / (1024 * 1024)).toFixed(2);
-      const ultraCompressionRatio = ((1 - ultraAggressiveBuffer.length / stats.size) * 100).toFixed(1);
+      const ultraCompressionRatio = ((1 - ultraAggressiveBuffer.length / statsSize) * 100).toFixed(1);
       logger.info(`[ImageProcessor] Ultra-aggressive compression result: ${ultraSizeMB}MB (${ultraCompressionRatio}% reduction)`);
       
       if (ultraAggressiveBuffer.length <= providerLimits.maxFileSize) {
@@ -194,32 +195,41 @@ async function optimizeImageForProvider(inputPath, provider = 'anthropic', optio
 
 /**
  * Check if an image needs optimization for a specific provider
- * @param {string} imagePath - Path to image file
+ * @param {string|Buffer} image - Path to image file or buffer
  * @param {string} provider - AI provider name
  * @returns {Promise<Object>} - Analysis result with recommendations
  */
-async function analyzeImageForProvider(imagePath, provider = 'anthropic') {
+async function analyzeImageForProvider(image, provider = 'anthropic') {
   const providerLimits = PROVIDER_LIMITS[provider] || PROVIDER_LIMITS.anthropic;
-  
+
   try {
-    const stats = await fs.stat(imagePath);
-    const metadata = await sharp(imagePath).metadata();
-    
+    const isBuffer = Buffer.isBuffer(image);
+    let statsSize;
+    let metadata;
+    if (isBuffer) {
+      statsSize = image.length;
+      metadata = await sharp(image).metadata();
+    } else {
+      const stats = await fs.stat(image);
+      statsSize = stats.size;
+      metadata = await sharp(image).metadata();
+    }
+
     const analysis = {
-      originalSize: stats.size,
-      originalSizeMB: (stats.size / (1024 * 1024)).toFixed(2),
+      originalSize: statsSize,
+      originalSizeMB: (statsSize / (1024 * 1024)).toFixed(2),
       dimensions: `${metadata.width}x${metadata.height}`,
       needsOptimization: false,
       reasons: []
     };
-    
+
     // Debug logging for Claude optimization issues
-    logger.info(`[ImageProcessor] Analyzing image for ${provider}: ${path.basename(imagePath)}`);
+    logger.info(`[ImageProcessor] Analyzing image for ${provider}: ${isBuffer ? 'buffer' : path.basename(image)}`);
     logger.info(`[ImageProcessor] File size: ${analysis.originalSizeMB}MB, Dimensions: ${analysis.dimensions}`);
     logger.info(`[ImageProcessor] Provider limits: ${providerLimits.maxFileSize / (1024 * 1024)}MB file, ${providerLimits.maxDimension}px max dimension`);
     
     // Check file size - account for base64 encoding overhead (~33% increase)
-    const base64Size = Math.round(stats.size * 1.33); // Base64 encoding increases size by ~33%
+    const base64Size = Math.round(statsSize * 1.33); // Base64 encoding increases size by ~33%
     const base64SizeMB = (base64Size / (1024 * 1024)).toFixed(2);
     
     logger.info(`[ImageProcessor] Estimated base64 size: ${base64SizeMB}MB (${base64Size} bytes)`);

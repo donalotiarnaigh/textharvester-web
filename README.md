@@ -12,10 +12,11 @@ Welcome to the Text Harvester, a community-driven web application designed to pr
 - **Multiple AI Providers**: Support for different vision AI models:
   - **OpenAI GPT-4o** (recommended for monument photos)
   - **Anthropic Claude 4 Sonnet** (good for clear images)
-- **Intelligent Image Processing**: 
+- **Intelligent Image Processing**:
   - Automatic image optimization for different AI providers
   - EXIF orientation correction for monument photos
   - File size optimization for provider limits
+  - Optional monument cropping to reduce background before OCR (disabled by default, toggle on upload page)
 - **Results Management**: 
   - Choose to replace existing results or add to them
   - Download extracted text data in JSON or CSV formats
@@ -23,6 +24,20 @@ Welcome to the Text Harvester, a community-driven web application designed to pr
   - Source type tracking (Record Sheet vs Monument Photo)
 - **Persistent Storage**: SQLite database ensures your data is safely stored and easily accessible
 - **Automatic Backups**: Database backups are created automatically in the `backups/` directory
+
+### Monument Cropping Configuration
+
+Monument photo uploads can be pre-cropped before OCR to reduce file size. This feature is disabled by default but can be enabled per session via the **Enable Intelligent Crop** toggle on the upload page. To enable by default and set thresholds, configure the following environment variables:
+
+```
+MONUMENT_CROPPING_ENABLED=true
+MONUMENT_MIN_WIDTH=400
+MONUMENT_MIN_HEIGHT=400
+MONUMENT_ASPECT_RATIO_MIN=0.5
+MONUMENT_ASPECT_RATIO_MAX=2.0
+```
+
+These defaults are defined in `config.json` and can be adjusted to fit different datasets.
 
 ## Database
 

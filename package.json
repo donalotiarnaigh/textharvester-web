@@ -35,8 +35,9 @@
     "multer": "^2.0.1",
     "open": "^10.1.2",
     "openai": "^4.24.0",
+    "opencv.js": "^1.2.1",
     "pdf-poppler": "^0.2.1",
-    "sharp": "^0.33.0",
+    "sharp": "^0.32.6",
     "winston": "^3.12.0"
   },
   "devDependencies": {
