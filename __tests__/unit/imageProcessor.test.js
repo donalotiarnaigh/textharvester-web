@@ -14,7 +14,8 @@ jest.mock('fs', () => ({
   promises: {
     stat: jest.fn()
   },
-  stat: jest.fn()
+  stat: jest.fn(),
+  existsSync: jest.fn().mockReturnValue(true)
 }));
 jest.mock('../../src/utils/logger');
 
@@ -43,6 +44,7 @@ describe('ImageProcessor', () => {
       }),
       resize: jest.fn().mockReturnThis(),
       jpeg: jest.fn().mockReturnThis(),
+      rotate: jest.fn().mockReturnThis(),
       toBuffer: jest.fn().mockResolvedValue(mockBuffer)
     };
     
@@ -112,7 +114,7 @@ describe('ImageProcessor', () => {
         dimensions: '2000x1500',
         needsOptimization: true,
         reasons: [
-          'File size 6.00MB exceeds 5MB limit'
+          'Base64 encoded size 7.98MB exceeds 5MB limit'
           // Dimensions 2000x1500 are now within 4096px limit
         ]
       });
@@ -169,7 +171,7 @@ describe('ImageProcessor', () => {
         withoutEnlargement: true
       });
       expect(mockSharpInstance.jpeg).toHaveBeenCalledWith({
-        quality: 85,
+        quality: 90,
         progressive: false,
         mozjpeg: true
       });
@@ -216,7 +218,7 @@ describe('ImageProcessor', () => {
 
       expect(result).toBe('aggressive-base64-data');
       // Should have called sharp twice (initial + aggressive)
-      expect(sharp).toHaveBeenCalledTimes(2);
+      expect(sharp).toHaveBeenCalledTimes(3);
     });
 
     it('should throw error when unable to compress below limit', async () => {

@@ -1,5 +1,7 @@
 # Monument Photo OCR – Phase 1: Intelligent Cropping
 
+Refer to [work breakdown structure](monument-photo-ocr-phase1-wbs.md) for implementation steps.
+
 ## 1. Current State Summary
 Phase 0 added end-to-end monument photo OCR by introducing a `source_type=monument_photo` upload mode and provider-specific prompt templates. The backend resizes images with Sharp so that the base64 payload stays within provider limits (5 MB for Anthropic, 20 MB for OpenAI). When images exceed the limit they are down‑scaled, which can reduce text legibility and OCR accuracy.
 
@@ -35,13 +37,12 @@ Upload → fileProcessing → MonumentCropper (optional) → optimizeImageForPro
 ```
 
 ## 5. Configuration
-Environment variables (examples):
+Environment variables (defaults shown):
 ```bash
-MONUMENT_CROPPING_ENABLED=true
-MONUMENT_MIN_WIDTH=200
-MONUMENT_MIN_HEIGHT=300
-MONUMENT_MIN_AREA=60000
-MONUMENT_ASPECT_RATIO_MIN=0.3
+MONUMENT_CROPPING_ENABLED=false
+MONUMENT_MIN_WIDTH=400
+MONUMENT_MIN_HEIGHT=400
+MONUMENT_ASPECT_RATIO_MIN=0.5
 MONUMENT_ASPECT_RATIO_MAX=2.0
 ```
 
