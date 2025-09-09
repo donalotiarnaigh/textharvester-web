@@ -118,4 +118,5 @@ describe('Monument cropping integration', () => {
     const usedBase64 = provider.processImage.mock.calls[0][0];
     expect(usedBase64.length).toBeLessThan(originalBase64.length);
   });
+
 });
