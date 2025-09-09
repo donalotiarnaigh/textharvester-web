@@ -30,6 +30,16 @@ jest.mock('../../src/utils/errorTypes', () => ({
   isEmptySheetError: jest.fn().mockReturnValue(false)
 }));
 
+// Mock image processing utilities to avoid file system dependency
+jest.mock('../../src/utils/imageProcessor', () => ({
+  analyzeImageForProvider: jest.fn().mockResolvedValue({ needsOptimization: false }),
+  optimizeImageForProvider: jest.fn().mockResolvedValue('base64imagedata')
+}));
+
+jest.mock('../../src/utils/imageProcessing/monumentCropper', () => ({
+  detectAndCrop: jest.fn().mockResolvedValue(null)
+}));
+
 describe('Monument Template Selection', () => {
   let processFile;
   let createProvider;

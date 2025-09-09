@@ -41,11 +41,21 @@ jest.mock('../src/utils/database', () => ({
   storeMemorial: jest.fn().mockResolvedValue(true)
 }));
 
+// Mock image processing utilities to avoid file system dependency
+jest.mock('../src/utils/imageProcessor', () => ({
+  analyzeImageForProvider: jest.fn().mockResolvedValue({ needsOptimization: false }),
+  optimizeImageForProvider: jest.fn().mockResolvedValue('base64imagestring')
+}));
+
+jest.mock('../src/utils/imageProcessing/monumentCropper', () => ({
+  detectAndCrop: jest.fn().mockResolvedValue(null)
+}));
+
 // Mock the model providers
 jest.mock('../src/utils/modelProviders', () => {
   const OpenAIProvider = jest.fn().mockImplementation(() => ({
     processImage: mockOpenAICreateMethod,
-    getModelVersion: () => 'gpt-5'
+    getModelVersion: () => 'gpt-4o'
   }));
 
   const AnthropicProvider = jest.fn().mockImplementation(() => ({
@@ -98,7 +108,7 @@ describe('processFile', () => {
     const result = await processFile('test.jpg', { provider: 'openai' });
     expect(result).toBeDefined();
     expect(result.ai_provider).toBe('openai');
-    expect(result.model_version).toBe('gpt-5');
+    expect(result.model_version).toBe('gpt-4o');
     expect(mockOpenAICreateMethod).toHaveBeenCalled();
     expect(mockAnthropicCreateMethod).not.toHaveBeenCalled();
   });
