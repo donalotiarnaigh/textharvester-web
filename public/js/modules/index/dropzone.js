@@ -6,13 +6,11 @@
 import { handleFileUpload } from "./fileUpload.js";
 import { initModelSelection } from "./modelSelection.js";
 import { initModeSelector } from "./modeSelector.js";
-import { initIntelligentCropToggle } from "./intelligentCropToggle.js";
 
 // Ensure Dropzone is defined globally
 const initDropzone = () => {
   // Initialize UI components
   initModeSelector();
-  initIntelligentCropToggle();
   initModelSelection();
   
   if (typeof Dropzone === "undefined") {

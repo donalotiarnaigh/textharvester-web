@@ -7,7 +7,6 @@ const { getPrompt } = require('./prompts/templates/providerTemplates');
 const { isEmptySheetError } = require('./errorTypes');
 const { getMemorialNumberForMonument } = require('./filenameParser');
 const { optimizeImageForProvider, analyzeImageForProvider } = require('./imageProcessor');
-const { detectAndCrop } = require('./imageProcessing/monumentCropper');
 const config = require('../../config.json');
 
 /**
@@ -32,40 +31,17 @@ async function processFile(filePath, options = {}) {
   logger.info(`Processing ${path.basename(filePath)} with provider: ${providerName}, source: ${sourceType}, template: ${promptTemplate}`);
   
   try {
-    let workingImage = filePath;
-    const cropEnabled = Object.prototype.hasOwnProperty.call(options, 'intelligentCrop')
-      ? options.intelligentCrop
-      : config.monumentCropping?.enabled;
-    if (sourceType === 'monument_photo' && cropEnabled) {
-      logger.info(`[MonumentCropper] Starting detection for ${filePath}`);
-      const cropResult = await detectAndCrop(filePath);
-      if (cropResult) {
-        const { box, original } = cropResult;
-        const reduction = 1 - (box.width * box.height) / (original.width * original.height);
-        logger.info(`[MonumentCropper] Cropping successful: box=${JSON.stringify(box)}, reduction=${(reduction * 100).toFixed(1)}%`);
-        logger.trackMonumentCrop(true);
-        workingImage = cropResult.buffer;
-      } else {
-        logger.warn(`[MonumentCropper] Cropping failed for ${filePath}, using original image`);
-        logger.trackMonumentCrop(false);
-      }
-    }
-
     // Analyze image to see if optimization is needed
-    const analysis = await analyzeImageForProvider(workingImage, providerName);
+    const analysis = await analyzeImageForProvider(filePath, providerName);
 
     let base64Image;
     if (analysis.needsOptimization) {
       logger.info(`[ImageProcessor] Image requires optimization: ${analysis.reasons.join(', ')}`);
-      base64Image = await optimizeImageForProvider(workingImage, providerName);
+      base64Image = await optimizeImageForProvider(filePath, providerName);
       logger.info(`File ${filePath} optimized and processed successfully. Proceeding with OCR processing.`);
     } else {
       // Image is already within limits, read directly
-      if (Buffer.isBuffer(workingImage)) {
-        base64Image = workingImage.toString('base64');
-      } else {
-        base64Image = await fs.readFile(workingImage, { encoding: 'base64' });
-      }
+      base64Image = await fs.readFile(filePath, { encoding: 'base64' });
       logger.info(`File ${filePath} read successfully (no optimization needed). Proceeding with OCR processing.`);
     }
 

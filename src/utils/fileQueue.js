@@ -39,8 +39,7 @@ function enqueueFiles(files) {
       provider: file.provider || 'openai',
       promptTemplate: file.promptTemplate,
       promptVersion: file.promptVersion,
-      source_type: file.source_type || 'record_sheet',
-      intelligentCrop: file.intelligentCrop || false
+      source_type: file.source_type || 'record_sheet'
     });
     retryLimits[filePath] = retryLimits[filePath] || 0;
     logger.info(
@@ -134,8 +133,7 @@ function checkAndProcessNextFile() {
       provider: file.provider,
       promptTemplate: file.promptTemplate,
       promptVersion: file.promptVersion,
-      source_type: file.source_type,
-      intelligentCrop: file.intelligentCrop
+      source_type: file.source_type
     })
       .then((result) => {
         // Store result regardless of success or error
