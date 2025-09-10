@@ -3,6 +3,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const BaseVisionProvider = require('./baseProvider');
 const { promptManager } = require('../prompts/templates/providerTemplates');
 const PerformanceTracker = require('../performanceTracker');
+const { ResponseLengthValidator } = require('../responseLengthValidator');
 const logger = require('../logger');
 
 /**
@@ -18,6 +19,7 @@ class AnthropicProvider extends BaseVisionProvider {
     this.model = this.config.ANTHROPIC_MODEL || this.config.anthropic?.model || 'claude-4-sonnet-20250514';
     this.maxTokens = this.config.MAX_TOKENS || this.config.anthropic?.maxTokens || 8000;  // Increased for monument photos
     this.temperature = this.config.TEMPERATURE || 0;
+    this.responseValidator = new ResponseLengthValidator();
   }
 
   /**
@@ -63,9 +65,17 @@ class AnthropicProvider extends BaseVisionProvider {
         userPrompt = JSON.stringify(userPrompt);
       }
 
+      // Validate and truncate prompt to prevent oversized responses
+      const promptValidation = this.responseValidator.validateResponseLength(userPrompt, 'anthropic');
+      if (promptValidation.needsTruncation) {
+        logger.warn(`[AnthropicProvider] Prompt too long (${userPrompt.length} chars), truncating to prevent oversized response`);
+        userPrompt = this.responseValidator.truncatePromptForProvider(userPrompt, 'anthropic');
+      }
+
       // Log the prompt being sent to Claude for debugging
       logger.info(`[AnthropicProvider] Sending prompt to Claude: ${userPrompt.substring(0, 200)}...`);
       logger.info(`[AnthropicProvider] System prompt: ${systemPrompt}`);
+      logger.info(`[AnthropicProvider] Prompt length: ${userPrompt.length} characters`);
 
       // Track API performance
       const result = await PerformanceTracker.trackAPICall(
@@ -112,6 +122,14 @@ class AnthropicProvider extends BaseVisionProvider {
         throw new Error('No text content in response');
       }
 
+      // Validate response length to detect potential truncation issues
+      const responseValidation = this.responseValidator.validateResponseLength(content, 'anthropic');
+      if (responseValidation.exceedsLimit) {
+        logger.warn(`[AnthropicProvider] Response exceeds limit (${content.length}/${responseValidation.maxLength} chars) - may be truncated`);
+      } else if (responseValidation.isApproachingLimit) {
+        logger.info(`[AnthropicProvider] Response approaching limit (${content.length}/${responseValidation.maxLength} chars)`);
+      }
+
       // Return raw content if requested
       if (options.raw) {
         return content;
@@ -138,68 +156,32 @@ class AnthropicProvider extends BaseVisionProvider {
       logger.info(`[AnthropicProvider] Response ends with: "${content.slice(-50)}"`);
       logger.info(`[AnthropicProvider] JSON content ends with: "${jsonContent.slice(-50)}"`);
       
-      try {
-        const parsedResponse = JSON.parse(jsonContent);
-        
-        // Validate that the response contains actual text, not just dashes
-        if (this.isInvalidResponse(parsedResponse)) {
-          logger.warn(`[AnthropicProvider] Response appears to contain invalid data (likely dashes instead of actual text)`);
-          throw new Error('Invalid response: Claude returned dashes instead of actual text. This may indicate image quality issues or prompt confusion.');
-        }
-        
-        return parsedResponse;
-      } catch (jsonError) {
-        logger.error(`Anthropic JSON parsing failed for model ${this.model}`, jsonError, {
+      // Use ResponseLengthValidator for robust JSON parsing
+      const validationResult = this.responseValidator.validateAndRepairJson(jsonContent);
+      
+      if (!validationResult.isValid) {
+        logger.error(`Anthropic JSON parsing failed for model ${this.model}`, validationResult.error, {
           phase: 'response_parsing',
           operation: 'processImage',
           contentLength: content.length,
           jsonContentLength: jsonContent.length,
           contentPreview: jsonContent.substring(0, 500)
         });
-        
-        // Try to fix common JSON issues
-        let fixedJson = jsonContent;
-        
-        // Fix unterminated strings by adding closing quotes
-        if (jsonError.message.includes('Unterminated string')) {
-          // Check if the string is at the very end (truncated response)
-          if (jsonContent.length === 21863) {
-            logger.warn(`[AnthropicProvider] Response appears to be truncated at exactly 21863 characters`);
-            // Try to close the JSON properly
-            if (jsonContent.endsWith('"')) {
-              // Already ends with quote, just close the JSON
-              fixedJson = jsonContent + '}';
-            } else {
-              // Add closing quote and brace
-              fixedJson = jsonContent + '"}';
-            }
-          } else {
-            fixedJson = fixedJson.replace(/"([^"]*)$/, '"$1"');
-          }
-        }
-        
-        // Try parsing the fixed JSON
-        try {
-          logger.info(`[AnthropicProvider] Attempting to fix JSON and retry parsing`);
-          const parsedResponse = JSON.parse(fixedJson);
-          
-          // Validate the fixed response too
-          if (this.isInvalidResponse(parsedResponse)) {
-            logger.warn(`[AnthropicProvider] Fixed response still contains invalid data`);
-            throw new Error('Invalid response: Claude returned dashes instead of actual text. This may indicate image quality issues or prompt confusion.');
-          }
-          
-          return parsedResponse;
-        } catch (retryError) {
-          logger.debugPayload('Anthropic JSON parsing error details:', {
-            model: this.model,
-            originalError: jsonError.message,
-            retryError: retryError.message,
-            jsonContent: jsonContent.substring(0, 1000)
-          });
-          throw new Error(`Failed to parse JSON response: ${jsonError.message}`);
-        }
+        throw new Error(`Failed to parse JSON response: ${validationResult.error}`);
       }
+      
+      // Validate that the response contains actual text, not just dashes
+      if (this.isInvalidResponse(validationResult.json)) {
+        logger.warn(`[AnthropicProvider] Response appears to contain invalid data (likely dashes instead of actual text)`);
+        throw new Error('Invalid response: Claude returned dashes instead of actual text. This may indicate image quality issues or prompt confusion.');
+      }
+      
+      // Log if JSON was repaired
+      if (validationResult.repaired) {
+        logger.info(`[AnthropicProvider] JSON response was successfully repaired (${validationResult.originalLength} -> ${validationResult.repairedLength} chars)`);
+      }
+      
+      return validationResult.json;
     } catch (error) {
       logger.error(`Anthropic API error for model ${this.model}`, error, {
         phase: 'api_call',

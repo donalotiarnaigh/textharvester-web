@@ -12,9 +12,11 @@ const path = require('path');
 jest.mock('sharp');
 jest.mock('fs', () => ({
   promises: {
-    stat: jest.fn()
+    stat: jest.fn(),
+    readFile: jest.fn()
   },
   stat: jest.fn(),
+  readFile: jest.fn(),
   existsSync: jest.fn().mockReturnValue(true)
 }));
 jest.mock('../../src/utils/logger');
@@ -34,6 +36,10 @@ describe('ImageProcessor', () => {
     // Mock fs.stat for both sync and async versions
     fs.stat = jest.fn().mockResolvedValue({ size: 6 * 1024 * 1024 });
     require('fs').stat = jest.fn().mockResolvedValue({ size: 6 * 1024 * 1024 });
+    
+    // Mock fs.readFile for both sync and async versions
+    fs.readFile = jest.fn().mockResolvedValue(mockBuffer);
+    require('fs').readFile = jest.fn().mockResolvedValue(mockBuffer);
     
     // Mock sharp instance with method chaining
     mockSharpInstance = {

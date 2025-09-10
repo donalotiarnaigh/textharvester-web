@@ -166,7 +166,7 @@ describe('AnthropicProvider', () => {
       
       await expect(provider.processImage(testImage, testPrompt))
         .rejects
-        .toThrow('Failed to parse JSON response: Unexpected token');
+        .toThrow('Failed to parse JSON response: Invalid JSON: Unexpected token');
     });
 
     it('should handle JSON response in code block', async () => {

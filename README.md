@@ -17,6 +17,7 @@ Welcome to the Text Harvester, a community-driven web application designed to pr
   - EXIF orientation correction for monument photos
   - File size optimization for provider limits
   - Optional monument cropping to reduce background before OCR (disabled by default, toggle on upload page)
+  - **Debug logging and image saving** (enabled by default for transparency)
 - **Results Management**: 
   - Choose to replace existing results or add to them
   - Download extracted text data in JSON or CSV formats
@@ -182,6 +183,25 @@ The Text Harvester includes specialized functionality for processing weathered s
 - Option to replace or append to existing records
 - Export functionality for data portability
 - Source type tracking for different processing modes
+
+## Debug Features
+
+The application includes comprehensive debug logging and image saving features that are **enabled by default**:
+
+- **Detailed Processing Logs**: Step-by-step logging of image preprocessing
+- **Debug Image Saving**: Images saved at each processing stage for manual review
+- **Processing Metrics**: Compression ratios, size reductions, and optimization decisions
+- **Debug Folder**: `data/temp/debug_images/` contains all processing stages
+
+### Disabling Debug Features
+
+To disable debug features, set these environment variables:
+```bash
+DEBUG_IMAGE_PROCESSING=false
+SAVE_DEBUG_IMAGES=false
+```
+
+For more information, see [DEBUG_IMAGE_PROCESSING.md](DEBUG_IMAGE_PROCESSING.md).
 
 ## Support
 
