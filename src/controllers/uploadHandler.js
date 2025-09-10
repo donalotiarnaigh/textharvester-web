@@ -144,15 +144,16 @@ const handleFileUpload = async (req, res) => {
       logger.info("Cleared existing memorial records as requested");
     }
 
-    // Process files
+    // Collect all files to enqueue in a single batch to preserve sequential processing
+    const filesToQueue = [];
     for (const file of files) {
       try {
         if (file.mimetype === "application/pdf") {
           logger.info(`Processing PDF file: ${file.originalname}`);
           const imagePaths = await convertPdfToJpegs(file.path);
           logger.info(`Converted PDF to images: ${imagePaths}`);
-          await enqueueFiles(
-            imagePaths.map((imagePath) => ({
+          filesToQueue.push(
+            ...imagePaths.map((imagePath) => ({
               path: imagePath,
               mimetype: "image/jpeg",
               provider: selectedModel,
@@ -162,13 +163,13 @@ const handleFileUpload = async (req, res) => {
             }))
           );
         } else {
-          await enqueueFiles([{ 
+          filesToQueue.push({
             ...file,
             provider: selectedModel,
             // Don't hardcode promptTemplate - let fileProcessing.js select based on source_type
             promptVersion: promptConfig.version,
             source_type: finalSourceType
-          }]);
+          });
         }
       } catch (conversionError) {
         logger.error(
@@ -178,6 +179,9 @@ const handleFileUpload = async (req, res) => {
         throw conversionError;
       }
     }
+
+    // Enqueue all files in a single call to maintain sequential processing order
+    enqueueFiles(filesToQueue);
 
     clearProcessingCompleteFlag();
     logger.info("Processing complete. Redirecting to results page.");
