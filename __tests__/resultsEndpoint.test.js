@@ -146,7 +146,7 @@ describe('Results Endpoint', () => {
       expect(responseData.memorials.length).toBeGreaterThan(0);
       
       const result = responseData.memorials[0];
-      expect(typeof result.memorial_number).toBe('number');
+      expect(typeof result.memorial_number).toBe('string'); // Changed to string to preserve leading zeros
       expect(typeof result.year_of_death).toBe('number');
     });
   });

@@ -9,16 +9,13 @@ const logger = require('./logger');
 function validateAndConvertTypes(data) {
   const result = { ...data };
 
-  // Convert numeric fields
+  // Convert memorial_number field - preserve as string to maintain leading zeros
   if ('memorial_number' in data) {
     if (data.memorial_number === null || data.memorial_number === '') {
       result.memorial_number = null;
     } else {
-      result.memorial_number = parseInt(data.memorial_number, 10);
-      if (isNaN(result.memorial_number)) {
-        logger.warn(`Invalid memorial_number: ${data.memorial_number}`);
-        result.memorial_number = null;
-      }
+      // Keep as string to preserve leading zeros (e.g., "0123" stays "0123")
+      result.memorial_number = String(data.memorial_number);
     }
   }
 

@@ -24,7 +24,7 @@ describe('Filename Parser', () => {
 
     it('should extract numbers from end patterns (UAT case)', () => {
       const result = extractMemorialNumberFromFilename('stja-0006_1757276988194.jpg', 'monument_photo');
-      expect(result).toBe('6'); // Leading zeros removed
+      expect(result).toBe('0006'); // Zero-padding preserved for Douro format
     });
 
     it('should handle complex filenames with timestamps', () => {
@@ -90,7 +90,7 @@ describe('Filename Parser', () => {
 
     it('should handle the UAT filename correctly', () => {
       const result = getMemorialNumberForMonument('stja-0006_1757276988194.jpg', 'monument_photo');
-      expect(result).toBe('6');
+      expect(result).toBe('0006'); // Zero-padding preserved for Douro format
     });
 
     it('should handle various monument filename patterns', () => {
@@ -111,6 +111,28 @@ describe('Filename Parser', () => {
     it('should default to record_sheet behavior when source_type not specified', () => {
       const result = getMemorialNumberForMonument('123.jpg');
       expect(result).toBeNull();
+    });
+
+    it('should handle Douro format with zero-padding preservation', () => {
+      const testCases = [
+        { filename: 'stja-0001.jpg', expected: '0001' },
+        { filename: 'stja-0006.jpg', expected: '0006' },
+        { filename: 'stja-0010.jpg', expected: '0010' },
+        { filename: 'stja-0100.jpg', expected: '0100' },
+        { filename: 'stja-1000.jpg', expected: '1000' },
+        { filename: 'stja-0138.jpg', expected: '0138' },
+        { filename: 'stjb-0001.jpg', expected: '0001' },
+        { filename: 'stjb-0185.jpg', expected: '0185' },
+        { filename: 'stjc-0001.jpg', expected: '0001' },
+        { filename: 'stjc-0173.jpg', expected: '0173' },
+        { filename: 'stjd-0001.jpg', expected: '0001' },
+        { filename: 'stjd-0139.jpg', expected: '0139' }
+      ];
+
+      testCases.forEach(({ filename, expected }) => {
+        const result = getMemorialNumberForMonument(filename, 'monument_photo');
+        expect(result).toBe(expected);
+      });
     });
   });
 

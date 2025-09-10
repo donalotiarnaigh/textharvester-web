@@ -216,9 +216,10 @@ Follow genealogical transcription standards - transcribe exactly what is visible
         
         if (value !== undefined) {
           try {
-            // Special handling for memorial_number - always null for monument photos
+            // Special handling for memorial_number - use provided value or null
             if (field.name === 'memorial_number') {
-              result[field.name] = null;  // System will assign from filename
+              // Use the value if provided (from filename extraction), otherwise null
+              result[field.name] = value || null;
             }
             // Special handling for year_of_death to allow dash-based illegible characters
             else if (field.name === 'year_of_death') {

@@ -29,7 +29,16 @@ function extractMemorialNumberFromFilename(filename, sourceType = 'record_sheet'
     return number;
   }
 
-  // Pattern 2: Prefix with number (e.g., "HG-123.jpg", "monument-456.jpg", "grave_789.jpg")
+  // Pattern 2: Douro format (e.g., "stja-0006.jpg", "stjb-0123.jpg")
+  const douroMatch = baseName.match(/^stj[abcd]-(\d{1,4})$/);
+  if (douroMatch) {
+    const number = douroMatch[1];
+    // For Douro format, preserve zero-padding exactly as in filename
+    logger.info(`[FilenameParser] Found Douro format pattern: ${number}`);
+    return number;
+  }
+
+  // Pattern 2b: General prefix with number (e.g., "HG-123.jpg", "monument-456.jpg", "grave_789.jpg")
   const prefixMatch = baseName.match(/^[a-zA-Z]+[-_]?(\d+)$/);
   if (prefixMatch) {
     const number = prefixMatch[1];
@@ -40,11 +49,21 @@ function extractMemorialNumberFromFilename(filename, sourceType = 'record_sheet'
   }
 
   // Pattern 3: Number at end (e.g., "stja-0006_1757276988194.jpg" -> "0006")
-  const endNumberMatch = baseName.match(/[-_](\d{3,})(?:_\d+)?$/);
+  const endNumberMatch = baseName.match(/[-_](\d{1,4})(?:_\d+)?$/);
   if (endNumberMatch) {
     const number = endNumberMatch[1];
-    // Remove leading zeros but keep at least one digit
-    const cleanNumber = number.replace(/^0+/, '') || '0';
+    // For Douro format, preserve zero-padding (e.g., "0006" stays "0006")
+    // Only remove leading zeros if the number is all zeros or single digit
+    let cleanNumber = number;
+    if (number === '0000' || number === '00' || number === '0') {
+      cleanNumber = '0';
+    } else if (number.startsWith('0') && number.length > 1) {
+      // Keep zero-padding for multi-digit numbers (e.g., "0006" -> "0006")
+      cleanNumber = number;
+    } else {
+      // For numbers without leading zeros, keep as is
+      cleanNumber = number;
+    }
     logger.info(`[FilenameParser] Found end number pattern: ${number} -> ${cleanNumber}`);
     return cleanNumber;
   }
