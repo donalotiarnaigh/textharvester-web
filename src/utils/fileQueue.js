@@ -24,10 +24,11 @@ const queueMonitor = new QueueMonitor();
 function enqueueFiles(files) {
   logger.info(`Enqueue operation started at ${new Date().toISOString()}`);
 
-  // Reset processing state at the start of a new batch
-  resetFileProcessingState();
-  isProcessing = false;  // Ensure processing flag is reset
-  fileQueue = [];       // Clear any existing queue
+  // If no processing is currently happening and the queue is empty,
+  // we can safely reset the counters for a fresh batch
+  if (fileQueue.length === 0 && !isProcessing) {
+    resetFileProcessingState();
+  }
 
   files.forEach((file, index) => {
     const filePath = typeof file === 'string' ? file : file.path;
@@ -47,9 +48,9 @@ function enqueueFiles(files) {
     );
   });
 
-  totalFiles = files.length;  // Set total files to new batch size
-  processedFiles = 0;        // Reset processed files counter
-  processedResults = [];     // Clear any previous results
+  // Accumulate totals instead of resetting so multiple enqueue
+  // calls can build up a single processing queue
+  totalFiles += files.length;
   
   // Record queue metrics
   queueMonitor.recordEnqueue(fileQueue.length);

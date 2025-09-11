@@ -103,6 +103,50 @@ describe('Upload Handler', () => {
         ])
       );
     });
+
+    test('queues multiple files in a single batch', async () => {
+      // Setup custom multer middleware to simulate two files
+      const multiFileMiddleware = (req, res, next) => {
+        req.files = {
+          file: [
+            {
+              originalname: 'first.jpg',
+              path: '/uploads/first.jpg',
+              mimetype: 'image/jpeg'
+            },
+            {
+              originalname: 'second.jpg',
+              path: '/uploads/second.jpg',
+              mimetype: 'image/jpeg'
+            }
+          ]
+        };
+        req.body = {
+          ...req.body,
+          aiProvider: req.body.aiProvider || 'openai',
+          promptTemplate: req.body.promptTemplate || 'memorialOCR',
+          promptVersion: req.body.promptVersion || 'latest',
+          replaceExisting: req.body.replaceExisting || 'false'
+        };
+        next();
+      };
+
+      multer.mockReturnValue({
+        fields: jest.fn().mockReturnValue(multiFileMiddleware)
+      });
+
+      // Execute
+      await handleFileUpload(mockReq, mockRes);
+
+      // Assert
+      expect(enqueueFiles).toHaveBeenCalledTimes(1);
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ path: '/uploads/first.jpg' }),
+          expect.objectContaining({ path: '/uploads/second.jpg' })
+        ])
+      );
+    });
   });
 
   describe('Prompt Validation', () => {
