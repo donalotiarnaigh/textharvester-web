@@ -45,7 +45,8 @@
   "upload": {
     "maxFileCount": 100,
     "retryDelaySeconds": 3,
-    "maxFileSize": "50mb"
+    "maxFileSize": "50mb",
+    "maxConcurrent": 3
   },
   "environment": "development",
   "local": {

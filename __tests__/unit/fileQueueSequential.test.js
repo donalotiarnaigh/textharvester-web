@@ -28,7 +28,8 @@ jest.mock('../../config.json', () => ({
   processingCompleteFlagPath: 'processing-complete.flag',
   maxRetryCount: 3,
   upload: {
-    retryDelaySeconds: 0.01
+    retryDelaySeconds: 0.01,
+    maxConcurrent: 1
   }
 }), { virtual: true });
 

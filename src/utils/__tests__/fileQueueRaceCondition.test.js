@@ -20,31 +20,31 @@ function createTestableGetProcessingProgress() {
   // Internal state variables (same as in fileQueue.js)
   let totalFiles = 0;
   let processedFiles = 0;
-  let isProcessing = false;
-  
+  let activeWorkers = 0;
+
   // Function to set state for testing
   const setState = (newState) => {
     totalFiles = newState.totalFiles || 0;
     processedFiles = newState.processedFiles || 0;
-    isProcessing = newState.isProcessing || false;
+    activeWorkers = newState.activeWorkers || 0;
   };
-  
+
   // The actual getProcessingProgress function (with our fix)
   const getProcessingProgress = () => {
-    console.log('Test state:', { totalFiles, processedFiles, isProcessing });
-    
+    console.log('Test state:', { totalFiles, processedFiles, activeWorkers });
+
     // Only mark complete if:
     // 1. No files in queue AND
-    // 2. Not currently processing AND  
+    // 2. No active workers AND
     // 3. All files have been processed
-    if (totalFiles === 0 && !isProcessing && processedFiles > 0) {
-      console.log('[FileQueue] All files processed and no active processing, marking as complete');
+    if (totalFiles === 0 && activeWorkers === 0 && processedFiles > 0) {
+      console.log('[FileQueue] All files processed and no active workers, marking as complete');
       return {
         state: 'complete',
         progress: 100
       };
     }
-    
+
     // If there are no files and we haven't processed any, we're waiting
     if (totalFiles === 0) {
       return {
@@ -52,18 +52,18 @@ function createTestableGetProcessingProgress() {
         progress: 0
       };
     }
-    
+
     const progress = Math.round((processedFiles / totalFiles) * 100);
-    
-    // Only mark complete if progress is 100% AND not currently processing
-    const state = (progress === 100 && !isProcessing) ? 'complete' : 'processing';
-    
+
+    // Only mark complete if progress is 100% AND no active workers
+    const state = (progress === 100 && activeWorkers === 0) ? 'complete' : 'processing';
+
     return {
       state,
       progress
     };
   };
-  
+
   return { getProcessingProgress, setState };
 }
 
@@ -81,12 +81,12 @@ describe('FileQueue Race Condition Bug (Issue #49)', () => {
     // 1. We have 1 file total
     // 2. 1 file has been processed (processedFiles = 1)
     // 3. Progress is 100% (1/1 = 100%)
-    // 4. But processing is still active (isProcessing = true)
-    
+    // 4. But there is still an active worker (activeWorkers = 1)
+
     setState({
       totalFiles: 1,        // 1 file total
       processedFiles: 1,    // 1 file processed (100%)
-      isProcessing: true,   // But processing is still active!
+      activeWorkers: 1,     // But a worker is still active!
     });
     
     const progress = getProcessingProgress();
@@ -95,7 +95,7 @@ describe('FileQueue Race Condition Bug (Issue #49)', () => {
     
     // This test demonstrates the bug that existed before our fix
     // With the old implementation, this would return 'complete' because progress === 100%
-    // With our fix, this should return 'processing' because isProcessing = true
+    // With our fix, this should return 'processing' because activeWorkers = 1
     expect(progress.state).toBe('processing'); // Our fix prevents the bug
     expect(progress.progress).toBe(100);
   });
@@ -106,7 +106,7 @@ describe('FileQueue Race Condition Bug (Issue #49)', () => {
     setState({
       totalFiles: 0,        // Queue is empty
       processedFiles: 1,    // One file has been processed
-      isProcessing: true,   // But processing is still active!
+      activeWorkers: 1,     // But a worker is still active!
     });
     
     const progress = getProcessingProgress();
@@ -122,7 +122,7 @@ describe('FileQueue Race Condition Bug (Issue #49)', () => {
     setState({
       totalFiles: 0,        // Queue is empty
       processedFiles: 3,    // All files have been processed
-      isProcessing: false,  // No active processing
+      activeWorkers: 0,     // No active workers
     });
     
     const progress = getProcessingProgress();
@@ -136,7 +136,7 @@ describe('FileQueue Race Condition Bug (Issue #49)', () => {
     setState({
       totalFiles: 3,        // Files in queue
       processedFiles: 1,    // One file processed
-      isProcessing: true,   // Processing active
+      activeWorkers: 1,     // Processing active
     });
     
     const progress = getProcessingProgress();
