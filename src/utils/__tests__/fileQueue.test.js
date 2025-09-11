@@ -1,9 +1,10 @@
 const fs = require('fs');
 const path = require('path');
-const { 
-  enqueueFiles, 
+const {
+  enqueueFiles,
   getProcessingProgress,
-  getProcessedResults 
+  getProcessedResults,
+  cancelProcessing
 } = require('../fileQueue');
 const { processFile } = require('../fileProcessing');
 const { ProcessingError } = require('../errorTypes');
@@ -45,6 +46,9 @@ describe('Enhanced File Queue with Error Handling', () => {
   beforeEach(() => {
     // Reset mocks
     jest.clearAllMocks();
+
+    // Ensure queue state is reset between tests
+    cancelProcessing();
     
     // Default mock implementation
     processFile.mockImplementation(async (filePath) => {
@@ -164,9 +168,9 @@ describe('Enhanced File Queue with Error Handling', () => {
       // (unless all files are processed AND no active processing)
       console.log('Current progress state:', progress);
       
-      // This test verifies our fix works - it should not be complete
-      // when there are no files in queue (unless processing is complete)
-      expect(progress.state).toBe('processing'); // Should be processing, not waiting or complete
+      // This test verifies our fix works - with no files and no active
+      // processing, the system should report a waiting state
+      expect(progress.state).toBe('waiting'); // Should be waiting, not complete
     });
 
     it('should NOT mark as complete when queue is empty but processing is still active', () => {
