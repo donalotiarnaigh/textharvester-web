@@ -74,5 +74,13 @@
       "eslint --fix",
       "git add"
     ]
+  },
+  "overrides": {
+    "prebuild-install": {
+      "tar-fs": "2.1.4"
+    },
+    "sharp": {
+      "tar-fs": "3.1.1"
+    }
   }
 }
