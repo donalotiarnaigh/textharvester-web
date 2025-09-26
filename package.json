@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "jest --config jest.config.cjs",
-    "start": "SAVE_DEBUG_IMAGES=false node server.js",
-    "dev": "SAVE_DEBUG_IMAGES=false nodemon server.js",
-    "local-start": "SAVE_DEBUG_IMAGES=false NODE_ENV=development nodemon server.js --ignore 'data/*' --ignore 'uploads/*'",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "local-start": "NODE_ENV=development nodemon server.js --ignore 'data/*' --ignore 'uploads/*'",
     "lint": "eslint .",
     "migrate:remove-confidence-score": "node scripts/remove-confidence-score.js",
     "migrate:add-model-columns": "node scripts/migrate-add-model-columns.js",
