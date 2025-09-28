@@ -34,13 +34,20 @@ function enqueueFiles(files) {
     const originalName = file.originalname
       ? file.originalname
       : path.basename(filePath);
+    const providers = file.providers && Array.isArray(file.providers) && file.providers.length
+      ? file.providers
+      : [file.provider || 'openai'];
+
     fileQueue.push({
       path: filePath,
-      provider: file.provider || 'openai'
+      provider: file.provider || providers[0] || 'openai',
+      providers,
+      promptTemplate: file.promptTemplate,
+      promptVersion: file.promptVersion
     });
     retryLimits[filePath] = retryLimits[filePath] || 0;
     logger.info(
-      `File ${index + 1} [${originalName}] enqueued. Path: ${filePath}, Provider: ${file.provider || 'openai'}`
+      `File ${index + 1} [${originalName}] enqueued. Path: ${filePath}, Providers: ${providers.join(', ')}`
     );
   });
 
@@ -70,8 +77,11 @@ function dequeueFile() {
   if (fileQueue.length > 0) {
     const nextFile = fileQueue.shift();
     retryLimits[nextFile.path] = retryLimits[nextFile.path] || 0;
+    const providers = nextFile.providers && Array.isArray(nextFile.providers)
+      ? nextFile.providers
+      : [nextFile.provider];
     logger.info(
-      `Dequeued file for processing: ${nextFile.path} with provider: ${nextFile.provider}. Remaining queue length: ${fileQueue.length}.`
+      `Dequeued file for processing: ${nextFile.path} with providers: ${providers.join(', ')}. Remaining queue length: ${fileQueue.length}.`
     );
     return nextFile;
   }
@@ -123,22 +133,48 @@ function checkAndProcessNextFile() {
     // Record processing start
     queueMonitor.recordProcessingStart(file.path, fileQueue.length);
     
+    const providerList = file.providers && Array.isArray(file.providers)
+      ? file.providers
+      : [file.provider];
     logger.info(
-      `Dequeued file for processing: ${file.path} with provider: ${file.provider}. Initiating processing.`
+      `Dequeued file for processing: ${file.path} with providers: ${providerList.join(', ')}. Initiating processing.`
     );
-    processFile(file.path, { provider: file.provider })
+    processFile(file.path, {
+      provider: file.provider,
+      providers: providerList,
+      promptTemplate: file.promptTemplate,
+      promptVersion: file.promptVersion
+    })
       .then((result) => {
+        if (result && result.providers) {
+          const failedProviders = Object.entries(result.providers)
+            .filter(([, providerResult]) => providerResult.status === 'error');
+          if (failedProviders.length > 0) {
+            result.error = true;
+            result.errorMessage = `Provider errors: ${failedProviders.map(([name]) => name).join(', ')}`;
+          }
+        }
         // Store result regardless of success or error
         processedResults.push(result);
-        
+
         const processingTime = Date.now() - processingStartTime;
-        const success = !result.error;
+        const success = !result.error && !(result.providers && Object.values(result.providers).every(r => r.status === 'error'));
         
         // Record processing completion
         queueMonitor.recordProcessingComplete(file.path, processingTime, success, fileQueue.length);
         
         if (result.error) {
           logger.info(`File ${file.path} processed with error: ${result.errorMessage}`);
+        } else if (result.providers) {
+          const failedProviders = Object.entries(result.providers)
+            .filter(([, providerResult]) => providerResult.status === 'error');
+          if (failedProviders.length > 0) {
+            logger.warn(
+              `File ${file.path} processed with provider errors: ${failedProviders.map(([name]) => name).join(', ')}`
+            );
+          } else {
+            logger.info(`File processing completed successfully for all providers: ${file.path}.`);
+          }
         } else {
           logger.info(`File processing completed successfully: ${file.path}.`);
         }
