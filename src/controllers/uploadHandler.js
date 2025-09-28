@@ -122,16 +122,27 @@ const handleFileUpload = async (req, res) => {
   }
 
   try {
-    // Validate prompt configuration
-    let promptConfig;
+    const isParallel = process.env.PARALLEL_OCR === 'true';
+    const parallelProviders = (process.env.PARALLEL_PROVIDERS || 'openai,anthropic')
+      .split(',')
+      .map(provider => provider.trim())
+      .filter(Boolean);
+    const providersToValidate = isParallel ? parallelProviders : [selectedModel];
+
+    const promptConfigs = {};
     try {
-      promptConfig = await validatePromptConfig(selectedModel, promptTemplate, promptVersion);
+      for (const provider of providersToValidate) {
+        promptConfigs[provider] = await validatePromptConfig(provider, promptTemplate, promptVersion);
+      }
     } catch (error) {
       logger.error("Prompt validation error:", error);
       return res.status(400).json({
         error: error.message
       });
     }
+
+    const resolvedPromptTemplate = promptConfigs[providersToValidate[0]].template;
+    const resolvedPromptVersion = promptConfigs[providersToValidate[0]].version;
 
     if (shouldReplace) {
       await clearAllMemorials();
@@ -149,17 +160,19 @@ const handleFileUpload = async (req, res) => {
             imagePaths.map((imagePath) => ({
               path: imagePath,
               mimetype: "image/jpeg",
-              provider: selectedModel,
-              promptTemplate: promptConfig.template,
-              promptVersion: promptConfig.version
+              provider: isParallel ? undefined : selectedModel,
+              providers: isParallel ? providersToValidate : undefined,
+              promptTemplate: resolvedPromptTemplate,
+              promptVersion: resolvedPromptVersion
             }))
           );
         } else {
           await enqueueFiles([{
             ...file,
-            provider: selectedModel,
-            promptTemplate: promptConfig.template,
-            promptVersion: promptConfig.version
+            provider: isParallel ? undefined : selectedModel,
+            providers: isParallel ? providersToValidate : undefined,
+            promptTemplate: resolvedPromptTemplate,
+            promptVersion: resolvedPromptVersion
           }]);
         }
       } catch (conversionError) {
@@ -177,9 +190,9 @@ const handleFileUpload = async (req, res) => {
     res.status(200).json({
       message: "File upload complete. Starting conversion...",
       promptConfig: {
-        template: promptConfig.template,
-        version: promptConfig.version,
-        provider: selectedModel
+        template: resolvedPromptTemplate,
+        version: resolvedPromptVersion,
+        providers: isParallel ? providersToValidate : [selectedModel]
       }
     });
   } catch (error) {

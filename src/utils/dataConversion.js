@@ -5,13 +5,13 @@ const logger = require('./logger');
  * @param {Array} jsonData Array of objects to convert
  * @returns {string} CSV formatted string
  */
-function jsonToCsv(jsonData) {
+function jsonToCsv(jsonData, explicitColumns) {
   if (!jsonData || !Array.isArray(jsonData) || jsonData.length === 0) {
     return '';
   }
 
   // Define column order with all fields including prompt metadata
-  const columns = [
+  const columns = explicitColumns && explicitColumns.length > 0 ? explicitColumns : [
     'memorial_number',
     'first_name',
     'last_name',

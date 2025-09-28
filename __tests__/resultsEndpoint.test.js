@@ -8,7 +8,7 @@ const { memorialTypes } = require('../src/utils/prompts/types/memorialTypes');
 jest.mock('../src/utils/database');
 jest.mock('../src/utils/fileQueue.js');
 
-const { getAllMemorials } = require('../src/utils/database');
+const { getAllMemorials, getAllParallelMemorials } = require('../src/utils/database');
 const { getProcessedResults } = require('../src/utils/fileQueue.js');
 
 describe('Results Endpoint', () => {
@@ -18,9 +18,10 @@ describe('Results Endpoint', () => {
     req = httpMocks.createRequest();
     res = httpMocks.createResponse();
     jest.clearAllMocks();
-    
+
     // Mock getProcessedResults to return no errors by default
     getProcessedResults.mockReturnValue([]);
+    getAllParallelMemorials.mockResolvedValue([]);
   });
 
   describe('getResults', () => {
@@ -51,6 +52,37 @@ describe('Results Endpoint', () => {
       expect(responseData).toHaveProperty('memorials');
       expect(responseData).toHaveProperty('errors');
       expect(Array.isArray(responseData.memorials)).toBe(true);
+    });
+
+    it('returns combined provider data when parallel OCR is enabled', async () => {
+      process.env.PARALLEL_OCR = 'true';
+      const mockParallelResults = [
+        {
+          file_name: 'test.jpg',
+          prompt_template: 'memorialOCR',
+          prompt_version: '1.0',
+          openai_first_name: 'John',
+          openai_last_name: 'Smith',
+          openai_memorial_number: 'O-1',
+          openai_status: 'success',
+          anthropic_first_name: 'Jon',
+          anthropic_last_name: 'Smyth',
+          anthropic_memorial_number: 'A-1',
+          anthropic_status: 'error',
+          anthropic_error_message: 'timeout'
+        }
+      ];
+
+      getAllParallelMemorials.mockResolvedValue(mockParallelResults);
+      res.json = jest.fn().mockReturnValue(res);
+
+      await getResults(req, res);
+
+      const responseData = res.json.mock.calls[0][0];
+      expect(getAllParallelMemorials).toHaveBeenCalled();
+      expect(responseData.memorials[0].openai.first_name).toBe('John');
+      expect(responseData.memorials[0].anthropic.status).toBe('error');
+      delete process.env.PARALLEL_OCR;
     });
 
     it('should handle missing optional fields', async () => {

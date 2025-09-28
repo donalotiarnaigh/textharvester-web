@@ -8,7 +8,8 @@ jest.mock('../src/utils/database', () => ({
       first_name: 'John',
       last_name: 'Doe'
     }
-  ])
+  ]),
+  getAllParallelMemorials: jest.fn().mockResolvedValue([])
 }));
 
 describe('downloadResultsJSON', () => {

@@ -7,7 +7,8 @@ jest.mock('../src/utils/database', () => ({
   getAllMemorials: jest.fn().mockResolvedValue([{
     memorial_number: '001',
     first_name: 'John'
-  }])
+  }]),
+  getAllParallelMemorials: jest.fn().mockResolvedValue([])
 }));
 
 describe('downloadResultsJSON', () => {

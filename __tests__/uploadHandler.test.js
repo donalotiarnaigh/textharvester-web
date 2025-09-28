@@ -101,6 +101,31 @@ describe('Upload Handler', () => {
     });
   });
 
+  describe('Parallel processing flag', () => {
+    beforeEach(() => {
+      process.env.PARALLEL_OCR = 'true';
+      process.env.PARALLEL_PROVIDERS = 'openai,anthropic';
+    });
+
+    afterEach(() => {
+      delete process.env.PARALLEL_OCR;
+      delete process.env.PARALLEL_PROVIDERS;
+    });
+
+    test('enqueues a single job with multiple providers when parallel OCR enabled', async () => {
+      await handleFileUpload(mockReq, mockRes);
+
+      expect(enqueueFiles).toHaveBeenCalledWith([
+        expect.objectContaining({
+          path: '/uploads/test.jpg',
+          providers: ['openai', 'anthropic'],
+          promptTemplate: 'memorialOCR',
+          promptVersion: 'latest'
+        })
+      ]);
+    });
+  });
+
   describe('Prompt Validation', () => {
     test('validates prompt template selection', async () => {
       // Setup
