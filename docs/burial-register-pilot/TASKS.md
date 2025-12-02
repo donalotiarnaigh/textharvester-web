@@ -6,7 +6,7 @@ Sequential task list for implementing the burial register pilot extension. Compl
 
 ## Phase 1: Foundation - Prompt Template and Schema
 
-- [ ] **1.1.1** Create `src/utils/prompts/templates/BurialRegisterPrompt.js` class extending `BasePrompt`
+- [x] **1.1.1** Create `src/utils/prompts/templates/BurialRegisterPrompt.js` class extending `BasePrompt`
 - [ ] **1.1.2** Define page-level fields (volume_id, page_number, headers) in BurialRegisterPrompt
 - [ ] **1.1.3** Define entry-level fields (entry_no_raw, name_raw, abode_raw, etc.) in BurialRegisterPrompt
 - [ ] **1.1.4** Implement `getPromptText()` method with extraction instructions
