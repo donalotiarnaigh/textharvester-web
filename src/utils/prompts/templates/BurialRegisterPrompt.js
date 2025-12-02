@@ -1,5 +1,5 @@
 const BasePrompt = require('../BasePrompt');
-const { StringType, IntegerType } = require('../types/dataTypes');
+const { StringType, IntegerType, validateValue } = require('../types/dataTypes');
 
 const PAGE_FIELDS = {
   volume_id: {
@@ -229,6 +229,141 @@ Important instructions:
       ...pageData,
       entries: pageDataRaw.entries || []
     };
+  }
+
+  /**
+   * Validate and normalize an individual entry object
+   * @param {Object} entryRaw Raw entry data
+   * @returns {Object} Validated entry data
+   */
+  validateAndConvertEntry(entryRaw) {
+    if (!entryRaw || typeof entryRaw !== 'object') {
+      throw new Error('Entry must be an object with required fields');
+    }
+
+    const errors = [];
+    const result = {};
+
+    for (const [fieldName, field] of Object.entries(this.entryFields)) {
+      if (field.metadata?.required && !(fieldName in entryRaw)) {
+        errors.push(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`);
+      }
+    }
+
+    for (const fieldName of Object.keys(this.entryFields)) {
+      if (fieldName === 'uncertainty_flags') {
+        const flagsRaw = fieldName in entryRaw ? entryRaw[fieldName] : [];
+
+        if (flagsRaw === null || flagsRaw === undefined) {
+          result.uncertainty_flags = [];
+        } else if (!Array.isArray(flagsRaw)) {
+          errors.push('uncertainty_flags must be an array of strings');
+        } else {
+          const invalidIndex = flagsRaw.findIndex(flag => typeof flag !== 'string');
+          if (invalidIndex !== -1) {
+            errors.push(`uncertainty_flags must be an array of strings (invalid value at index ${invalidIndex})`);
+          } else {
+            result.uncertainty_flags = flagsRaw.map(flag => flag.trim());
+          }
+        }
+        continue;
+      }
+
+      try {
+        const value = fieldName in entryRaw ? entryRaw[fieldName] : null;
+        result[fieldName] = this.validateEntryField(fieldName, value);
+      } catch (error) {
+        errors.push(error.message);
+      }
+    }
+
+    if (errors.length > 0) {
+      const error = new Error(errors[0]);
+      error.details = errors;
+      throw error;
+    }
+
+    return result;
+  }
+
+  validateEntryField(fieldName, value) {
+    const field = this.entryFields[fieldName];
+
+    if (!field) {
+      throw new Error(`Unknown field: ${fieldName}`);
+    }
+
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    const fieldType = typeof field.type === 'object' ? field.type.name : field.type;
+    let convertedValue = value;
+
+    if (typeof value === 'string' && value.trim() !== '') {
+      switch (fieldType) {
+      case 'integer': {
+        const intValue = parseInt(value.trim(), 10);
+        if (!isNaN(intValue) && intValue.toString() === value.trim()) {
+          convertedValue = intValue;
+        }
+        break;
+      }
+      case 'float': {
+        const floatValue = parseFloat(value.trim());
+        if (!isNaN(floatValue)) {
+          convertedValue = floatValue;
+        }
+        break;
+      }
+      case 'boolean': {
+        const lowerValue = value.toLowerCase().trim();
+        if (lowerValue === 'true') {
+          convertedValue = true;
+        } else if (lowerValue === 'false') {
+          convertedValue = false;
+        }
+        break;
+      }
+      case 'date': {
+        const dateValue = new Date(value);
+        if (!isNaN(dateValue.getTime())) {
+          convertedValue = dateValue;
+        }
+        break;
+      }
+      }
+    }
+
+    const result = validateValue(convertedValue, fieldType, field.metadata);
+
+    if (result.errors.length > 0) {
+      const errorMessages = result.errors.map(error => {
+        let transformedError = error.replace('Value', fieldName.charAt(0).toUpperCase() + fieldName.slice(1));
+
+        if (transformedError.includes('Invalid integer value:')) {
+          const valueMatch = transformedError.match(/Invalid integer value: (.+)/);
+          const invalidValue = valueMatch ? valueMatch[1] : 'unknown';
+          transformedError = `Cannot convert value "${invalidValue}" to integer`;
+        }
+        if (transformedError.includes('Invalid float value:')) {
+          const valueMatch = transformedError.match(/Invalid float value: (.+)/);
+          const invalidValue = valueMatch ? valueMatch[1] : 'unknown';
+          transformedError = `Cannot convert value "${invalidValue}" to float`;
+        }
+        if (transformedError.includes('Invalid boolean value:')) {
+          transformedError = transformedError.replace('Invalid boolean value:', 'Invalid boolean value');
+        }
+        if (transformedError.includes('Invalid date value:')) {
+          transformedError = transformedError.replace('Invalid date value:', 'Invalid date value');
+        }
+
+        return transformedError;
+      });
+      throw new Error(errorMessages[0]);
+    }
+
+    return result.value;
   }
 }
 

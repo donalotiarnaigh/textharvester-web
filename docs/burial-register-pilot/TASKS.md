@@ -20,8 +20,8 @@ Sequential task list for implementing the burial register pilot extension. Compl
 
 **PR 3: Validation Methods (1.1.7-1.1.9)**
 - [x] **1.1.7** Implement `validateAndConvertPage(pageDataRaw)` for page JSON validation
-- [ ] **1.1.8** Implement `validateAndConvertEntry(entry)` for entry validation
-- [ ] **1.1.9** Handle uncertainty_flags as array of strings in validation
+- [x] **1.1.8** Implement `validateAndConvertEntry(entry)` for entry validation
+- [x] **1.1.9** Handle uncertainty_flags as array of strings in validation
 
 ### 1.2 Register Prompt Template (Single PR: 1.2.1-1.2.6)
 - [ ] **1.2.1** Import `BurialRegisterPrompt` in `src/utils/prompts/templates/providerTemplates.js`
