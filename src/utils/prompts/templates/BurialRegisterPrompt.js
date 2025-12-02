@@ -184,6 +184,52 @@ Important instructions:
       return { userPrompt: basePrompt };
     }
   }
+
+  /**
+   * Validate and normalize page-level burial register data
+   * @param {Object} pageDataRaw Raw page JSON from the provider
+   * @returns {Object} Validated page data with entries array preserved
+   */
+  validateAndConvertPage(pageDataRaw) {
+    if (!pageDataRaw || typeof pageDataRaw !== 'object') {
+      throw new Error('Page data must be an object with required fields');
+    }
+
+    const errors = [];
+    let pageData = {};
+
+    try {
+      pageData = super.validateAndConvert(pageDataRaw);
+    } catch (error) {
+      if (error.details?.length) {
+        errors.push(...error.details);
+      } else {
+        errors.push(error.message);
+      }
+    }
+
+    if (!('entries' in pageDataRaw)) {
+      errors.push('Entries array is required');
+    } else if (!Array.isArray(pageDataRaw.entries)) {
+      errors.push('Entries must be an array');
+    } else {
+      const invalidIndex = pageDataRaw.entries.findIndex(entry => entry !== null && typeof entry !== 'object');
+      if (invalidIndex !== -1) {
+        errors.push(`Entry at index ${invalidIndex} must be an object`);
+      }
+    }
+
+    if (errors.length > 0) {
+      const error = new Error(errors[0]);
+      error.details = errors;
+      throw error;
+    }
+
+    return {
+      ...pageData,
+      entries: pageDataRaw.entries || []
+    };
+  }
 }
 
 module.exports = BurialRegisterPrompt;
