@@ -174,6 +174,12 @@ Important instructions:
         userPrompt: `${basePrompt}\n\nResponse Format:\n- Use response_format: { type: "json" }\n- Return a single JSON object matching the schema above\n- Ensure numeric fields (page_number, row_index_on_page) are integers\n- Use null for missing text fields and [] for uncertainty_flags`
       };
 
+    case 'anthropic':
+      return {
+        systemPrompt: 'You are Claude, an expert OCR system trained by Anthropic, specialising in structured extraction from historical burial registers.',
+        userPrompt: `${basePrompt}\n\nResponse Format:\n- Return valid JSON only (no markdown)\n- Return a single JSON object matching the schema above\n- Ensure numeric fields (page_number, row_index_on_page) are integers\n- Use null for missing text fields and [] for uncertainty_flags`
+      };
+
     default:
       return { userPrompt: basePrompt };
     }
