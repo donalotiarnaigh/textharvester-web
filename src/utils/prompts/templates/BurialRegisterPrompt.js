@@ -116,6 +116,47 @@ class BurialRegisterPrompt extends BasePrompt {
     this.pageFields = PAGE_FIELDS;
     this.entryFields = ENTRY_FIELDS;
   }
+
+  /**
+   * Get the complete prompt text with extraction instructions
+   * @returns {string} Formatted prompt text
+   */
+  getPromptText() {
+    return `You are an expert in reading historical burial registers.
+
+Extract the data from the provided page image and return a single JSON object with this exact structure:
+{
+  "volume_id": string,
+  "page_number": integer,
+  "parish_header_raw": string | null,
+  "county_header_raw": string | null,
+  "year_header_raw": string | null,
+  "page_marginalia_raw": string | null,
+  "entries": [
+    {
+      "row_index_on_page": integer,           // 1-based position of the row on the page
+      "entry_id": string,                     // leave blank/null, will be generated downstream
+      "entry_no_raw": string | null,          // entry number as written
+      "name_raw": string | null,              // full name as written
+      "abode_raw": string | null,             // abode/residence as written
+      "burial_date_raw": string | null,       // burial date as written (allow partial/uncertain)
+      "age_raw": string | null,               // age as written
+      "officiant_raw": string | null,         // officiant/ministers initials or name
+      "marginalia_raw": string | null,        // entry-level marginalia
+      "extra_notes_raw": string | null,       // any extra notes for the entry
+      "row_ocr_raw": string | null,           // raw OCR text for the entire row
+      "uncertainty_flags": [string]           // array of uncertainty notes; use [] if none
+    }
+  ]
+}
+
+Important instructions:
+- Preserve the original spelling/punctuation from the page. Do not standardise or infer.
+- If a field is missing or unreadable, use null (or [] for uncertainty_flags).
+- Do not add extra fields or nesting beyond what is shown.
+- Maintain the original row order; set row_index_on_page starting at 1 and incrementing.
+- Return only the JSON object, nothing else.`;
+  }
 }
 
 module.exports = BurialRegisterPrompt;
