@@ -19,7 +19,7 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - [x] **1.1.6** Implement `getProviderPrompt(provider)` for Anthropic formatting
 
 **PR 3: Validation Methods (1.1.7-1.1.9)**
-- [ ] **1.1.7** Implement `validateAndConvertPage(pageDataRaw)` for page JSON validation
+- [x] **1.1.7** Implement `validateAndConvertPage(pageDataRaw)` for page JSON validation
 - [ ] **1.1.8** Implement `validateAndConvertEntry(entry)` for entry validation
 - [ ] **1.1.9** Handle uncertainty_flags as array of strings in validation
 
