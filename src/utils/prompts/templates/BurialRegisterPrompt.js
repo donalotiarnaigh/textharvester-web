@@ -157,6 +157,27 @@ Important instructions:
 - Maintain the original row order; set row_index_on_page starting at 1 and incrementing.
 - Return only the JSON object, nothing else.`;
   }
+
+  /**
+   * Get provider-specific prompt configuration
+   * @param {string} provider Provider name
+   * @returns {Object} Provider-specific prompt configuration
+   */
+  getProviderPrompt(provider) {
+    this.validateProvider(provider);
+    const basePrompt = this.getPromptText();
+
+    switch (provider.toLowerCase()) {
+    case 'openai':
+      return {
+        systemPrompt: 'You are an expert OCR system trained by OpenAI, specialising in structured extraction from historical burial registers.',
+        userPrompt: `${basePrompt}\n\nResponse Format:\n- Use response_format: { type: "json" }\n- Return a single JSON object matching the schema above\n- Ensure numeric fields (page_number, row_index_on_page) are integers\n- Use null for missing text fields and [] for uncertainty_flags`
+      };
+
+    default:
+      return { userPrompt: basePrompt };
+    }
+  }
 }
 
 module.exports = BurialRegisterPrompt;
