@@ -24,12 +24,12 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - [x] **1.1.9** Handle uncertainty_flags as array of strings in validation
 
 ### 1.2 Register Prompt Template (Single PR: 1.2.1-1.2.6)
-- [ ] **1.2.1** Import `BurialRegisterPrompt` in `src/utils/prompts/templates/providerTemplates.js`
-- [ ] **1.2.2** Create prompt instances for OpenAI (similar to `memorialOCRTemplates`)
-- [ ] **1.2.3** Create prompt instances for Anthropic (similar to `memorialOCRTemplates`)
-- [ ] **1.2.4** Add `'burialRegister'` case to `getPrompt()` function in providerTemplates.js
-- [ ] **1.2.5** Test: `getPrompt('openai', 'burialRegister', 'latest')` returns correct instance
-- [ ] **1.2.6** Test: `getPrompt('anthropic', 'burialRegister', 'latest')` returns correct instance
+- [x] **1.2.1** Import `BurialRegisterPrompt` in `src/utils/prompts/templates/providerTemplates.js`
+- [x] **1.2.2** Create prompt instances for OpenAI (similar to `memorialOCRTemplates`)
+- [x] **1.2.3** Create prompt instances for Anthropic (similar to `memorialOCRTemplates`)
+- [x] **1.2.4** Add `'burialRegister'` case to `getPrompt()` function in providerTemplates.js
+- [x] **1.2.5** Test: `getPrompt('openai', 'burialRegister', 'latest')` returns correct instance
+- [x] **1.2.6** Test: `getPrompt('anthropic', 'burialRegister', 'latest')` returns correct instance
 
 ### 1.3 Test Prompt with Sample Data (Single PR: 1.3.1-1.3.6)
 - [ ] **1.3.1** Create test file with sample page JSON structure
