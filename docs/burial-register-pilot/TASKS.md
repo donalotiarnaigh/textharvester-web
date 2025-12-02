@@ -32,12 +32,12 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - [x] **1.2.6** Test: `getPrompt('anthropic', 'burialRegister', 'latest')` returns correct instance
 
 ### 1.3 Test Prompt with Sample Data (Single PR: 1.3.1-1.3.6)
-- [ ] **1.3.1** Create test file with sample page JSON structure
-- [ ] **1.3.2** Test `validateAndConvertPage()` with valid page JSON
-- [ ] **1.3.3** Test `validateAndConvertPage()` with invalid page JSON (missing fields)
-- [ ] **1.3.4** Test `validateAndConvertEntry()` with valid entry
-- [ ] **1.3.5** Test `validateAndConvertEntry()` with invalid entry
-- [ ] **1.3.6** Verify error messages are clear and descriptive
+- [x] **1.3.1** Create test file with sample page JSON structure
+- [x] **1.3.2** Test `validateAndConvertPage()` with valid page JSON
+- [x] **1.3.3** Test `validateAndConvertPage()` with invalid page JSON (missing fields)
+- [x] **1.3.4** Test `validateAndConvertEntry()` with valid entry
+- [x] **1.3.5** Test `validateAndConvertEntry()` with invalid entry
+- [x] **1.3.6** Verify error messages are clear and descriptive
 
 ---
 
