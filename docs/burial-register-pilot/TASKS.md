@@ -44,14 +44,14 @@ Sequential task list for implementing the burial register pilot extension. Compl
 ## Phase 2: Flattening Logic
 
 ### 2.1 Create Flattener Module (Single PR: 2.1.1-2.1.4)
-- [ ] **2.1.1** Create `src/utils/burialRegisterFlattener.js` module
-- [ ] **2.1.2** Implement `generateEntryId(volumeId, pageNumber, rowIndex)` function
+- [x] **2.1.1** Create `src/utils/burialRegisterFlattener.js` module
+- [x] **2.1.2** Implement `generateEntryId(volumeId, pageNumber, rowIndex)` function
   - Format: `vol1_p001_r003` with zero-padding
-- [ ] **2.1.3** Implement `injectPageMetadata(entry, pageData, metadata)` function
+- [x] **2.1.3** Implement `injectPageMetadata(entry, pageData, metadata)` function
   - Inject volume_id, page_number, row_index_on_page
   - Inject header metadata (parish_header_raw, county_header_raw, year_header_raw)
   - Inject processing metadata (provider, model, filePath)
-- [ ] **2.1.4** Implement `flattenPageToEntries(pageData, metadata)` function
+- [x] **2.1.4** Implement `flattenPageToEntries(pageData, metadata)` function
   - Iterate through `pageData.entries` array
   - Generate entry_id for each entry
   - Inject page metadata into each entry
