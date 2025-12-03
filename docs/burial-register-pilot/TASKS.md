@@ -264,10 +264,40 @@ Sequential task list for implementing the burial register pilot extension. Compl
 
 ---
 
+## Phase 10: Frontend UI Support
+
+### 10.1 Add Source Type Selection UI (Single PR: 10.1.1-10.1.8)
+- [ ] **10.1.1** Create `public/js/modules/index/sourceTypeSelection.js` module (similar to modelSelection.js)
+- [ ] **10.1.2** Add source type selector UI component to `index.html` (radio buttons or dropdown)
+  - Options: Record Sheet, Monument Photo, Burial Register
+  - Default: Record Sheet
+- [ ] **10.1.3** Add volume ID input field to `index.html` (conditionally visible)
+  - Default value: "vol1"
+  - Label: "Volume ID"
+  - Placeholder: "e.g., vol1"
+- [ ] **10.1.4** Implement show/hide logic for volume ID field based on source type selection
+- [ ] **10.1.5** Update `fileUpload.js` to capture source type selection
+- [ ] **10.1.6** Update `fileUpload.js` to capture volume ID when burial register is selected
+- [ ] **10.1.7** Update `fileUpload.js` `sending` event handler to append `source_type` and `volume_id` to formData
+- [ ] **10.1.8** Test: Verify form data sent matches backend expectations
+
+### 10.2 Test Frontend Integration (Single PR: 10.2.1-10.2.5)
+- [ ] **10.2.1** Test record_sheet upload (default behavior)
+- [ ] **10.2.2** Test monument_photo upload
+- [ ] **10.2.3** Test burial_register upload with volume ID
+- [ ] **10.2.4** Verify backend receives correct parameters for each source type
+- [ ] **10.2.5** Verify backend processing works correctly for each source type
+
+**Related Issue:** https://github.com/donalotiarnaigh/textharvester-web/issues/90
+
+---
+
 ## Summary
 
-**Total Tasks:** 127  
-**Total PRs:** ~20-25 (tasks grouped into logical PR-sized chunks)  
+**Total Tasks:** 140  
+**Completed Tasks:** 121 (86%)  
+**Remaining Tasks:** 19 (14%)  
+**Total PRs:** ~22-27 (tasks grouped into logical PR-sized chunks)  
 **Critical Path:** Phases 1-5 must be completed sequentially  
 **Estimated Completion:** Ready for pilot run after Phase 7
 
@@ -287,9 +317,10 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - Phase 7: Integration testing (requires all previous)
 - Phase 8: Documentation and cleanup
 - Phase 9: Pilot preparation
+- Phase 10: Frontend UI support (new)
 
 ---
 
-**Last Updated:** 2025-01-XX  
-**Status:** Ready for Implementation
+**Last Updated:** 2025-01-27  
+**Status:** Phases 1-8 Complete - Frontend UI Support Needed (Phase 10)
 
