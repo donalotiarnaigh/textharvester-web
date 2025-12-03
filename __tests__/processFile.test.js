@@ -244,5 +244,84 @@ describe('processFile', () => {
 
       expect(fs.unlink).toHaveBeenCalledWith('burial.jpg');
     });
+
+    it('processes burial register entries with Claude provider without errors', async () => {
+      const burialPromptMock = {
+        getProviderPrompt: jest.fn().mockReturnValue({ userPrompt: 'user', systemPrompt: 'system' }),
+        validateAndConvertPage: jest.fn(),
+        validateAndConvertEntry: jest.fn(),
+        version: '1.0.1'
+      };
+
+      const pageData = { volume_id: 'vol2', page_number: 4, entries: [{}], parish_header_raw: 'Parish' };
+      const flattenedEntries = [{
+        row_index_on_page: 1,
+        entry_id: 'vol2_p004_r001',
+        name_raw: 'Another Name',
+        volume_id: 'vol2',
+        page_number: 4,
+        parish_header_raw: 'Parish',
+        county_header_raw: null,
+        year_header_raw: null,
+        uncertainty_flags: []
+      }];
+
+      burialPromptMock.validateAndConvertPage.mockReturnValue(pageData);
+      burialPromptMock.validateAndConvertEntry.mockImplementation(entry => ({
+        row_index_on_page: entry.row_index_on_page,
+        entry_id: entry.entry_id,
+        name_raw: entry.name_raw,
+        parish_header_raw: entry.parish_header_raw,
+        county_header_raw: entry.county_header_raw,
+        year_header_raw: entry.year_header_raw,
+        uncertainty_flags: entry.uncertainty_flags
+      }));
+
+      providerTemplates.getPrompt.mockImplementationOnce(() => burialPromptMock);
+      burialRegisterFlattener.flattenPageToEntries.mockReturnValue(flattenedEntries);
+
+      mockAnthropicCreateMethod.mockResolvedValue(pageData);
+
+      const result = await processFile('claude-burial.jpg', {
+        provider: 'anthropic',
+        sourceType: 'burial_register',
+        promptTemplate: 'burialRegister'
+      });
+
+      expect(providerTemplates.getPrompt).toHaveBeenCalledWith('anthropic', 'burialRegister', 'latest');
+      expect(burialRegisterStorage.storePageJSON).toHaveBeenCalledWith(pageData, 'anthropic', 'vol2', 4);
+      expect(burialRegisterFlattener.flattenPageToEntries).toHaveBeenCalledWith(pageData, {
+        provider: 'anthropic',
+        model: 'claude-4-sonnet-20250514',
+        filePath: 'claude-burial.jpg'
+      });
+
+      expect(result.entries).toHaveLength(1);
+      expect(result.pageData).toEqual(pageData);
+      expect(result.entries[0]).toMatchObject({
+        ai_provider: 'anthropic',
+        model_name: 'claude-4-sonnet-20250514',
+        prompt_template: 'burialRegister',
+        prompt_version: '1.0.1',
+        fileName: 'claude-burial.jpg',
+        source_type: 'burial_register',
+        volume_id: 'vol2',
+        page_number: 4
+      });
+
+      expect(burialRegisterStorage.storeBurialRegisterEntry).toHaveBeenCalledWith(expect.objectContaining({
+        ai_provider: 'anthropic',
+        model_name: 'claude-4-sonnet-20250514',
+        entry_id: 'vol2_p004_r001',
+        volume_id: 'vol2',
+        page_number: 4,
+        fileName: 'claude-burial.jpg',
+        prompt_template: 'burialRegister',
+        prompt_version: '1.0.1',
+        source_type: 'burial_register'
+      }));
+
+      expect(fs.unlink).toHaveBeenCalledWith('claude-burial.jpg');
+    });
   });
 });
