@@ -98,6 +98,11 @@ class StringType extends DataType {
     // Convert to string and trim
     const converted = String(value).trim();
     
+    // If empty string and field is not required, return null
+    if (converted === '' && !metadata.required) {
+      return null;
+    }
+    
     // Validate metadata
     const errors = this.validateMetadata(converted, metadata);
     if (errors.length > 0) {
@@ -110,7 +115,7 @@ class StringType extends DataType {
   validateMetadata(value, metadata) {
     const errors = [];
     
-    if (value === null) {
+    if (value === null || value === '') {
       return errors;
     }
 

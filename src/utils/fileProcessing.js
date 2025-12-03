@@ -77,6 +77,12 @@ async function processFile(filePath, options = {}) {
 
       logger.debugPayload(`Raw ${providerName} burial register response for ${filePath}:`, pageDataRaw);
 
+      // Inject user-provided volume_id before validation (API can't extract this from page)
+      const volumeId = options.volume_id || options.volumeId || config.burialRegister?.volumeId || 'vol1';
+      if (pageDataRaw && typeof pageDataRaw === 'object') {
+        pageDataRaw.volume_id = volumeId;
+      }
+
       const pageData = promptInstance.validateAndConvertPage(pageDataRaw);
 
       logger.debugPayload(`Validated burial register page data for ${filePath}:`, pageData);
