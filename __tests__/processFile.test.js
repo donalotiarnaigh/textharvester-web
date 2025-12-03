@@ -34,9 +34,28 @@ jest.mock('fs', () => ({
   mkdirSync: jest.fn()
 }));
 
+jest.mock('../src/utils/prompts/templates/providerTemplates', () => {
+  const actualProviderTemplates = jest.requireActual('../src/utils/prompts/templates/providerTemplates');
+  return {
+    ...actualProviderTemplates,
+    getPrompt: jest.fn(actualProviderTemplates.getPrompt)
+  };
+});
+
+const actualProviderTemplates = jest.requireActual('../src/utils/prompts/templates/providerTemplates');
+
 jest.mock('../src/utils/logger');
 jest.mock('../src/utils/database', () => ({
   storeMemorial: jest.fn().mockResolvedValue(true)
+}));
+
+jest.mock('../src/utils/burialRegisterFlattener', () => ({
+  flattenPageToEntries: jest.fn()
+}));
+
+jest.mock('../src/utils/burialRegisterStorage', () => ({
+  storePageJSON: jest.fn().mockResolvedValue('/tmp/page.json'),
+  storeBurialRegisterEntry: jest.fn().mockResolvedValue(1)
 }));
 
 // Mock the model providers
@@ -73,6 +92,9 @@ const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
 const { processFile } = require('../src/utils/fileProcessing.js');
 const logger = require('../src/utils/logger.js');
+const providerTemplates = require('../src/utils/prompts/templates/providerTemplates');
+const burialRegisterFlattener = require('../src/utils/burialRegisterFlattener');
+const burialRegisterStorage = require('../src/utils/burialRegisterStorage');
 
 describe('processFile', () => {
   beforeEach(() => {
@@ -90,6 +112,8 @@ describe('processFile', () => {
 
     // Mock Anthropic response format
     mockAnthropicCreateMethod.mockResolvedValue(mockResponse);
+
+    providerTemplates.getPrompt.mockImplementation(actualProviderTemplates.getPrompt);
   });
 
   it('should process file successfully with OpenAI', async () => {
@@ -143,5 +167,82 @@ describe('processFile', () => {
     await expect(processFile('test.jpg', { provider: 'openai' }))
       .rejects
       .toThrow('Database error');
+  });
+
+  describe('burial register processing', () => {
+    it('processes burial register entries and stores metadata', async () => {
+      const burialPromptMock = {
+        getProviderPrompt: jest.fn().mockReturnValue({ userPrompt: 'user', systemPrompt: 'system' }),
+        validateAndConvertPage: jest.fn(),
+        validateAndConvertEntry: jest.fn(),
+        version: '1.0.0'
+      };
+
+      const pageData = { volume_id: 'vol1', page_number: 2, entries: [{}] };
+      const flattenedEntries = [{
+        row_index_on_page: 1,
+        entry_id: 'vol1_p002_r001',
+        name_raw: 'Test Name',
+        volume_id: 'vol1',
+        page_number: 2,
+        parish_header_raw: 'Parish',
+        county_header_raw: 'County',
+        year_header_raw: '2025',
+        uncertainty_flags: ['flagged']
+      }];
+
+      burialPromptMock.validateAndConvertPage.mockReturnValue(pageData);
+      burialPromptMock.validateAndConvertEntry.mockImplementation(entry => ({
+        row_index_on_page: entry.row_index_on_page,
+        entry_id: entry.entry_id,
+        name_raw: entry.name_raw,
+        uncertainty_flags: entry.uncertainty_flags
+      }));
+
+      providerTemplates.getPrompt.mockImplementationOnce(() => burialPromptMock);
+      burialRegisterFlattener.flattenPageToEntries.mockReturnValue(flattenedEntries);
+
+      mockOpenAICreateMethod.mockResolvedValue(pageData);
+
+      const result = await processFile('burial.jpg', {
+        provider: 'openai',
+        sourceType: 'burial_register',
+        promptTemplate: 'burialRegister'
+      });
+
+      expect(providerTemplates.getPrompt).toHaveBeenCalledWith('openai', 'burialRegister', 'latest');
+      expect(burialRegisterStorage.storePageJSON).toHaveBeenCalledWith(pageData, 'openai', 'vol1', 2);
+      expect(burialRegisterFlattener.flattenPageToEntries).toHaveBeenCalledWith(pageData, {
+        provider: 'openai',
+        model: 'gpt-5',
+        filePath: 'burial.jpg'
+      });
+
+      expect(result.entries).toHaveLength(1);
+      expect(result.entries[0]).toMatchObject({
+        ai_provider: 'openai',
+        model_name: 'gpt-5',
+        prompt_template: 'burialRegister',
+        prompt_version: '1.0.0',
+        fileName: 'burial.jpg',
+        source_type: 'burial_register',
+        volume_id: 'vol1',
+        page_number: 2
+      });
+
+      expect(burialRegisterStorage.storeBurialRegisterEntry).toHaveBeenCalledWith(expect.objectContaining({
+        ai_provider: 'openai',
+        model_name: 'gpt-5',
+        entry_id: 'vol1_p002_r001',
+        volume_id: 'vol1',
+        page_number: 2,
+        fileName: 'burial.jpg',
+        prompt_template: 'burialRegister',
+        prompt_version: '1.0.0',
+        source_type: 'burial_register'
+      }));
+
+      expect(fs.unlink).toHaveBeenCalledWith('burial.jpg');
+    });
   });
 });

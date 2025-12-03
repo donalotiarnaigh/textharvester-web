@@ -68,7 +68,36 @@ async function processFile(filePath, options = {}) {
 
       logger.info(`Prepared ${entries.length} burial register entries for ${filePath}`);
 
-      throw new Error('Burial register entry processing not implemented yet (pending 4.1.9-4.1.13)');
+      const processedEntries = [];
+      const filename = path.basename(filePath);
+
+      for (const entry of entries) {
+        const validatedEntry = promptInstance.validateAndConvertEntry(entry);
+
+        const entryWithMetadata = {
+          ...validatedEntry,
+          volume_id: entry.volume_id,
+          page_number: entry.page_number,
+          parish_header_raw: entry.parish_header_raw ?? null,
+          county_header_raw: entry.county_header_raw ?? null,
+          year_header_raw: entry.year_header_raw ?? null,
+          fileName: filename,
+          ai_provider: providerName,
+          model_name: provider.getModelVersion(),
+          model_run_id: entry.model_run_id ?? null,
+          prompt_template: 'burialRegister',
+          prompt_version: promptInstance.version,
+          source_type: 'burial_register'
+        };
+
+        await burialRegisterStorage.storeBurialRegisterEntry(entryWithMetadata);
+        processedEntries.push(entryWithMetadata);
+      }
+
+      await fs.unlink(filePath);
+      logger.info(`Cleaned up processed burial register file: ${filePath}`);
+
+      return { entries: processedEntries, pageData };
     }
     
     // Get the appropriate prompt for this provider

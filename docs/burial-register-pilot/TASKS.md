@@ -127,11 +127,11 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - [x] **4.1.8** In burial register branch: Store page JSON with `storePageJSON(...)`
 
 **PR 3: Entry Processing and Regression (4.1.9-4.1.13)**
-- [ ] **4.1.9** In burial register branch: Loop through entries, validate each with `validateAndConvertEntry(entry)`
-- [ ] **4.1.10** In burial register branch: Add metadata to each entry (fileName, ai_provider, model_name, etc.)
-- [ ] **4.1.11** In burial register branch: Store each entry with `storeBurialRegisterEntry(validatedEntry)`
-- [ ] **4.1.12** In burial register branch: Return `{ entries: processedEntries, pageData }`
-- [ ] **4.1.13** Verify existing memorial flow still works (no regression)
+- [x] **4.1.9** In burial register branch: Loop through entries, validate each with `validateAndConvertEntry(entry)`
+- [x] **4.1.10** In burial register branch: Add metadata to each entry (fileName, ai_provider, model_name, etc.)
+- [x] **4.1.11** In burial register branch: Store each entry with `storeBurialRegisterEntry(validatedEntry)`
+- [x] **4.1.12** In burial register branch: Return `{ entries: processedEntries, pageData }`
+- [x] **4.1.13** Verify existing memorial flow still works (no regression)
 
 ### 4.2 Update Upload Handler (Single PR: 4.2.1-4.2.6)
 - [ ] **4.2.1** Add `'burial_register'` to valid source types in `src/controllers/uploadHandler.js`
