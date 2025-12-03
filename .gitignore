@@ -89,3 +89,4 @@ sample_data/
 ehthumbs.db
 Thumbs.db
 .DS_Store
+test-data/burial-register-test-pages/*
