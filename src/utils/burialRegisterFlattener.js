@@ -4,6 +4,13 @@
  * Converts validated burial register page JSON into flat entry objects with
  * generated identifiers and injected metadata.
  */
+/**
+ * Generate a human-readable entry identifier for a burial register row.
+ * @param {string} volumeId Volume identifier
+ * @param {number} pageNumber Page number within the volume
+ * @param {number} rowIndex Row index on the page (1-based)
+ * @returns {string} Entry identifier formatted as {volume_id}_p{page}_r{row}
+ */
 function generateEntryId(volumeId, pageNumber, rowIndex) {
   const page = String(pageNumber).padStart(3, '0');
   const row = String(rowIndex).padStart(3, '0');
@@ -11,6 +18,13 @@ function generateEntryId(volumeId, pageNumber, rowIndex) {
   return `${volumeId}_p${page}_r${row}`;
 }
 
+/**
+ * Inject page-level and processing metadata into an entry.
+ * @param {Object} entry Raw entry object from provider output
+ * @param {Object} pageData Validated page-level data
+ * @param {Object} metadata Processing metadata (provider, model, filePath)
+ * @returns {Object} Entry with metadata applied
+ */
 function injectPageMetadata(entry, pageData, metadata = {}) {
   const safeEntry = entry && typeof entry === 'object' ? { ...entry } : {};
   const { volume_id: volumeId, page_number: pageNumber } = pageData || {};
@@ -28,6 +42,12 @@ function injectPageMetadata(entry, pageData, metadata = {}) {
   };
 }
 
+/**
+ * Flatten validated page JSON into flat entry objects with generated IDs.
+ * @param {Object} pageData Validated page-level data containing entries
+ * @param {Object} metadata Processing metadata (provider, model, filePath)
+ * @returns {Array<Object>} Array of flat entries
+ */
 function flattenPageToEntries(pageData, metadata = {}) {
   if (!pageData || typeof pageData !== 'object') {
     throw new Error('pageData must be an object with entries');
