@@ -210,13 +210,13 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - [x] **7.1.8** Verify both CSVs generated correctly
 
 ### 7.2 Test Multi-Page Batch (Single PR: 7.2.1-7.2.7)
-- [ ] **7.2.1** Upload 3-5 page images
-- [ ] **7.2.2** Process all pages with GPT provider
-- [ ] **7.2.3** Process all pages with Claude provider
-- [ ] **7.2.4** Verify all page JSON files created
-- [ ] **7.2.5** Verify all entries in database
-- [ ] **7.2.6** Verify CSV export includes all entries
-- [ ] **7.2.7** Verify correct ordering in CSV (volume, page, row)
+- [x] **7.2.1** Upload 3-5 page images
+- [x] **7.2.2** Process all pages with GPT provider
+- [x] **7.2.3** Process all pages with Claude provider
+- [x] **7.2.4** Verify all page JSON files created
+- [x] **7.2.5** Verify all entries in database
+- [x] **7.2.6** Verify CSV export includes all entries
+- [x] **7.2.7** Verify correct ordering in CSV (volume, page, row)
 
 ### 7.3 Validate CSV Schema (Single PR: 7.3.1-7.3.6)
 - [ ] **7.3.1** Compare CSV columns to pilot plan schema
