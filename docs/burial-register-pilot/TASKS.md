@@ -200,14 +200,14 @@ Sequential task list for implementing the burial register pilot extension. Compl
 ## Phase 7: Integration Testing
 
 ### 7.1 Test Dual Provider Processing (Single PR: 7.1.1-7.1.8)
-- [ ] **7.1.1** Upload same page twice (once with GPT, once with Claude)
-- [ ] **7.1.2** Verify both page JSON files created in separate directories
-- [ ] **7.1.3** Verify both sets of entries in database
-- [ ] **7.1.4** Verify entries have same entry_id but different ai_provider
-- [ ] **7.1.5** Verify UNIQUE constraint works (can't insert duplicate)
-- [ ] **7.1.6** Run CSV export for GPT provider
-- [ ] **7.1.7** Run CSV export for Claude provider
-- [ ] **7.1.8** Verify both CSVs generated correctly
+- [x] **7.1.1** Upload same page twice (once with GPT, once with Claude)
+- [x] **7.1.2** Verify both page JSON files created in separate directories
+- [x] **7.1.3** Verify both sets of entries in database
+- [x] **7.1.4** Verify entries have same entry_id but different ai_provider
+- [x] **7.1.5** Verify UNIQUE constraint works (can't insert duplicate)
+- [x] **7.1.6** Run CSV export for GPT provider
+- [x] **7.1.7** Run CSV export for Claude provider
+- [x] **7.1.8** Verify both CSVs generated correctly
 
 ### 7.2 Test Multi-Page Batch (Single PR: 7.2.1-7.2.7)
 - [ ] **7.2.1** Upload 3-5 page images
