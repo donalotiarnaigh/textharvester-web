@@ -162,14 +162,14 @@ Sequential task list for implementing the burial register pilot extension. Compl
 ## Phase 5: CSV Export
 
 ### 5.1 Create CSV Export Script (Single PR: 5.1.1-5.1.8)
-- [ ] **5.1.1** Create `scripts/export-burial-register-csv.js` script
-- [ ] **5.1.2** Accept command-line arguments: `{provider} {volumeId}`
-- [ ] **5.1.3** Connect to database in script
-- [ ] **5.1.4** Implement SQL query: `SELECT * FROM burial_register_entries WHERE ai_provider = ? AND volume_id = ? ORDER BY volume_id, page_number, row_index_on_page`
-- [ ] **5.1.5** Import and use `jsonToCsv()` from `dataConversion.js`
-- [ ] **5.1.6** Write CSV to: `data/burial_register/{volumeId}/csv/burials_{volumeId}_{provider}.csv`
-- [ ] **5.1.7** Handle uncertainty_flags (JSON string) in CSV output
-- [ ] **5.1.8** Add error handling and logging
+- [x] **5.1.1** Create `scripts/export-burial-register-csv.js` script
+- [x] **5.1.2** Accept command-line arguments: `{provider} {volumeId}`
+- [x] **5.1.3** Connect to database in script
+- [x] **5.1.4** Implement SQL query: `SELECT * FROM burial_register_entries WHERE ai_provider = ? AND volume_id = ? ORDER BY volume_id, page_number, row_index_on_page`
+- [x] **5.1.5** Import and use `jsonToCsv()` from `dataConversion.js`
+- [x] **5.1.6** Write CSV to: `data/burial_register/{volumeId}/csv/burials_{volumeId}_{provider}.csv`
+- [x] **5.1.7** Handle uncertainty_flags (JSON string) in CSV output
+- [x] **5.1.8** Add error handling and logging
 
 ### 5.2 Test CSV Export (Single PR: 5.2.1-5.2.9)
 - [ ] **5.2.1** Insert test entries into database (GPT entries)

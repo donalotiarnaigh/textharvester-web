@@ -82,10 +82,25 @@ describe('Data Conversion Utils', () => {
 
       const csv = jsonToCsv(dataWithQuotes);
       const lines = csv.split('\n');
-      
+
       // Check that quotes are properly escaped
       expect(lines[1]).toContain('"John ""Johnny"""');
       expect(lines[1]).toContain('"He said ""goodbye"""');
     });
+
+    it('should support custom column order when provided', () => {
+      const customColumns = ['entry_id', 'name_raw'];
+      const customData = [
+        { entry_id: 'vol1_p001_r001', name_raw: 'Test Name' },
+        { entry_id: 'vol1_p001_r002', name_raw: 'Second Entry' }
+      ];
+
+      const csv = jsonToCsv(customData, customColumns);
+      const lines = csv.trim().split('\n');
+
+      expect(lines[0]).toBe('entry_id,name_raw');
+      expect(lines[1]).toBe('vol1_p001_r001,Test Name');
+      expect(lines[2]).toBe('vol1_p001_r002,Second Entry');
+    });
   });
-}); 
+});
