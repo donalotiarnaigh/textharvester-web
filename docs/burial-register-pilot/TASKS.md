@@ -231,11 +231,11 @@ Sequential task list for implementing the burial register pilot extension. Compl
 ## Phase 8: Documentation and Cleanup
 
 ### 8.1 Update Documentation (Single PR: 8.1.1-8.1.5)
-- [ ] **8.1.1** Document new prompt template in README
-- [ ] **8.1.2** Document CSV export script usage
-- [ ] **8.1.3** Document database schema changes
-- [ ] **8.1.4** Add usage examples to documentation
-- [ ] **8.1.5** Update API documentation (if routes added)
+- [x] **8.1.1** Document new prompt template in README
+- [x] **8.1.2** Document CSV export script usage
+- [x] **8.1.3** Document database schema changes
+- [x] **8.1.4** Add usage examples to documentation
+- [x] **8.1.5** Update API documentation (if routes added)
 
 ### 8.2 Code Review and Cleanup (Single PR: 8.2.1-8.2.6)
 - [ ] **8.2.1** Review all new code for consistency
