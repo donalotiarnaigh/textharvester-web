@@ -120,11 +120,11 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - [x] **4.1.3** Add conditional branch: `if (sourceType === 'burial_register')` in `processFile()`
 
 **PR 2: Core Processing Flow (4.1.4-4.1.8)**
-- [ ] **4.1.4** In burial register branch: Get prompt using `getPrompt(providerName, 'burialRegister', promptVersion)`
-- [ ] **4.1.5** In burial register branch: Call provider `processImage()` to get page JSON
-- [ ] **4.1.6** In burial register branch: Validate page JSON with `validateAndConvertPage(pageDataRaw)`
-- [ ] **4.1.7** In burial register branch: Flatten with `flattenPageToEntries(pageData, {...})`
-- [ ] **4.1.8** In burial register branch: Store page JSON with `storePageJSON(...)`
+- [x] **4.1.4** In burial register branch: Get prompt using `getPrompt(providerName, 'burialRegister', promptVersion)`
+- [x] **4.1.5** In burial register branch: Call provider `processImage()` to get page JSON
+- [x] **4.1.6** In burial register branch: Validate page JSON with `validateAndConvertPage(pageDataRaw)`
+- [x] **4.1.7** In burial register branch: Flatten with `flattenPageToEntries(pageData, {...})`
+- [x] **4.1.8** In burial register branch: Store page JSON with `storePageJSON(...)`
 
 **PR 3: Entry Processing and Regression (4.1.9-4.1.13)**
 - [ ] **4.1.9** In burial register branch: Loop through entries, validate each with `validateAndConvertEntry(entry)`
