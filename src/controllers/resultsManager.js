@@ -97,6 +97,10 @@ async function downloadResultsJSON(req, res) {
       // Skip validateAndConvertRecords for burial register entries (already validated on insertion)
       validatedResults = transformedResults;
       
+      // Extract volume_id from first entry if available
+      const volumeId = results.length > 0 ? results[0].volume_id : 'all';
+      logger.info(`Exporting burial register JSON: ${results.length} entries, volume_id=${volumeId}`);
+      
       // Generate filename
       defaultFilename = `burials_${moment().format('YYYYMMDD_HHmmss')}.json`;
     } else {
@@ -129,7 +133,10 @@ async function downloadResultsJSON(req, res) {
     res.setHeader('Content-Type', 'application/json');
     res.send(jsonData);
         
-    logger.info(`Downloaded JSON results as ${requestedFilename} (${format} format)`);
+    const entryCount = sourceType === 'burial_register' 
+      ? validatedResults.length 
+      : validatedResults.length;
+    logger.info(`Downloaded JSON results as ${requestedFilename} (${format} format, ${entryCount} entries)`);
   } catch (err) {
     logger.error('Error downloading JSON results:', err);
     res.status(500).send('Unable to download results');
@@ -187,11 +194,9 @@ async function detectSourceType() {
           }
 
           // Compare dates - return the one with more recent data
-          if (burialDate > memorialDate) {
-            resolve('burial_register');
-          } else {
-            resolve('memorial');
-          }
+          const detectedType = burialDate > memorialDate ? 'burial_register' : 'memorial';
+          logger.debug(`Source type detection: most recent is ${detectedType} (memorial_date=${memorialResult?.max_date || 'null'}, burial_date=${burialResult?.max_date || 'null'})`);
+          resolve(detectedType);
         });
       });
     } catch (error) {
@@ -208,10 +213,16 @@ async function downloadResultsCSV(req, res) {
     
     let csvData;
     let defaultFilename;
+    let entryCount = 0;
     
     if (sourceType === 'burial_register') {
       // Get burial register entries
       const results = await getAllBurialRegisterEntries();
+      entryCount = results.length;
+      
+      // Extract volume_id from first entry if available
+      const volumeId = results.length > 0 ? results[0].volume_id : 'all';
+      logger.info(`Exporting burial register CSV: ${entryCount} entries, volume_id=${volumeId}`);
       
       // Normalize uncertainty flags for CSV export
       const normalizedResults = results.map(entry => ({
@@ -227,6 +238,7 @@ async function downloadResultsCSV(req, res) {
     } else {
       // Get memorials (default)
       const results = await getAllMemorials();
+      entryCount = results.length;
       
       // Transform database field names to match frontend expectations
       const transformedResults = results.map(memorial => ({
@@ -251,8 +263,8 @@ async function downloadResultsCSV(req, res) {
     res.setHeader('Content-Disposition', `attachment; filename="${requestedFilename}"`);
     res.setHeader('Content-Type', 'text/csv');
     res.send(csvData);
-        
-    logger.info(`Downloaded CSV results as ${requestedFilename}`);
+    
+    logger.info(`Downloaded CSV results as ${requestedFilename} (${entryCount} entries)`);
   } catch (err) {
     logger.error('Error downloading CSV results:', err);
     res.status(500).send('Unable to download results');

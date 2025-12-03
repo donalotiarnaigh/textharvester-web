@@ -62,6 +62,7 @@ async function processFile(filePath, options = {}) {
     });
 
     if (sourceType === 'burial_register') {
+      const startTime = Date.now();
       logger.info(`Processing burial register file via ${providerName}: ${filePath}`);
 
       const promptInstance = getPrompt(providerName, 'burialRegister', promptVersion);
@@ -75,6 +76,8 @@ async function processFile(filePath, options = {}) {
         promptTemplate: promptInstance
       });
 
+      const apiDuration = Date.now() - startTime;
+      logger.info(`Burial register API call completed in ${apiDuration}ms for ${filePath}`);
       logger.debugPayload(`Raw ${providerName} burial register response for ${filePath}:`, pageDataRaw);
 
       // Inject user-provided volume_id before validation (API can't extract this from page)
@@ -104,28 +107,47 @@ async function processFile(filePath, options = {}) {
 
       const processedEntries = [];
       const filename = path.basename(filePath);
+      let validCount = 0;
+      let totalCount = entries.length;
 
       for (const entry of entries) {
-        const validatedEntry = promptInstance.validateAndConvertEntry(entry);
+        try {
+          const validatedEntry = promptInstance.validateAndConvertEntry(entry);
 
-        const entryWithMetadata = {
-          ...validatedEntry,
-          volume_id: entry.volume_id,
-          page_number: entry.page_number,
-          parish_header_raw: entry.parish_header_raw ?? null,
-          county_header_raw: entry.county_header_raw ?? null,
-          year_header_raw: entry.year_header_raw ?? null,
-          fileName: filename,
-          ai_provider: providerName,
-          model_name: provider.getModelVersion(),
-          model_run_id: entry.model_run_id ?? null,
-          prompt_template: 'burialRegister',
-          prompt_version: promptInstance.version,
-          source_type: 'burial_register'
-        };
+          const entryWithMetadata = {
+            ...validatedEntry,
+            volume_id: entry.volume_id,
+            page_number: entry.page_number,
+            parish_header_raw: entry.parish_header_raw ?? null,
+            county_header_raw: entry.county_header_raw ?? null,
+            year_header_raw: entry.year_header_raw ?? null,
+            fileName: filename,
+            ai_provider: providerName,
+            model_name: provider.getModelVersion(),
+            model_run_id: entry.model_run_id ?? null,
+            prompt_template: 'burialRegister',
+            prompt_version: promptInstance.version,
+            source_type: 'burial_register'
+          };
 
-        await burialRegisterStorage.storeBurialRegisterEntry(entryWithMetadata);
-        processedEntries.push(entryWithMetadata);
+          await burialRegisterStorage.storeBurialRegisterEntry(entryWithMetadata);
+          processedEntries.push(entryWithMetadata);
+          validCount++;
+        } catch (error) {
+          logger.warn(`Entry validation failed for entry_id=${entry.entry_id || 'unknown'}, page_number=${pageData.page_number}, volume_id=${pageData.volume_id}: ${error.message}`);
+        }
+      }
+
+      if (validCount < totalCount) {
+        logger.warn(`Validated ${validCount}/${totalCount} entries successfully for ${filePath}`);
+      }
+
+      if (processedEntries.length > 0) {
+        const firstEntryId = processedEntries[0].entry_id;
+        const lastEntryId = processedEntries[processedEntries.length - 1].entry_id;
+        logger.info(`Stored ${processedEntries.length} burial register entries for page ${pageData.page_number} (${filePath}). Entry IDs: ${firstEntryId} to ${lastEntryId}`);
+      } else {
+        logger.warn(`No entries were stored for page ${pageData.page_number} (${filePath})`);
       }
 
       await fs.unlink(filePath);

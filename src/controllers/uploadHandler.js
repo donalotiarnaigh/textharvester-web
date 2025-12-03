@@ -220,6 +220,10 @@ const handleFileUpload = async (req, res) => {
     // Enqueue all files in a single call to maintain sequential processing order
     enqueueFiles(filesToQueue);
 
+    if (sourceType === 'burial_register') {
+      logger.info(`Enqueued ${filesToQueue.length} burial register files for processing (volume_id=${volumeId}, provider=${selectedModel})`);
+    }
+
     clearProcessingCompleteFlag();
     logger.info("Processing complete. Redirecting to results page.");
 

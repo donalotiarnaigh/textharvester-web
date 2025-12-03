@@ -60,11 +60,17 @@ async function storePageJSON(pageData, provider, volumeId, pageNumber) {
 
   const paddedPage = padPageNumber(pageNumber);
   const pagesDir = path.join(getBurialRegisterBaseDir(), volumeId, 'pages', provider);
-  await fs.promises.mkdir(pagesDir, { recursive: true });
+  
+  try {
+    await fs.promises.mkdir(pagesDir, { recursive: true });
+  } catch (err) {
+    logger.error(`Error creating directory for burial register page JSON: ${pagesDir}`, err);
+    throw err;
+  }
 
   const filePath = path.join(pagesDir, `page_${paddedPage}.json`);
   await fs.promises.writeFile(filePath, JSON.stringify(pageData, null, 2), 'utf-8');
-  logger.debug(`Stored burial register page JSON at ${filePath}`);
+  logger.info(`Stored burial register page JSON: volume_id=${volumeId}, page_number=${pageNumber}, provider=${provider}, path=${filePath}`);
 
   return filePath;
 }
@@ -182,12 +188,14 @@ async function storeBurialRegisterEntry(entry) {
           volume_id: entry.volume_id,
           page_number: entry.page_number,
           row_index_on_page: entry.row_index_on_page,
+          entry_id: entry.entry_id,
+          entry_no_raw: entry.entry_no_raw,
           ai_provider: entry.ai_provider
         });
         reject(err);
         return;
       }
-      logger.debug(`Successfully stored burial register entry with ID: ${this.lastID}`);
+      logger.debug(`Successfully stored burial register entry with ID: ${this.lastID}, entry_id=${entry.entry_id}`);
       resolve(this.lastID);
     });
   });
@@ -199,15 +207,26 @@ async function storeBurialRegisterEntry(entry) {
  */
 function clearAllBurialRegisterEntries() {
   return new Promise((resolve, reject) => {
-    logger.info('Attempting to clear all burial register entries');
-    db.run('DELETE FROM burial_register_entries', [], (err) => {
+    // First, get the count of entries to be deleted
+    db.get('SELECT COUNT(*) as count FROM burial_register_entries', [], (err, row) => {
       if (err) {
-        logger.error('Error clearing burial register entries:', err);
+        logger.error('Error counting burial register entries before deletion:', err);
         reject(err);
         return;
       }
-      logger.info('Successfully cleared all burial register entries');
-      resolve();
+
+      const count = row?.count || 0;
+      logger.info(`Clearing ${count} burial register entries from database`);
+
+      db.run('DELETE FROM burial_register_entries', [], (err2) => {
+        if (err2) {
+          logger.error('Error clearing burial register entries:', err2);
+          reject(err2);
+          return;
+        }
+        logger.info(`Successfully cleared ${count} burial register entries`);
+        resolve();
+      });
     });
   });
 }
@@ -225,7 +244,7 @@ function getAllBurialRegisterEntries() {
         reject(err);
         return;
       }
-      logger.info(`Retrieved ${rows ? rows.length : 0} burial register entries`);
+      logger.info(`Retrieved ${rows ? rows.length : 0} burial register entries (most recent first)`);
       resolve(rows || []); // Ensure we always return an array
     });
   });

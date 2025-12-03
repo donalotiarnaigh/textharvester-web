@@ -4,6 +4,7 @@
  * Converts validated burial register page JSON into flat entry objects with
  * generated identifiers and injected metadata.
  */
+const logger = require('./logger');
 /**
  * Generate a human-readable entry identifier for a burial register row.
  * @param {string} volumeId Volume identifier
@@ -53,22 +54,53 @@ function flattenPageToEntries(pageData, metadata = {}) {
     throw new Error('pageData must be an object with entries');
   }
 
+  const volumeId = pageData.volume_id || 'unknown';
+  const pageNumber = pageData.page_number || 'unknown';
   const entries = Array.isArray(pageData.entries) ? pageData.entries : [];
 
-  return entries.map((entryRaw, index) => {
+  logger.info(`Flattening burial register page: volume_id=${volumeId}, page_number=${pageNumber}, entries_found=${entries.length}`);
+
+  if (entries.length === 0) {
+    logger.warn(`No entries found in page data for volume_id=${volumeId}, page_number=${pageNumber}`);
+  }
+
+  const flattenedEntries = entries.map((entryRaw, index) => {
     const entry = entryRaw && typeof entryRaw === 'object' ? { ...entryRaw } : {};
     const parsedRowIndex = Number.parseInt(entry.row_index_on_page, 10);
+    const originalRowIndex = entry.row_index_on_page;
     const rowIndex = Number.isInteger(entry.row_index_on_page)
       ? entry.row_index_on_page
       : Number.isInteger(parsedRowIndex) && !Number.isNaN(parsedRowIndex)
         ? parsedRowIndex
         : index + 1;
 
+    // Log warning if we had to fall back to index+1
+    if (!Number.isInteger(entry.row_index_on_page) && 
+        (!Number.isInteger(parsedRowIndex) || Number.isNaN(parsedRowIndex))) {
+      logger.warn(`Invalid row_index_on_page for entry at index ${index} (value: ${originalRowIndex}), using fallback: ${rowIndex}`);
+    }
+
     entry.row_index_on_page = rowIndex;
     entry.entry_id = generateEntryId(pageData.volume_id, pageData.page_number, rowIndex);
 
     return injectPageMetadata(entry, pageData, metadata);
   });
+
+  // Log summary of generated entry IDs
+  if (flattenedEntries.length > 0) {
+    if (flattenedEntries.length <= 10) {
+      const entryIds = flattenedEntries.map(e => e.entry_id).join(', ');
+      logger.debug(`Generated entry IDs: ${entryIds}`);
+    } else {
+      const firstThree = flattenedEntries.slice(0, 3).map(e => e.entry_id).join(', ');
+      const lastThree = flattenedEntries.slice(-3).map(e => e.entry_id).join(', ');
+      logger.debug(`Generated entry IDs: ${firstThree} ... ${lastThree} (${flattenedEntries.length} total)`);
+    }
+  }
+
+  logger.info(`Flattened ${flattenedEntries.length} entries for page ${pageNumber}`);
+
+  return flattenedEntries;
 }
 
 module.exports = {

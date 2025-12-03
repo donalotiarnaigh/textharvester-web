@@ -36,6 +36,19 @@ function enqueueFiles(files) {
     resetFileProcessingState();
   }
 
+  // Detect if all files are burial_register type
+  const allBurialRegister = files.every(file => {
+    const sourceType = file.source_type || file.sourceType;
+    return sourceType === 'burial_register';
+  });
+  const volumeId = allBurialRegister && files.length > 0 
+    ? (files[0].volume_id || files[0].volumeId) 
+    : null;
+
+  if (allBurialRegister && volumeId) {
+    logger.info(`Enqueuing ${files.length} burial register files (volume_id=${volumeId})`);
+  }
+
   files.forEach((file, index) => {
     const filePath = typeof file === 'string' ? file : file.path;
     const originalName = file.originalname
@@ -52,8 +65,11 @@ function enqueueFiles(files) {
       ...(file.volume_id && { volume_id: file.volume_id, volumeId: file.volumeId || file.volume_id })
     });
     retryLimits[filePath] = retryLimits[filePath] || 0;
+    const logContext = sourceType === 'burial_register' && file.volume_id
+      ? `, Source: ${sourceType}, Volume: ${file.volume_id}`
+      : '';
     logger.info(
-      `File ${index + 1} [${originalName}] enqueued. Path: ${filePath}, Provider: ${file.provider || 'openai'}`
+      `File ${index + 1} [${originalName}] enqueued. Path: ${filePath}, Provider: ${file.provider || 'openai'}${logContext}`
     );
   });
 
@@ -136,8 +152,13 @@ function checkAndProcessNextFile() {
     // Record processing start
     queueMonitor.recordProcessingStart(file.path, fileQueue.length);
 
+    const sourceType = file.sourceType || file.source_type || 'unknown';
+    const volumeId = file.volume_id || file.volumeId;
+    const sourceContext = sourceType === 'burial_register' && volumeId
+      ? `, source_type: ${sourceType}, volume_id: ${volumeId}`
+      : sourceType !== 'unknown' ? `, source_type: ${sourceType}` : '';
     logger.info(
-      `Started processing: ${file.path} with provider: ${file.provider}. Active workers: ${activeWorkers}, Queue length: ${fileQueue.length}`
+      `Started processing: ${file.path} with provider: ${file.provider}${sourceContext}. Active workers: ${activeWorkers}, Queue length: ${fileQueue.length}`
     );
 
     const processingOptions = {

@@ -160,6 +160,18 @@ async function main() {
         process.exit(0);
       }
 
+      logger.info(`Found ${entries.length} entries for provider=${provider}, volume=${volumeId}`);
+
+      // Calculate page range
+      const pages = [...new Set(entries.map(e => e.page_number).filter(p => p != null))].sort((a, b) => a - b);
+      const minPage = pages.length > 0 ? pages[0] : 'N/A';
+      const maxPage = pages.length > 0 ? pages[pages.length - 1] : 'N/A';
+      const uniquePages = pages.length;
+      
+      if (pages.length > 0) {
+        logger.info(`Page range: ${minPage} to ${maxPage} (${uniquePages} unique pages)`);
+      }
+
       const csvData = buildCsvData(entries);
 
       if (!csvData) {
@@ -169,7 +181,7 @@ async function main() {
       }
 
       const outputPath = writeCsvFile(csvData, volumeId, provider);
-      logger.info(`CSV export completed: ${outputPath}`);
+      logger.info(`CSV export completed: ${outputPath} (${entries.length} entries, ${uniquePages} unique pages)`);
     } finally {
       db.close((err) => {
         if (err) {
