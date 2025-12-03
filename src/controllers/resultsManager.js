@@ -9,6 +9,55 @@ const { getAllMemorials, db } = require('../utils/database');
 const { getAllBurialRegisterEntries } = require('../utils/burialRegisterStorage');
 const { validateAndConvertRecords } = require('../utils/dataValidation');
 
+// Burial register CSV column order (matches pilot plan format)
+const BURIAL_REGISTER_CSV_COLUMNS = [
+  'volume_id',
+  'page_number',
+  'row_index_on_page',
+  'entry_id',
+  'entry_no_raw',
+  'name_raw',
+  'abode_raw',
+  'burial_date_raw',
+  'age_raw',
+  'officiant_raw',
+  'marginalia_raw',
+  'extra_notes_raw',
+  'row_ocr_raw',
+  'parish_header_raw',
+  'county_header_raw',
+  'year_header_raw',
+  'model_name',
+  'model_run_id',
+  'uncertainty_flags',
+  'file_name',
+  'ai_provider',
+  'prompt_template',
+  'prompt_version',
+  'processed_date'
+];
+
+/**
+ * Normalize uncertainty flags for CSV export
+ * @param {*} value - Uncertainty flags value (array, string, null, etc.)
+ * @returns {string} Normalized uncertainty flags as JSON string
+ */
+function normalizeUncertaintyFlags(value) {
+  if (Array.isArray(value)) {
+    return JSON.stringify(value);
+  }
+
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  return JSON.stringify(value);
+}
+
 function getProcessingStatus(req, res) {
   // Use the same logic as getProcessingProgress for consistency
   const progressData = getProcessingProgress();
@@ -29,20 +78,45 @@ function getProcessingStatus(req, res) {
 
 async function downloadResultsJSON(req, res) {
   try {
-    // Get all successful records from database
-    const results = await getAllMemorials();
+    // Detect which source type has the most recent data
+    const sourceType = await detectSourceType();
     
-    // Transform database field names to match frontend expectations
-    const transformedResults = results.map(memorial => ({
-      ...memorial,
-      fileName: memorial.file_name, // Map file_name to fileName for frontend compatibility
-    }));
+    let validatedResults;
+    let defaultFilename;
     
-    // Validate and convert data types
-    const validatedResults = validateAndConvertRecords(transformedResults);
-        
+    if (sourceType === 'burial_register') {
+      // Get burial register entries
+      const results = await getAllBurialRegisterEntries();
+      
+      // Transform database field names to match frontend expectations
+      const transformedResults = results.map(entry => ({
+        ...entry,
+        fileName: entry.file_name, // Map file_name to fileName for frontend compatibility
+      }));
+      
+      // Skip validateAndConvertRecords for burial register entries (already validated on insertion)
+      validatedResults = transformedResults;
+      
+      // Generate filename
+      defaultFilename = `burials_${moment().format('YYYYMMDD_HHmmss')}.json`;
+    } else {
+      // Get memorials (default)
+      const results = await getAllMemorials();
+      
+      // Transform database field names to match frontend expectations
+      const transformedResults = results.map(memorial => ({
+        ...memorial,
+        fileName: memorial.file_name, // Map file_name to fileName for frontend compatibility
+      }));
+      
+      // Validate and convert data types
+      validatedResults = validateAndConvertRecords(transformedResults);
+      
+      // Generate filename
+      defaultFilename = `memorials_${moment().format('YYYYMMDD_HHmmss')}.json`;
+    }
+    
     // Extract filename from query parameters or use a default
-    const defaultFilename = `memorials_${moment().format('YYYYMMDD_HHmmss')}.json`;
     const requestedFilename = req.query.filename 
       ? `${sanitizeFilename(req.query.filename)}.json` 
       : defaultFilename;
@@ -129,23 +203,47 @@ async function detectSourceType() {
 
 async function downloadResultsCSV(req, res) {
   try {
-    // Get all successful records from database
-    const results = await getAllMemorials();
+    // Detect which source type has the most recent data
+    const sourceType = await detectSourceType();
     
-    // Transform database field names to match frontend expectations
-    const transformedResults = results.map(memorial => ({
-      ...memorial,
-      fileName: memorial.file_name, // Map file_name to fileName for frontend compatibility
-    }));
+    let csvData;
+    let defaultFilename;
     
-    // Validate and convert data types
-    const validatedResults = validateAndConvertRecords(transformedResults);
-        
-    // Convert to CSV
-    const csvData = jsonToCsv(validatedResults);
-        
-    // Generate filename
-    const defaultFilename = `memorials_${moment().format('YYYYMMDD_HHmmss')}.csv`;
+    if (sourceType === 'burial_register') {
+      // Get burial register entries
+      const results = await getAllBurialRegisterEntries();
+      
+      // Normalize uncertainty flags for CSV export
+      const normalizedResults = results.map(entry => ({
+        ...entry,
+        uncertainty_flags: normalizeUncertaintyFlags(entry.uncertainty_flags)
+      }));
+      
+      // Convert to CSV with explicit column order
+      csvData = jsonToCsv(normalizedResults, BURIAL_REGISTER_CSV_COLUMNS);
+      
+      // Generate filename
+      defaultFilename = `burials_${moment().format('YYYYMMDD_HHmmss')}.csv`;
+    } else {
+      // Get memorials (default)
+      const results = await getAllMemorials();
+      
+      // Transform database field names to match frontend expectations
+      const transformedResults = results.map(memorial => ({
+        ...memorial,
+        fileName: memorial.file_name, // Map file_name to fileName for frontend compatibility
+      }));
+      
+      // Validate and convert data types
+      const validatedResults = validateAndConvertRecords(transformedResults);
+      
+      // Convert to CSV (uses default memorial columns)
+      csvData = jsonToCsv(validatedResults);
+      
+      // Generate filename
+      defaultFilename = `memorials_${moment().format('YYYYMMDD_HHmmss')}.csv`;
+    }
+    
     const requestedFilename = req.query.filename 
       ? `${sanitizeFilename(req.query.filename)}.csv` 
       : defaultFilename;
