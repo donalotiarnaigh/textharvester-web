@@ -142,11 +142,11 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - [x] **4.2.6** Ensure volume_id is available in file metadata
 
 ### 4.3 Update File Queue (Single PR: 4.3.1-4.3.5)
-- [ ] **4.3.1** Review current file metadata structure in `src/utils/fileQueue.js`
-- [ ] **4.3.2** Ensure `promptTemplate` is passed to `processFile()` in fileQueue
-- [ ] **4.3.3** Ensure `source_type` is passed to `processFile()` in fileQueue
-- [ ] **4.3.4** Update `processFile()` call to include new metadata
-- [ ] **4.3.5** Verify existing queue functionality unchanged
+- [x] **4.3.1** Review current file metadata structure in `src/utils/fileQueue.js`
+- [x] **4.3.2** Ensure `promptTemplate` is passed to `processFile()` in fileQueue
+- [x] **4.3.3** Ensure `source_type` is passed to `processFile()` in fileQueue
+- [x] **4.3.4** Update `processFile()` call to include new metadata
+- [x] **4.3.5** Verify existing queue functionality unchanged
 
 ### 4.4 Test End-to-End Single Provider Flow (Single PR: 4.4.1-4.4.7)
 - [ ] **4.4.1** Test: Upload single burial register page image
