@@ -256,11 +256,11 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - [x] **9.1.4** Prepare validation checklist
 
 ### 9.2 Pilot Run Preparation (Single PR: 9.2.1-9.2.5)
-- [ ] **9.2.1** Verify all ~210 pages are accessible
-- [ ] **9.2.2** Set up processing environment
-- [ ] **9.2.3** Prepare monitoring/logging setup
-- [ ] **9.2.4** Create backup procedures
-- [ ] **9.2.5** Document pilot run steps
+- [x] **9.2.1** Verify all ~210 pages are accessible
+- [x] **9.2.2** Set up processing environment
+- [x] **9.2.3** Prepare monitoring/logging setup
+- [x] **9.2.4** Create backup procedures
+- [x] **9.2.5** Document pilot run steps
 
 ---
 
