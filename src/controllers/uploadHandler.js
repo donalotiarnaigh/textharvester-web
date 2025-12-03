@@ -122,12 +122,13 @@ const handleFileUpload = async (req, res) => {
 
   const shouldReplace = req.body.replaceExisting === 'true';
   const selectedModel = req.body.aiProvider || 'openai';
-  const sourceType = req.body.source_type || req.body.sourceType || 'record_sheet';
+  let sourceType = req.body.source_type || req.body.sourceType || 'record_sheet';
   const volumeId = req.body.volume_id || 'vol1';
 
+  // Validate and coerce invalid source_type to record_sheet (for backward compatibility)
   if (!validSourceTypes.includes(sourceType)) {
-    logger.error(`Invalid source type received: ${sourceType}`);
-    return res.status(400).json({ error: 'Invalid source type' });
+    logger.warn(`Invalid source type received: ${sourceType}, defaulting to record_sheet`);
+    sourceType = 'record_sheet';
   }
 
   const requestedPromptTemplate = req.body.promptTemplate;

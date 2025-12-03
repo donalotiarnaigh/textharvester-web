@@ -42,6 +42,8 @@ async function processFile(filePath, options = {}) {
       base64Image = await fs.readFile(filePath, { encoding: 'base64' });
       logger.info(`File ${filePath} read successfully (burial register, no optimization). Proceeding with OCR processing.`);
     } else {
+      // Analyze image to see if optimization is needed
+      const analysis = await analyzeImageForProvider(filePath, providerName);
       if (analysis.needsOptimization) {
         logger.info(`[ImageProcessor] Image requires optimization: ${analysis.reasons.join(', ')}`);
         base64Image = await optimizeImageForProvider(filePath, providerName);
