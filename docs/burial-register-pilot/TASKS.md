@@ -58,13 +58,13 @@ Sequential task list for implementing the burial register pilot extension. Compl
   - Return array of flat entry objects
 
 ### 2.2 Test Flattening Logic (Single PR: 2.2.1-2.2.7)
-- [ ] **2.2.1** Create test with sample page JSON containing 3 entries
-- [ ] **2.2.2** Verify flattening produces exactly 3 flat entry objects
-- [ ] **2.2.3** Verify each entry has correct entry_id format
-- [ ] **2.2.4** Verify page headers are injected into each entry
-- [ ] **2.2.5** Verify processing metadata is injected into each entry
-- [ ] **2.2.6** Test edge case: empty entries array
-- [ ] **2.2.7** Test edge case: missing headers
+- [x] **2.2.1** Create test with sample page JSON containing 3 entries
+- [x] **2.2.2** Verify flattening produces exactly 3 flat entry objects
+- [x] **2.2.3** Verify each entry has correct entry_id format
+- [x] **2.2.4** Verify page headers are injected into each entry
+- [x] **2.2.5** Verify processing metadata is injected into each entry
+- [x] **2.2.6** Test edge case: empty entries array
+- [x] **2.2.7** Test edge case: missing headers
 
 ---
 
