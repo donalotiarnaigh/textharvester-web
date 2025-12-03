@@ -2,6 +2,7 @@
 // fileUpload.js
 
 import { getSelectedModel } from "./modelSelection.js";
+import { getSelectedSourceType, getVolumeId } from "./sourceTypeSelection.js";
 
 export const handleFileUpload = (dropzoneInstance) => {
   console.log("Dropzone initialized"); // Log initialization
@@ -38,12 +39,20 @@ export const handleFileUpload = (dropzoneInstance) => {
     );
   });
 
-  dropzoneInstance.on("sending", function(file, xhr, formData) {
+  dropzoneInstance.on("sending", function (file, xhr, formData) {
     const replaceExisting = document.getElementById('replaceExisting').checked;
     const selectedModel = getSelectedModel();
+    const sourceType = getSelectedSourceType();
+    const volumeId = getVolumeId();
     console.log('Replace existing checked:', replaceExisting); // Debug log
     console.log('Selected model:', selectedModel); // Debug log
+    console.log('Selected source type:', sourceType); // Debug log
+    console.log('Volume ID:', volumeId); // Debug log
     formData.append('replaceExisting', replaceExisting.toString()); // Convert to string
     formData.append('aiProvider', selectedModel);
+    formData.append('source_type', sourceType);
+    if (sourceType === 'burial_register') {
+      formData.append('volume_id', volumeId);
+    }
   });
 };
