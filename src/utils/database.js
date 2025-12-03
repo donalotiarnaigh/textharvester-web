@@ -57,6 +57,63 @@ function initializeDatabase() {
   });
 }
 
+// Initialize burial register table
+function initializeBurialRegisterTable() {
+  const createTableSQL = `
+    CREATE TABLE IF NOT EXISTS burial_register_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      volume_id TEXT NOT NULL,
+      page_number INTEGER NOT NULL,
+      row_index_on_page INTEGER NOT NULL,
+      entry_id TEXT NOT NULL,
+      entry_no_raw TEXT,
+      name_raw TEXT,
+      abode_raw TEXT,
+      burial_date_raw TEXT,
+      age_raw TEXT,
+      officiant_raw TEXT,
+      marginalia_raw TEXT,
+      extra_notes_raw TEXT,
+      row_ocr_raw TEXT,
+      parish_header_raw TEXT,
+      county_header_raw TEXT,
+      year_header_raw TEXT,
+      model_name TEXT,
+      model_run_id TEXT,
+      uncertainty_flags TEXT,
+      file_name TEXT,
+      ai_provider TEXT NOT NULL,
+      prompt_template TEXT,
+      prompt_version TEXT,
+      processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(volume_id, page_number, row_index_on_page, ai_provider)
+    )
+  `;
+
+  db.run(createTableSQL, (err) => {
+    if (err) {
+      logger.error('Error creating burial_register_entries table:', err);
+      return;
+    }
+    logger.info('Burial register entries table initialized');
+    
+    // Create indexes
+    const indexes = [
+      'CREATE INDEX IF NOT EXISTS idx_burial_provider_volume_page ON burial_register_entries(ai_provider, volume_id, page_number)',
+      'CREATE INDEX IF NOT EXISTS idx_burial_entry_id ON burial_register_entries(entry_id)',
+      'CREATE INDEX IF NOT EXISTS idx_burial_volume_page ON burial_register_entries(volume_id, page_number)'
+    ];
+
+    indexes.forEach((indexSQL) => {
+      db.run(indexSQL, (indexErr) => {
+        if (indexErr) {
+          logger.error('Error creating burial register index:', indexErr);
+        }
+      });
+    });
+  });
+}
+
 // Store a single memorial record
 function storeMemorial(data) {
   logger.info('Attempting to store memorial:', JSON.stringify(data));
@@ -153,6 +210,7 @@ const backupDatabase = async () => {
 
 // Initialize database on module load
 initializeDatabase();
+initializeBurialRegisterTable();
 
 module.exports = {
   storeMemorial,
