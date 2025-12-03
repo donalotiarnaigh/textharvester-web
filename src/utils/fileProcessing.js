@@ -7,6 +7,9 @@ const { getPrompt } = require('./prompts/templates/providerTemplates');
 const { isEmptySheetError } = require('./errorTypes');
 const burialRegisterFlattener = require('./burialRegisterFlattener');
 const burialRegisterStorage = require('./burialRegisterStorage');
+const { getMemorialNumberForMonument } = require('./filenameParser');
+const { optimizeImageForProvider, analyzeImageForProvider } = require('./imageProcessor');
+const config = require('../../config.json');
 
 /**
  * Enhances the processFile function with detailed logging for better tracking and debugging.
@@ -17,15 +20,38 @@ const burialRegisterStorage = require('./burialRegisterStorage');
  */
 async function processFile(filePath, options = {}) {
   const providerName = options.provider || process.env.AI_PROVIDER || 'openai';
-  const promptTemplate = options.promptTemplate || 'memorialOCR';
-  const promptVersion = options.promptVersion || 'latest';
-  const sourceType = options.sourceType || options.source_type || 'memorial';
+  const sourceType = options.sourceType || options.source_type || 'record_sheet';
   
-  logger.info(`Starting to process file: ${filePath} with provider: ${providerName}`);
+  // Select template based on source_type (unless custom template is provided)
+  const promptTemplate = options.promptTemplate || 
+    (sourceType === 'burial_register'
+      ? 'burialRegister'
+      : sourceType === 'monument_photo' 
+        ? 'monumentPhotoOCR'
+        : 'memorialOCR');
+  
+  const promptVersion = options.promptVersion || 'latest';
+  
+  logger.info(`Processing ${path.basename(filePath)} with provider: ${providerName}, source: ${sourceType}, template: ${promptTemplate}`);
   
   try {
-    const base64Image = await fs.readFile(filePath, { encoding: 'base64' });
-    logger.info(`File ${filePath} read successfully. Proceeding with OCR processing.`);
+    // For burial register, skip image optimization (handled differently)
+    // For other types, analyze image to see if optimization is needed
+    let base64Image;
+    if (sourceType === 'burial_register') {
+      base64Image = await fs.readFile(filePath, { encoding: 'base64' });
+      logger.info(`File ${filePath} read successfully (burial register, no optimization). Proceeding with OCR processing.`);
+    } else {
+      if (analysis.needsOptimization) {
+        logger.info(`[ImageProcessor] Image requires optimization: ${analysis.reasons.join(', ')}`);
+        base64Image = await optimizeImageForProvider(filePath, providerName);
+        logger.info(`File ${filePath} optimized and processed successfully. Proceeding with OCR processing.`);
+      } else {
+        // Image is already within limits, read directly
+        base64Image = await fs.readFile(filePath, { encoding: 'base64' });
+        logger.info(`File ${filePath} read successfully (no optimization needed). Proceeding with OCR processing.`);
+      }
+    }
 
     // Create provider instance
     const provider = createProvider({
@@ -118,18 +144,35 @@ async function processFile(filePath, options = {}) {
     logger.debugPayload(`Raw ${providerName} API response for ${filePath}:`, rawExtractedData);
     
     try {
+      // For monument photos, inject memorial number from filename if not provided by OCR
+      const filename = path.basename(filePath);
+      const filenameMemorialNumber = getMemorialNumberForMonument(filename, sourceType);
+      
+      // Enhance raw data with filename-based memorial number for monuments
+      let enhancedData = { ...rawExtractedData };
+      if (sourceType === 'monument_photo' && filenameMemorialNumber) {
+        // Use filename memorial number if OCR didn't provide one or provided null
+        if (!enhancedData.memorial_number || enhancedData.memorial_number === null) {
+          enhancedData.memorial_number = filenameMemorialNumber;
+          logger.info(`[FileProcessing] Injected memorial number from filename: ${filenameMemorialNumber} for ${filename}`);
+        } else {
+          logger.info(`[FileProcessing] OCR provided memorial number: ${enhancedData.memorial_number}, keeping it over filename: ${filenameMemorialNumber}`);
+        }
+      }
+      
       // Validate and convert the data according to our type definitions
-      const extractedData = promptInstance.validateAndConvert(rawExtractedData);
+      const extractedData = promptInstance.validateAndConvert(enhancedData);
       
       logger.info(`${providerName} API response processed successfully for ${filePath}`);
       logger.debugPayload(`Processed ${providerName} data for ${filePath}:`, extractedData);
       
       // Add metadata to the extracted data
-      extractedData.fileName = path.basename(filePath);
+      extractedData.fileName = filename;
       extractedData.ai_provider = providerName;
       extractedData.model_version = provider.getModelVersion();
       extractedData.prompt_template = promptTemplate;
       extractedData.prompt_version = promptInstance.version;
+      extractedData.source_type = sourceType;
       
       // Store in database
       await storeMemorial(extractedData);
@@ -153,7 +196,8 @@ async function processFile(filePath, options = {}) {
           errorType: error.type || 'empty_sheet',
           errorMessage: error.message,
           ai_provider: providerName,
-          model_version: provider.getModelVersion()
+          model_version: provider.getModelVersion(),
+          source_type: sourceType
         };
         
         // Clean up the file even for empty sheets

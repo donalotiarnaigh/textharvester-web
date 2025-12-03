@@ -28,7 +28,7 @@ describe('PerformanceTracker', () => {
       
       const result = await PerformanceTracker.trackAPICall(
         'openai',
-        'gpt-5',
+        'gpt-4o',
         'processImage',
         mockFn,
         { testMetadata: 'value' }
@@ -38,10 +38,10 @@ describe('PerformanceTracker', () => {
       expect(mockFn).toHaveBeenCalledTimes(1);
 
       const stats = tracker.getStats();
-      expect(stats['openai-gpt-5']).toBeDefined();
-      expect(stats['openai-gpt-5'].totalCalls).toBe(1);
-      expect(stats['openai-gpt-5'].successfulCalls).toBe(1);
-      expect(stats['openai-gpt-5'].failedCalls).toBe(0);
+      expect(stats['openai-gpt-4o']).toBeDefined();
+      expect(stats['openai-gpt-4o'].totalCalls).toBe(1);
+      expect(stats['openai-gpt-4o'].successfulCalls).toBe(1);
+      expect(stats['openai-gpt-4o'].failedCalls).toBe(0);
     });
 
     test('should track failed API calls', async () => {
@@ -73,15 +73,15 @@ describe('PerformanceTracker', () => {
       
       await PerformanceTracker.trackAPICall(
         'openai',
-        'gpt-5',
+        'gpt-4o',
         'processImage',
         mockFn
       );
 
       const stats = tracker.getStats();
-      expect(stats['openai-gpt-5'].averageResponseTime).toBeGreaterThan(90);
-      expect(stats['openai-gpt-5'].minResponseTime).toBeGreaterThan(90);
-      expect(stats['openai-gpt-5'].maxResponseTime).toBeGreaterThan(90);
+      expect(stats['openai-gpt-4o'].averageResponseTime).toBeGreaterThan(90);
+      expect(stats['openai-gpt-4o'].minResponseTime).toBeGreaterThan(90);
+      expect(stats['openai-gpt-4o'].maxResponseTime).toBeGreaterThan(90);
     });
   });
 
@@ -94,12 +94,12 @@ describe('PerformanceTracker', () => {
     test('should filter stats by provider', async () => {
       const mockFn = jest.fn().mockResolvedValue({ success: true });
       
-      await PerformanceTracker.trackAPICall('openai', 'gpt-5', 'processImage', mockFn);
+      await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', mockFn);
       await PerformanceTracker.trackAPICall('anthropic', 'claude-4-sonnet-20250514', 'processImage', mockFn);
 
       const openaiStats = tracker.getStats('openai');
       expect(Object.keys(openaiStats)).toHaveLength(1);
-      expect(openaiStats['openai-gpt-5']).toBeDefined();
+      expect(openaiStats['openai-gpt-4o']).toBeDefined();
 
       const anthropicStats = tracker.getStats('anthropic');
       expect(Object.keys(anthropicStats)).toHaveLength(1);
@@ -110,17 +110,17 @@ describe('PerformanceTracker', () => {
       const successFn = jest.fn().mockResolvedValue({ success: true });
       const failFn = jest.fn().mockRejectedValue(new Error('Failed'));
       
-      await PerformanceTracker.trackAPICall('openai', 'gpt-5', 'processImage', successFn);
-      await PerformanceTracker.trackAPICall('openai', 'gpt-5', 'processImage', successFn);
+      await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', successFn);
+      await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', successFn);
       
       try {
-        await PerformanceTracker.trackAPICall('openai', 'gpt-5', 'processImage', failFn);
+        await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', failFn);
       } catch (e) {
         // Expected to fail
       }
 
       const stats = tracker.getStats();
-      expect(stats['openai-gpt-5'].successRate).toBeCloseTo(66.67, 1);
+      expect(stats['openai-gpt-4o'].successRate).toBeCloseTo(66.67, 1);
     });
   });
 
@@ -128,7 +128,7 @@ describe('PerformanceTracker', () => {
     test('should generate comprehensive summary', async () => {
       const mockFn = jest.fn().mockResolvedValue({ success: true });
       
-      await PerformanceTracker.trackAPICall('openai', 'gpt-5', 'processImage', mockFn);
+      await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', mockFn);
       await PerformanceTracker.trackAPICall('anthropic', 'claude-4-sonnet-20250514', 'processImage', mockFn);
 
       const summary = tracker.generateSummary();
@@ -142,7 +142,7 @@ describe('PerformanceTracker', () => {
       
       expect(summary.providerComparison.openai).toBeDefined();
       expect(summary.providerComparison.anthropic).toBeDefined();
-      expect(summary.modelComparison['openai-gpt-5']).toBeDefined();
+      expect(summary.modelComparison['openai-gpt-4o']).toBeDefined();
       expect(summary.modelComparison['anthropic-claude-4-sonnet-20250514']).toBeDefined();
     });
   });
@@ -151,7 +151,7 @@ describe('PerformanceTracker', () => {
     test('should return recent metrics', async () => {
       const mockFn = jest.fn().mockResolvedValue({ success: true });
       
-      await PerformanceTracker.trackAPICall('openai', 'gpt-5', 'processImage', mockFn);
+      await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', mockFn);
       await PerformanceTracker.trackAPICall('anthropic', 'claude-4-sonnet-20250514', 'processImage', mockFn);
 
       const recentMetrics = tracker.getRecentMetrics(5);
@@ -164,7 +164,7 @@ describe('PerformanceTracker', () => {
       const mockFn = jest.fn().mockResolvedValue({ success: true });
       
       for (let i = 0; i < 10; i++) {
-        await PerformanceTracker.trackAPICall('openai', 'gpt-5', 'processImage', mockFn);
+        await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', mockFn);
       }
 
       const recentMetrics = tracker.getRecentMetrics(5);
@@ -176,7 +176,7 @@ describe('PerformanceTracker', () => {
     test('should clear all metrics', async () => {
       const mockFn = jest.fn().mockResolvedValue({ success: true });
       
-      await PerformanceTracker.trackAPICall('openai', 'gpt-5', 'processImage', mockFn);
+      await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', mockFn);
       
       let stats = tracker.getStats();
       expect(Object.keys(stats)).toHaveLength(1);

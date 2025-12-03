@@ -15,7 +15,7 @@ describe('Data Conversion Utils', () => {
       file_name: 'test1.jpg',
       processed_date: '2025-01-01T12:00:00Z',
       ai_provider: 'openai',
-      model_version: 'gpt-5',
+      model_version: 'gpt-4o',
       prompt_version: '1.0'
     },
     {
@@ -47,7 +47,7 @@ describe('Data Conversion Utils', () => {
       expect(lines[0]).toBe('memorial_number,first_name,last_name,year_of_death,inscription,file_name,ai_provider,model_version,prompt_version,processed_date');
       
       // Check first data row
-      expect(lines[1]).toBe('MEM001,John,Doe,1900,Rest in Peace,test1.jpg,openai,gpt-5,1.0,2025-01-01T12:00:00Z');
+      expect(lines[1]).toBe('MEM001,John,Doe,1900,Rest in Peace,test1.jpg,openai,gpt-4o,1.0,2025-01-01T12:00:00Z');
     });
 
     it('should properly handle newlines in fields', () => {

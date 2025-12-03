@@ -38,7 +38,9 @@ describe('Upload Handler', () => {
           mimetype: 'image/jpeg'
         }]
       };
+      // Preserve the existing body and add defaults
       req.body = {
+        ...req.body,
         aiProvider: req.body.aiProvider || 'openai',
         promptTemplate: req.body.promptTemplate || 'memorialOCR',
         promptVersion: req.body.promptVersion || 'latest',
@@ -71,8 +73,9 @@ describe('Upload Handler', () => {
           expect.objectContaining({
             path: '/uploads/test.jpg',
             provider: 'openai',
-            promptTemplate: 'memorialOCR',
-            promptVersion: 'latest'
+            // promptTemplate no longer passed - fileProcessing.js selects based on source_type
+            promptVersion: 'latest',
+            source_type: 'record_sheet'
           })
         ])
       );
@@ -93,9 +96,54 @@ describe('Upload Handler', () => {
       expect(enqueueFiles).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
-            promptTemplate: 'memorialOCR',
-            promptVersion: 'latest'
+            // promptTemplate no longer passed - fileProcessing.js selects based on source_type
+            promptVersion: 'latest',
+            source_type: 'record_sheet'
           })
+        ])
+      );
+    });
+
+    test('queues multiple files in a single batch', async () => {
+      // Setup custom multer middleware to simulate two files
+      const multiFileMiddleware = (req, res, next) => {
+        req.files = {
+          file: [
+            {
+              originalname: 'first.jpg',
+              path: '/uploads/first.jpg',
+              mimetype: 'image/jpeg'
+            },
+            {
+              originalname: 'second.jpg',
+              path: '/uploads/second.jpg',
+              mimetype: 'image/jpeg'
+            }
+          ]
+        };
+        req.body = {
+          ...req.body,
+          aiProvider: req.body.aiProvider || 'openai',
+          promptTemplate: req.body.promptTemplate || 'memorialOCR',
+          promptVersion: req.body.promptVersion || 'latest',
+          replaceExisting: req.body.replaceExisting || 'false'
+        };
+        next();
+      };
+
+      multer.mockReturnValue({
+        fields: jest.fn().mockReturnValue(multiFileMiddleware)
+      });
+
+      // Execute
+      await handleFileUpload(mockReq, mockRes);
+
+      // Assert
+      expect(enqueueFiles).toHaveBeenCalledTimes(1);
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ path: '/uploads/first.jpg' }),
+          expect.objectContaining({ path: '/uploads/second.jpg' })
         ])
       );
     });
@@ -216,8 +264,9 @@ describe('Upload Handler', () => {
         expect.arrayContaining([
           expect.objectContaining({
             provider: 'anthropic',
-            promptTemplate: 'customTemplate',
-            promptVersion: '2.0'
+            // promptTemplate no longer passed - fileProcessing.js selects based on source_type
+            promptVersion: '2.0',
+            source_type: 'record_sheet'
           })
         ])
       );
@@ -256,4 +305,90 @@ describe('Upload Handler', () => {
       );
     });
   });
-}); 
+
+  describe('Source Type Handling', () => {
+    test('should handle source_type parameter when provided', async () => {
+      // Setup
+      mockReq.body = {
+        aiProvider: 'openai',
+        replaceExisting: 'false',
+        source_type: 'monument_photo'
+      };
+      
+      // Execute
+      await handleFileUpload(mockReq, mockRes);
+      
+      // Assert
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            source_type: 'monument_photo'
+          })
+        ])
+      );
+    });
+
+    test('should default to record_sheet when source_type not provided', async () => {
+      // Setup
+      mockReq.body = {
+        aiProvider: 'openai',
+        replaceExisting: 'false'
+      };
+      
+      // Execute
+      await handleFileUpload(mockReq, mockRes);
+      
+      // Assert
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            source_type: 'record_sheet'
+          })
+        ])
+      );
+    });
+
+    test('should validate source_type and default invalid values to record_sheet', async () => {
+      // Setup
+      mockReq.body = {
+        aiProvider: 'openai',
+        replaceExisting: 'false',
+        source_type: 'invalid_type'
+      };
+      
+      // Execute
+      await handleFileUpload(mockReq, mockRes);
+      
+      // Assert that invalid source_type is coerced to record_sheet
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            source_type: 'record_sheet'
+          })
+        ])
+      );
+    });
+
+    test('should accept valid monument_photo source_type', async () => {
+      // Setup
+      mockReq.body = {
+        aiProvider: 'openai',
+        replaceExisting: 'false',
+        source_type: 'monument_photo'
+      };
+      
+      // Execute
+      await handleFileUpload(mockReq, mockRes);
+      
+      // Assert that valid monument_photo source_type is preserved
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            source_type: 'monument_photo'
+          })
+        ])
+      );
+    });
+  });
+
+});

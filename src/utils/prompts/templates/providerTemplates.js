@@ -4,6 +4,7 @@
 
 const MemorialOCRPrompt = require('./MemorialOCRPrompt');
 const BurialRegisterPrompt = require('./BurialRegisterPrompt');
+const MonumentPhotoOCRPrompt = require('./MonumentPhotoOCRPrompt');
 const ProviderPromptManager = require('../ProviderPromptManager');
 const { MEMORIAL_FIELDS } = require('../types/memorialFields');
 
@@ -100,6 +101,19 @@ const burialRegisterTemplates = {
   })
 };
 
+const monumentPhotoOCRTemplates = {
+  openai: new MonumentPhotoOCRPrompt({
+    version: '1.0.0',
+    provider: 'openai',
+    fields: MEMORIAL_FIELDS
+  }),
+  anthropic: new MonumentPhotoOCRPrompt({
+    version: '1.0.0',
+    provider: 'anthropic',
+    fields: MEMORIAL_FIELDS
+  })
+};
+
 /**
  * Get a prompt template for a provider
  * @param {string} provider The AI provider name
@@ -108,19 +122,29 @@ const burialRegisterTemplates = {
  * @returns {Object} The prompt template
  */
 const getPrompt = (provider, templateName, version = 'latest') => {
-  // Handle the special case for memorialOCR template
-  if (templateName === 'memorialOCR') {
-    const promptInstance = memorialOCRTemplates[provider];
-    if (!promptInstance) {
-      throw new Error(`No memorial OCR template found for provider: ${provider}`);
-    }
-    return promptInstance;
-  }
-
+  // Handle burial register template
   if (templateName === 'burialRegister') {
     const promptInstance = burialRegisterTemplates[provider];
     if (!promptInstance) {
       throw new Error(`No burial register template found for provider: ${provider}`);
+    }
+    return promptInstance;
+  }
+
+  // Handle monument photo OCR template
+  if (templateName === 'monumentPhotoOCR') {
+    const promptInstance = monumentPhotoOCRTemplates[provider];
+    if (!promptInstance) {
+      throw new Error(`No monument photo OCR template found for provider: ${provider}`);
+    }
+    return promptInstance;
+  }
+  
+  // Handle existing memorialOCR template
+  if (templateName === 'memorialOCR') {
+    const promptInstance = memorialOCRTemplates[provider];
+    if (!promptInstance) {
+      throw new Error(`No memorial OCR template found for provider: ${provider}`);
     }
     return promptInstance;
   }

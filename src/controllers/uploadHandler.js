@@ -141,7 +141,9 @@ const handleFileUpload = async (req, res) => {
   logger.info(`Prompt template: ${promptTemplate || 'default'}`);
   logger.info(`Prompt version: ${promptVersion || 'latest'}`);
   logger.info(`Source type: ${sourceType}`);
-  logger.info(`Volume ID: ${volumeId}`);
+  if (sourceType === 'burial_register') {
+    logger.info(`Volume ID: ${volumeId}`);
+  }
 
   const files = req.files?.file || [];
   logger.info(`Number of files received: ${files.length}`);
@@ -168,39 +170,36 @@ const handleFileUpload = async (req, res) => {
       logger.info("Cleared existing memorial records as requested");
     }
 
-    // Process files
+    // Collect all files to enqueue in a single batch to preserve sequential processing
+    const filesToQueue = [];
     for (const file of files) {
       try {
         if (file.mimetype === "application/pdf") {
           logger.info(`Processing PDF file: ${file.originalname}`);
           const imagePaths = await convertPdfToJpegs(file.path);
           logger.info(`Converted PDF to images: ${imagePaths}`);
-          await enqueueFiles(
-            imagePaths.map((imagePath) => ({
+          filesToQueue.push(
+            ...imagePaths.map((imagePath) => ({
               path: imagePath,
               mimetype: "image/jpeg",
               provider: selectedModel,
-              promptTemplate: promptConfig.template,
               promptVersion: promptConfig.version,
               source_type: sourceType,
               sourceType,
-              volume_id: volumeId,
-              volumeId,
+              ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
               uploadDir: path.dirname(imagePath)
             }))
           );
         } else {
-          await enqueueFiles([{ 
+          filesToQueue.push({
             ...file,
             provider: selectedModel,
-            promptTemplate: promptConfig.template,
             promptVersion: promptConfig.version,
             source_type: sourceType,
             sourceType,
-            volume_id: volumeId,
-            volumeId,
+            ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
             uploadDir: path.dirname(file.path)
-          }]);
+          });
         }
       } catch (conversionError) {
         logger.error(
@@ -210,6 +209,9 @@ const handleFileUpload = async (req, res) => {
         throw conversionError;
       }
     }
+
+    // Enqueue all files in a single call to maintain sequential processing order
+    enqueueFiles(filesToQueue);
 
     clearProcessingCompleteFlag();
     logger.info("Processing complete. Redirecting to results page.");

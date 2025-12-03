@@ -1,6 +1,9 @@
 {
   "port": 3000,
-  "supportedFileTypes": ["image/jpeg", "image/jpg"],
+  "supportedFileTypes": [
+    "image/jpeg",
+    "image/jpg"
+  ],
   "uploadPath": "./uploads/",
   "dataStorage": {
     "resultsPath": "./data/results/",
@@ -28,7 +31,7 @@
     }
   },
   "openAI": {
-    "model": "gpt-5",
+    "model": "gpt-4o",
     "maxTokens": 4000,
     "localCache": true,
     "cacheExpiry": 604800000
@@ -42,7 +45,8 @@
   "upload": {
     "maxFileCount": 100,
     "retryDelaySeconds": 3,
-    "maxFileSize": "50mb"
+    "maxFileSize": "50mb",
+    "maxConcurrent": 3
   },
   "environment": "development",
   "local": {
@@ -61,5 +65,12 @@
   },
   "database": {
     "path": "./data/memorials.db"
+  },
+  "monumentCropping": {
+    "enabled": false,
+    "minWidth": 400,
+    "minHeight": 400,
+    "aspectRatioMin": 0.5,
+    "aspectRatioMax": 2.0
   }
 }

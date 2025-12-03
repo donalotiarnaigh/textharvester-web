@@ -22,13 +22,13 @@ describe('Processing Page Model Selection Features', () => {
       localStorage.setItem('selectedModel', 'openai');
       initModelTracking();
       expect(document.getElementById('modelDisplay').textContent)
-        .toContain('OpenAI GPT-5');
+        .toContain('OpenAI GPT-4o');
     });
 
     test('should display default model when no model is selected', () => {
       initModelTracking();
       expect(document.getElementById('modelDisplay').textContent)
-        .toContain('OpenAI GPT-5');
+        .toContain('OpenAI GPT-4o');
     });
   });
 
@@ -64,7 +64,7 @@ describe('Processing Page Model Selection Features', () => {
     test('should display model-specific status messages during processing', () => {
       localStorage.setItem('selectedModel', 'openai');
       const message = getStatusMessage('processing', 'openai');
-      expect(message).toContain('Processing with OpenAI GPT-5');
+      expect(message).toContain('Processing with OpenAI GPT-4o');
     });
 
     test('should handle model-specific errors appropriately', () => {

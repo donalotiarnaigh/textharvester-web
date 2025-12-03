@@ -34,15 +34,23 @@ import { formatDate } from './date.js';
  */
 function updateModelInfoPanel(data) {
   if (!data) return;
-  
+
+  // Helper function to safely update DOM elements
+  const safeUpdate = (elementId, value) => {
+    const element = document.getElementById(elementId);
+    if (element) {
+      element.textContent = value;
+    }
+  };
+
   // Update model information
-  document.getElementById('infoProvider').textContent = formatProviderName(data.ai_provider);
-  document.getElementById('infoModelVersion').textContent = data.model_version || 'N/A';
-  
+  safeUpdate('infoProvider', formatProviderName(data.ai_provider));
+  safeUpdate('infoModelVersion', data.model_version || 'N/A');
+
   // Update prompt information
-  document.getElementById('infoTemplate').textContent = data.prompt_template || 'N/A';
-  document.getElementById('infoPromptVersion').textContent = data.prompt_version || 'N/A';
-  document.getElementById('infoProcessedDate').textContent = data.processed_date ? formatDate(data.processed_date) : 'N/A';
+  safeUpdate('infoTemplate', data.prompt_template || 'N/A');
+  safeUpdate('infoPromptVersion', data.prompt_version || 'N/A');
+  safeUpdate('infoProcessedDate', data.processed_date ? formatDate(data.processed_date) : 'N/A');
 }
 
 /**
@@ -90,6 +98,10 @@ function initializeModelInfoPanel() {
     button.addEventListener('click', handleCollapseToggle);
   });
 }
+
+// Export functions for use by other modules
+export { updateModelInfoPanel, initializeModelInfoPanel, formatProviderName };
+export { formatDate } from './date.js';
 
 // Make functions available globally for testing
 window.updateModelInfoPanel = updateModelInfoPanel;

@@ -9,7 +9,7 @@ import { initSourceTypeSelection } from "./sourceTypeSelection.js";
 
 // Ensure Dropzone is defined globally
 const initDropzone = () => {
-  // Initialize the model selection UI first
+  // Initialize UI components
   initSourceTypeSelection();
   initModelSelection();
   
