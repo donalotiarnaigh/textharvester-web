@@ -3,15 +3,16 @@ const logger = require('./logger');
 /**
  * Convert JSON data to CSV format
  * @param {Array} jsonData Array of objects to convert
+ * @param {Array} [columns] Optional array defining column order
  * @returns {string} CSV formatted string
  */
-function jsonToCsv(jsonData) {
+function jsonToCsv(jsonData, columns) {
   if (!jsonData || !Array.isArray(jsonData) || jsonData.length === 0) {
     return '';
   }
 
   // Define column order with all fields including prompt metadata
-  const columns = [
+  let columnOrder = [
     'memorial_number',
     'first_name',
     'last_name',
@@ -24,12 +25,16 @@ function jsonToCsv(jsonData) {
     'processed_date'
   ];
 
+  if (Array.isArray(columns) && columns.length > 0) {
+    columnOrder = columns;
+  }
+
   // Create header row
-  const headerRow = columns.join(',');
+  const headerRow = columnOrder.join(',');
 
   // Create data rows
   const dataRows = jsonData.map(record => {
-    return columns.map(column => {
+    return columnOrder.map(column => {
       let value = record[column];
       
       // Handle null/undefined values
