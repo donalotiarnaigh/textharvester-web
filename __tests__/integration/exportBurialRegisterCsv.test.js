@@ -1,6 +1,7 @@
 jest.unmock('fs');
 const fs = jest.requireActual('fs');
 const path = require('path');
+const config = require('../../config.json');
 
 const openaiEntries = [
   {
@@ -129,8 +130,14 @@ jest.mock('../../src/utils/logger', () => ({
 const exportScript = require('../../scripts/export-burial-register-csv');
 const logger = require('../../src/utils/logger');
 
-const dataDir = path.join(__dirname, '..', '..', 'data');
-const csvDir = path.join(dataDir, 'burial_register', 'vol1', 'csv');
+const resolveBurialRegisterBaseDir = () => path.resolve(
+  process.env.BURIAL_REGISTER_OUTPUT_DIR
+    || (config.burialRegister && config.burialRegister.outputDir)
+    || path.join(__dirname, '..', '..', 'data', 'burial_register')
+);
+
+const burialRegisterBaseDir = resolveBurialRegisterBaseDir();
+const csvDir = path.join(burialRegisterBaseDir, 'vol1', 'csv');
 const expectedHeader = [
   'volume_id',
   'page_number',
@@ -161,15 +168,15 @@ const expectedHeader = [
 describe('export-burial-register-csv script', () => {
   let exitSpy;
   const removeDataDir = () => {
-    if (fs.existsSync(dataDir)) {
-      fs.rmSync(dataDir, { recursive: true, force: true });
+    if (fs.existsSync(burialRegisterBaseDir)) {
+      fs.rmSync(burialRegisterBaseDir, { recursive: true, force: true });
     }
   };
 
   beforeAll(async () => {
     exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {});
     removeDataDir();
-    fs.mkdirSync(dataDir, { recursive: true });
+    fs.mkdirSync(burialRegisterBaseDir, { recursive: true });
   });
 
   afterAll(async () => {

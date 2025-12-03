@@ -125,6 +125,12 @@ To run the Historic Graves Text Harvester locally, follow these steps:
 - Option to replace or append to existing records
 - Export functionality for data portability
 
+### Burial register configuration
+
+- Burial register outputs default to `./data/burial_register` with files organised by volume and provider.
+- Configure defaults in `config.json` under the `burialRegister` section (output directory, default volume ID, CSV options).
+- Override the output directory at runtime with the `BURIAL_REGISTER_OUTPUT_DIR` environment variable when needed.
+
 ## Support
 
 For support, questions, or feedback, contact us at [daniel@curlew.ie](daniel@curlew.ie).

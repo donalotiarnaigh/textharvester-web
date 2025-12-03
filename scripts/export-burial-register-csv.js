@@ -3,8 +3,20 @@ const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const { jsonToCsv } = require('../src/utils/dataConversion');
 const logger = require('../src/utils/logger');
+const config = require('../config.json');
 
 const dbPath = path.join(__dirname, '..', 'data', 'memorials.db');
+
+function getBurialRegisterOutputDir() {
+  const burialRegisterConfig = config.burialRegister || {};
+  const outputDir = process.env.BURIAL_REGISTER_OUTPUT_DIR || burialRegisterConfig.outputDir;
+
+  if (outputDir) {
+    return path.resolve(outputDir);
+  }
+
+  return path.join(__dirname, '..', 'data', 'burial_register');
+}
 
 function normalizeProvider(providerArg) {
   const provider = providerArg.toLowerCase();
@@ -113,7 +125,7 @@ function buildCsvData(entries) {
 }
 
 function writeCsvFile(csvData, volumeId, provider) {
-  const csvDir = path.join(__dirname, '..', 'data', 'burial_register', volumeId, 'csv');
+  const csvDir = path.join(getBurialRegisterOutputDir(), volumeId, 'csv');
   fs.mkdirSync(csvDir, { recursive: true });
 
   const outputPath = path.join(csvDir, `burials_${volumeId}_${provider}.csv`);
@@ -178,5 +190,6 @@ if (require.main === module) {
 module.exports = {
   buildCsvData,
   fetchEntries,
-  main
+  main,
+  getBurialRegisterOutputDir
 };

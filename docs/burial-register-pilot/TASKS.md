@@ -187,13 +187,13 @@ Sequential task list for implementing the burial register pilot extension. Compl
 ## Phase 6: Configuration
 
 ### 6.1 Update config.json (Single PR: 6.1.1-6.1.3)
-- [ ] **6.1.1** Add `burialRegister` section to `config.json`
+- [x] **6.1.1** Add `burialRegister` section to `config.json`
   - `outputDir`: `"./data/burial_register"`
   - `volumeId`: `"vol1"`
   - `csv.includeHeaders`: `true`
   - `csv.encoding`: `"utf-8"`
-- [ ] **6.1.2** Document environment variable override: `BURIAL_REGISTER_OUTPUT_DIR`
-- [ ] **6.1.3** Verify config is loaded correctly in code
+- [x] **6.1.2** Document environment variable override: `BURIAL_REGISTER_OUTPUT_DIR`
+- [x] **6.1.3** Verify config is loaded correctly in code
 
 ---
 
