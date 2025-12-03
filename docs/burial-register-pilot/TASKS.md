@@ -149,13 +149,13 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - [x] **4.3.5** Verify existing queue functionality unchanged
 
 ### 4.4 Test End-to-End Single Provider Flow (Single PR: 4.4.1-4.4.7)
-- [ ] **4.4.1** Test: Upload single burial register page image
-- [ ] **4.4.2** Test: Process with GPT provider
-- [ ] **4.4.3** Verify page JSON stored correctly
-- [ ] **4.4.4** Verify all entries stored in database
-- [ ] **4.4.5** Verify return value structure
-- [ ] **4.4.6** Test: Process same page with Claude provider
-- [ ] **4.4.7** Verify no errors in processing
+- [x] **4.4.1** Test: Upload single burial register page image
+- [x] **4.4.2** Test: Process with GPT provider
+- [x] **4.4.3** Verify page JSON stored correctly
+- [x] **4.4.4** Verify all entries stored in database
+- [x] **4.4.5** Verify return value structure
+- [x] **4.4.6** Test: Process same page with Claude provider
+- [x] **4.4.7** Verify no errors in processing
 
 ---
 
