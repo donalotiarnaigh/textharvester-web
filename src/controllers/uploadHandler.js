@@ -8,6 +8,7 @@ const logger = require("../utils/logger");
 const { clearProcessingCompleteFlag } = require("../utils/processingFlag");
 const { convertPdfToJpegs } = require("../utils/pdfConverter");
 const { clearAllMemorials } = require('../utils/database');
+const { clearAllBurialRegisterEntries } = require('../utils/burialRegisterStorage');
 const { getPrompt } = require('../utils/prompts/templates/providerTemplates');
 const { promptManager } = require('../utils/prompts/templates/providerTemplates');
 
@@ -167,8 +168,13 @@ const handleFileUpload = async (req, res) => {
     }
 
     if (shouldReplace) {
-      await clearAllMemorials();
-      logger.info("Cleared existing memorial records as requested");
+      if (sourceType === 'burial_register') {
+        await clearAllBurialRegisterEntries();
+        logger.info("Cleared existing burial register entries as requested");
+      } else {
+        await clearAllMemorials();
+        logger.info("Cleared existing memorial records as requested");
+      }
     }
 
     // Collect all files to enqueue in a single batch to preserve sequential processing

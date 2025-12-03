@@ -193,8 +193,48 @@ async function storeBurialRegisterEntry(entry) {
   });
 }
 
+/**
+ * Clear all burial register entries from the database.
+ * @returns {Promise<void>} Resolves when all entries are cleared
+ */
+function clearAllBurialRegisterEntries() {
+  return new Promise((resolve, reject) => {
+    logger.info('Attempting to clear all burial register entries');
+    db.run('DELETE FROM burial_register_entries', [], (err) => {
+      if (err) {
+        logger.error('Error clearing burial register entries:', err);
+        reject(err);
+        return;
+      }
+      logger.info('Successfully cleared all burial register entries');
+      resolve();
+    });
+  });
+}
+
+/**
+ * Retrieve all burial register entries from the database.
+ * @returns {Promise<Array>} Resolves with array of burial register entries
+ */
+function getAllBurialRegisterEntries() {
+  return new Promise((resolve, reject) => {
+    logger.info('Attempting to retrieve all burial register entries');
+    db.all('SELECT * FROM burial_register_entries ORDER BY processed_date DESC', [], (err, rows) => {
+      if (err) {
+        logger.error('Error retrieving burial register entries:', err);
+        reject(err);
+        return;
+      }
+      logger.info(`Retrieved ${rows ? rows.length : 0} burial register entries`);
+      resolve(rows || []); // Ensure we always return an array
+    });
+  });
+}
+
 module.exports = {
   storePageJSON,
   storeBurialRegisterEntry,
-  getBurialRegisterBaseDir
+  getBurialRegisterBaseDir,
+  clearAllBurialRegisterEntries,
+  getAllBurialRegisterEntries
 };
