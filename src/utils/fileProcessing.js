@@ -36,11 +36,39 @@ async function processFile(filePath, options = {}) {
     if (sourceType === 'burial_register') {
       logger.info(`Processing burial register file via ${providerName}: ${filePath}`);
 
-      // Placeholder to be expanded in subsequent tasks; referenced to satisfy linting rules.
-      void burialRegisterFlattener;
-      void burialRegisterStorage;
+      const promptInstance = getPrompt(providerName, 'burialRegister', promptVersion);
+      const promptConfig = promptInstance.getProviderPrompt(providerName);
 
-      throw new Error('Burial register processing branch not implemented yet');
+      const userPrompt = typeof promptConfig === 'string' ? promptConfig : promptConfig.userPrompt;
+      const systemPrompt = typeof promptConfig === 'object' ? promptConfig.systemPrompt : undefined;
+
+      const pageDataRaw = await provider.processImage(base64Image, userPrompt, {
+        systemPrompt: systemPrompt,
+        promptTemplate: promptInstance
+      });
+
+      logger.debugPayload(`Raw ${providerName} burial register response for ${filePath}:`, pageDataRaw);
+
+      const pageData = promptInstance.validateAndConvertPage(pageDataRaw);
+
+      logger.debugPayload(`Validated burial register page data for ${filePath}:`, pageData);
+
+      const entries = burialRegisterFlattener.flattenPageToEntries(pageData, {
+        provider: providerName,
+        model: provider.getModelVersion(),
+        filePath
+      });
+
+      await burialRegisterStorage.storePageJSON(
+        pageData,
+        providerName,
+        pageData.volume_id,
+        pageData.page_number
+      );
+
+      logger.info(`Prepared ${entries.length} burial register entries for ${filePath}`);
+
+      throw new Error('Burial register entry processing not implemented yet (pending 4.1.9-4.1.13)');
     }
     
     // Get the appropriate prompt for this provider
