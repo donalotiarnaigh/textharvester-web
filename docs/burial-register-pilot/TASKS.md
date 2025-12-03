@@ -172,15 +172,15 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - [x] **5.1.8** Add error handling and logging
 
 ### 5.2 Test CSV Export (Single PR: 5.2.1-5.2.9)
-- [ ] **5.2.1** Insert test entries into database (GPT entries)
-- [ ] **5.2.2** Insert test entries into database (Claude entries)
-- [ ] **5.2.3** Run export script for GPT: `node scripts/export-burial-register-csv.js gpt vol1`
-- [ ] **5.2.4** Run export script for Claude: `node scripts/export-burial-register-csv.js claude vol1`
-- [ ] **5.2.5** Verify GPT CSV file created
-- [ ] **5.2.6** Verify Claude CSV file created
-- [ ] **5.2.7** Verify CSV column order matches pilot plan
-- [ ] **5.2.8** Verify all entries included in CSV
-- [ ] **5.2.9** Verify uncertainty_flags format in CSV
+- [x] **5.2.1** Insert test entries into database (GPT entries)
+- [x] **5.2.2** Insert test entries into database (Claude entries)
+- [x] **5.2.3** Run export script for GPT: `node scripts/export-burial-register-csv.js gpt vol1`
+- [x] **5.2.4** Run export script for Claude: `node scripts/export-burial-register-csv.js claude vol1`
+- [x] **5.2.5** Verify GPT CSV file created
+- [x] **5.2.6** Verify Claude CSV file created
+- [x] **5.2.7** Verify CSV column order matches pilot plan
+- [x] **5.2.8** Verify all entries included in CSV
+- [x] **5.2.9** Verify uncertainty_flags format in CSV
 
 ---
 
