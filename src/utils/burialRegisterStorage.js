@@ -2,8 +2,19 @@ const fs = require('fs');
 const path = require('path');
 const { db } = require('./database');
 const logger = require('./logger');
+const config = require('../../config.json');
 
-const BURIAL_REGISTER_BASE_DIR = path.join(__dirname, '..', '..', 'data', 'burial_register');
+const burialRegisterConfig = config.burialRegister || {};
+
+function getBurialRegisterBaseDir() {
+  const outputDir = process.env.BURIAL_REGISTER_OUTPUT_DIR || burialRegisterConfig.outputDir;
+
+  if (outputDir) {
+    return path.resolve(outputDir);
+  }
+
+  return path.join(__dirname, '..', '..', 'data', 'burial_register');
+}
 
 function padPageNumber(pageNumber) {
   if (pageNumber === null || pageNumber === undefined) {
@@ -18,7 +29,7 @@ function padPageNumber(pageNumber) {
 
 async function storePageJSON(pageData, provider, volumeId, pageNumber) {
   const paddedPage = padPageNumber(pageNumber);
-  const pagesDir = path.join(BURIAL_REGISTER_BASE_DIR, volumeId, 'pages', provider);
+  const pagesDir = path.join(getBurialRegisterBaseDir(), volumeId, 'pages', provider);
   await fs.promises.mkdir(pagesDir, { recursive: true });
 
   const filePath = path.join(pagesDir, `page_${paddedPage}.json`);
@@ -122,5 +133,6 @@ async function storeBurialRegisterEntry(entry) {
 
 module.exports = {
   storePageJSON,
-  storeBurialRegisterEntry
+  storeBurialRegisterEntry,
+  getBurialRegisterBaseDir
 };

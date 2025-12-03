@@ -51,6 +51,14 @@
     "saveLastSession": true,
     "autoBackup": true
   },
+  "burialRegister": {
+    "outputDir": "./data/burial_register",
+    "volumeId": "vol1",
+    "csv": {
+      "includeHeaders": true,
+      "encoding": "utf-8"
+    }
+  },
   "database": {
     "path": "./data/memorials.db"
   }

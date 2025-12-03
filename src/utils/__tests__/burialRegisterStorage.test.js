@@ -12,10 +12,11 @@ jest.mock('../logger', () => ({
 }));
 
 describe('burialRegisterStorage', () => {
-  const burialRegisterBaseDir = path.join(__dirname, '..', '..', '..', 'data', 'burial_register');
   let db;
   let storePageJSON;
   let storeBurialRegisterEntry;
+  let getBurialRegisterBaseDir;
+  let burialRegisterBaseDir;
 
   const removeDirectory = async (targetPath) => {
     if (fs.promises.rm) {
@@ -73,16 +74,18 @@ describe('burialRegisterStorage', () => {
 
   beforeEach(async () => {
     jest.resetModules();
+    delete process.env.BURIAL_REGISTER_OUTPUT_DIR;
     db = new sqlite3.Database(':memory:');
     await createTable();
 
     jest.doMock('../database', () => ({ db }));
-    ({ storePageJSON, storeBurialRegisterEntry } = require('../burialRegisterStorage'));
+    ({ storePageJSON, storeBurialRegisterEntry, getBurialRegisterBaseDir } = require('../burialRegisterStorage'));
+    burialRegisterBaseDir = getBurialRegisterBaseDir();
   });
 
   afterEach(async () => {
     await new Promise((resolve) => db.close(resolve));
-    await removeDirectory(burialRegisterBaseDir);
+    await removeDirectory(getBurialRegisterBaseDir());
     jest.resetModules();
   });
 
@@ -95,12 +98,33 @@ describe('burialRegisterStorage', () => {
     };
 
     const storedPath = await storePageJSON(pageData, 'gpt', 'vol-test', 1);
-    const relativePath = path.relative(path.join(__dirname, '..', '..', '..'), storedPath);
+    const expectedPath = path.join(burialRegisterBaseDir, 'vol-test', 'pages', 'gpt', 'page_001.json');
 
-    expect(relativePath).toBe(path.join('data', 'burial_register', 'vol-test', 'pages', 'gpt', 'page_001.json'));
+    expect(storedPath).toBe(expectedPath);
 
     const storedContent = await fs.promises.readFile(storedPath, 'utf-8');
     expect(JSON.parse(storedContent)).toEqual(pageData);
+  });
+
+  test('storePageJSON respects BURIAL_REGISTER_OUTPUT_DIR override', async () => {
+    const customBaseDir = path.join(__dirname, '..', '..', '..', 'tmp_burial_output');
+    process.env.BURIAL_REGISTER_OUTPUT_DIR = customBaseDir;
+
+    const pageData = {
+      volume_id: 'vol-custom',
+      page_number: 2,
+      entries: []
+    };
+
+    try {
+      const storedPath = await storePageJSON(pageData, 'anthropic', 'vol-custom', 2);
+      expect(storedPath.startsWith(customBaseDir)).toBe(true);
+      const expectedPath = path.join(customBaseDir, 'vol-custom', 'pages', 'anthropic', 'page_002.json');
+      expect(storedPath).toBe(expectedPath);
+    } finally {
+      await removeDirectory(customBaseDir);
+      delete process.env.BURIAL_REGISTER_OUTPUT_DIR;
+    }
   });
 
   test('storeBurialRegisterEntry inserts entry with uncertainty flags', async () => {
