@@ -28,10 +28,12 @@ jest.mock('@anthropic-ai/sdk', () => {
 jest.mock('fs', () => ({
   promises: {
     readFile: jest.fn().mockResolvedValue('base64imagestring'),
-    unlink: jest.fn().mockResolvedValue(undefined)
+    unlink: jest.fn().mockResolvedValue(undefined),
+    stat: jest.fn().mockResolvedValue({ size: 1000000 })
   },
   existsSync: jest.fn().mockReturnValue(true),
-  mkdirSync: jest.fn()
+  mkdirSync: jest.fn(),
+  statSync: jest.fn().mockReturnValue({ size: 1000000 })
 }));
 
 jest.mock('../src/utils/prompts/templates/providerTemplates', () => {
@@ -56,6 +58,14 @@ jest.mock('../src/utils/burialRegisterFlattener', () => ({
 jest.mock('../src/utils/burialRegisterStorage', () => ({
   storePageJSON: jest.fn().mockResolvedValue('/tmp/page.json'),
   storeBurialRegisterEntry: jest.fn().mockResolvedValue(1)
+}));
+
+jest.mock('../src/utils/imageProcessor', () => ({
+  analyzeImageForProvider: jest.fn().mockResolvedValue({
+    needsOptimization: false,
+    reasons: []
+  }),
+  optimizeImageForProvider: jest.fn().mockResolvedValue('optimized_base64_string')
 }));
 
 // Mock the model providers
