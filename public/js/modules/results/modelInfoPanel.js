@@ -45,7 +45,8 @@ function updateModelInfoPanel(data) {
 
   // Update model information
   safeUpdate('infoProvider', formatProviderName(data.ai_provider));
-  safeUpdate('infoModelVersion', data.model_version || 'N/A');
+  // Handle both model_version (memorials) and model_name (burial register entries)
+  safeUpdate('infoModelVersion', data.model_version || data.model_name || 'N/A');
 
   // Update prompt information
   safeUpdate('infoTemplate', data.prompt_template || 'N/A');

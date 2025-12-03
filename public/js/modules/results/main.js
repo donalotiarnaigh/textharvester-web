@@ -531,6 +531,290 @@ function displayMemorials(memorials) {
   });
 }
 
+/**
+ * Update table headers based on source type
+ * @param {string} sourceType - 'burial_register' or 'memorial'
+ */
+function updateTableHeaders(sourceType) {
+  const thead = document.querySelector('#resultsTable thead tr');
+  if (!thead) return;
+
+  if (sourceType === 'burial_register') {
+    thead.innerHTML = `
+      <th style="width: 50px;"></th>
+      <th class="sortable" data-sort="entry_id">Entry ID <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="name_raw">Name <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="burial_date_raw">Burial Date <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="age_raw">Age <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="page_number">Page <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="row_index_on_page">Row <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="ai_provider">AI Model <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="processed_date">Processed <i class="fas fa-sort"></i></th>
+    `;
+  } else {
+    // Default memorial headers
+    thead.innerHTML = `
+      <th style="width: 50px;"></th>
+      <th class="sortable" data-sort="memorial_number">Memorial # <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="name">Name <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="year_of_death">Year of Death <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="source_type">Source Type <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="ai_provider">AI Model <i class="fas fa-sort"></i></th>
+      <th>Prompt Template</th>
+      <th>Template Version</th>
+      <th class="sortable" data-sort="processed_date">Processed <i class="fas fa-sort"></i></th>
+    `;
+  }
+}
+
+/**
+ * Sanitize burial register entry data
+ * @param {Object} entry - Burial register entry object
+ * @returns {Object} Sanitized entry data
+ */
+function sanitizeBurialRegisterEntry(entry) {
+  if (!entry || typeof entry !== 'object') return {};
+
+  return {
+    id: entry.id,
+    entry_id: SanitizeUtils.sanitizeText(entry.entry_id),
+    name_raw: SanitizeUtils.sanitizeText(entry.name_raw),
+    burial_date_raw: SanitizeUtils.sanitizeText(entry.burial_date_raw),
+    age_raw: SanitizeUtils.sanitizeText(entry.age_raw),
+    abode_raw: SanitizeUtils.sanitizeText(entry.abode_raw),
+    page_number: SanitizeUtils.sanitizeNumber(entry.page_number),
+    row_index_on_page: SanitizeUtils.sanitizeNumber(entry.row_index_on_page),
+    entry_no_raw: SanitizeUtils.sanitizeText(entry.entry_no_raw),
+    officiant_raw: SanitizeUtils.sanitizeText(entry.officiant_raw),
+    marginalia_raw: SanitizeUtils.sanitizeText(entry.marginalia_raw),
+    extra_notes_raw: SanitizeUtils.sanitizeText(entry.extra_notes_raw),
+    row_ocr_raw: SanitizeUtils.sanitizeText(entry.row_ocr_raw),
+    parish_header_raw: SanitizeUtils.sanitizeText(entry.parish_header_raw),
+    county_header_raw: SanitizeUtils.sanitizeText(entry.county_header_raw),
+    year_header_raw: SanitizeUtils.sanitizeText(entry.year_header_raw),
+    uncertainty_flags: entry.uncertainty_flags,
+    ai_provider: SanitizeUtils.sanitizeText(entry.ai_provider),
+    model_name: SanitizeUtils.sanitizeText(entry.model_name),
+    prompt_template: SanitizeUtils.sanitizeText(entry.prompt_template),
+    prompt_version: SanitizeUtils.sanitizeText(entry.prompt_version),
+    fileName: SanitizeUtils.sanitizeAttribute(entry.fileName || entry.file_name),
+    volume_id: SanitizeUtils.sanitizeText(entry.volume_id),
+    processed_date: entry.processed_date
+  };
+}
+
+/**
+ * Create safe HTML for burial register entry main row
+ * @param {Object} entry - Burial register entry object
+ * @param {string} uniqueId - Unique identifier for this entry
+ * @returns {string} Safe HTML string for main table row
+ */
+function createBurialRegisterMainRowHTML(entry, uniqueId) {
+  const safe = sanitizeBurialRegisterEntry(entry);
+
+  return `
+    <td class="text-center">
+      <button class="btn btn-sm btn-outline-secondary expand-toggle"
+        data-toggle-memorial="${uniqueId}"
+        title="Click to expand/collapse details">
+        <i class="fas fa-chevron-down"></i>
+      </button>
+    </td>
+    <td>${safe.entry_id || 'N/A'}</td>
+    <td>${safe.name_raw || 'N/A'}</td>
+    <td>${safe.burial_date_raw || 'N/A'}</td>
+    <td>${safe.age_raw || 'N/A'}</td>
+    <td>${safe.page_number || 'N/A'}</td>
+    <td>${safe.row_index_on_page || 'N/A'}</td>
+    <td>${safe.ai_provider || 'N/A'}</td>
+    <td>${formatDate(entry.processed_date)}</td>
+  `;
+}
+
+/**
+ * Create safe HTML for burial register entry detail row
+ * @param {Object} entry - Burial register entry object
+ * @param {number} colSpan - Column span for the table cell
+ * @param {string} uniqueId - Unique identifier for this entry
+ * @returns {string} Safe HTML string
+ */
+function createBurialRegisterDetailHTML(entry, colSpan, uniqueId) {
+  const safe = sanitizeBurialRegisterEntry(entry);
+  
+  // Parse uncertainty flags if it's a JSON string
+  let uncertaintyFlags = [];
+  try {
+    if (typeof safe.uncertainty_flags === 'string') {
+      uncertaintyFlags = JSON.parse(safe.uncertainty_flags);
+    } else if (Array.isArray(safe.uncertainty_flags)) {
+      uncertaintyFlags = safe.uncertainty_flags;
+    }
+  } catch (e) {
+    // If parsing fails, leave as empty array
+  }
+
+  return `
+    <td colspan="${colSpan}">
+      <div class="detail-content p-3">
+        <div class="row">
+          <div class="col-12">
+            <h5 class="mb-3">
+              ${safe.entry_id || 'N/A'} - ${safe.name_raw || 'N/A'}
+            </h5>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-header bg-light">
+            <strong>Entry Details</strong>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <p><strong>Entry Number:</strong> ${safe.entry_no_raw || 'N/A'}</p>
+                <p><strong>Name:</strong> ${safe.name_raw || 'N/A'}</p>
+                <p><strong>Abode:</strong> ${safe.abode_raw || 'N/A'}</p>
+                <p><strong>Burial Date:</strong> ${safe.burial_date_raw || 'N/A'}</p>
+                <p><strong>Age:</strong> ${safe.age_raw || 'N/A'}</p>
+                <p><strong>Officiant:</strong> ${safe.officiant_raw || 'N/A'}</p>
+              </div>
+              <div class="col-md-6">
+                <p><strong>Page Number:</strong> ${safe.page_number}</p>
+                <p><strong>Row Index:</strong> ${safe.row_index_on_page}</p>
+                <p><strong>Volume ID:</strong> ${safe.volume_id || 'N/A'}</p>
+                ${uncertaintyFlags.length > 0 ? `<p><strong>Uncertainty Flags:</strong> ${uncertaintyFlags.join(', ')}</p>` : ''}
+              </div>
+            </div>
+            ${safe.marginalia_raw ? `<p><strong>Marginalia:</strong> ${safe.marginalia_raw}</p>` : ''}
+            ${safe.extra_notes_raw ? `<p><strong>Extra Notes:</strong> ${safe.extra_notes_raw}</p>` : ''}
+            ${safe.row_ocr_raw ? `<p><strong>Row OCR:</strong> <code>${safe.row_ocr_raw}</code></p>` : ''}
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-header bg-light">
+            <strong>Page Header Information</strong>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-4">
+                <p><strong>Parish:</strong> ${safe.parish_header_raw || 'N/A'}</p>
+              </div>
+              <div class="col-md-4">
+                <p><strong>County:</strong> ${safe.county_header_raw || 'N/A'}</p>
+              </div>
+              <div class="col-md-4">
+                <p><strong>Year:</strong> ${safe.year_header_raw || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="detail-info">
+              <h6>Processing Information</h6>
+              <dl class="row">
+                <dt class="col-sm-4">Model:</dt>
+                <dd class="col-sm-8">${safe.ai_provider || 'N/A'} ${safe.model_name ? `(${safe.model_name})` : ''}</dd>
+
+                <dt class="col-sm-4">Template:</dt>
+                <dd class="col-sm-8">${safe.prompt_template || 'N/A'}</dd>
+
+                <dt class="col-sm-4">Version:</dt>
+                <dd class="col-sm-8">${safe.prompt_version || 'N/A'}</dd>
+
+                <dt class="col-sm-4">Source File:</dt>
+                <dd class="col-sm-8">${safe.fileName || 'N/A'}</dd>
+              </dl>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="detail-info">
+              <h6>Additional Details</h6>
+              <dl class="row">
+                <dt class="col-sm-4">Processed:</dt>
+                <dd class="col-sm-8">${formatDate(entry.processed_date)}</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <button class="btn btn-sm btn-secondary close-detail" data-memorial="${uniqueId}">
+            <i class="fas fa-chevron-up"></i> Close Details
+          </button>
+        </div>
+      </div>
+    </td>
+  `;
+}
+
+/**
+ * Create detail row for burial register entry
+ * @param {Object} entry - Burial register entry object
+ * @param {number} colSpan - Column span
+ * @returns {HTMLElement} Detail row element
+ */
+function createBurialRegisterDetailRow(entry, colSpan) {
+  const detailRow = document.createElement('tr');
+  detailRow.className = 'detail-row';
+  detailRow.style.display = 'none';
+
+  const uniqueId = entry.id || `burial-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  detailRow.id = `detail-${uniqueId}`;
+  detailRow.setAttribute('data-memorial-id', uniqueId);
+
+  detailRow.innerHTML = createBurialRegisterDetailHTML(entry, colSpan, uniqueId);
+
+  return detailRow;
+}
+
+// Function to display burial register entries with expandable rows
+function displayBurialRegisterEntries(entries) {
+  const tableBody = document.getElementById('resultsTableBody');
+  const emptyState = document.getElementById('emptyState');
+  
+  // Clear existing content and reset expanded rows
+  tableBody.innerHTML = '';
+  expandedRows.clear();
+  
+  // Check if there are any entries
+  if (!entries || entries.length === 0) {
+    if (emptyState) {
+      emptyState.classList.remove('d-none');
+    }
+    return;
+  }
+  
+  // Hide empty state
+  if (emptyState) {
+    emptyState.classList.add('d-none');
+  }
+  
+  // Create rows for each entry
+  entries.forEach(entry => {
+    // Create main row
+    const row = document.createElement('tr');
+    row.className = 'memorial-row';
+    row.style.cursor = 'pointer';
+
+    // Generate unique ID
+    const uniqueId = entry.id || `burial-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    row.setAttribute('data-memorial-id', uniqueId);
+
+    // Use safe HTML generation
+    row.innerHTML = createBurialRegisterMainRowHTML(entry, uniqueId);
+
+    tableBody.appendChild(row);
+
+    // Create detail row (initially hidden)
+    const detailRow = createBurialRegisterDetailRow(entry, 9); // 9 columns total
+    tableBody.appendChild(detailRow);
+  });
+}
+
 // Function to setup event delegation for memorial rows (prevents memory leaks)
 function setupEventDelegation() {
   const tableBody = document.getElementById('resultsTableBody');
@@ -611,24 +895,47 @@ export async function loadResults() {
     // Reset retry count on success
     retryCount = 0;
 
-    // Display memorials and error summary
-    displayMemorials(data.memorials);
+    // Display data based on source type
+    if (data.sourceType === 'burial_register' && data.burialRegisterEntries) {
+      updateTableHeaders('burial_register');
+      displayBurialRegisterEntries(data.burialRegisterEntries);
+      
+      // Update model info panel with data from the first entry
+      if (data.burialRegisterEntries.length > 0) {
+        const latestEntry = data.burialRegisterEntries.reduce((latest, current) =>
+          new Date(current.processed_date) > new Date(latest.processed_date) ? current : latest
+        );
+        updateModelInfoPanel(latestEntry);
+      }
+      
+      // Initialize table enhancements
+      if (data.burialRegisterEntries.length > 0) {
+        tableEnhancements.init(data.burialRegisterEntries);
+        enableDownloadButtons();
+      }
+    } else {
+      // Default to memorials display
+      updateTableHeaders('memorial');
+      displayMemorials(data.memorials || []);
+      
+      // Update model info panel with data from the first memorial (or aggregate)
+      if (data.memorials && data.memorials.length > 0) {
+        // Use the most recent memorial's data for the model info panel
+        const latestMemorial = data.memorials.reduce((latest, current) =>
+          new Date(current.processed_date) > new Date(latest.processed_date) ? current : latest
+        );
+        updateModelInfoPanel(latestMemorial);
+      }
+
+      // Initialize table enhancements
+      if (data.memorials && data.memorials.length > 0) {
+        tableEnhancements.init(data.memorials);
+        enableDownloadButtons();
+      }
+    }
+    
+    // Display error summary (common for both types)
     displayErrorSummary(data.errors);
-
-    // Update model info panel with data from the first memorial (or aggregate)
-    if (data.memorials && data.memorials.length > 0) {
-      // Use the most recent memorial's data for the model info panel
-      const latestMemorial = data.memorials.reduce((latest, current) =>
-        new Date(current.processed_date) > new Date(latest.processed_date) ? current : latest
-      );
-      updateModelInfoPanel(latestMemorial);
-    }
-
-    // Initialize table enhancements
-    if (data.memorials && data.memorials.length > 0) {
-      tableEnhancements.init(data.memorials);
-      enableDownloadButtons();
-    }
 
     return data;
 
