@@ -250,10 +250,10 @@ Sequential task list for implementing the burial register pilot extension. Compl
 ## Phase 9: Pilot Preparation
 
 ### 9.1 Prepare Test Data (Single PR: 9.1.1-9.1.4)
-- [ ] **9.1.1** Identify sample pages for testing
-- [ ] **9.1.2** Create expected output examples
-- [ ] **9.1.3** Document test scenarios
-- [ ] **9.1.4** Prepare validation checklist
+- [x] **9.1.1** Identify sample pages for testing
+- [x] **9.1.2** Create expected output examples
+- [x] **9.1.3** Document test scenarios
+- [x] **9.1.4** Prepare validation checklist
 
 ### 9.2 Pilot Run Preparation (Single PR: 9.2.1-9.2.5)
 - [ ] **9.2.1** Verify all ~210 pages are accessible
