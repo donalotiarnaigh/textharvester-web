@@ -5,6 +5,8 @@ const { createProvider } = require('./modelProviders');
 const { storeMemorial } = require('./database');
 const { getPrompt } = require('./prompts/templates/providerTemplates');
 const { isEmptySheetError } = require('./errorTypes');
+const burialRegisterFlattener = require('./burialRegisterFlattener');
+const burialRegisterStorage = require('./burialRegisterStorage');
 
 /**
  * Enhances the processFile function with detailed logging for better tracking and debugging.
@@ -17,6 +19,7 @@ async function processFile(filePath, options = {}) {
   const providerName = options.provider || process.env.AI_PROVIDER || 'openai';
   const promptTemplate = options.promptTemplate || 'memorialOCR';
   const promptVersion = options.promptVersion || 'latest';
+  const sourceType = options.sourceType || options.source_type || 'memorial';
   
   logger.info(`Starting to process file: ${filePath} with provider: ${providerName}`);
   
@@ -29,6 +32,16 @@ async function processFile(filePath, options = {}) {
       ...options,
       AI_PROVIDER: providerName
     });
+
+    if (sourceType === 'burial_register') {
+      logger.info(`Processing burial register file via ${providerName}: ${filePath}`);
+
+      // Placeholder to be expanded in subsequent tasks; referenced to satisfy linting rules.
+      void burialRegisterFlattener;
+      void burialRegisterStorage;
+
+      throw new Error('Burial register processing branch not implemented yet');
+    }
     
     // Get the appropriate prompt for this provider
     const promptInstance = getPrompt(providerName, promptTemplate, promptVersion);

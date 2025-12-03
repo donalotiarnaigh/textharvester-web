@@ -115,9 +115,9 @@ Sequential task list for implementing the burial register pilot extension. Compl
 ### 4.1 Modify fileProcessing.js (Split into 3 PRs for reviewability)
 
 **PR 1: Setup and Branch (4.1.1-4.1.3)**
-- [ ] **4.1.1** Import `burialRegisterFlattener` in `src/utils/fileProcessing.js`
-- [ ] **4.1.2** Import `burialRegisterStorage` in `src/utils/fileProcessing.js`
-- [ ] **4.1.3** Add conditional branch: `if (sourceType === 'burial_register')` in `processFile()`
+- [x] **4.1.1** Import `burialRegisterFlattener` in `src/utils/fileProcessing.js`
+- [x] **4.1.2** Import `burialRegisterStorage` in `src/utils/fileProcessing.js`
+- [x] **4.1.3** Add conditional branch: `if (sourceType === 'burial_register')` in `processFile()`
 
 **PR 2: Core Processing Flow (4.1.4-4.1.8)**
 - [ ] **4.1.4** In burial register branch: Get prompt using `getPrompt(providerName, 'burialRegister', promptVersion)`
