@@ -71,19 +71,19 @@ Sequential task list for implementing the burial register pilot extension. Compl
 ## Phase 3: Database Schema and Storage
 
 ### 3.1 Create Database Migration Script (Single PR: 3.1.1-3.1.8)
-- [ ] **3.1.1** Create `scripts/migrate-add-burial-register-table.js` migration script
-- [ ] **3.1.2** Define `burial_register_entries` table schema with all required columns
+- [x] **3.1.1** Create `scripts/migrate-add-burial-register-table.js` migration script
+- [x] **3.1.2** Define `burial_register_entries` table schema with all required columns
   - Core fields: volume_id, page_number, row_index_on_page, entry_id
   - Entry fields: entry_no_raw, name_raw, abode_raw, burial_date_raw, age_raw, officiant_raw, marginalia_raw, extra_notes_raw, row_ocr_raw
   - Header metadata: parish_header_raw, county_header_raw, year_header_raw
   - Model metadata: model_name, model_run_id, uncertainty_flags (TEXT for JSON)
   - Processing metadata: file_name, ai_provider, prompt_template, prompt_version, processed_date
-- [ ] **3.1.3** Add UNIQUE constraint: `(volume_id, page_number, row_index_on_page, ai_provider)`
-- [ ] **3.1.4** Create composite index: `idx_burial_provider_volume_page`
-- [ ] **3.1.5** Create index: `idx_burial_entry_id`
-- [ ] **3.1.6** Create index: `idx_burial_volume_page`
-- [ ] **3.1.7** Test migration script runs successfully
-- [ ] **3.1.8** Verify migration is idempotent (can run multiple times)
+- [x] **3.1.3** Add UNIQUE constraint: `(volume_id, page_number, row_index_on_page, ai_provider)`
+- [x] **3.1.4** Create composite index: `idx_burial_provider_volume_page`
+- [x] **3.1.5** Create index: `idx_burial_entry_id`
+- [x] **3.1.6** Create index: `idx_burial_volume_page`
+- [x] **3.1.7** Test migration script runs successfully
+- [x] **3.1.8** Verify migration is idempotent (can run multiple times)
 
 ### 3.2 Create Storage Functions (Single PR: 3.2.1-3.2.4)
 - [ ] **3.2.1** Create `src/utils/burialRegisterStorage.js` module
