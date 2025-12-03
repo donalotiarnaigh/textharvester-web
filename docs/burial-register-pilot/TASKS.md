@@ -219,12 +219,12 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - [x] **7.2.7** Verify correct ordering in CSV (volume, page, row)
 
 ### 7.3 Validate CSV Schema (Single PR: 7.3.1-7.3.6)
-- [ ] **7.3.1** Compare CSV columns to pilot plan schema
-- [ ] **7.3.2** Verify all required fields present in CSV
-- [ ] **7.3.3** Verify column order matches pilot plan
-- [ ] **7.3.4** Verify data types match expectations
-- [ ] **7.3.5** Verify uncertainty_flags format in CSV
-- [ ] **7.3.6** Create sample CSV for review
+- [x] **7.3.1** Compare CSV columns to pilot plan schema
+- [x] **7.3.2** Verify all required fields present in CSV
+- [x] **7.3.3** Verify column order matches pilot plan
+- [x] **7.3.4** Verify data types match expectations
+- [x] **7.3.5** Verify uncertainty_flags format in CSV
+- [x] **7.3.6** Create sample CSV for review
 
 ---
 
