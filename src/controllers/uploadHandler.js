@@ -1,4 +1,5 @@
 /* eslint-disable quotes */
+const fs = require("fs");
 const multer = require("multer");
 const path = require("path");
 const config = require("../../config.json");
@@ -33,7 +34,21 @@ const fileFilter = (req, file, cb) => {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, config.uploadPath);
+    const sourceType = req.body?.source_type || req.body?.sourceType;
+    const volumeId = req.body?.volume_id || 'vol1';
+
+    let destinationPath = config.uploadPath;
+
+    if (sourceType === 'burial_register') {
+      destinationPath = path.join('data', 'burial_register', volumeId);
+    }
+
+    if (!fs.existsSync(destinationPath)) {
+      fs.mkdirSync(destinationPath, { recursive: true });
+      logger.info(`Created upload directory at ${destinationPath}`);
+    }
+
+    cb(null, destinationPath);
   },
   filename: (req, file, cb) => {
     const uniqueName = createUniqueName(file);
@@ -83,6 +98,8 @@ const validatePromptConfig = async (provider, template, version) => {
 const handleFileUpload = async (req, res) => {
   logger.info("Handling file upload request");
 
+  const validSourceTypes = ['record_sheet', 'monument_photo', 'burial_register'];
+
   try {
     const uploadMiddleware = multer(multerConfig).fields([{ name: 'file', maxCount: 10 }]);
     await new Promise((resolve, reject) => {
@@ -105,13 +122,26 @@ const handleFileUpload = async (req, res) => {
 
   const shouldReplace = req.body.replaceExisting === 'true';
   const selectedModel = req.body.aiProvider || 'openai';
-  const promptTemplate = req.body.promptTemplate;
+  const sourceType = req.body.source_type || req.body.sourceType || 'record_sheet';
+  const volumeId = req.body.volume_id || 'vol1';
+
+  if (!validSourceTypes.includes(sourceType)) {
+    logger.error(`Invalid source type received: ${sourceType}`);
+    return res.status(400).json({ error: 'Invalid source type' });
+  }
+
+  const requestedPromptTemplate = req.body.promptTemplate;
+  const promptTemplate = sourceType === 'burial_register'
+    ? 'burialRegister'
+    : requestedPromptTemplate;
   const promptVersion = req.body.promptVersion;
 
   logger.info(`Replace existing setting: ${shouldReplace}`);
   logger.info(`Selected AI model: ${selectedModel}`);
   logger.info(`Prompt template: ${promptTemplate || 'default'}`);
   logger.info(`Prompt version: ${promptVersion || 'latest'}`);
+  logger.info(`Source type: ${sourceType}`);
+  logger.info(`Volume ID: ${volumeId}`);
 
   const files = req.files?.file || [];
   logger.info(`Number of files received: ${files.length}`);
@@ -151,15 +181,25 @@ const handleFileUpload = async (req, res) => {
               mimetype: "image/jpeg",
               provider: selectedModel,
               promptTemplate: promptConfig.template,
-              promptVersion: promptConfig.version
+              promptVersion: promptConfig.version,
+              source_type: sourceType,
+              sourceType,
+              volume_id: volumeId,
+              volumeId,
+              uploadDir: path.dirname(imagePath)
             }))
           );
         } else {
-          await enqueueFiles([{
+          await enqueueFiles([{ 
             ...file,
             provider: selectedModel,
             promptTemplate: promptConfig.template,
-            promptVersion: promptConfig.version
+            promptVersion: promptConfig.version,
+            source_type: sourceType,
+            sourceType,
+            volume_id: volumeId,
+            volumeId,
+            uploadDir: path.dirname(file.path)
           }]);
         }
       } catch (conversionError) {
