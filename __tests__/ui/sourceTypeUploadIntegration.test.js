@@ -109,4 +109,20 @@ describe('Source type upload integration', () => {
     expect(formData.append).toHaveBeenCalledWith('source_type', 'burial_register');
     expect(formData.append).toHaveBeenCalledWith('volume_id', 'vol9');
   });
+
+  it('uses default volume id when burial register input is blank', () => {
+    const dropzoneInstance = createDropzoneMock();
+    const sourceSelect = document.getElementById('sourceTypeSelect');
+    const volumeInput = document.getElementById('volumeId');
+
+    sourceSelect.value = 'burial_register';
+    sourceSelect.dispatchEvent(new Event('change'));
+    volumeInput.value = '   ';
+
+    handleFileUpload(dropzoneInstance);
+    const formData = triggerSending(dropzoneInstance);
+
+    expect(formData.append).toHaveBeenCalledWith('source_type', 'burial_register');
+    expect(formData.append).toHaveBeenCalledWith('volume_id', 'vol1');
+  });
 });

@@ -149,6 +149,64 @@ describe('Upload Handler', () => {
     });
   });
 
+  describe('Source type handling', () => {
+    test('queues monument photo uploads with correct metadata', async () => {
+      mockReq.body = {
+        aiProvider: 'anthropic',
+        promptTemplate: 'monumentPhotoOCR',
+        promptVersion: '2.0.0',
+        source_type: 'monument_photo',
+        replaceExisting: 'false'
+      };
+
+      await handleFileUpload(mockReq, mockRes);
+
+      expect(getPrompt).toHaveBeenCalledWith('anthropic', 'monumentPhotoOCR', '2.0.0');
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            provider: 'anthropic',
+            promptVersion: '2.0.0',
+            source_type: 'monument_photo',
+            sourceType: 'monument_photo'
+          })
+        ])
+      );
+
+      const queuedFile = enqueueFiles.mock.calls[0][0][0];
+      expect(queuedFile).not.toHaveProperty('volume_id');
+      expect(queuedFile).not.toHaveProperty('volumeId');
+      expect(mockRes._getStatusCode()).toBe(200);
+    });
+
+    test('queues burial register uploads with volume metadata and prompt selection', async () => {
+      mockReq.body = {
+        aiProvider: 'openai',
+        promptVersion: '1.2.3',
+        source_type: 'burial_register',
+        volume_id: 'vol99',
+        replaceExisting: 'false'
+      };
+
+      await handleFileUpload(mockReq, mockRes);
+
+      expect(getPrompt).toHaveBeenCalledWith('openai', 'burialRegister', '1.2.3');
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            provider: 'openai',
+            promptVersion: '1.2.3',
+            source_type: 'burial_register',
+            sourceType: 'burial_register',
+            volume_id: 'vol99',
+            volumeId: 'vol99'
+          })
+        ])
+      );
+      expect(mockRes._getStatusCode()).toBe(200);
+    });
+  });
+
   describe('Prompt Validation', () => {
     test('validates prompt template selection', async () => {
       // Setup
