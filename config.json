@@ -61,7 +61,8 @@
     "csv": {
       "includeHeaders": true,
       "encoding": "utf-8"
-    }
+    },
+    "apiTimeout": 90000
   },
   "database": {
     "path": "./data/memorials.db"

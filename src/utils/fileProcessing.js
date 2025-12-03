@@ -71,9 +71,13 @@ async function processFile(filePath, options = {}) {
       const userPrompt = typeof promptConfig === 'string' ? promptConfig : promptConfig.userPrompt;
       const systemPrompt = typeof promptConfig === 'object' ? promptConfig.systemPrompt : undefined;
 
+      // Use longer timeout for burial register processing (configurable, default 90 seconds)
+      const burialRegisterTimeout = config.burialRegister?.apiTimeout || 90000;
+      logger.debug(`Using API timeout of ${burialRegisterTimeout}ms for burial register processing`);
       const pageDataRaw = await provider.processImage(base64Image, userPrompt, {
         systemPrompt: systemPrompt,
-        promptTemplate: promptInstance
+        promptTemplate: promptInstance,
+        timeout: burialRegisterTimeout
       });
 
       const apiDuration = Date.now() - startTime;

@@ -39,7 +39,12 @@ class OpenAIProvider extends BaseVisionProvider {
    */
   async processImage(base64Image, prompt, options = {}) {
     const maxRetries = 3;
-    const baseTimeout = 30000; // 30 seconds base timeout
+    // Allow timeout to be overridden via options, default to 30 seconds
+    const baseTimeout = options.timeout || this.config.openAI?.timeout || 30000; // Default 30 seconds base timeout
+    
+    if (options.timeout && options.timeout !== 30000) {
+      logger.debug(`Using custom API timeout: ${options.timeout}ms (default: 30000ms)`);
+    }
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
