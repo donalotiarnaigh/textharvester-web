@@ -282,11 +282,11 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - [x] **10.1.8** Test: Verify form data sent matches backend expectations
 
 ### 10.2 Test Frontend Integration (Single PR: 10.2.1-10.2.5)
-- [ ] **10.2.1** Test record_sheet upload (default behavior)
-- [ ] **10.2.2** Test monument_photo upload
-- [ ] **10.2.3** Test burial_register upload with volume ID
-- [ ] **10.2.4** Verify backend receives correct parameters for each source type
-- [ ] **10.2.5** Verify backend processing works correctly for each source type
+- [x] **10.2.1** Test record_sheet upload (default behavior)
+- [x] **10.2.2** Test monument_photo upload
+- [x] **10.2.3** Test burial_register upload with volume ID
+- [x] **10.2.4** Verify backend receives correct parameters for each source type
+- [x] **10.2.5** Verify backend processing works correctly for each source type
 
 **Related Issue:** https://github.com/donalotiarnaigh/textharvester-web/issues/90
 
