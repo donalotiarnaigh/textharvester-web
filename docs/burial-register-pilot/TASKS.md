@@ -238,12 +238,12 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - [x] **8.1.5** Update API documentation (if routes added)
 
 ### 8.2 Code Review and Cleanup (Single PR: 8.2.1-8.2.6)
-- [ ] **8.2.1** Review all new code for consistency
-- [ ] **8.2.2** Remove or adjust debug logging levels
-- [ ] **8.2.3** Verify error handling is comprehensive
-- [ ] **8.2.4** Check for code duplication
-- [ ] **8.2.5** Ensure naming conventions consistent
-- [ ] **8.2.6** Add JSDoc comments where needed
+- [x] **8.2.1** Review all new code for consistency
+- [x] **8.2.2** Remove or adjust debug logging levels
+- [x] **8.2.3** Verify error handling is comprehensive
+- [x] **8.2.4** Check for code duplication
+- [x] **8.2.5** Ensure naming conventions consistent
+- [x] **8.2.6** Add JSDoc comments where needed
 
 ---
 

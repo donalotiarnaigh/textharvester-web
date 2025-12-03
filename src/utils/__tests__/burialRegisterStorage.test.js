@@ -8,6 +8,7 @@ const sqlite3 = require('sqlite3').verbose();
 jest.mock('../logger', () => ({
   error: jest.fn(),
   info: jest.fn(),
+  debug: jest.fn(),
   debugPayload: jest.fn()
 }));
 

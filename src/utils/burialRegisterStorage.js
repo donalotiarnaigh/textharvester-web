@@ -6,6 +6,10 @@ const config = require('../../config.json');
 
 const burialRegisterConfig = config.burialRegister || {};
 
+/**
+ * Resolve the base directory for burial register outputs.
+ * @returns {string} Absolute path to the burial register base directory
+ */
 function getBurialRegisterBaseDir() {
   const outputDir = process.env.BURIAL_REGISTER_OUTPUT_DIR || burialRegisterConfig.outputDir;
 
@@ -16,6 +20,11 @@ function getBurialRegisterBaseDir() {
   return path.join(__dirname, '..', '..', 'data', 'burial_register');
 }
 
+/**
+ * Pad the page number to a three digit string.
+ * @param {number|string|null} pageNumber Page number to pad
+ * @returns {string} Three-character padded page number
+ */
 function padPageNumber(pageNumber) {
   if (pageNumber === null || pageNumber === undefined) {
     return '000';
@@ -27,18 +36,44 @@ function padPageNumber(pageNumber) {
   return String(pageValue).padStart(3, '0');
 }
 
+/**
+ * Persist validated burial register page JSON to disk.
+ * @param {Object} pageData Validated page data
+ * @param {string} provider AI provider name
+ * @param {string} volumeId Volume identifier
+ * @param {number|string} pageNumber Page number
+ * @returns {Promise<string>} Absolute path to the stored JSON file
+ */
 async function storePageJSON(pageData, provider, volumeId, pageNumber) {
+  if (!pageData || typeof pageData !== 'object') {
+    throw new Error('pageData is required to store burial register JSON');
+  }
+  if (!provider) {
+    throw new Error('provider is required to store burial register JSON');
+  }
+  if (!volumeId) {
+    throw new Error('volumeId is required to store burial register JSON');
+  }
+  if (pageNumber === null || pageNumber === undefined) {
+    throw new Error('pageNumber is required to store burial register JSON');
+  }
+
   const paddedPage = padPageNumber(pageNumber);
   const pagesDir = path.join(getBurialRegisterBaseDir(), volumeId, 'pages', provider);
   await fs.promises.mkdir(pagesDir, { recursive: true });
 
   const filePath = path.join(pagesDir, `page_${paddedPage}.json`);
   await fs.promises.writeFile(filePath, JSON.stringify(pageData, null, 2), 'utf-8');
-  logger.info(`Stored burial register page JSON at ${filePath}`);
+  logger.debug(`Stored burial register page JSON at ${filePath}`);
 
   return filePath;
 }
 
+/**
+ * Map an entry object to the parameter order expected by the burial_register_entries table.
+ * @param {Object} entry Entry object ready for storage
+ * @returns {Array<*>} Parameter array for sqlite run
+ */
 function buildBurialEntryParams(entry) {
   const fileName = entry.fileName || entry.file_name || null;
   const pageNumber = entry.page_number !== undefined && entry.page_number !== null
@@ -83,9 +118,30 @@ function buildBurialEntryParams(entry) {
   ];
 }
 
+/**
+ * Insert a single burial register entry into the database.
+ * @param {Object} entry Entry data ready for insertion
+ * @returns {Promise<number>} Inserted row ID
+ */
 async function storeBurialRegisterEntry(entry) {
   if (!entry || typeof entry !== 'object') {
     throw new Error('Entry data is required for storage');
+  }
+
+  if (!entry.volume_id) {
+    throw new Error('volume_id is required to store a burial register entry');
+  }
+
+  if (entry.page_number === undefined || entry.page_number === null) {
+    throw new Error('page_number is required to store a burial register entry');
+  }
+
+  if (entry.row_index_on_page === undefined || entry.row_index_on_page === null) {
+    throw new Error('row_index_on_page is required to store a burial register entry');
+  }
+
+  if (!entry.ai_provider) {
+    throw new Error('ai_provider is required to store a burial register entry');
   }
 
   const sql = `
@@ -121,11 +177,17 @@ async function storeBurialRegisterEntry(entry) {
   return new Promise((resolve, reject) => {
     db.run(sql, params, function(err) {
       if (err) {
-        logger.error('Error storing burial register entry:', err);
+        logger.error('Error storing burial register entry:', {
+          error: err,
+          volume_id: entry.volume_id,
+          page_number: entry.page_number,
+          row_index_on_page: entry.row_index_on_page,
+          ai_provider: entry.ai_provider
+        });
         reject(err);
         return;
       }
-      logger.info(`Successfully stored burial register entry with ID: ${this.lastID}`);
+      logger.debug(`Successfully stored burial register entry with ID: ${this.lastID}`);
       resolve(this.lastID);
     });
   });
