@@ -134,12 +134,12 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - [x] **4.1.13** Verify existing memorial flow still works (no regression)
 
 ### 4.2 Update Upload Handler (Single PR: 4.2.1-4.2.6)
-- [ ] **4.2.1** Add `'burial_register'` to valid source types in `src/controllers/uploadHandler.js`
-- [ ] **4.2.2** Extract `volume_id` from request body (default to 'vol1')
-- [ ] **4.2.3** Set output directory based on volume_id: `data/burial_register/{volumeId}/`
-- [ ] **4.2.4** Pass `source_type: 'burial_register'` to file queue
-- [ ] **4.2.5** Pass `promptTemplate: 'burialRegister'` to file queue
-- [ ] **4.2.6** Ensure volume_id is available in file metadata
+- [x] **4.2.1** Add `'burial_register'` to valid source types in `src/controllers/uploadHandler.js`
+- [x] **4.2.2** Extract `volume_id` from request body (default to 'vol1')
+- [x] **4.2.3** Set output directory based on volume_id: `data/burial_register/{volumeId}/`
+- [x] **4.2.4** Pass `source_type: 'burial_register'` to file queue
+- [x] **4.2.5** Pass `promptTemplate: 'burialRegister'` to file queue
+- [x] **4.2.6** Ensure volume_id is available in file metadata
 
 ### 4.3 Update File Queue (Single PR: 4.3.1-4.3.5)
 - [ ] **4.3.1** Review current file metadata structure in `src/utils/fileQueue.js`
