@@ -267,19 +267,19 @@ Sequential task list for implementing the burial register pilot extension. Compl
 ## Phase 10: Frontend UI Support
 
 ### 10.1 Add Source Type Selection UI (Single PR: 10.1.1-10.1.8)
-- [ ] **10.1.1** Create `public/js/modules/index/sourceTypeSelection.js` module (similar to modelSelection.js)
-- [ ] **10.1.2** Add source type selector UI component to `index.html` (radio buttons or dropdown)
+- [x] **10.1.1** Create `public/js/modules/index/sourceTypeSelection.js` module (similar to modelSelection.js)
+- [x] **10.1.2** Add source type selector UI component to `index.html` (radio buttons or dropdown)
   - Options: Record Sheet, Monument Photo, Burial Register
   - Default: Record Sheet
-- [ ] **10.1.3** Add volume ID input field to `index.html` (conditionally visible)
+- [x] **10.1.3** Add volume ID input field to `index.html` (conditionally visible)
   - Default value: "vol1"
   - Label: "Volume ID"
   - Placeholder: "e.g., vol1"
-- [ ] **10.1.4** Implement show/hide logic for volume ID field based on source type selection
-- [ ] **10.1.5** Update `fileUpload.js` to capture source type selection
-- [ ] **10.1.6** Update `fileUpload.js` to capture volume ID when burial register is selected
-- [ ] **10.1.7** Update `fileUpload.js` `sending` event handler to append `source_type` and `volume_id` to formData
-- [ ] **10.1.8** Test: Verify form data sent matches backend expectations
+- [x] **10.1.4** Implement show/hide logic for volume ID field based on source type selection
+- [x] **10.1.5** Update `fileUpload.js` to capture source type selection
+- [x] **10.1.6** Update `fileUpload.js` to capture volume ID when burial register is selected
+- [x] **10.1.7** Update `fileUpload.js` `sending` event handler to append `source_type` and `volume_id` to formData
+- [x] **10.1.8** Test: Verify form data sent matches backend expectations
 
 ### 10.2 Test Frontend Integration (Single PR: 10.2.1-10.2.5)
 - [ ] **10.2.1** Test record_sheet upload (default behavior)
