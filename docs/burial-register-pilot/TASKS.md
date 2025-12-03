@@ -86,27 +86,27 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - [x] **3.1.8** Verify migration is idempotent (can run multiple times)
 
 ### 3.2 Create Storage Functions (Single PR: 3.2.1-3.2.4)
-- [ ] **3.2.1** Create `src/utils/burialRegisterStorage.js` module
-- [ ] **3.2.2** Implement `storePageJSON(pageData, provider, volumeId, pageNumber)` function
+- [x] **3.2.1** Create `src/utils/burialRegisterStorage.js` module
+- [x] **3.2.2** Implement `storePageJSON(pageData, provider, volumeId, pageNumber)` function
   - Create directory: `data/burial_register/{volumeId}/pages/{provider}/`
   - Write file: `page_{NNN:03d}.json`
   - Return path to stored file
-- [ ] **3.2.3** Implement `storeBurialRegisterEntry(entry)` function
+- [x] **3.2.3** Implement `storeBurialRegisterEntry(entry)` function
   - Use existing database connection pattern
   - Insert into `burial_register_entries` table
   - Handle uncertainty_flags as JSON string (JSON.stringify)
   - Map `fileName` (JS) to `file_name` (DB)
   - Return inserted record ID
-- [ ] **3.2.4** Export both functions from module
+- [x] **3.2.4** Export both functions from module
 
 ### 3.3 Test Storage Functions (Single PR: 3.3.1-3.3.7)
-- [ ] **3.3.1** Test `storePageJSON()` with sample page data
-- [ ] **3.3.2** Verify file created in correct directory structure
-- [ ] **3.3.3** Verify file content matches input JSON
-- [ ] **3.3.4** Test `storeBurialRegisterEntry()` with sample entry
-- [ ] **3.3.5** Verify entry appears in database with all fields
-- [ ] **3.3.6** Verify uncertainty_flags stored as JSON string
-- [ ] **3.3.7** Test storing multiple entries from same page
+- [x] **3.3.1** Test `storePageJSON()` with sample page data
+- [x] **3.3.2** Verify file created in correct directory structure
+- [x] **3.3.3** Verify file content matches input JSON
+- [x] **3.3.4** Test `storeBurialRegisterEntry()` with sample entry
+- [x] **3.3.5** Verify entry appears in database with all fields
+- [x] **3.3.6** Verify uncertainty_flags stored as JSON string
+- [x] **3.3.7** Test storing multiple entries from same page
 
 ---
 
