@@ -62,9 +62,8 @@ function getProcessingStatus(req, res) {
   // Use the same logic as getProcessingProgress for consistency
   const progressData = getProcessingProgress();
   
-  // Get any errors from processed files
-  const processedResults = getProcessedResults();
-  const errors = processedResults.filter(r => r && r.error);
+  // Use errors from progressData which includes conflicts from successful results
+  const errors = progressData.errors || [];
   
   // Return the full progress data including queue metrics for performance widget
   res.json({
@@ -280,6 +279,33 @@ async function getResults(req, res) {
     const processedResults = getProcessedResults();
     const errors = processedResults.filter(r => r && r.error);
     
+    // Collect conflict warnings from successful results (same format as getProcessingProgress)
+    const conflictWarnings = [];
+    processedResults.forEach(result => {
+      if (result && !result.error && result.conflicts && result.conflicts.length > 0) {
+        result.conflicts.forEach(conflict => {
+          if (conflict.status === 'resolved') {
+            conflictWarnings.push({
+              fileName: conflict.file_name,
+              errorType: 'page_number_conflict',
+              errorMessage: `Page number conflict resolved: AI extracted page ${conflict.original_page_number} but filename suggests page ${conflict.resolved_page_number}. Using filename-based page number.`,
+              conflicts: [conflict] // Include for consistency with getProcessingProgress format
+            });
+          } else if (conflict.status === 'failed') {
+            conflictWarnings.push({
+              fileName: conflict.file_name,
+              errorType: 'page_number_conflict',
+              errorMessage: `Page number conflict unresolved: AI extracted page ${conflict.original_page_number} but entry already exists. Filename does not match expected pattern.`,
+              conflicts: [conflict]
+            });
+          }
+        });
+      }
+    });
+    
+    // Combine actual errors with conflict warnings
+    const allErrors = [...errors, ...conflictWarnings];
+    
     if (sourceType === 'burial_register') {
       // Get burial register entries
       const dbResults = await getAllBurialRegisterEntries();
@@ -294,7 +320,7 @@ async function getResults(req, res) {
       res.json({
         burialRegisterEntries: transformedResults,
         sourceType: 'burial_register',
-        errors: errors
+        errors: allErrors.length > 0 ? allErrors : undefined
       });
     } else {
       // Get memorials (default)
@@ -313,7 +339,7 @@ async function getResults(req, res) {
       res.json({
         memorials: validatedResults,
         sourceType: 'memorial',
-        errors: errors
+        errors: allErrors.length > 0 ? allErrors : undefined
       });
     }
   } catch (error) {
