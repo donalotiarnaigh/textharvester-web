@@ -6,6 +6,7 @@ const { storeMemorial } = require('./database');
 const { getPrompt } = require('./prompts/templates/providerTemplates');
 const { isEmptySheetError } = require('./errorTypes');
 const burialRegisterFlattener = require('./burialRegisterFlattener');
+const { generateEntryId } = require('./burialRegisterFlattener');
 const burialRegisterStorage = require('./burialRegisterStorage');
 const { getMemorialNumberForMonument } = require('./filenameParser');
 const { optimizeImageForProvider, analyzeImageForProvider } = require('./imageProcessor');
@@ -113,6 +114,9 @@ async function processFile(filePath, options = {}) {
       const filename = path.basename(filePath);
       let validCount = 0;
       let totalCount = entries.length;
+      let conflictResolvedCount = 0;
+      let conflictFailedCount = 0;
+      const conflicts = [];
 
       for (const entry of entries) {
         try {
@@ -134,11 +138,43 @@ async function processFile(filePath, options = {}) {
             source_type: 'burial_register'
           };
 
-          await burialRegisterStorage.storeBurialRegisterEntry(entryWithMetadata);
+          const originalPageNumber = entryWithMetadata.page_number;
+          const storageResult = await burialRegisterStorage.storeBurialRegisterEntry(entryWithMetadata);
+          
+          // Update entry with potentially resolved page_number and entry_id
+          if (storageResult.conflictResolved) {
+            entryWithMetadata.page_number = storageResult.resolvedPageNumber;
+            entryWithMetadata.entry_id = generateEntryId(
+              entryWithMetadata.volume_id,
+              storageResult.resolvedPageNumber,
+              entryWithMetadata.row_index_on_page
+            );
+            conflictResolvedCount++;
+            conflicts.push({
+              file_name: filename,
+              original_page_number: storageResult.originalPageNumber,
+              resolved_page_number: storageResult.resolvedPageNumber,
+              status: 'resolved'
+            });
+          }
+          
           processedEntries.push(entryWithMetadata);
           validCount++;
         } catch (error) {
-          logger.warn(`Entry validation failed for entry_id=${entry.entry_id || 'unknown'}, page_number=${pageData.page_number}, volume_id=${pageData.volume_id}: ${error.message}`);
+          // Check if this is a conflict resolution failure
+          if (error.conflictInfo && !error.conflictInfo.resolved) {
+            conflictFailedCount++;
+            conflicts.push({
+              file_name: filename,
+              original_page_number: error.conflictInfo.originalPageNumber,
+              resolved_page_number: null,
+              status: 'failed',
+              error_message: error.message
+            });
+            logger.warn(`Entry storage failed due to unresolved page number conflict: ${error.message}. Conflict details: ${JSON.stringify(error.conflictInfo)}`);
+          } else {
+            logger.warn(`Entry validation failed for entry_id=${entry.entry_id || 'unknown'}, page_number=${pageData.page_number}, volume_id=${pageData.volume_id}: ${error.message}`);
+          }
         }
       }
 
@@ -146,18 +182,29 @@ async function processFile(filePath, options = {}) {
         logger.warn(`Validated ${validCount}/${totalCount} entries successfully for ${filePath}`);
       }
 
+      if (conflictResolvedCount > 0 || conflictFailedCount > 0) {
+        logger.info(`Page number conflicts resolved: ${conflictResolvedCount}, failed: ${conflictFailedCount} for ${filePath}`);
+      }
+
       if (processedEntries.length > 0) {
         const firstEntryId = processedEntries[0].entry_id;
         const lastEntryId = processedEntries[processedEntries.length - 1].entry_id;
         logger.info(`Stored ${processedEntries.length} burial register entries for page ${pageData.page_number} (${filePath}). Entry IDs: ${firstEntryId} to ${lastEntryId}`);
       } else {
-        logger.warn(`No entries were stored for page ${pageData.page_number} (${filePath})`);
+        const conflictMessage = conflictFailedCount > 0 
+          ? `${conflictFailedCount} entries failed due to unresolved page number conflicts.`
+          : 'All entries failed validation or storage.';
+        logger.warn(`No entries were stored for page ${pageData.page_number} (${filePath}). ${conflictMessage}`);
       }
 
       await fs.unlink(filePath);
       logger.info(`Cleaned up processed burial register file: ${filePath}`);
 
-      return { entries: processedEntries, pageData };
+      return { 
+        entries: processedEntries, 
+        pageData,
+        conflicts: conflicts.length > 0 ? conflicts : undefined
+      };
     }
     
     // Get the appropriate prompt for this provider
