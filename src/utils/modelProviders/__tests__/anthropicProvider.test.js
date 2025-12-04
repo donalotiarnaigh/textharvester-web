@@ -65,7 +65,7 @@ describe('AnthropicProvider', () => {
 
     it('should use default model if not specified', () => {
       const defaultProvider = new AnthropicProvider({});
-      expect(defaultProvider.model).toBe('claude-4-sonnet-20250514');
+      expect(defaultProvider.model).toBe('claude-sonnet-4-5');
     });
 
     it('should use provided max tokens from config', () => {
