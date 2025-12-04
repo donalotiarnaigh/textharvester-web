@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * Extract 5 random pages from a PDF and convert them to JPG files
- * Usage: node scripts/extract-random-pages.js [pdf-path] [output-dir]
+ * Extract pages from a PDF and convert them to JPG files
+ * Usage: 
+ *   Random pages: node scripts/extract-random-pages.js [pdf-path] [output-dir] [count]
+ *   Specific pages: node scripts/extract-random-pages.js [pdf-path] [output-dir] --pages 42,89,133
+ * Default: 20 random pages
  */
 
 const { exec } = require('child_process');
@@ -40,7 +43,7 @@ async function getPdfPageCount(pdfPath) {
   }
 }
 
-function getRandomPages(totalPages, count = 5) {
+function getRandomPages(totalPages, count = 20) {
   const pages = [];
   while (pages.length < count) {
     const page = Math.floor(Math.random() * totalPages) + 1; // 1-indexed
@@ -66,9 +69,25 @@ async function extractPage(pdfPath, pageNumber, outputPath) {
   }
 }
 
+function parsePageNumbers() {
+  // Check for --pages flag
+  const pagesIndex = process.argv.indexOf('--pages');
+  if (pagesIndex !== -1 && process.argv[pagesIndex + 1]) {
+    const pagesStr = process.argv[pagesIndex + 1];
+    const pages = pagesStr.split(',').map(p => parseInt(p.trim(), 10)).filter(p => !isNaN(p) && p > 0);
+    return pages.length > 0 ? pages : null;
+  }
+  
+  return null;
+}
+
 async function main() {
   const pdfPath = process.argv[2] || '/Users/danieltierney/projects/historic-graves/11_Douglas/data/raw/St Lukes Church_Burial Register_Book1_1840-1893.pdf';
   const outputDir = process.argv[3] || path.join(__dirname, '..', 'test-data', 'burial-register-test-pages');
+  const pageCount = parseInt(process.argv[4] || '20', 10);
+
+  // Check if specific pages are requested
+  const specificPages = parsePageNumbers();
 
   // Validate PDF exists
   try {
@@ -87,7 +106,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`\nExtracting random pages from: ${path.basename(pdfPath)}\n`);
+  console.log(`\nExtracting pages from: ${path.basename(pdfPath)}\n`);
 
   try {
     // Get total page count
@@ -95,9 +114,22 @@ async function main() {
     const totalPages = await getPdfPageCount(pdfPath);
     console.log(`Total pages in PDF: ${totalPages}\n`);
 
-    // Select 5 random pages
-    const selectedPages = getRandomPages(totalPages, 5);
-    console.log(`Selected pages: ${selectedPages.join(', ')}\n`);
+    // Determine which pages to extract
+    let selectedPages;
+    if (specificPages && specificPages.length > 0) {
+      // Validate specific pages are within range
+      const invalidPages = specificPages.filter(p => p > totalPages || p < 1);
+      if (invalidPages.length > 0) {
+        console.error(`Error: Invalid page numbers: ${invalidPages.join(', ')} (PDF has ${totalPages} pages)`);
+        process.exit(1);
+      }
+      selectedPages = specificPages.sort((a, b) => a - b);
+      console.log(`Extracting specific pages: ${selectedPages.join(', ')}\n`);
+    } else {
+      // Select random pages
+      selectedPages = getRandomPages(totalPages, pageCount);
+      console.log(`Selected ${pageCount} random pages: ${selectedPages.join(', ')}\n`);
+    }
 
     // Extract each page
     const extractedFiles = [];
