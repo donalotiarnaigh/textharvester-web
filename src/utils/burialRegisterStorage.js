@@ -3,6 +3,7 @@ const path = require('path');
 const { db } = require('./database');
 const logger = require('./logger');
 const config = require('../../config.json');
+const { generateEntryId } = require('./burialRegisterFlattener');
 
 const burialRegisterConfig = config.burialRegister || {};
 
@@ -76,6 +77,86 @@ async function storePageJSON(pageData, provider, volumeId, pageNumber) {
 }
 
 /**
+ * Extract page number from filename if it matches the expected pattern.
+ * Pattern: page_{NNN}.jpg, page_{NNN}.png, etc. where NNN is 1-3 digits
+ * @param {string} fileName Filename to extract page number from
+ * @returns {number|null} Extracted page number or null if pattern doesn't match
+ */
+function extractPageNumberFromFilename(fileName) {
+  if (!fileName || typeof fileName !== 'string') {
+    return null;
+  }
+
+  // Match pattern: page_ followed by 1-3 digits, then extension
+  const match = fileName.match(/page_(\d{1,3})\.(jpg|png|jpeg)/i);
+  if (match && match[1]) {
+    const pageNumber = Number.parseInt(match[1], 10);
+    if (!Number.isNaN(pageNumber) && pageNumber > 0) {
+      return pageNumber;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Check if a unique constraint error is due to a page_number conflict (different file_name)
+ * or a true duplicate (same file_name).
+ * @param {Object} entry Entry that failed to store
+ * @returns {Promise<Object|null>} Conflict info if page_number conflict detected, null otherwise
+ */
+function checkForPageNumberConflict(entry) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT file_name, page_number
+      FROM burial_register_entries
+      WHERE volume_id = ?
+        AND page_number = ?
+        AND row_index_on_page = ?
+        AND ai_provider = ?
+      LIMIT 1
+    `;
+
+    db.get(sql, [
+      entry.volume_id,
+      entry.page_number,
+      entry.row_index_on_page,
+      entry.ai_provider
+    ], (err, existingEntry) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      if (!existingEntry) {
+        // No existing entry found, not a conflict
+        resolve(null);
+        return;
+      }
+
+      const entryFileName = entry.fileName || entry.file_name;
+      const existingFileName = existingEntry.file_name;
+
+      // If file names are different, it's a page_number conflict
+      // If file names are the same, it's a true duplicate
+      if (entryFileName !== existingFileName) {
+        resolve({
+          isConflict: true,
+          existingFileName,
+          existingPageNumber: existingEntry.page_number,
+          entryFileName
+        });
+      } else {
+        resolve({
+          isConflict: false,
+          isDuplicate: true
+        });
+      }
+    });
+  });
+}
+
+/**
  * Map an entry object to the parameter order expected by the burial_register_entries table.
  * @param {Object} entry Entry object ready for storage
  * @returns {Array<*>} Parameter array for sqlite run
@@ -126,8 +207,9 @@ function buildBurialEntryParams(entry) {
 
 /**
  * Insert a single burial register entry into the database.
+ * Handles page_number conflicts by using filename-based page number as fallback.
  * @param {Object} entry Entry data ready for insertion
- * @returns {Promise<number>} Inserted row ID
+ * @returns {Promise<Object>} Object with { rowId, conflictResolved } where conflictResolved indicates if conflict was resolved
  */
 async function storeBurialRegisterEntry(entry) {
   if (!entry || typeof entry !== 'object') {
@@ -178,25 +260,115 @@ async function storeBurialRegisterEntry(entry) {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
+  const originalPageNumber = entry.page_number;
+  const originalEntryId = entry.entry_id;
+  const fileName = entry.fileName || entry.file_name;
+
   const params = buildBurialEntryParams(entry);
 
   return new Promise((resolve, reject) => {
-    db.run(sql, params, function(err) {
+    db.run(sql, params, async function(err) {
       if (err) {
-        logger.error('Error storing burial register entry:', {
-          error: err,
-          volume_id: entry.volume_id,
-          page_number: entry.page_number,
-          row_index_on_page: entry.row_index_on_page,
-          entry_id: entry.entry_id,
-          entry_no_raw: entry.entry_no_raw,
-          ai_provider: entry.ai_provider
-        });
-        reject(err);
-        return;
+        // Check if this is a unique constraint violation
+        if (err.code === 'SQLITE_CONSTRAINT' && err.message && err.message.includes('UNIQUE constraint failed')) {
+          try {
+            // Check if this is a page_number conflict (different file_name) or true duplicate
+            const conflictInfo = await checkForPageNumberConflict(entry);
+            
+            if (conflictInfo && conflictInfo.isConflict) {
+              // Page number conflict detected - try filename-based fallback
+              logger.info(`Page number conflict detected for file ${fileName}: AI extracted page_number=${originalPageNumber}, existing entry has page_number=${conflictInfo.existingPageNumber} from file ${conflictInfo.existingFileName}`);
+
+              const filenamePageNumber = extractPageNumberFromFilename(fileName);
+              
+              if (filenamePageNumber !== null) {
+                logger.info(`Extracted page number ${filenamePageNumber} from filename ${fileName}`);
+                
+                // Update entry with filename-based page number
+                entry.page_number = filenamePageNumber;
+                entry.entry_id = generateEntryId(entry.volume_id, filenamePageNumber, entry.row_index_on_page);
+                
+                logger.debug(`Regenerated entry_id: ${entry.entry_id} (was: ${originalEntryId})`);
+                
+                // Retry storage with updated values
+                const retryParams = buildBurialEntryParams(entry);
+                
+                db.run(sql, retryParams, function(retryErr) {
+                  if (retryErr) {
+                    logger.error(`Failed to store entry after page number conflict resolution: ${retryErr.message}`, {
+                      error: retryErr,
+                      volume_id: entry.volume_id,
+                      original_page_number: originalPageNumber,
+                      resolved_page_number: filenamePageNumber,
+                      entry_id: entry.entry_id,
+                      file_name: fileName,
+                      ai_provider: entry.ai_provider
+                    });
+                    reject(retryErr);
+                    return;
+                  }
+                  
+                  logger.info(`Successfully stored entry with resolved page_number=${filenamePageNumber} (original: ${originalPageNumber}) for file ${fileName}`);
+                  resolve({ 
+                    rowId: this.lastID, 
+                    conflictResolved: true,
+                    originalPageNumber,
+                    resolvedPageNumber: filenamePageNumber
+                  });
+                });
+                return;
+              } else {
+                // Cannot extract page number from filename
+                logger.warn(`Cannot extract page number from filename ${fileName}: pattern does not match expected format (page_NNN.jpg/png)`);
+                const error = new Error(`Cannot resolve page number conflict: filename ${fileName} does not match expected pattern. Entry will be skipped.`);
+                error.conflictInfo = {
+                  fileName,
+                  originalPageNumber,
+                  existingPageNumber: conflictInfo.existingPageNumber,
+                  existingFileName: conflictInfo.existingFileName,
+                  resolved: false
+                };
+                reject(error);
+                return;
+              }
+            } else if (conflictInfo && conflictInfo.isDuplicate) {
+              // True duplicate - same file_name, same page_number, same row
+              logger.warn(`True duplicate entry detected: same file ${fileName}, page_number=${originalPageNumber}, row_index=${entry.row_index_on_page}`);
+              reject(err);
+              return;
+            } else {
+              // Unknown conflict type, re-throw original error
+              reject(err);
+              return;
+            }
+          } catch (checkError) {
+            // Error checking for conflict, re-throw original error
+            logger.error('Error checking for page number conflict:', checkError);
+            reject(err);
+            return;
+          }
+        } else {
+          // Not a unique constraint error, re-throw
+          logger.error('Error storing burial register entry:', {
+            error: err,
+            volume_id: entry.volume_id,
+            page_number: entry.page_number,
+            row_index_on_page: entry.row_index_on_page,
+            entry_id: entry.entry_id,
+            entry_no_raw: entry.entry_no_raw,
+            ai_provider: entry.ai_provider
+          });
+          reject(err);
+          return;
+        }
       }
+      
+      // Success - no conflict
       logger.debug(`Successfully stored burial register entry with ID: ${this.lastID}, entry_id=${entry.entry_id}`);
-      resolve(this.lastID);
+      resolve({ 
+        rowId: this.lastID, 
+        conflictResolved: false 
+      });
     });
   });
 }
