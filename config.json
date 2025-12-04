@@ -45,6 +45,7 @@
   "upload": {
     "maxFileCount": 100,
     "retryDelaySeconds": 3,
+    "maxRetryCount": 3,
     "maxFileSize": "50mb",
     "maxConcurrent": 3
   },

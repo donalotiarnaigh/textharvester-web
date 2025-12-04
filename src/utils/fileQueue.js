@@ -109,7 +109,8 @@ function dequeueFile() {
 }
 
 function enqueueFileForRetry(file) {
-  if (retryLimits[file.path] < config.maxRetryCount) {
+  const maxRetryCount = config.upload?.maxRetryCount || 3;
+  if (retryLimits[file.path] < maxRetryCount) {
     fileQueue.push(file);
     retryLimits[file.path]++;
     logger.info(
@@ -123,7 +124,7 @@ function enqueueFileForRetry(file) {
       fileName: path.basename(file.path),
       error: true,
       errorType: 'processing_failed',
-      errorMessage: `Processing failed after ${config.maxRetryCount} attempts`
+      errorMessage: `Processing failed after ${maxRetryCount} attempts`
     });
     
     processedFiles++; // Count as processed even though it failed
@@ -300,7 +301,11 @@ function getProcessingProgress() {
   if (errors.length > 0) {
     logger.warn('[FileQueue] Errors detected during processing', {
       errorCount: errors.length,
-      errors: errors.map(e => ({ message: e.error.message }))
+      errors: errors.map(e => ({
+        fileName: e.fileName,
+        errorType: e.errorType,
+        message: e.errorMessage
+      }))
     });
   }
   
