@@ -20,13 +20,25 @@ export const handleFileUpload = (dropzoneInstance) => {
 
   dropzoneInstance.on("queuecomplete", function () {
     console.log(
-      "All files have been uploaded. Redirecting to processing.html."
+      "All files have been uploaded. Checking if redirect is needed."
     );
-    // Only redirect if files were actually uploaded (not just added to queue)
-    if (dropzoneInstance.getQueuedFiles().length === 0 && dropzoneInstance.getUploadingFiles().length === 0) {
+    // Only redirect if files were actually uploaded successfully (not just added to queue or rejected)
+    const queuedFiles = dropzoneInstance.getQueuedFiles();
+    const uploadingFiles = dropzoneInstance.getUploadingFiles();
+    const acceptedFiles = dropzoneInstance.getAcceptedFiles();
+    
+    // Check if any files were actually accepted and uploaded
+    const hasSuccessfulUploads = acceptedFiles.some(file => file.status === 'success');
+    
+    if (queuedFiles.length === 0 && uploadingFiles.length === 0 && hasSuccessfulUploads) {
+      console.log("All files uploaded successfully. Redirecting to processing.html.");
       window.location.href = "/processing.html"; // Redirect when all files are uploaded
     } else {
-      console.warn("Queue complete but files still queued/uploading - not redirecting");
+      console.warn("Queue complete but conditions not met for redirect:", {
+        queuedFiles: queuedFiles.length,
+        uploadingFiles: uploadingFiles.length,
+        hasSuccessfulUploads
+      });
     }
   });
 
