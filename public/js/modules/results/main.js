@@ -379,7 +379,11 @@ function displayErrorSummary(errors) {
   // Add each error to the list with sanitization
   errors.forEach(error => {
     const listItem = document.createElement('li');
-    listItem.className = 'list-group-item list-group-item-warning';
+    // Use warning style for conflicts (resolved), error style for actual errors
+    const itemClass = error.errorType === 'page_number_conflict' 
+      ? 'list-group-item list-group-item-warning'
+      : 'list-group-item list-group-item-danger';
+    listItem.className = itemClass;
 
     // Sanitize error data to prevent XSS
     const safeFileName = SanitizeUtils.sanitizeText(error.fileName || 'Unknown file');
@@ -395,6 +399,9 @@ function displayErrorSummary(errors) {
       break;
     case 'processing_failed':
       message += 'Processing failed after multiple attempts.';
+      break;
+    case 'page_number_conflict':
+      message += safeErrorMessage;
       break;
     default:
       message += safeErrorMessage;

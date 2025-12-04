@@ -270,10 +270,44 @@ function getProcessingProgress() {
   const progress = Math.round((processedFiles / totalFiles) * 100);
   const errors = processedResults.filter(r => r && r.error);
   
+  // Collect conflict warnings from successful results
+  const conflictWarnings = [];
+  processedResults.forEach(result => {
+    if (result && !result.error && result.conflicts && result.conflicts.length > 0) {
+      result.conflicts.forEach(conflict => {
+        if (conflict.status === 'resolved') {
+          conflictWarnings.push({
+            fileName: conflict.file_name,
+            errorType: 'page_number_conflict',
+            errorMessage: `Page number conflict resolved: AI extracted page ${conflict.original_page_number} but filename suggests page ${conflict.resolved_page_number}. Using filename-based page number.`,
+            conflicts: [conflict]
+          });
+        } else if (conflict.status === 'failed') {
+          conflictWarnings.push({
+            fileName: conflict.file_name,
+            errorType: 'page_number_conflict',
+            errorMessage: `Page number conflict unresolved: AI extracted page ${conflict.original_page_number} but entry already exists. Filename does not match expected pattern.`,
+            conflicts: [conflict]
+          });
+        }
+      });
+    }
+  });
+  
+  // Combine errors and conflict warnings
+  const allWarnings = [...errors, ...conflictWarnings];
+  
   if (errors.length > 0) {
     logger.warn('[FileQueue] Errors detected during processing', {
       errorCount: errors.length,
       errors: errors.map(e => ({ message: e.error.message }))
+    });
+  }
+  
+  if (conflictWarnings.length > 0) {
+    logger.info('[FileQueue] Page number conflicts detected and resolved', {
+      conflictCount: conflictWarnings.length,
+      conflicts: conflictWarnings.map(c => ({ fileName: c.fileName, status: c.conflicts[0].status }))
     });
   }
 
@@ -282,7 +316,8 @@ function getProcessingProgress() {
   logger.debug('[FileQueue] Progress calculation complete', {
     progress,
     state,
-    hasErrors: errors.length > 0
+    hasErrors: errors.length > 0,
+    hasConflicts: conflictWarnings.length > 0
   });
 
   // Get queue performance metrics
@@ -291,7 +326,7 @@ function getProcessingProgress() {
   return {
     state,
     progress,
-    errors: errors.length > 0 ? errors : undefined,
+    errors: allWarnings.length > 0 ? allWarnings : undefined,
     queue: {
       size: queueMetrics.current.queueSize,
       throughputPerMinute: queueMetrics.current.throughputPerMinute,
