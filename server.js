@@ -25,7 +25,12 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Use the modular functions for routes
-app.post('/upload', handleFileUpload);
+// Set timeout to 30 minutes for large PDF uploads (690MB can take time)
+app.post('/upload', (req, res) => {
+  req.setTimeout(30 * 60 * 1000); // 30 minutes
+  res.setTimeout(30 * 60 * 1000); // 30 minutes
+  handleFileUpload(req, res);
+});
 app.get('/processing-status', resultsManager.getProcessingStatus);
 app.get('/results-data', resultsManager.getResults);
 app.get('/download-json', resultsManager.downloadResultsJSON);

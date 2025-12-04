@@ -98,7 +98,15 @@ const validatePromptConfig = async (provider, template, version) => {
 };
 
 const handleFileUpload = async (req, res) => {
+  const uploadStartTime = Date.now();
   logger.info("Handling file upload request");
+  
+  // Log request details for large file debugging
+  const contentLength = req.headers['content-length'];
+  if (contentLength) {
+    const sizeMB = (parseInt(contentLength, 10) / 1024 / 1024).toFixed(2);
+    logger.info(`Upload request size: ${sizeMB}MB`);
+  }
 
   const validSourceTypes = ['record_sheet', 'monument_photo', 'burial_register'];
 
@@ -232,7 +240,8 @@ const handleFileUpload = async (req, res) => {
     }
 
     clearProcessingCompleteFlag();
-    logger.info("Processing complete. Redirecting to results page.");
+    const uploadDuration = Date.now() - uploadStartTime;
+    logger.info(`Processing complete. Upload took ${uploadDuration}ms. Redirecting to results page.`);
 
     res.status(200).json({
       message: "File upload complete. Starting conversion...",
