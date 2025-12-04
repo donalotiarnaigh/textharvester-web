@@ -65,10 +65,11 @@ const storage = multer.diskStorage({
 // }).fields([...]);
 
 // For test compatibility, we use a simpler configuration that matches the test mock
+// Increased file size limit to 1GB to support large PDF files (e.g., 210-page burial registers)
 const multerConfig = {
   storage: storage,
   fileFilter: fileFilter,
-  limits: { fileSize: 100 * 1024 * 1024 }
+  limits: { fileSize: 1024 * 1024 * 1024 } // 1GB limit for large PDFs
 };
 
 const validatePromptConfig = async (provider, template, version) => {
@@ -112,12 +113,18 @@ const handleFileUpload = async (req, res) => {
   } catch (err) {
     if (err instanceof multer.MulterError) {
       logger.error("Multer upload error:", err);
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        logger.error(`File size exceeds limit: ${err.message}`);
+        return res
+          .status(413)
+          .json({ error: `File too large. Maximum file size is 1GB. ${err.message}` });
+      }
       return res
         .status(500)
-        .send("An error occurred during the file upload: " + err.message);
+        .json({ error: "An error occurred during the file upload: " + err.message });
     } else {
       logger.error("Unknown upload error:", err);
-      return res.status(500).send("Unknown upload error: " + err.message);
+      return res.status(500).json({ error: "Unknown upload error: " + err.message });
     }
   }
 
