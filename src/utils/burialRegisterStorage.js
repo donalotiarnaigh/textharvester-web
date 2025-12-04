@@ -87,8 +87,9 @@ function extractPageNumberFromFilename(fileName) {
     return null;
   }
 
-  // Match pattern: page_ followed by 1-3 digits, then extension
-  const match = fileName.match(/page_(\d{1,3})\.(jpg|png|jpeg)/i);
+  // Match pattern: page_ or page- followed by 1-3 digits, then extension
+  // Handles both formats: page_001.jpg and page-001.jpg
+  const match = fileName.match(/page[-_](\d{1,3})\.(jpg|png|jpeg)/i);
   if (match && match[1]) {
     const pageNumber = Number.parseInt(match[1], 10);
     if (!Number.isNaN(pageNumber) && pageNumber > 0) {
@@ -319,7 +320,7 @@ async function storeBurialRegisterEntry(entry) {
                 return;
               } else {
                 // Cannot extract page number from filename
-                logger.warn(`Cannot extract page number from filename ${fileName}: pattern does not match expected format (page_NNN.jpg/png)`);
+                logger.warn(`Cannot extract page number from filename ${fileName}: pattern does not match expected format (page_NNN.jpg/png or page-NNN.jpg/png)`);
                 const error = new Error(`Cannot resolve page number conflict: filename ${fileName} does not match expected pattern. Entry will be skipped.`);
                 error.conflictInfo = {
                   fileName,
