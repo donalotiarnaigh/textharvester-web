@@ -159,7 +159,7 @@ describe('OpenAIProvider', () => {
       });
     });
 
-    it('should include reasoning parameter for GPT-5.1 model', async () => {
+    it('should include reasoning_effort parameter for GPT-5.1 model', async () => {
       const gpt5Config = {
         ...mockConfig,
         OPENAI_MODEL: 'gpt-5.1'
@@ -172,18 +172,16 @@ describe('OpenAIProvider', () => {
       expect(gpt5Provider.client.chat.completions.create).toHaveBeenCalledWith(
         expect.objectContaining({
           model: 'gpt-5.1',
-          reasoning: {
-            effort: 'none'
-          }
+          reasoning_effort: 'none'
         })
       );
     });
 
-    it('should not include reasoning parameter for GPT-4o model', async () => {
+    it('should not include reasoning_effort parameter for GPT-4o model', async () => {
       await provider.processImage(testImage, testPrompt);
       
       const callArgs = provider.client.chat.completions.create.mock.calls[0][0];
-      expect(callArgs.reasoning).toBeUndefined();
+      expect(callArgs.reasoning_effort).toBeUndefined();
     });
 
     it('should return parsed JSON response', async () => {
