@@ -17,7 +17,7 @@ This document outlines critical tests to run before processing all 210 pages. Th
 ## Critical Tests (Must Complete)
 
 ### 1. Claude/Anthropic Provider Test
-**Status:** ⚠️ Not tested (only GPT tested so far)
+**Status:** ✅ PASSED (2025-12-04)
 
 **Steps:**
 1. Process 2-3 pages with Anthropic provider selected
@@ -26,12 +26,22 @@ This document outlines critical tests to run before processing all 210 pages. Th
 4. Verify same `entry_id` structure as GPT (for comparison)
 
 **Success Criteria:**
-- [ ] Entries stored with correct provider identifier
-- [ ] Page JSON files created in correct directory
-- [ ] No timeout errors
-- [ ] Results page displays burial register entries correctly
+- [x] Entries stored with correct provider identifier
+- [x] Page JSON files created in correct directory
+- [x] No timeout errors
+- [x] Results page displays burial register entries correctly
 
-**Time:** ~5 minutes
+**Test Results:**
+- Processed 5 pages (more than required 2-3)
+- All pages completed successfully: 20.6s - 24.9s per page (avg: 22.9s)
+- All entries stored with `ai_provider: 'anthropic'`
+- Page JSON files stored correctly under `pages/anthropic/`
+- Entry IDs match GPT format: `vol1_p###_r###`
+- No timeout errors (all within 90s limit)
+- Results page displays 40 entries correctly
+- Response lengths: 3,864 - 4,899 chars (17.6% - 22.3% of limit)
+
+**Time:** ~5 minutes (actual: ~2 minutes for 5 pages)
 
 ---
 
