@@ -20,7 +20,25 @@ jest.mock('../../utils/fileQueue', () => ({
 }));
 
 jest.mock('../../utils/database', () => ({
-  getAllMemorials: jest.fn()
+  getAllMemorials: jest.fn(),
+  db: {
+    get: jest.fn((query, params, callback) => {
+      // Mock detectSourceType queries
+      if (query.includes('SELECT MAX(processed_date)')) {
+        if (query.includes('FROM memorials')) {
+          callback(null, { max_date: '2025-12-04 10:00:00' });
+        } else if (query.includes('FROM burial_register_entries')) {
+          callback(null, null); // No burial register entries
+        }
+      } else {
+        callback(null, null);
+      }
+    })
+  }
+}));
+
+jest.mock('../../utils/burialRegisterStorage', () => ({
+  getAllBurialRegisterEntries: jest.fn()
 }));
 
 jest.mock('../../utils/dataValidation', () => ({
@@ -85,6 +103,7 @@ describe('Enhanced Results Manager with Error Handling', () => {
           file_name: 'file1.jpg',
           fileName: 'file1.jpg'
         }],
+        sourceType: 'memorial',
         errors: [mockResults[1]]
       });
     });
@@ -128,7 +147,8 @@ describe('Enhanced Results Manager with Error Handling', () => {
             fileName: 'file2.jpg'
           }
         ],
-        errors: []
+        sourceType: 'memorial',
+        errors: undefined
       });
     });
     
@@ -156,6 +176,7 @@ describe('Enhanced Results Manager with Error Handling', () => {
       
       expect(mockResponse.json).toHaveBeenCalledWith({
         memorials: [],
+        sourceType: 'memorial',
         errors: mockResults
       });
     });

@@ -155,8 +155,9 @@ describe('burialRegisterStorage', () => {
       prompt_version: '1.0.0'
     };
 
-    const insertedId = await storeBurialRegisterEntry(sampleEntry);
-    expect(insertedId).toBe(1);
+    const result = await storeBurialRegisterEntry(sampleEntry);
+    expect(result).toHaveProperty('rowId', 1);
+    expect(result).toHaveProperty('conflictResolved', false);
 
     const rows = await new Promise((resolve, reject) => {
       db.all('SELECT * FROM burial_register_entries', (err, result) => {
@@ -199,11 +200,13 @@ describe('burialRegisterStorage', () => {
       ai_provider: 'openai'
     };
 
-    const firstId = await storeBurialRegisterEntry(entryOne);
-    const secondId = await storeBurialRegisterEntry(entryTwo);
+    const firstResult = await storeBurialRegisterEntry(entryOne);
+    const secondResult = await storeBurialRegisterEntry(entryTwo);
 
-    expect(firstId).toBe(1);
-    expect(secondId).toBe(2);
+    expect(firstResult).toHaveProperty('rowId', 1);
+    expect(firstResult).toHaveProperty('conflictResolved', false);
+    expect(secondResult).toHaveProperty('rowId', 2);
+    expect(secondResult).toHaveProperty('conflictResolved', false);
 
     const rows = await new Promise((resolve, reject) => {
       db.all('SELECT entry_id, row_index_on_page FROM burial_register_entries ORDER BY row_index_on_page', (err, result) => {

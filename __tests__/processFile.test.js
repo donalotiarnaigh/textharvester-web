@@ -295,7 +295,8 @@ describe('processFile', () => {
       const result = await processFile('claude-burial.jpg', {
         provider: 'anthropic',
         sourceType: 'burial_register',
-        promptTemplate: 'burialRegister'
+        promptTemplate: 'burialRegister',
+        volume_id: 'vol2'
       });
 
       expect(providerTemplates.getPrompt).toHaveBeenCalledWith('anthropic', 'burialRegister', 'latest');
