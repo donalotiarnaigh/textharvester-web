@@ -31,10 +31,11 @@
     }
   },
   "openAI": {
-    "model": "gpt-4o",
+    "model": "gpt-5.1",
     "maxTokens": 4000,
     "localCache": true,
-    "cacheExpiry": 604800000
+    "cacheExpiry": 604800000,
+    "reasoningEffort": null
   },
   "anthropic": {
     "model": "claude-4-sonnet-20250514",

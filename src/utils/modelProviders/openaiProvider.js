@@ -18,6 +18,15 @@ class OpenAIProvider extends BaseVisionProvider {
     this.model = this.config.OPENAI_MODEL || this.config.openAI?.model || 'gpt-4o';
     this.maxTokens = this.config.MAX_TOKENS || this.config.openAI?.maxTokens || 4000;
     this.temperature = this.config.TEMPERATURE || 0;
+    
+    // Read reasoningEffort from config, or auto-detect for GPT-5 models
+    this.reasoningEffort = this.config.openAI?.reasoningEffort || null;
+    
+    // Auto-detect GPT-5 models and set reasoning.effort to 'none' if not explicitly configured
+    if (this.model.includes('gpt-5') && !this.reasoningEffort) {
+      this.reasoningEffort = 'none';
+      logger.info(`Auto-detected GPT-5 model (${this.model}), setting reasoning.effort to 'none'`);
+    }
   }
 
   /**
@@ -85,6 +94,13 @@ class OpenAIProvider extends BaseVisionProvider {
 
       // Include temperature for models that support it
       requestPayload.temperature = this.temperature;
+      
+      // Add reasoning_effort parameter if configured (for GPT-5.x models)
+      // For Chat Completions API, use reasoning_effort (top-level string)
+      // For Responses API, use reasoning: { effort: "..." } (nested object)
+      if (this.reasoningEffort) {
+        requestPayload.reasoning_effort = this.reasoningEffort;
+      }
 
         // Calculate timeout with exponential backoff
         const timeout = baseTimeout * attempt;
@@ -169,8 +185,13 @@ class OpenAIProvider extends BaseVisionProvider {
     if (!this.client) {
       throw new Error('OpenAI client not initialized. Check API key configuration.');
     }
-    if (!this.model.includes('vision') && !this.model.includes('gpt-4o')) {
-      throw new Error('Invalid model specified. Must be a vision-capable model.');
+    // Allow GPT-4o, GPT-4, GPT-5, and vision models
+    const isValidModel = this.model.includes('vision') || 
+                        this.model.includes('gpt-4o') || 
+                        this.model.includes('gpt-4') || 
+                        this.model.includes('gpt-5');
+    if (!isValidModel) {
+      throw new Error('Invalid model specified. Must be a vision-capable model (gpt-4o, gpt-4, gpt-5, or vision models).');
     }
     return true;
   }
