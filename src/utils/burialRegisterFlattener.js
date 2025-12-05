@@ -8,12 +8,15 @@ const logger = require('./logger');
 /**
  * Generate a human-readable entry identifier for a burial register row.
  * @param {string} volumeId Volume identifier
- * @param {number} pageNumber Page number within the volume
+ * @param {number} pageNumber Page number within the volume (AI-extracted, used as fallback)
  * @param {number} rowIndex Row index on the page (1-based)
+ * @param {number|null} pageNumberForId Optional page number from filename to use for entry_id generation
  * @returns {string} Entry identifier formatted as {volume_id}_p{page}_r{row}
  */
-function generateEntryId(volumeId, pageNumber, rowIndex) {
-  const page = String(pageNumber).padStart(3, '0');
+function generateEntryId(volumeId, pageNumber, rowIndex, pageNumberForId = null) {
+  // Use filename page number if provided, otherwise fall back to AI-extracted page number
+  const pageNumForId = pageNumberForId !== null && pageNumberForId !== undefined ? pageNumberForId : pageNumber;
+  const page = String(pageNumForId).padStart(3, '0');
   const row = String(rowIndex).padStart(3, '0');
 
   return `${volumeId}_p${page}_r${row}`;
@@ -47,9 +50,10 @@ function injectPageMetadata(entry, pageData, metadata = {}) {
  * Flatten validated page JSON into flat entry objects with generated IDs.
  * @param {Object} pageData Validated page-level data containing entries
  * @param {Object} metadata Processing metadata (provider, model, filePath)
+ * @param {number|null} pageNumberForId Optional page number from filename to use for entry_id generation
  * @returns {Array<Object>} Array of flat entries
  */
-function flattenPageToEntries(pageData, metadata = {}) {
+function flattenPageToEntries(pageData, metadata = {}, pageNumberForId = null) {
   if (!pageData || typeof pageData !== 'object') {
     throw new Error('pageData must be an object with entries');
   }
@@ -58,7 +62,12 @@ function flattenPageToEntries(pageData, metadata = {}) {
   const pageNumber = pageData.page_number || 'unknown';
   const entries = Array.isArray(pageData.entries) ? pageData.entries : [];
 
-  logger.info(`Flattening burial register page: volume_id=${volumeId}, page_number=${pageNumber}, entries_found=${entries.length}`);
+  // Log which page number is being used for entry_id
+  if (pageNumberForId !== null && pageNumberForId !== undefined) {
+    logger.info(`Flattening burial register page: volume_id=${volumeId}, page_number=${pageNumber} (AI), filename_page_number=${pageNumberForId} (for entry_id), entries_found=${entries.length}`);
+  } else {
+    logger.info(`Flattening burial register page: volume_id=${volumeId}, page_number=${pageNumber}, entries_found=${entries.length}`);
+  }
 
   if (entries.length === 0) {
     logger.warn(`No entries found in page data for volume_id=${volumeId}, page_number=${pageNumber}`);
@@ -81,7 +90,8 @@ function flattenPageToEntries(pageData, metadata = {}) {
     }
 
     entry.row_index_on_page = rowIndex;
-    entry.entry_id = generateEntryId(pageData.volume_id, pageData.page_number, rowIndex);
+    // Use filename page number for entry_id generation, but keep AI-extracted page_number in entry
+    entry.entry_id = generateEntryId(pageData.volume_id, pageData.page_number, rowIndex, pageNumberForId);
 
     return injectPageMetadata(entry, pageData, metadata);
   });

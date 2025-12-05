@@ -57,7 +57,17 @@ jest.mock('../src/utils/burialRegisterFlattener', () => ({
 
 jest.mock('../src/utils/burialRegisterStorage', () => ({
   storePageJSON: jest.fn().mockResolvedValue('/tmp/page.json'),
-  storeBurialRegisterEntry: jest.fn().mockResolvedValue(1)
+  storeBurialRegisterEntry: jest.fn().mockResolvedValue(1),
+  extractPageNumberFromFilename: jest.fn((fileName) => {
+    const match = fileName.match(/page[-_](\d{1,3})(?:_\d+)?\.(jpg|png|jpeg)/i);
+    if (match && match[1]) {
+      const pageNumber = Number.parseInt(match[1], 10);
+      if (!Number.isNaN(pageNumber) && pageNumber > 0) {
+        return pageNumber;
+      }
+    }
+    return null;
+  })
 }));
 
 jest.mock('../src/utils/imageProcessor', () => ({
@@ -226,7 +236,7 @@ describe('processFile', () => {
         provider: 'openai',
         model: 'gpt-5',
         filePath: 'burial.jpg'
-      });
+      }, null);
 
       expect(result.entries).toHaveLength(1);
       expect(result.entries[0]).toMatchObject({
@@ -305,7 +315,7 @@ describe('processFile', () => {
         provider: 'anthropic',
         model: 'claude-4-sonnet-20250514',
         filePath: 'claude-burial.jpg'
-      });
+      }, null);
 
       expect(result.entries).toHaveLength(1);
       expect(result.pageData).toEqual(pageData);
