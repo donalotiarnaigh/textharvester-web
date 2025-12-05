@@ -10,7 +10,7 @@ const PAGE_FIELDS = {
   page_number: {
     type: new IntegerType(),
     description: 'Sequential page number within the volume',
-    metadata: { required: true, min: 1 }
+    metadata: {}
   },
   parish_header_raw: {
     type: new StringType(),
