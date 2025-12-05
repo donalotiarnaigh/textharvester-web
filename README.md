@@ -67,12 +67,12 @@ CREATE TABLE IF NOT EXISTS burial_register_entries (
   model_name TEXT,
   model_run_id TEXT,
   uncertainty_flags TEXT,
-  file_name TEXT,
+  file_name TEXT NOT NULL,
   ai_provider TEXT NOT NULL,
   prompt_template TEXT,
   prompt_version TEXT,
   processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(volume_id, page_number, row_index_on_page, ai_provider)
+  UNIQUE(volume_id, file_name, row_index_on_page, ai_provider)
 );
 
 -- Helpful indexes

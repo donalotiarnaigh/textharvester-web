@@ -8,6 +8,7 @@ const { isEmptySheetError } = require('./errorTypes');
 const burialRegisterFlattener = require('./burialRegisterFlattener');
 const { generateEntryId } = require('./burialRegisterFlattener');
 const burialRegisterStorage = require('./burialRegisterStorage');
+const { extractPageNumberFromFilename } = require('./burialRegisterStorage');
 const { getMemorialNumberForMonument } = require('./filenameParser');
 const { optimizeImageForProvider, analyzeImageForProvider } = require('./imageProcessor');
 const config = require('../../config.json');
@@ -95,11 +96,22 @@ async function processFile(filePath, options = {}) {
 
       logger.debugPayload(`Validated burial register page data for ${filePath}:`, pageData);
 
+      // Extract page number from filename for entry_id generation
+      const filename = path.basename(filePath);
+      const filenamePageNumber = extractPageNumberFromFilename(filename);
+      
+      if (filenamePageNumber !== null) {
+        logger.info(`Extracted page number ${filenamePageNumber} from filename ${filename} for entry_id generation`);
+      } else {
+        logger.warn(`Could not extract page number from filename ${filename}, will use AI-extracted page_number for entry_id`);
+      }
+
+      // Pass filename page number for entry_id generation only (pageData.page_number remains AI-extracted)
       const entries = burialRegisterFlattener.flattenPageToEntries(pageData, {
         provider: providerName,
         model: provider.getModelVersion(),
         filePath
-      });
+      }, filenamePageNumber);
 
       await burialRegisterStorage.storePageJSON(
         pageData,
@@ -111,12 +123,9 @@ async function processFile(filePath, options = {}) {
       logger.info(`Prepared ${entries.length} burial register entries for ${filePath}`);
 
       const processedEntries = [];
-      const filename = path.basename(filePath);
       let validCount = 0;
       let totalCount = entries.length;
-      let conflictResolvedCount = 0;
-      let conflictFailedCount = 0;
-      const conflicts = [];
+      let duplicateCount = 0;
 
       for (const entry of entries) {
         try {
@@ -138,52 +147,26 @@ async function processFile(filePath, options = {}) {
             source_type: 'burial_register'
           };
 
-          const originalPageNumber = entryWithMetadata.page_number;
-          const storageResult = await burialRegisterStorage.storeBurialRegisterEntry(entryWithMetadata);
-          
-          // Update entry with potentially resolved page_number and entry_id
-          if (storageResult.conflictResolved) {
-            entryWithMetadata.page_number = storageResult.resolvedPageNumber;
-            entryWithMetadata.entry_id = generateEntryId(
-              entryWithMetadata.volume_id,
-              storageResult.resolvedPageNumber,
-              entryWithMetadata.row_index_on_page
-            );
-            conflictResolvedCount++;
-            conflicts.push({
-              file_name: filename,
-              original_page_number: storageResult.originalPageNumber,
-              resolved_page_number: storageResult.resolvedPageNumber,
-              status: 'resolved'
-            });
-          }
+          await burialRegisterStorage.storeBurialRegisterEntry(entryWithMetadata);
           
           processedEntries.push(entryWithMetadata);
           validCount++;
         } catch (error) {
-          // Check if this is a conflict resolution failure
-          if (error.conflictInfo && !error.conflictInfo.resolved) {
-            conflictFailedCount++;
-            conflicts.push({
-              file_name: filename,
-              original_page_number: error.conflictInfo.originalPageNumber,
-              resolved_page_number: null,
-              status: 'failed',
-              error_message: error.message
-            });
-            logger.warn(`Entry storage failed due to unresolved page number conflict: ${error.message}. Conflict details: ${JSON.stringify(error.conflictInfo)}`);
+          // Check if this is a duplicate entry
+          if (error.isDuplicate) {
+            duplicateCount++;
+            logger.warn(`Duplicate entry skipped: ${error.message}`);
           } else {
-            logger.warn(`Entry validation failed for entry_id=${entry.entry_id || 'unknown'}, page_number=${pageData.page_number}, volume_id=${pageData.volume_id}: ${error.message}`);
+            logger.warn(`Entry validation or storage failed for entry_id=${entry.entry_id || 'unknown'}, page_number=${pageData.page_number}, volume_id=${pageData.volume_id}: ${error.message}`);
           }
         }
       }
 
       if (validCount < totalCount) {
         logger.warn(`Validated ${validCount}/${totalCount} entries successfully for ${filePath}`);
-      }
-
-      if (conflictResolvedCount > 0 || conflictFailedCount > 0) {
-        logger.info(`Page number conflicts resolved: ${conflictResolvedCount}, failed: ${conflictFailedCount} for ${filePath}`);
+        if (duplicateCount > 0) {
+          logger.info(`Skipped ${duplicateCount} duplicate entries for ${filePath}`);
+        }
       }
 
       if (processedEntries.length > 0) {
@@ -191,10 +174,10 @@ async function processFile(filePath, options = {}) {
         const lastEntryId = processedEntries[processedEntries.length - 1].entry_id;
         logger.info(`Stored ${processedEntries.length} burial register entries for page ${pageData.page_number} (${filePath}). Entry IDs: ${firstEntryId} to ${lastEntryId}`);
       } else {
-        const conflictMessage = conflictFailedCount > 0 
-          ? `${conflictFailedCount} entries failed due to unresolved page number conflicts.`
+        const errorMessage = duplicateCount > 0 
+          ? `${duplicateCount} entries were duplicates and ${totalCount - duplicateCount} entries failed validation or storage.`
           : 'All entries failed validation or storage.';
-        logger.warn(`No entries were stored for page ${pageData.page_number} (${filePath}). ${conflictMessage}`);
+        logger.warn(`No entries were stored for page ${pageData.page_number} (${filePath}). ${errorMessage}`);
       }
 
       await fs.unlink(filePath);
@@ -202,8 +185,7 @@ async function processFile(filePath, options = {}) {
 
       return { 
         entries: processedEntries, 
-        pageData,
-        conflicts: conflicts.length > 0 ? conflicts : undefined
+        pageData
       };
     }
     

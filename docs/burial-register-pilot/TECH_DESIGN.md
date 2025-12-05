@@ -327,7 +327,7 @@ CREATE TABLE IF NOT EXISTS burial_register_entries (
     prompt_version TEXT,
     processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     -- Indexes for querying and joining
-    UNIQUE(volume_id, page_number, row_index_on_page, ai_provider)
+    UNIQUE(volume_id, file_name, row_index_on_page, ai_provider)
 );
 
 -- Composite index for main CSV query pattern
@@ -340,7 +340,7 @@ CREATE INDEX idx_burial_volume_page ON burial_register_entries(volume_id, page_n
 ```
 
 **Key Design Points:**
-- Unique constraint on `(volume_id, page_number, row_index_on_page, ai_provider)` ensures one entry per provider per row
+- Unique constraint on `(volume_id, file_name, row_index_on_page, ai_provider)` ensures one entry per provider per file/row, preventing duplicates while allowing different files with same page_number
 - `entry_id` is provider-agnostic (e.g., `vol1_p001_r003`) - same value for GPT and Claude rows, enabling easy joining
 - `entry_id` is NOT UNIQUE (allows same entry_id for different providers)
 - `uncertainty_flags` stored as JSON-encoded array of strings (e.g., `["illegible_date","partial_name"]`)

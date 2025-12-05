@@ -9,6 +9,7 @@ jest.mock('../logger', () => ({
   error: jest.fn(),
   info: jest.fn(),
   debug: jest.fn(),
+  warn: jest.fn(),
   debugPayload: jest.fn()
 }));
 
@@ -57,12 +58,12 @@ describe('burialRegisterStorage', () => {
         model_name TEXT,
         model_run_id TEXT,
         uncertainty_flags TEXT,
-        file_name TEXT,
+        file_name TEXT NOT NULL,
         ai_provider TEXT NOT NULL,
         prompt_template TEXT,
         prompt_version TEXT,
         processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(volume_id, page_number, row_index_on_page, ai_provider)
+        UNIQUE(volume_id, file_name, row_index_on_page, ai_provider)
       )
     `, (err) => {
       if (err) {
@@ -80,7 +81,7 @@ describe('burialRegisterStorage', () => {
     await createTable();
 
     jest.doMock('../database', () => ({ db }));
-    ({ storePageJSON, storeBurialRegisterEntry, getBurialRegisterBaseDir } = require('../burialRegisterStorage'));
+    ({ storePageJSON, storeBurialRegisterEntry, getBurialRegisterBaseDir, extractPageNumberFromFilename } = require('../burialRegisterStorage'));
     burialRegisterBaseDir = getBurialRegisterBaseDir();
   });
 
@@ -157,7 +158,6 @@ describe('burialRegisterStorage', () => {
 
     const result = await storeBurialRegisterEntry(sampleEntry);
     expect(result).toHaveProperty('rowId', 1);
-    expect(result).toHaveProperty('conflictResolved', false);
 
     const rows = await new Promise((resolve, reject) => {
       db.all('SELECT * FROM burial_register_entries', (err, result) => {
@@ -189,6 +189,7 @@ describe('burialRegisterStorage', () => {
       page_number: 5,
       row_index_on_page: 1,
       entry_id: 'vol1_p005_r001',
+      fileName: 'page5.png',
       ai_provider: 'openai'
     };
 
@@ -197,6 +198,7 @@ describe('burialRegisterStorage', () => {
       page_number: 5,
       row_index_on_page: 2,
       entry_id: 'vol1_p005_r002',
+      fileName: 'page5.png',
       ai_provider: 'openai'
     };
 
@@ -204,9 +206,7 @@ describe('burialRegisterStorage', () => {
     const secondResult = await storeBurialRegisterEntry(entryTwo);
 
     expect(firstResult).toHaveProperty('rowId', 1);
-    expect(firstResult).toHaveProperty('conflictResolved', false);
     expect(secondResult).toHaveProperty('rowId', 2);
-    expect(secondResult).toHaveProperty('conflictResolved', false);
 
     const rows = await new Promise((resolve, reject) => {
       db.all('SELECT entry_id, row_index_on_page FROM burial_register_entries ORDER BY row_index_on_page', (err, result) => {
@@ -222,5 +222,142 @@ describe('burialRegisterStorage', () => {
       { entry_id: 'vol1_p005_r001', row_index_on_page: 1 },
       { entry_id: 'vol1_p005_r002', row_index_on_page: 2 }
     ]);
+  });
+
+  test('storeBurialRegisterEntry allows different files with same page_number', async () => {
+    const entryOne = {
+      volume_id: 'vol1',
+      page_number: 5,
+      row_index_on_page: 1,
+      entry_id: 'vol1_p005_r001',
+      fileName: 'page5_file1.png',
+      ai_provider: 'openai'
+    };
+
+    const entryTwo = {
+      volume_id: 'vol1',
+      page_number: 5,
+      row_index_on_page: 1,
+      entry_id: 'vol1_p005_r001',
+      fileName: 'page5_file2.png',
+      ai_provider: 'openai'
+    };
+
+    const firstResult = await storeBurialRegisterEntry(entryOne);
+    const secondResult = await storeBurialRegisterEntry(entryTwo);
+
+    expect(firstResult).toHaveProperty('rowId', 1);
+    expect(secondResult).toHaveProperty('rowId', 2);
+
+    const rows = await new Promise((resolve, reject) => {
+      db.all('SELECT file_name, page_number, row_index_on_page FROM burial_register_entries ORDER BY id', (err, result) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(result);
+      });
+    });
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0].file_name).toBe('page5_file1.png');
+    expect(rows[1].file_name).toBe('page5_file2.png');
+  });
+
+  test('storeBurialRegisterEntry rejects duplicate entries (same file_name, row, provider)', async () => {
+    const entry = {
+      volume_id: 'vol1',
+      page_number: 5,
+      row_index_on_page: 1,
+      entry_id: 'vol1_p005_r001',
+      fileName: 'page5.png',
+      ai_provider: 'openai'
+    };
+
+    await storeBurialRegisterEntry(entry);
+
+    await expect(storeBurialRegisterEntry(entry)).rejects.toThrow(/Duplicate entry/);
+    
+    try {
+      await storeBurialRegisterEntry(entry);
+      fail('Expected duplicate entry to be rejected');
+    } catch (error) {
+      expect(error.message).toMatch(/Duplicate entry/);
+      expect(error.isDuplicate).toBe(true);
+    }
+  });
+
+  test('storeBurialRegisterEntry requires file_name', async () => {
+    const entry = {
+      volume_id: 'vol1',
+      page_number: 5,
+      row_index_on_page: 1,
+      entry_id: 'vol1_p005_r001',
+      ai_provider: 'openai'
+    };
+
+    await expect(storeBurialRegisterEntry(entry)).rejects.toThrow(/file_name is required/);
+  });
+
+  describe('extractPageNumberFromFilename', () => {
+    test('extracts page number from page_XXX.jpg format', () => {
+      expect(extractPageNumberFromFilename('page_033.jpg')).toBe(33);
+      expect(extractPageNumberFromFilename('page_001.jpg')).toBe(1);
+      expect(extractPageNumberFromFilename('page_999.jpg')).toBe(999);
+    });
+
+    test('extracts page number from page-XXX.jpg format', () => {
+      expect(extractPageNumberFromFilename('page-033.jpg')).toBe(33);
+      expect(extractPageNumberFromFilename('page-001.jpg')).toBe(1);
+      expect(extractPageNumberFromFilename('page-999.jpg')).toBe(999);
+    });
+
+    test('extracts page number from timestamped filenames with underscore', () => {
+      expect(extractPageNumberFromFilename('page_033_1764952402182.jpg')).toBe(33);
+      expect(extractPageNumberFromFilename('page_058_1764952402190.jpg')).toBe(58);
+      expect(extractPageNumberFromFilename('page_001_1234567890.jpg')).toBe(1);
+      expect(extractPageNumberFromFilename('page_999_9999999999.jpg')).toBe(999);
+    });
+
+    test('extracts page number from timestamped filenames with dash', () => {
+      expect(extractPageNumberFromFilename('page-033_1764952402190.jpg')).toBe(33);
+      expect(extractPageNumberFromFilename('page-058_1764952402190.jpg')).toBe(58);
+    });
+
+    test('handles different file extensions', () => {
+      expect(extractPageNumberFromFilename('page_033.jpg')).toBe(33);
+      expect(extractPageNumberFromFilename('page_033.png')).toBe(33);
+      expect(extractPageNumberFromFilename('page_033.jpeg')).toBe(33);
+      expect(extractPageNumberFromFilename('page_033.JPG')).toBe(33); // case insensitive
+      expect(extractPageNumberFromFilename('page_033.PNG')).toBe(33);
+    });
+
+    test('handles timestamped filenames with different extensions', () => {
+      expect(extractPageNumberFromFilename('page_033_1764952402182.jpg')).toBe(33);
+      expect(extractPageNumberFromFilename('page_033_1764952402182.png')).toBe(33);
+      expect(extractPageNumberFromFilename('page_033_1764952402182.jpeg')).toBe(33);
+    });
+
+    test('returns null for invalid patterns', () => {
+      expect(extractPageNumberFromFilename('invalid.jpg')).toBeNull();
+      expect(extractPageNumberFromFilename('page.jpg')).toBeNull();
+      expect(extractPageNumberFromFilename('page_abc.jpg')).toBeNull();
+      expect(extractPageNumberFromFilename('page_033.txt')).toBeNull();
+      expect(extractPageNumberFromFilename('')).toBeNull();
+      expect(extractPageNumberFromFilename(null)).toBeNull();
+      expect(extractPageNumberFromFilename(undefined)).toBeNull();
+    });
+
+    test('handles edge cases', () => {
+      // Single digit
+      expect(extractPageNumberFromFilename('page_5.jpg')).toBe(5);
+      // Two digits
+      expect(extractPageNumberFromFilename('page_42.jpg')).toBe(42);
+      // Three digits
+      expect(extractPageNumberFromFilename('page_999.jpg')).toBe(999);
+      // Leading zeros
+      expect(extractPageNumberFromFilename('page_001.jpg')).toBe(1);
+      expect(extractPageNumberFromFilename('page_033.jpg')).toBe(33);
+    });
   });
 });
