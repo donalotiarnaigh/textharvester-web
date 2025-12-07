@@ -27,16 +27,20 @@ function generateEntryId(volumeId, pageNumber, rowIndex, pageNumberForId = null)
  * @param {Object} entry Raw entry object from provider output
  * @param {Object} pageData Validated page-level data
  * @param {Object} metadata Processing metadata (provider, model, filePath)
+ * @param {number|null} pageNumberForId Filename-based page number (reliable, overrides AI-extracted)
  * @returns {Object} Entry with metadata applied
  */
-function injectPageMetadata(entry, pageData, metadata = {}) {
+function injectPageMetadata(entry, pageData, metadata = {}, pageNumberForId = null) {
   const safeEntry = entry && typeof entry === 'object' ? { ...entry } : {};
-  const { volume_id: volumeId, page_number: pageNumber } = pageData || {};
+  const { volume_id: volumeId, page_number: aiPageNumber } = pageData || {};
+
+  // Use filename page number if available (reliable), otherwise fall back to AI-extracted
+  const pageNumber = pageNumberForId !== null && pageNumberForId !== undefined ? pageNumberForId : aiPageNumber;
 
   return {
     ...safeEntry,
     volume_id: volumeId,
-    page_number: pageNumber,
+    page_number: pageNumber,  // Now uses filename-based page number (reliable)
     parish_header_raw: pageData?.parish_header_raw ?? null,
     county_header_raw: pageData?.county_header_raw ?? null,
     year_header_raw: pageData?.year_header_raw ?? null,
@@ -84,16 +88,16 @@ function flattenPageToEntries(pageData, metadata = {}, pageNumberForId = null) {
         : index + 1;
 
     // Log warning if we had to fall back to index+1
-    if (!Number.isInteger(entry.row_index_on_page) && 
-        (!Number.isInteger(parsedRowIndex) || Number.isNaN(parsedRowIndex))) {
+    if (!Number.isInteger(entry.row_index_on_page) &&
+      (!Number.isInteger(parsedRowIndex) || Number.isNaN(parsedRowIndex))) {
       logger.warn(`Invalid row_index_on_page for entry at index ${index} (value: ${originalRowIndex}), using fallback: ${rowIndex}`);
     }
 
     entry.row_index_on_page = rowIndex;
-    // Use filename page number for entry_id generation, but keep AI-extracted page_number in entry
+    // Use filename page number for both entry_id AND page_number field (reliable source)
     entry.entry_id = generateEntryId(pageData.volume_id, pageData.page_number, rowIndex, pageNumberForId);
 
-    return injectPageMetadata(entry, pageData, metadata);
+    return injectPageMetadata(entry, pageData, metadata, pageNumberForId);
   });
 
   // Log summary of generated entry IDs
