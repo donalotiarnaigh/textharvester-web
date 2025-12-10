@@ -5,16 +5,65 @@ const config = require('../../config.json'); // Adjust the path as needed
 const { jsonToCsv, formatJsonForExport } = require('../utils/dataConversion'); // Adjust path as needed
 const moment = require('moment'); // Ensure moment is installed and imported
 const { getTotalFiles, getProcessedFiles, getProcessedResults, getProcessingProgress } = require('../utils/fileQueue.js'); // Adjust the path as needed
-const { getAllMemorials } = require('../utils/database');
+const { getAllMemorials, db } = require('../utils/database');
+const { getAllBurialRegisterEntries } = require('../utils/burialRegisterStorage');
 const { validateAndConvertRecords } = require('../utils/dataValidation');
+
+// Burial register CSV column order (matches pilot plan format)
+const BURIAL_REGISTER_CSV_COLUMNS = [
+  'volume_id',
+  'page_number',
+  'row_index_on_page',
+  'entry_id',
+  'entry_no_raw',
+  'name_raw',
+  'abode_raw',
+  'burial_date_raw',
+  'age_raw',
+  'officiant_raw',
+  'marginalia_raw',
+  'extra_notes_raw',
+  'row_ocr_raw',
+  'parish_header_raw',
+  'county_header_raw',
+  'year_header_raw',
+  'model_name',
+  'model_run_id',
+  'uncertainty_flags',
+  'file_name',
+  'ai_provider',
+  'prompt_template',
+  'prompt_version',
+  'processed_date'
+];
+
+/**
+ * Normalize uncertainty flags for CSV export
+ * @param {*} value - Uncertainty flags value (array, string, null, etc.)
+ * @returns {string} Normalized uncertainty flags as JSON string
+ */
+function normalizeUncertaintyFlags(value) {
+  if (Array.isArray(value)) {
+    return JSON.stringify(value);
+  }
+
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  return JSON.stringify(value);
+}
 
 function getProcessingStatus(req, res) {
   // Use the same logic as getProcessingProgress for consistency
   const progressData = getProcessingProgress();
   
-  // Get any errors from processed files
-  const processedResults = getProcessedResults();
-  const errors = processedResults.filter(r => r && r.error);
+  // Use errors from progressData which includes conflicts from successful results
+  const errors = progressData.errors || [];
   
   // Return the full progress data including queue metrics for performance widget
   res.json({
@@ -28,20 +77,49 @@ function getProcessingStatus(req, res) {
 
 async function downloadResultsJSON(req, res) {
   try {
-    // Get all successful records from database
-    const results = await getAllMemorials();
+    // Detect which source type has the most recent data
+    const sourceType = await detectSourceType();
     
-    // Transform database field names to match frontend expectations
-    const transformedResults = results.map(memorial => ({
-      ...memorial,
-      fileName: memorial.file_name, // Map file_name to fileName for frontend compatibility
-    }));
+    let validatedResults;
+    let defaultFilename;
     
-    // Validate and convert data types
-    const validatedResults = validateAndConvertRecords(transformedResults);
-        
+    if (sourceType === 'burial_register') {
+      // Get burial register entries
+      const results = await getAllBurialRegisterEntries();
+      
+      // Transform database field names to match frontend expectations
+      const transformedResults = results.map(entry => ({
+        ...entry,
+        fileName: entry.file_name, // Map file_name to fileName for frontend compatibility
+      }));
+      
+      // Skip validateAndConvertRecords for burial register entries (already validated on insertion)
+      validatedResults = transformedResults;
+      
+      // Extract volume_id from first entry if available
+      const volumeId = results.length > 0 ? results[0].volume_id : 'all';
+      logger.info(`Exporting burial register JSON: ${results.length} entries, volume_id=${volumeId}`);
+      
+      // Generate filename
+      defaultFilename = `burials_${moment().format('YYYYMMDD_HHmmss')}.json`;
+    } else {
+      // Get memorials (default)
+      const results = await getAllMemorials();
+      
+      // Transform database field names to match frontend expectations
+      const transformedResults = results.map(memorial => ({
+        ...memorial,
+        fileName: memorial.file_name, // Map file_name to fileName for frontend compatibility
+      }));
+      
+      // Validate and convert data types
+      validatedResults = validateAndConvertRecords(transformedResults);
+      
+      // Generate filename
+      defaultFilename = `memorials_${moment().format('YYYYMMDD_HHmmss')}.json`;
+    }
+    
     // Extract filename from query parameters or use a default
-    const defaultFilename = `memorials_${moment().format('YYYYMMDD_HHmmss')}.json`;
     const requestedFilename = req.query.filename 
       ? `${sanitizeFilename(req.query.filename)}.json` 
       : defaultFilename;
@@ -54,7 +132,10 @@ async function downloadResultsJSON(req, res) {
     res.setHeader('Content-Type', 'application/json');
     res.send(jsonData);
         
-    logger.info(`Downloaded JSON results as ${requestedFilename} (${format} format)`);
+    const entryCount = sourceType === 'burial_register' 
+      ? validatedResults.length 
+      : validatedResults.length;
+    logger.info(`Downloaded JSON results as ${requestedFilename} (${format} format, ${entryCount} entries)`);
   } catch (err) {
     logger.error('Error downloading JSON results:', err);
     res.status(500).send('Unable to download results');
@@ -70,25 +151,110 @@ function sanitizeFilename(filename) {
   return filename.replace(/[^a-zA-Z0-9_.-]/g, '_');
 }
 
+/**
+ * Detect which source type has the most recent data by comparing processed_date
+ * @returns {Promise<string>} Returns 'burial_register' or 'memorial' (defaults to 'memorial')
+ */
+async function detectSourceType() {
+  return new Promise((resolve) => {
+    try {
+      // Query both tables for most recent processed_date
+      db.get('SELECT MAX(processed_date) as max_date FROM memorials', [], (err, memorialResult) => {
+        if (err) {
+          logger.error('Error querying memorials for source type detection:', err);
+          resolve('memorial'); // Default on error
+          return;
+        }
+
+        db.get('SELECT MAX(processed_date) as max_date FROM burial_register_entries', [], (err2, burialResult) => {
+          if (err2) {
+            logger.error('Error querying burial_register_entries for source type detection:', err2);
+            resolve('memorial'); // Default on error
+            return;
+          }
+
+          const memorialDate = memorialResult?.max_date ? new Date(memorialResult.max_date) : null;
+          const burialDate = burialResult?.max_date ? new Date(burialResult.max_date) : null;
+
+          // If both are null/empty, default to memorial
+          if (!memorialDate && !burialDate) {
+            resolve('memorial');
+            return;
+          }
+
+          // If only one has data, return that type
+          if (!memorialDate) {
+            resolve('burial_register');
+            return;
+          }
+          if (!burialDate) {
+            resolve('memorial');
+            return;
+          }
+
+          // Compare dates - return the one with more recent data
+          const detectedType = burialDate > memorialDate ? 'burial_register' : 'memorial';
+          logger.debug(`Source type detection: most recent is ${detectedType} (memorial_date=${memorialResult?.max_date || 'null'}, burial_date=${burialResult?.max_date || 'null'})`);
+          resolve(detectedType);
+        });
+      });
+    } catch (error) {
+      logger.error('Error in detectSourceType:', error);
+      resolve('memorial'); // Default on error
+    }
+  });
+}
+
 async function downloadResultsCSV(req, res) {
   try {
-    // Get all successful records from database
-    const results = await getAllMemorials();
+    // Detect which source type has the most recent data
+    const sourceType = await detectSourceType();
     
-    // Transform database field names to match frontend expectations
-    const transformedResults = results.map(memorial => ({
-      ...memorial,
-      fileName: memorial.file_name, // Map file_name to fileName for frontend compatibility
-    }));
+    let csvData;
+    let defaultFilename;
+    let entryCount = 0;
     
-    // Validate and convert data types
-    const validatedResults = validateAndConvertRecords(transformedResults);
-        
-    // Convert to CSV
-    const csvData = jsonToCsv(validatedResults);
-        
-    // Generate filename
-    const defaultFilename = `memorials_${moment().format('YYYYMMDD_HHmmss')}.csv`;
+    if (sourceType === 'burial_register') {
+      // Get burial register entries
+      const results = await getAllBurialRegisterEntries();
+      entryCount = results.length;
+      
+      // Extract volume_id from first entry if available
+      const volumeId = results.length > 0 ? results[0].volume_id : 'all';
+      logger.info(`Exporting burial register CSV: ${entryCount} entries, volume_id=${volumeId}`);
+      
+      // Normalize uncertainty flags for CSV export
+      const normalizedResults = results.map(entry => ({
+        ...entry,
+        uncertainty_flags: normalizeUncertaintyFlags(entry.uncertainty_flags)
+      }));
+      
+      // Convert to CSV with explicit column order
+      csvData = jsonToCsv(normalizedResults, BURIAL_REGISTER_CSV_COLUMNS);
+      
+      // Generate filename
+      defaultFilename = `burials_${moment().format('YYYYMMDD_HHmmss')}.csv`;
+    } else {
+      // Get memorials (default)
+      const results = await getAllMemorials();
+      entryCount = results.length;
+      
+      // Transform database field names to match frontend expectations
+      const transformedResults = results.map(memorial => ({
+        ...memorial,
+        fileName: memorial.file_name, // Map file_name to fileName for frontend compatibility
+      }));
+      
+      // Validate and convert data types
+      const validatedResults = validateAndConvertRecords(transformedResults);
+      
+      // Convert to CSV (uses default memorial columns)
+      csvData = jsonToCsv(validatedResults);
+      
+      // Generate filename
+      defaultFilename = `memorials_${moment().format('YYYYMMDD_HHmmss')}.csv`;
+    }
+    
     const requestedFilename = req.query.filename 
       ? `${sanitizeFilename(req.query.filename)}.csv` 
       : defaultFilename;
@@ -96,8 +262,8 @@ async function downloadResultsCSV(req, res) {
     res.setHeader('Content-Disposition', `attachment; filename="${requestedFilename}"`);
     res.setHeader('Content-Type', 'text/csv');
     res.send(csvData);
-        
-    logger.info(`Downloaded CSV results as ${requestedFilename}`);
+    
+    logger.info(`Downloaded CSV results as ${requestedFilename} (${entryCount} entries)`);
   } catch (err) {
     logger.error('Error downloading CSV results:', err);
     res.status(500).send('Unable to download results');
@@ -106,28 +272,76 @@ async function downloadResultsCSV(req, res) {
 
 async function getResults(req, res) {
   try {
-    // Get all successful records from database
-    const dbResults = await getAllMemorials();
-    
-    // Transform database field names to match frontend expectations
-    const transformedResults = dbResults.map(memorial => ({
-      ...memorial,
-      fileName: memorial.file_name, // Map file_name to fileName for frontend compatibility
-      // Keep the original file_name for backward compatibility if needed
-    }));
-    
-    // Validate and convert data types
-    const validatedResults = validateAndConvertRecords(transformedResults);
+    // Detect which source type has the most recent data
+    const sourceType = await detectSourceType();
     
     // Get any errors from processed files
     const processedResults = getProcessedResults();
     const errors = processedResults.filter(r => r && r.error);
     
-    // Return both memorials and errors
-    res.json({
-      memorials: validatedResults,
-      errors: errors
+    // Collect conflict warnings from successful results (same format as getProcessingProgress)
+    const conflictWarnings = [];
+    processedResults.forEach(result => {
+      if (result && !result.error && result.conflicts && result.conflicts.length > 0) {
+        result.conflicts.forEach(conflict => {
+          if (conflict.status === 'resolved') {
+            conflictWarnings.push({
+              fileName: conflict.file_name,
+              errorType: 'page_number_conflict',
+              errorMessage: `Page number conflict resolved: AI extracted page ${conflict.original_page_number} but filename suggests page ${conflict.resolved_page_number}. Using filename-based page number.`,
+              conflicts: [conflict] // Include for consistency with getProcessingProgress format
+            });
+          } else if (conflict.status === 'failed') {
+            conflictWarnings.push({
+              fileName: conflict.file_name,
+              errorType: 'page_number_conflict',
+              errorMessage: `Page number conflict unresolved: AI extracted page ${conflict.original_page_number} but entry already exists. Filename does not match expected pattern.`,
+              conflicts: [conflict]
+            });
+          }
+        });
+      }
     });
+    
+    // Combine actual errors with conflict warnings
+    const allErrors = [...errors, ...conflictWarnings];
+    
+    if (sourceType === 'burial_register') {
+      // Get burial register entries
+      const dbResults = await getAllBurialRegisterEntries();
+      
+      // Transform database field names to match frontend expectations
+      const transformedResults = dbResults.map(entry => ({
+        ...entry,
+        fileName: entry.file_name, // Map file_name to fileName for frontend compatibility
+      }));
+      
+      // Return burial register entries with source type
+      res.json({
+        burialRegisterEntries: transformedResults,
+        sourceType: 'burial_register',
+        errors: allErrors.length > 0 ? allErrors : undefined
+      });
+    } else {
+      // Get memorials (default)
+      const dbResults = await getAllMemorials();
+      
+      // Transform database field names to match frontend expectations
+      const transformedResults = dbResults.map(memorial => ({
+        ...memorial,
+        fileName: memorial.file_name, // Map file_name to fileName for frontend compatibility
+      }));
+      
+      // Validate and convert data types
+      const validatedResults = validateAndConvertRecords(transformedResults);
+      
+      // Return memorials with source type
+      res.json({
+        memorials: validatedResults,
+        sourceType: 'memorial',
+        errors: allErrors.length > 0 ? allErrors : undefined
+      });
+    }
   } catch (error) {
     logger.error('Error retrieving results:', error);
     res.status(500).json({ error: 'Failed to retrieve results' });

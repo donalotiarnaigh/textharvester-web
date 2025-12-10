@@ -31,14 +31,20 @@ function initializeDatabase() {
       memorial_number TEXT,
       first_name TEXT,
       last_name TEXT,
-      year_of_death TEXT,
+      year_of_death TEXT CONSTRAINT valid_year CHECK (
+        year_of_death IS NULL OR 
+        year_of_death = '-' OR
+        year_of_death GLOB '*-*' OR
+        (CAST(year_of_death AS INTEGER) >= 1500 AND CAST(year_of_death AS INTEGER) <= 2100)
+      ),
       inscription TEXT,
       file_name TEXT,
       ai_provider TEXT,
       model_version TEXT,
       prompt_template TEXT,
       prompt_version TEXT,
-      processed_date DATETIME DEFAULT CURRENT_TIMESTAMP
+      processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+      source_type TEXT
     )
   `;
 
@@ -48,6 +54,63 @@ function initializeDatabase() {
       return;
     }
     logger.info('Memorials table initialized');
+  });
+}
+
+// Initialize burial register table
+function initializeBurialRegisterTable() {
+  const createTableSQL = `
+    CREATE TABLE IF NOT EXISTS burial_register_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      volume_id TEXT NOT NULL,
+      page_number INTEGER NOT NULL,
+      row_index_on_page INTEGER NOT NULL,
+      entry_id TEXT NOT NULL,
+      entry_no_raw TEXT,
+      name_raw TEXT,
+      abode_raw TEXT,
+      burial_date_raw TEXT,
+      age_raw TEXT,
+      officiant_raw TEXT,
+      marginalia_raw TEXT,
+      extra_notes_raw TEXT,
+      row_ocr_raw TEXT,
+      parish_header_raw TEXT,
+      county_header_raw TEXT,
+      year_header_raw TEXT,
+      model_name TEXT,
+      model_run_id TEXT,
+      uncertainty_flags TEXT,
+      file_name TEXT NOT NULL,
+      ai_provider TEXT NOT NULL,
+      prompt_template TEXT,
+      prompt_version TEXT,
+      processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(volume_id, file_name, row_index_on_page, ai_provider)
+    )
+  `;
+
+  db.run(createTableSQL, (err) => {
+    if (err) {
+      logger.error('Error creating burial_register_entries table:', err);
+      return;
+    }
+    logger.info('Burial register entries table initialized');
+    
+    // Create indexes
+    const indexes = [
+      'CREATE INDEX IF NOT EXISTS idx_burial_provider_volume_page ON burial_register_entries(ai_provider, volume_id, page_number)',
+      'CREATE INDEX IF NOT EXISTS idx_burial_entry_id ON burial_register_entries(entry_id)',
+      'CREATE INDEX IF NOT EXISTS idx_burial_volume_page ON burial_register_entries(volume_id, page_number)'
+    ];
+
+    indexes.forEach((indexSQL) => {
+      db.run(indexSQL, (indexErr) => {
+        if (indexErr) {
+          logger.error('Error creating burial register index:', indexErr);
+        }
+      });
+    });
   });
 }
 
@@ -65,8 +128,9 @@ function storeMemorial(data) {
       ai_provider,
       model_version,
       prompt_template,
-      prompt_version
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      prompt_version,
+      source_type
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   return new Promise((resolve, reject) => {
@@ -80,7 +144,8 @@ function storeMemorial(data) {
       data.ai_provider || null,
       data.model_version || null,
       data.prompt_template || null,
-      data.prompt_version || null
+      data.prompt_version || null,
+      data.source_type || null
     ], function(err) {
       if (err) {
         logger.error('Error storing memorial:', err);
@@ -145,6 +210,7 @@ const backupDatabase = async () => {
 
 // Initialize database on module load
 initializeDatabase();
+initializeBurialRegisterTable();
 
 module.exports = {
   storeMemorial,

@@ -65,7 +65,7 @@ describe('AnthropicProvider', () => {
 
     it('should use default model if not specified', () => {
       const defaultProvider = new AnthropicProvider({});
-      expect(defaultProvider.model).toBe('claude-4-sonnet-20250514');
+      expect(defaultProvider.model).toBe('claude-sonnet-4-5');
     });
 
     it('should use provided max tokens from config', () => {
@@ -74,7 +74,7 @@ describe('AnthropicProvider', () => {
 
     it('should use default max tokens if not specified', () => {
       const defaultProvider = new AnthropicProvider({});
-      expect(defaultProvider.maxTokens).toBe(4000);
+      expect(defaultProvider.maxTokens).toBe(8000);
     });
 
     it('should use provided temperature from config', () => {
@@ -166,7 +166,7 @@ describe('AnthropicProvider', () => {
       
       await expect(provider.processImage(testImage, testPrompt))
         .rejects
-        .toThrow('Failed to parse JSON response: Unexpected token');
+        .toThrow('Failed to parse JSON response: Invalid JSON: Unexpected token');
     });
 
     it('should handle JSON response in code block', async () => {

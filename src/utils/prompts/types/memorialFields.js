@@ -160,7 +160,7 @@ const MEMORIAL_FIELDS = [
     }
   }),
   new MemorialField('inscription', new StringType(), false, {
-    maxLength: 1000,
+    maxLength: 5000, // Increased to handle longer responses
     transform: (value) => {
       if (value === null || value === undefined || value === '') {
         return null;

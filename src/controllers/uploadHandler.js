@@ -1,4 +1,5 @@
 /* eslint-disable quotes */
+const fs = require("fs");
 const multer = require("multer");
 const path = require("path");
 const config = require("../../config.json");
@@ -7,6 +8,7 @@ const logger = require("../utils/logger");
 const { clearProcessingCompleteFlag } = require("../utils/processingFlag");
 const { convertPdfToJpegs } = require("../utils/pdfConverter");
 const { clearAllMemorials } = require('../utils/database');
+const { clearAllBurialRegisterEntries } = require('../utils/burialRegisterStorage');
 const { getPrompt } = require('../utils/prompts/templates/providerTemplates');
 const { promptManager } = require('../utils/prompts/templates/providerTemplates');
 
@@ -33,7 +35,21 @@ const fileFilter = (req, file, cb) => {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, config.uploadPath);
+    const sourceType = req.body?.source_type || req.body?.sourceType;
+    const volumeId = req.body?.volume_id || 'vol1';
+
+    let destinationPath = config.uploadPath;
+
+    if (sourceType === 'burial_register') {
+      destinationPath = path.join('data', 'burial_register', volumeId);
+    }
+
+    if (!fs.existsSync(destinationPath)) {
+      fs.mkdirSync(destinationPath, { recursive: true });
+      logger.info(`Created upload directory at ${destinationPath}`);
+    }
+
+    cb(null, destinationPath);
   },
   filename: (req, file, cb) => {
     const uniqueName = createUniqueName(file);
@@ -49,10 +65,11 @@ const storage = multer.diskStorage({
 // }).fields([...]);
 
 // For test compatibility, we use a simpler configuration that matches the test mock
+// Increased file size limit to 1GB to support large PDF files (e.g., 210-page burial registers)
 const multerConfig = {
   storage: storage,
   fileFilter: fileFilter,
-  limits: { fileSize: 100 * 1024 * 1024 }
+  limits: { fileSize: 1024 * 1024 * 1024 } // 1GB limit for large PDFs
 };
 
 const validatePromptConfig = async (provider, template, version) => {
@@ -81,7 +98,17 @@ const validatePromptConfig = async (provider, template, version) => {
 };
 
 const handleFileUpload = async (req, res) => {
+  const uploadStartTime = Date.now();
   logger.info("Handling file upload request");
+  
+  // Log request details for large file debugging
+  const contentLength = req.headers['content-length'];
+  if (contentLength) {
+    const sizeMB = (parseInt(contentLength, 10) / 1024 / 1024).toFixed(2);
+    logger.info(`Upload request size: ${sizeMB}MB`);
+  }
+
+  const validSourceTypes = ['record_sheet', 'monument_photo', 'burial_register'];
 
   try {
     const uploadMiddleware = multer(multerConfig).fields([{ name: 'file', maxCount: 10 }]);
@@ -94,24 +121,46 @@ const handleFileUpload = async (req, res) => {
   } catch (err) {
     if (err instanceof multer.MulterError) {
       logger.error("Multer upload error:", err);
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        logger.error(`File size exceeds limit: ${err.message}`);
+        return res
+          .status(413)
+          .json({ error: `File too large. Maximum file size is 1GB. ${err.message}` });
+      }
       return res
         .status(500)
-        .send("An error occurred during the file upload: " + err.message);
+        .json({ error: "An error occurred during the file upload: " + err.message });
     } else {
       logger.error("Unknown upload error:", err);
-      return res.status(500).send("Unknown upload error: " + err.message);
+      return res.status(500).json({ error: "Unknown upload error: " + err.message });
     }
   }
 
   const shouldReplace = req.body.replaceExisting === 'true';
   const selectedModel = req.body.aiProvider || 'openai';
-  const promptTemplate = req.body.promptTemplate;
+  let sourceType = req.body.source_type || req.body.sourceType || 'record_sheet';
+  const volumeId = req.body.volume_id || 'vol1';
+
+  // Validate and coerce invalid source_type to record_sheet (for backward compatibility)
+  if (!validSourceTypes.includes(sourceType)) {
+    logger.warn(`Invalid source type received: ${sourceType}, defaulting to record_sheet`);
+    sourceType = 'record_sheet';
+  }
+
+  const requestedPromptTemplate = req.body.promptTemplate;
+  const promptTemplate = sourceType === 'burial_register'
+    ? 'burialRegister'
+    : requestedPromptTemplate;
   const promptVersion = req.body.promptVersion;
 
   logger.info(`Replace existing setting: ${shouldReplace}`);
   logger.info(`Selected AI model: ${selectedModel}`);
   logger.info(`Prompt template: ${promptTemplate || 'default'}`);
   logger.info(`Prompt version: ${promptVersion || 'latest'}`);
+  logger.info(`Source type: ${sourceType}`);
+  if (sourceType === 'burial_register') {
+    logger.info(`Volume ID: ${volumeId}`);
+  }
 
   const files = req.files?.file || [];
   logger.info(`Number of files received: ${files.length}`);
@@ -134,33 +183,45 @@ const handleFileUpload = async (req, res) => {
     }
 
     if (shouldReplace) {
-      await clearAllMemorials();
-      logger.info("Cleared existing memorial records as requested");
+      if (sourceType === 'burial_register') {
+        await clearAllBurialRegisterEntries();
+        logger.info("Cleared existing burial register entries as requested");
+      } else {
+        await clearAllMemorials();
+        logger.info("Cleared existing memorial records as requested");
+      }
     }
 
-    // Process files
+    // Collect all files to enqueue in a single batch to preserve sequential processing
+    const filesToQueue = [];
     for (const file of files) {
       try {
         if (file.mimetype === "application/pdf") {
           logger.info(`Processing PDF file: ${file.originalname}`);
           const imagePaths = await convertPdfToJpegs(file.path);
           logger.info(`Converted PDF to images: ${imagePaths}`);
-          await enqueueFiles(
-            imagePaths.map((imagePath) => ({
+          filesToQueue.push(
+            ...imagePaths.map((imagePath) => ({
               path: imagePath,
               mimetype: "image/jpeg",
               provider: selectedModel,
-              promptTemplate: promptConfig.template,
-              promptVersion: promptConfig.version
+              promptVersion: promptConfig.version,
+              source_type: sourceType,
+              sourceType,
+              ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
+              uploadDir: path.dirname(imagePath)
             }))
           );
         } else {
-          await enqueueFiles([{
+          filesToQueue.push({
             ...file,
             provider: selectedModel,
-            promptTemplate: promptConfig.template,
-            promptVersion: promptConfig.version
-          }]);
+            promptVersion: promptConfig.version,
+            source_type: sourceType,
+            sourceType,
+            ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
+            uploadDir: path.dirname(file.path)
+          });
         }
       } catch (conversionError) {
         logger.error(
@@ -171,8 +232,16 @@ const handleFileUpload = async (req, res) => {
       }
     }
 
+    // Enqueue all files in a single call to maintain sequential processing order
+    enqueueFiles(filesToQueue);
+
+    if (sourceType === 'burial_register') {
+      logger.info(`Enqueued ${filesToQueue.length} burial register files for processing (volume_id=${volumeId}, provider=${selectedModel})`);
+    }
+
     clearProcessingCompleteFlag();
-    logger.info("Processing complete. Redirecting to results page.");
+    const uploadDuration = Date.now() - uploadStartTime;
+    logger.info(`Processing complete. Upload took ${uploadDuration}ms. Redirecting to results page.`);
 
     res.status(200).json({
       message: "File upload complete. Starting conversion...",

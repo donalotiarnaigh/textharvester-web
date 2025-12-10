@@ -165,6 +165,10 @@ class Logger {
     }
   }
 
+  trackMonumentCrop(success) {
+    this.trackMetrics('monument_cropping', { success });
+  }
+
   /**
    * Get current error patterns and metrics
    * @returns {Object} Error patterns and metrics

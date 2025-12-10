@@ -22,13 +22,13 @@ describe('Processing Page Model Selection Features', () => {
       localStorage.setItem('selectedModel', 'openai');
       initModelTracking();
       expect(document.getElementById('modelDisplay').textContent)
-        .toContain('OpenAI GPT-5');
+        .toContain('OpenAI GPT-5.1');
     });
 
     test('should display default model when no model is selected', () => {
       initModelTracking();
       expect(document.getElementById('modelDisplay').textContent)
-        .toContain('OpenAI GPT-5');
+        .toContain('OpenAI GPT-5.1');
     });
   });
 
@@ -64,13 +64,13 @@ describe('Processing Page Model Selection Features', () => {
     test('should display model-specific status messages during processing', () => {
       localStorage.setItem('selectedModel', 'openai');
       const message = getStatusMessage('processing', 'openai');
-      expect(message).toContain('Processing with OpenAI GPT-5');
+      expect(message).toContain('Processing with OpenAI GPT-5.1');
     });
 
     test('should handle model-specific errors appropriately', () => {
       localStorage.setItem('selectedModel', 'anthropic');
       const message = getStatusMessage('error', 'anthropic');
-      expect(message).toContain('Error processing with Anthropic Claude 4 Sonnet');
+      expect(message).toContain('Error processing with Anthropic Claude Sonnet 4.5');
     });
 
     test('should display completion message', () => {

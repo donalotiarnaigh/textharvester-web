@@ -28,7 +28,7 @@ describe('Download Functionality', () => {
         inscription: 'Test inscription',
         file_name: 'test.jpg',
         ai_provider: 'openai',
-        model_version: 'gpt-5',
+        model_version: 'gpt-4o',
         prompt_version: '1.0.0',
         processed_date: '2024-03-20T10:00:00.000Z'
       }];
@@ -38,14 +38,14 @@ describe('Download Functionality', () => {
 
       const data = JSON.parse(res._getData());
       expect(data[0]).toHaveProperty('ai_provider', 'openai');
-      expect(data[0]).toHaveProperty('model_version', 'gpt-5');
+      expect(data[0]).toHaveProperty('model_version', 'gpt-4o');
       expect(data[0]).toHaveProperty('prompt_version', '1.0.0');
     });
 
     it('should handle format option for JSON export', async () => {
       const mockData = [{
         id: 1,
-        memorial_number: 123,
+        memorial_number: '123', // Changed to string to preserve leading zeros
         first_name: 'John',
         last_name: 'Doe'
       }];
@@ -66,7 +66,7 @@ describe('Download Functionality', () => {
 
     it('should validate data types in JSON export', async () => {
       const mockData = [{
-        memorial_number: '123', // String that should be number
+        memorial_number: '123', // String to preserve leading zeros
         year_of_death: '1900', // String that should be number
         first_name: 'John'
       }];
@@ -75,7 +75,7 @@ describe('Download Functionality', () => {
       await downloadResultsJSON(req, res);
 
       const data = JSON.parse(res._getData());
-      expect(typeof data[0].memorial_number).toBe('number');
+      expect(typeof data[0].memorial_number).toBe('string'); // Changed to string to preserve leading zeros
       expect(typeof data[0].year_of_death).toBe('number');
     });
   });
@@ -91,7 +91,7 @@ describe('Download Functionality', () => {
         inscription: 'Test inscription',
         file_name: 'test.jpg',
         ai_provider: 'openai',
-        model_version: 'gpt-5',
+        model_version: 'gpt-4o',
         prompt_version: '1.0.0',
         processed_date: '2024-03-20T10:00:00.000Z'
       }];

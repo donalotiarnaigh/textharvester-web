@@ -15,7 +15,7 @@ describe('Data Conversion Utils', () => {
       file_name: 'test1.jpg',
       processed_date: '2025-01-01T12:00:00Z',
       ai_provider: 'openai',
-      model_version: 'gpt-5',
+      model_version: 'gpt-4o',
       prompt_version: '1.0'
     },
     {
@@ -47,7 +47,7 @@ describe('Data Conversion Utils', () => {
       expect(lines[0]).toBe('memorial_number,first_name,last_name,year_of_death,inscription,file_name,ai_provider,model_version,prompt_version,processed_date');
       
       // Check first data row
-      expect(lines[1]).toBe('MEM001,John,Doe,1900,Rest in Peace,test1.jpg,openai,gpt-5,1.0,2025-01-01T12:00:00Z');
+      expect(lines[1]).toBe('MEM001,John,Doe,1900,Rest in Peace,test1.jpg,openai,gpt-4o,1.0,2025-01-01T12:00:00Z');
     });
 
     it('should properly handle newlines in fields', () => {
@@ -82,10 +82,25 @@ describe('Data Conversion Utils', () => {
 
       const csv = jsonToCsv(dataWithQuotes);
       const lines = csv.split('\n');
-      
+
       // Check that quotes are properly escaped
       expect(lines[1]).toContain('"John ""Johnny"""');
       expect(lines[1]).toContain('"He said ""goodbye"""');
     });
+
+    it('should support custom column order when provided', () => {
+      const customColumns = ['entry_id', 'name_raw'];
+      const customData = [
+        { entry_id: 'vol1_p001_r001', name_raw: 'Test Name' },
+        { entry_id: 'vol1_p001_r002', name_raw: 'Second Entry' }
+      ];
+
+      const csv = jsonToCsv(customData, customColumns);
+      const lines = csv.trim().split('\n');
+
+      expect(lines[0]).toBe('entry_id,name_raw');
+      expect(lines[1]).toBe('vol1_p001_r001,Test Name');
+      expect(lines[2]).toBe('vol1_p001_r002,Second Entry');
+    });
   });
-}); 
+});

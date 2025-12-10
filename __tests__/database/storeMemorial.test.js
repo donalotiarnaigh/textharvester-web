@@ -101,7 +101,7 @@ describe('storeMemorial Function', () => {
       inscription: 'Test inscription',
       fileName: 'test.jpg',
       ai_provider: 'openai',
-      model_version: 'gpt-5',
+      model_version: 'gpt-4o',
       prompt_template: 'memorialOCR',
       prompt_version: '1.0'
     };
@@ -118,7 +118,7 @@ describe('storeMemorial Function', () => {
         'Test inscription',
         'test.jpg',
         'openai',
-        'gpt-5',
+        'gpt-4o',
         'memorialOCR',
         '1.0',
         expect.any(String)

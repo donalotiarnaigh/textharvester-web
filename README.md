@@ -9,7 +9,8 @@ Welcome to the Text Harvester, a community-driven web application designed to pr
 - **Multiple AI Providers**: Support for different vision AI models:
   - OpenAI GPT-5 (default)
   - Anthropic Claude 4 Sonnet
-- **Results Management**: 
+- **Burial Register Pilot**: Dedicated prompt template for burial register pages, dual-provider support, and CSV exports for per-entry records.
+- **Results Management**:
   - Choose to replace existing results or add to them
   - Download extracted text data in JSON or CSV formats
   - Custom filename support for downloads
@@ -41,6 +42,43 @@ CREATE TABLE memorials (
 CREATE INDEX idx_memorial_number ON memorials(memorial_number);
 CREATE INDEX idx_name ON memorials(last_name, first_name);
 CREATE INDEX idx_year ON memorials(year_of_death);
+```
+
+### Burial register schema
+```sql
+CREATE TABLE IF NOT EXISTS burial_register_entries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  volume_id TEXT NOT NULL,
+  page_number INTEGER NOT NULL,
+  row_index_on_page INTEGER NOT NULL,
+  entry_id TEXT NOT NULL,
+  entry_no_raw TEXT,
+  name_raw TEXT,
+  abode_raw TEXT,
+  burial_date_raw TEXT,
+  age_raw TEXT,
+  officiant_raw TEXT,
+  marginalia_raw TEXT,
+  extra_notes_raw TEXT,
+  row_ocr_raw TEXT,
+  parish_header_raw TEXT,
+  county_header_raw TEXT,
+  year_header_raw TEXT,
+  model_name TEXT,
+  model_run_id TEXT,
+  uncertainty_flags TEXT,
+  file_name TEXT NOT NULL,
+  ai_provider TEXT NOT NULL,
+  prompt_template TEXT,
+  prompt_version TEXT,
+  processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(volume_id, file_name, row_index_on_page, ai_provider)
+);
+
+-- Helpful indexes
+CREATE INDEX IF NOT EXISTS idx_burial_provider_volume_page ON burial_register_entries(ai_provider, volume_id, page_number);
+CREATE INDEX IF NOT EXISTS idx_burial_entry_id ON burial_register_entries(entry_id);
+CREATE INDEX IF NOT EXISTS idx_burial_volume_page ON burial_register_entries(volume_id, page_number);
 ```
 
 ### Data Types and Constraints
@@ -124,6 +162,69 @@ To run the Historic Graves Text Harvester locally, follow these steps:
 - Regular database backups are maintained
 - Option to replace or append to existing records
 - Export functionality for data portability
+
+### Burial register configuration
+
+- Burial register outputs default to `./data/burial_register` with files organised by volume and provider.
+- Configure defaults in `config.json` under the `burialRegister` section (output directory, default volume ID, CSV options).
+- Override the output directory at runtime with the `BURIAL_REGISTER_OUTPUT_DIR` environment variable when needed.
+
+### Burial register prompt template
+
+The `BurialRegisterPrompt` extends the shared `BasePrompt` to describe both page-level metadata and entry-level fields for register pages. The template supports OpenAI and Anthropic providers, exposes provider-specific system/user prompts, and validates the returned JSON before flattening. Expected JSON structure:
+
+```json
+{
+  "volume_id": "vol1",
+  "page_number": 1,
+  "parish_header_raw": "St Luke's",
+  "county_header_raw": "Cork",
+  "year_header_raw": "1896",
+  "page_marginalia_raw": null,
+  "entries": [
+    {
+      "row_index_on_page": 1,
+      "entry_id": null,
+      "entry_no_raw": "12",
+      "name_raw": "Jane Doe",
+      "abode_raw": "Douglas",
+      "burial_date_raw": "12 Mar 1896",
+      "age_raw": "48",
+      "officiant_raw": "J. Smith",
+      "marginalia_raw": null,
+      "extra_notes_raw": null,
+      "row_ocr_raw": "12 Jane Doe Douglas 12 Mar 1896 48 J. Smith",
+      "uncertainty_flags": []
+    }
+  ]
+}
+```
+
+### Burial register workflow and examples
+
+1. **Prepare the database**: ensure the burial register table exists by running the migration:
+   ```sh
+   node scripts/migrate-add-burial-register-table.js
+   ```
+2. **Upload a page image** using the existing `/upload` endpoint with `source_type=burial_register` and the desired provider (e.g. `openai` or `anthropic`). The upload handler stores page JSON under `data/burial_register/{volumeId}/pages/{provider}/` and flattens entries into the `burial_register_entries` table.
+3. **Export per-entry CSVs** once a volume is processed:
+   ```sh
+   node scripts/export-burial-register-csv.js gpt vol1
+   node scripts/export-burial-register-csv.js claude vol1
+   ```
+   The script normalises provider aliases (`gpt` → `openai`, `claude` → `anthropic`), reads entries from SQLite in volume/page order, and writes CSVs to `data/burial_register/{volumeId}/csv/`.
+
+### Burial register API parameters
+
+The existing `POST /upload` route accepts burial register uploads without additional endpoints. Include these fields with the request (e.g. multipart form):
+
+- `file`: JPEG image(s) or PDF of register pages
+- `source_type`: `burial_register`
+- `aiProvider`: `openai` or `anthropic`
+- `volume_id` (optional): volume identifier, defaults to `vol1`
+- `promptVersion` (optional): prompt version, defaults to `latest`
+
+The prompt template automatically switches to `burialRegister` when `source_type` is `burial_register`.
 
 ## Support
 

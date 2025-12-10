@@ -29,7 +29,7 @@ class PerformanceTracker {
   /**
    * Track an API call with timing and memory usage
    * @param {string} provider - The AI provider (openai, anthropic)
-   * @param {string} model - The model name (gpt-5, claude-4-sonnet-20250514)
+   * @param {string} model - The model name (gpt-4o, claude-4-sonnet-20250514)
    * @param {string} operation - The operation type (processImage, etc)
    * @param {Function} fn - The async function to execute and track
    * @param {Object} metadata - Additional metadata to track

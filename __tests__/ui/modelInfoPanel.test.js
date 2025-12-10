@@ -26,7 +26,7 @@ describe('Model Info Panel', () => {
   let container;
   const mockData = {
     ai_provider: 'openai',
-    model_version: 'gpt-5',
+    model_version: 'gpt-4o',
     prompt_template: 'memorial_ocr',
     prompt_version: '1.0.0',
     processed_date: '2024-03-20T10:00:00.000Z'
@@ -117,7 +117,7 @@ describe('Model Info Panel', () => {
 
     it('should display model information correctly', () => {
       expect(document.getElementById('infoProvider').textContent).toBe('OpenAI');
-      expect(document.getElementById('infoModelVersion').textContent).toBe('gpt-5');
+      expect(document.getElementById('infoModelVersion').textContent).toBe('gpt-4o');
     });
 
     it('should display prompt information correctly', () => {

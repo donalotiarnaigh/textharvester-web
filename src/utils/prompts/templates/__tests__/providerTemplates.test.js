@@ -1,6 +1,7 @@
-const { promptManager, openaiTemplate, anthropicTemplate } = require('../providerTemplates');
+const { promptManager, openaiTemplate, anthropicTemplate, getPrompt } = require('../providerTemplates');
 const BasePrompt = require('../../BasePrompt');
 const { MEMORIAL_FIELDS } = require('../../types/memorialFields');
+const BurialRegisterPrompt = require('../BurialRegisterPrompt');
 
 // Test prompt class using field-based approach
 class TestPrompt extends BasePrompt {
@@ -89,4 +90,16 @@ describe('Provider Templates', () => {
       expect(result.isValid).toBe(true);
     });
   });
-}); 
+
+  describe('Burial register prompt registration', () => {
+    it('should return burial register prompt for OpenAI', () => {
+      const promptInstance = getPrompt('openai', 'burialRegister', 'latest');
+      expect(promptInstance).toBeInstanceOf(BurialRegisterPrompt);
+    });
+
+    it('should return burial register prompt for Anthropic', () => {
+      const promptInstance = getPrompt('anthropic', 'burialRegister', 'latest');
+      expect(promptInstance).toBeInstanceOf(BurialRegisterPrompt);
+    });
+  });
+});

@@ -7,9 +7,11 @@ const { memorialTypes } = require('../src/utils/prompts/types/memorialTypes');
 // Mock database module where getAllMemorials is actually defined
 jest.mock('../src/utils/database');
 jest.mock('../src/utils/fileQueue.js');
+jest.mock('../src/utils/burialRegisterStorage');
 
-const { getAllMemorials } = require('../src/utils/database');
+const { getAllMemorials, db } = require('../src/utils/database');
 const { getProcessedResults } = require('../src/utils/fileQueue.js');
+const { getAllBurialRegisterEntries } = require('../src/utils/burialRegisterStorage');
 
 describe('Results Endpoint', () => {
   let req, res;
@@ -21,6 +23,26 @@ describe('Results Endpoint', () => {
     
     // Mock getProcessedResults to return no errors by default
     getProcessedResults.mockReturnValue([]);
+    
+    // Mock getAllBurialRegisterEntries to return empty array
+    getAllBurialRegisterEntries.mockResolvedValue([]);
+    
+    // Mock db.get for detectSourceType queries
+    db.get = jest.fn((query, params, callback) => {
+      if (query.includes('SELECT MAX(processed_date)')) {
+        if (query.includes('FROM memorials')) {
+          // Return a memorial date to ensure detectSourceType returns 'memorial'
+          callback(null, { max_date: '2025-12-04 10:00:00' });
+        } else if (query.includes('FROM burial_register_entries')) {
+          // Return null to indicate no burial register entries
+          callback(null, null);
+        } else {
+          callback(null, null);
+        }
+      } else {
+        callback(null, null);
+      }
+    });
   });
 
   describe('getResults', () => {
@@ -146,7 +168,7 @@ describe('Results Endpoint', () => {
       expect(responseData.memorials.length).toBeGreaterThan(0);
       
       const result = responseData.memorials[0];
-      expect(typeof result.memorial_number).toBe('number');
+      expect(typeof result.memorial_number).toBe('string'); // Changed to string to preserve leading zeros
       expect(typeof result.year_of_death).toBe('number');
     });
   });

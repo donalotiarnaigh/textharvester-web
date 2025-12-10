@@ -35,6 +35,13 @@ jest.mock('../src/utils/prompts/templates/providerTemplates', () => ({
   })
 }));
 jest.mock('../src/utils/logger');
+jest.mock('../src/utils/imageProcessor', () => ({
+  analyzeImageForProvider: jest.fn().mockResolvedValue({
+    needsOptimization: false,
+    reasons: []
+  }),
+  optimizeImageForProvider: jest.fn().mockResolvedValue('optimized-base64-data')
+}));
 jest.mock('../../config.json', () => ({
   dbPath: 'test/db',
   uploadPath: 'test/uploads'

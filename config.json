@@ -1,6 +1,9 @@
 {
   "port": 3000,
-  "supportedFileTypes": ["image/jpeg", "image/jpg"],
+  "supportedFileTypes": [
+    "image/jpeg",
+    "image/jpg"
+  ],
   "uploadPath": "./uploads/",
   "dataStorage": {
     "resultsPath": "./data/results/",
@@ -28,13 +31,14 @@
     }
   },
   "openAI": {
-    "model": "gpt-5",
+    "model": "gpt-5.1",
     "maxTokens": 4000,
     "localCache": true,
-    "cacheExpiry": 604800000
+    "cacheExpiry": 604800000,
+    "reasoningEffort": null
   },
   "anthropic": {
-    "model": "claude-4-sonnet-20250514",
+    "model": "claude-sonnet-4-5",
     "maxTokens": 4000,
     "localCache": true,
     "cacheExpiry": 604800000
@@ -42,7 +46,9 @@
   "upload": {
     "maxFileCount": 100,
     "retryDelaySeconds": 3,
-    "maxFileSize": "50mb"
+    "maxRetryCount": 3,
+    "maxFileSize": "50mb",
+    "maxConcurrent": 3
   },
   "environment": "development",
   "local": {
@@ -51,7 +57,23 @@
     "saveLastSession": true,
     "autoBackup": true
   },
+  "burialRegister": {
+    "outputDir": "./data/burial_register",
+    "volumeId": "vol1",
+    "csv": {
+      "includeHeaders": true,
+      "encoding": "utf-8"
+    },
+    "apiTimeout": 90000
+  },
   "database": {
     "path": "./data/memorials.db"
+  },
+  "monumentCropping": {
+    "enabled": false,
+    "minWidth": 400,
+    "minHeight": 400,
+    "aspectRatioMin": 0.5,
+    "aspectRatioMax": 2.0
   }
 }
