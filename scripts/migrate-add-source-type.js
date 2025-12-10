@@ -27,7 +27,7 @@ async function addSourceTypeColumn(dbPath) {
       }
 
       // Check if source_type column already exists
-      db.all("PRAGMA table_info(memorials)", (err, columns) => {
+      db.all('PRAGMA table_info(memorials)', (err, columns) => {
         if (err) {
           logger.error('Error checking table structure:', err);
           db.close();

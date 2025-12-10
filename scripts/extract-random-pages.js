@@ -3,6 +3,7 @@
 /**
  * Extract pages from a PDF and convert them to JPG files
  * Usage: 
+ *   All pages: node scripts/extract-random-pages.js [pdf-path] [output-dir] --all
  *   Random pages: node scripts/extract-random-pages.js [pdf-path] [output-dir] [count]
  *   Specific pages: node scripts/extract-random-pages.js [pdf-path] [output-dir] --pages 42,89,133
  * Default: 20 random pages
@@ -55,15 +56,31 @@ function getRandomPages(totalPages, count = 20) {
 }
 
 async function extractPage(pdfPath, pageNumber, outputPath) {
-  const outputFile = path.join(outputPath, `page_${String(pageNumber).padStart(3, '0')}.jpg`);
+  const finalOutputFile = path.join(outputPath, `page_${String(pageNumber).padStart(3, '0')}.jpg`);
+  // pdftocairo appends -001 when extracting single pages, so we extract to a temp name first
+  const tempOutputFile = path.join(outputPath, `page_${String(pageNumber).padStart(3, '0')}_temp`);
   
-  // Use pdftocairo to extract specific page
-  const command = `pdftocairo -jpeg -scale-to 2048 -f ${pageNumber} -l ${pageNumber} "${pdfPath}" "${outputFile}"`;
+  // Use pdftocairo to extract specific page (it will create tempOutputFile-001.jpg)
+  const command = `pdftocairo -jpeg -scale-to 2048 -f ${pageNumber} -l ${pageNumber} "${pdfPath}" "${tempOutputFile}"`;
   
   try {
     await execAsync(command);
-    console.log(`✓ Extracted page ${pageNumber} → ${path.basename(outputFile)}`);
-    return outputFile;
+    
+    // pdftocairo appends -001, -002, etc. to the output filename
+    // Find the actual file that was created (e.g., page_001_temp-001.jpg)
+    const files = await fs.readdir(outputPath);
+    const tempPrefix = `page_${String(pageNumber).padStart(3, '0')}_temp`;
+    const createdFile = files.find(f => f.startsWith(tempPrefix) && f.endsWith('.jpg'));
+    
+    if (createdFile) {
+      const createdFilePath = path.join(outputPath, createdFile);
+      // Rename to the final filename
+      await fs.rename(createdFilePath, finalOutputFile);
+      console.log(`✓ Extracted page ${pageNumber} → ${path.basename(finalOutputFile)}`);
+      return finalOutputFile;
+    } else {
+      throw new Error(`Expected output file not found after extraction. Looked for files starting with "${tempPrefix}"`);
+    }
   } catch (error) {
     throw new Error(`Failed to extract page ${pageNumber}: ${error.message}`);
   }
@@ -114,9 +131,16 @@ async function main() {
     const totalPages = await getPdfPageCount(pdfPath);
     console.log(`Total pages in PDF: ${totalPages}\n`);
 
+    // Check for --all flag
+    const extractAll = process.argv.includes('--all');
+    
     // Determine which pages to extract
     let selectedPages;
-    if (specificPages && specificPages.length > 0) {
+    if (extractAll) {
+      // Extract all pages
+      selectedPages = Array.from({ length: totalPages }, (_, i) => i + 1);
+      console.log(`Extracting all ${totalPages} pages\n`);
+    } else if (specificPages && specificPages.length > 0) {
       // Validate specific pages are within range
       const invalidPages = specificPages.filter(p => p > totalPages || p < 1);
       if (invalidPages.length > 0) {

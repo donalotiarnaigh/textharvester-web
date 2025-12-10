@@ -69,11 +69,11 @@ describe('Monument Template Selection', () => {
     // Mock provider
     const mockProvider = {
       processImage: jest.fn().mockResolvedValue({
-        memorial_number: "123",
-        first_name: "TEST",
-        last_name: "USER",
+        memorial_number: '123',
+        first_name: 'TEST',
+        last_name: 'USER',
         year_of_death: 2000,
-        inscription: "Test inscription"
+        inscription: 'Test inscription'
       }),
       getModelVersion: jest.fn().mockReturnValue('mock-model-1.0')
     };

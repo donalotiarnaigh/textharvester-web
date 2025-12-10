@@ -128,7 +128,7 @@ async function optimizeImageForProvider(input, provider = 'anthropic', options =
   const isBuffer = Buffer.isBuffer(input);
   const inputFilename = isBuffer ? 'buffer_input' : path.basename(input);
 
-  logger.info(`[ImageProcessor] ===== STARTING IMAGE OPTIMIZATION =====`);
+  logger.info('[ImageProcessor] ===== STARTING IMAGE OPTIMIZATION =====');
   logger.info(`[ImageProcessor] Provider: ${provider}`);
   logger.info(`[ImageProcessor] Input: ${isBuffer ? 'Buffer' : inputFilename}`);
   logger.info(`[ImageProcessor] Provider limits: ${providerLimits.maxFileSize / (1024 * 1024)}MB file, ${providerLimits.maxDimension}px max dimension`);
@@ -433,7 +433,7 @@ async function optimizeImageForProvider(input, provider = 'anthropic', options =
       base64Length: base64.length
     });
     
-    logger.info(`[ImageProcessor] ===== IMAGE OPTIMIZATION COMPLETE =====`);
+    logger.info('[ImageProcessor] ===== IMAGE OPTIMIZATION COMPLETE =====');
     
     return base64;
     
@@ -561,7 +561,7 @@ async function analyzeImageForProvider(image, provider = 'anthropic') {
 
     logProcessingStep('ANALYSIS_SUMMARY', analysisSummary);
     
-    logger.info(`[ImageProcessor] ===== IMAGE ANALYSIS COMPLETE =====`);
+    logger.info('[ImageProcessor] ===== IMAGE ANALYSIS COMPLETE =====');
     
     return analysis;
     

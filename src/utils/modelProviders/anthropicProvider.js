@@ -172,7 +172,7 @@ class AnthropicProvider extends BaseVisionProvider {
       
       // Validate that the response contains actual text, not just dashes
       if (this.isInvalidResponse(validationResult.json)) {
-        logger.warn(`[AnthropicProvider] Response appears to contain invalid data (likely dashes instead of actual text)`);
+        logger.warn('[AnthropicProvider] Response appears to contain invalid data (likely dashes instead of actual text)');
         throw new Error('Invalid response: Claude returned dashes instead of actual text. This may indicate image quality issues or prompt confusion.');
       }
       
@@ -224,7 +224,7 @@ class AnthropicProvider extends BaseVisionProvider {
       
       // Check for patterns that indicate invalid responses
       if (inscription.includes('----------|----------|----------')) {
-        logger.warn(`[AnthropicProvider] Inscription contains repeated dash patterns`);
+        logger.warn('[AnthropicProvider] Inscription contains repeated dash patterns');
         return true;
       }
     }

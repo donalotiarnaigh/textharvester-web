@@ -292,11 +292,27 @@ Sequential task list for implementing the burial register pilot extension. Compl
 
 ---
 
+## Phase 11: Simultaneous Dual Provider Processing
+
+### 11.1 Enable Simultaneous GPT and Claude Processing (Single PR: 11.1.1-11.1.8)
+- [ ] **11.1.1** Add "Both (GPT + Claude)" option to provider dropdown in UI
+- [ ] **11.1.2** Modify `uploadHandler.js` to duplicate files for both providers when "both" selected
+- [ ] **11.1.3** Update progress tracking to handle completion per `(filePath, provider)` pair
+- [ ] **11.1.4** Update `fileQueue.js` to track completion when all providers finish each file
+- [ ] **11.1.5** Implement error handling for partial failures (one provider succeeds, other fails)
+- [ ] **11.1.6** Update UI progress display to show both providers' status
+- [ ] **11.1.7** Update results page to display results from both providers
+- [ ] **11.1.8** Test with sample files to verify simultaneous processing works
+
+**Related Issue:** https://github.com/donalotiarnaigh/textharvester-web/issues/96
+
+---
+
 ## Summary
 
-**Total Tasks:** 140  
-**Completed Tasks:** 140 (100%)
-**Remaining Tasks:** 0 (0%)
+**Total Tasks:** 148  
+**Completed Tasks:** 140 (94.6%)
+**Remaining Tasks:** 8 (5.4%)
 **Total PRs:** ~22-27 (tasks grouped into logical PR-sized chunks)  
 **Critical Path:** Phases 1-5 must be completed sequentially  
 **Estimated Completion:** Ready for pilot run after Phase 7
@@ -312,9 +328,10 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - ✅ Phase 8: Documentation and cleanup - 100% Complete
 - ✅ Phase 9: Pilot preparation - 100% Complete
 - ✅ Phase 10: Frontend UI support - 100% Complete
+- ⏳ Phase 11: Simultaneous dual provider processing - 0% Complete
 
 **Remaining Work:**
-- All phases complete
+- Phase 11: Simultaneous GPT and Claude processing (8 tasks)
 
 **PR Grouping Strategy:**
 - Related tasks are grouped into single PRs for efficient review
@@ -332,10 +349,11 @@ Sequential task list for implementing the burial register pilot extension. Compl
 - Phase 7: Integration testing (requires all previous)
 - Phase 8: Documentation and cleanup
 - Phase 9: Pilot preparation
-- Phase 10: Frontend UI support (new)
+- Phase 10: Frontend UI support
+- Phase 11: Simultaneous dual provider processing (new)
 
 ---
 
-**Last Updated:** 2025-01-27  
-**Status:** Phases 1-8 Complete (100%), Phase 9 Partial (50%), Phase 10 Partial (80%) - Final Testing & Pilot Preparation Remaining
+**Last Updated:** 2025-12-04  
+**Status:** Phases 1-10 Complete (100%), Phase 11 Pending (0%) - Simultaneous Dual Provider Processing Feature
 

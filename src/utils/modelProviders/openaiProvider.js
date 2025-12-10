@@ -68,39 +68,39 @@ class OpenAIProvider extends BaseVisionProvider {
           userPrompt = formatted.userPrompt || formatted;
         }
 
-      const requestPayload = {
-        model: this.model,
-        messages: [
-          {
-            role: 'system',
-            content: systemPrompt,
-          },
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: userPrompt },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/jpeg;base64,${base64Image}`,
+        const requestPayload = {
+          model: this.model,
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt,
+            },
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: userPrompt },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:image/jpeg;base64,${base64Image}`,
+                  },
                 },
-              },
-            ],
-          },
-        ],
-        response_format: { type: 'json_object' },
-        max_completion_tokens: this.maxTokens
-      };
+              ],
+            },
+          ],
+          response_format: { type: 'json_object' },
+          max_completion_tokens: this.maxTokens
+        };
 
-      // Include temperature for models that support it
-      requestPayload.temperature = this.temperature;
+        // Include temperature for models that support it
+        requestPayload.temperature = this.temperature;
       
-      // Add reasoning_effort parameter if configured (for GPT-5.x models)
-      // For Chat Completions API, use reasoning_effort (top-level string)
-      // For Responses API, use reasoning: { effort: "..." } (nested object)
-      if (this.reasoningEffort) {
-        requestPayload.reasoning_effort = this.reasoningEffort;
-      }
+        // Add reasoning_effort parameter if configured (for GPT-5.x models)
+        // For Chat Completions API, use reasoning_effort (top-level string)
+        // For Responses API, use reasoning: { effort: "..." } (nested object)
+        if (this.reasoningEffort) {
+          requestPayload.reasoning_effort = this.reasoningEffort;
+        }
 
         // Calculate timeout with exponential backoff
         const timeout = baseTimeout * attempt;

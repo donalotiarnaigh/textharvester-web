@@ -19,6 +19,7 @@ describe('burialRegisterStorage', () => {
   let storeBurialRegisterEntry;
   let getBurialRegisterBaseDir;
   let burialRegisterBaseDir;
+  let extractPageNumberFromFilename;
 
   const removeDirectory = async (targetPath) => {
     if (fs.promises.rm) {
@@ -277,7 +278,7 @@ describe('burialRegisterStorage', () => {
     await storeBurialRegisterEntry(entry);
 
     await expect(storeBurialRegisterEntry(entry)).rejects.toThrow(/Duplicate entry/);
-    
+
     try {
       await storeBurialRegisterEntry(entry);
       fail('Expected duplicate entry to be rejected');
