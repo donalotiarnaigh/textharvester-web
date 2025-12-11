@@ -32,15 +32,15 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
     - Implement stitching logic using `sharp` (vertical join + padding).
     - _Requirements: 1.1, 1.2, 1.3_
 
-- [ ] 3. GraveCardPrompt Template (AI Interaction)
-  - [ ] 3.1 Write tests for Grave Record Schema Validation (TDD)
+- [x] 3. GraveCardPrompt Template (AI Interaction)
+  - [x] 3.1 Write tests for Grave Record Schema Validation (TDD)
     - Target: `src/utils/prompts/templates/GraveCardPrompt.test.js`.
     - **Happy Path**: Validate full JSON payload matches `GraveRecord` schema.
     - **Happy Path**: Test transcription conventions (verify `-` and `|` are accepted).
     - **Unhappy Path**: Missing `card_metadata`.
     - **Unhappy Path**: `interments` is not an array.
     - _Requirements: 2.1, 2.2, 2.3, 4.3_
-  - [ ] 3.2 Implement GraveCardPrompt Class
+  - [x] 3.2 Implement GraveCardPrompt Class
     - Create `src/utils/prompts/templates/GraveCardPrompt.js` extending `BasePrompt`.
     - Implement `getPromptText` with strict transcription rules.
     - Implement `validateAndConvert` with strict schema validation.
