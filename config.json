@@ -78,6 +78,7 @@
   },
   "graveCard": {
     "stitchPadding": 20,
-    "minResolution": 1000
+    "minResolution": 1000,
+    "maxExportInterments": 8
   }
 }

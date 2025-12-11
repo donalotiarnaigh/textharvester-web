@@ -48,12 +48,12 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
     - _Requirements: 2.1, 2.2, 2.3_
 
 - [ ] 4. File Processing Integration (Pipeline Wiring)
-  - [ ] 4.1 Write integration tests for fileProcessing.js
+  - [x] 4.1 Write integration tests for fileProcessing.js
     - Target: `src/utils/fileProcessing.test.js`.
     - **Happy Path**: Mock `GraveCardProcessor` and `Provider`. Call `processFile` with `source_type='grave_record_card'`. Verify flow: Processor -> Provider -> Storage.
     - **Unhappy Path**: Processor fails -> Error logged/rethrown.
     - _Requirements: 1.1, 1.2, 3.1_
-  - [ ] 4.2 Update fileProcessing.js
+  - [x] 4.2 Update fileProcessing.js
     - Add logic to check `source_type`.
     - If `grave_record_card`, bypass standard image read.
     - Call `GraveCardProcessor.processPdf`.
@@ -62,7 +62,7 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
     - _Requirements: 1.3, 4.4_
 
 - [ ] 5. Configuration & Verification
-  - [ ] 5.1 Update Config
+  - [x] 5.1 Update Config
     - Add `graveCard` settings (stitch padding, resolution) to `config.json`.
     - _Requirements: Non-functional_
   - [ ] 5.2 End-to-End Verification

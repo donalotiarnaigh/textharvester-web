@@ -173,20 +173,20 @@ TRANSCRIPTION NOTATION RULES:
     const basePrompt = this.getPromptText();
 
     switch (provider.toLowerCase()) {
-      case 'openai':
-        return {
-          systemPrompt: 'You are an expert OCR system trained by OpenAI, specialising in structured extraction from historical burial registers.',
-          userPrompt: `${basePrompt}\n\nResponse Format:\n- Use response_format: { type: "json" }\n- Return a single JSON object matching the schema above\n- Ensure numeric fields (page_number, row_index_on_page) are integers\n- Use null for missing text fields and [] for uncertainty_flags`
-        };
+    case 'openai':
+      return {
+        systemPrompt: 'You are an expert OCR system trained by OpenAI, specialising in structured extraction from historical burial registers.',
+        userPrompt: `${basePrompt}\n\nResponse Format:\n- Use response_format: { type: "json" }\n- Return a single JSON object matching the schema above\n- Ensure numeric fields (page_number, row_index_on_page) are integers\n- Use null for missing text fields and [] for uncertainty_flags`
+      };
 
-      case 'anthropic':
-        return {
-          systemPrompt: 'You are Claude, an expert OCR system trained by Anthropic, specialising in structured extraction from historical burial registers.',
-          userPrompt: `${basePrompt}\n\nResponse Format:\n- Return valid JSON only (no markdown)\n- Return a single JSON object matching the schema above\n- Ensure numeric fields (page_number, row_index_on_page) are integers\n- Use null for missing text fields and [] for uncertainty_flags`
-        };
+    case 'anthropic':
+      return {
+        systemPrompt: 'You are Claude, an expert OCR system trained by Anthropic, specialising in structured extraction from historical burial registers.',
+        userPrompt: `${basePrompt}\n\nResponse Format:\n- Return valid JSON only (no markdown)\n- Return a single JSON object matching the schema above\n- Ensure numeric fields (page_number, row_index_on_page) are integers\n- Use null for missing text fields and [] for uncertainty_flags`
+      };
 
-      default:
-        return { userPrompt: basePrompt };
+    default:
+      return { userPrompt: basePrompt };
     }
   }
 
@@ -307,36 +307,36 @@ TRANSCRIPTION NOTATION RULES:
 
     if (typeof value === 'string' && value.trim() !== '') {
       switch (fieldType) {
-        case 'integer': {
-          const intValue = parseInt(value.trim(), 10);
-          if (!isNaN(intValue) && intValue.toString() === value.trim()) {
-            convertedValue = intValue;
-          }
-          break;
+      case 'integer': {
+        const intValue = parseInt(value.trim(), 10);
+        if (!isNaN(intValue) && intValue.toString() === value.trim()) {
+          convertedValue = intValue;
         }
-        case 'float': {
-          const floatValue = parseFloat(value.trim());
-          if (!isNaN(floatValue)) {
-            convertedValue = floatValue;
-          }
-          break;
+        break;
+      }
+      case 'float': {
+        const floatValue = parseFloat(value.trim());
+        if (!isNaN(floatValue)) {
+          convertedValue = floatValue;
         }
-        case 'boolean': {
-          const lowerValue = value.toLowerCase().trim();
-          if (lowerValue === 'true') {
-            convertedValue = true;
-          } else if (lowerValue === 'false') {
-            convertedValue = false;
-          }
-          break;
+        break;
+      }
+      case 'boolean': {
+        const lowerValue = value.toLowerCase().trim();
+        if (lowerValue === 'true') {
+          convertedValue = true;
+        } else if (lowerValue === 'false') {
+          convertedValue = false;
         }
-        case 'date': {
-          const dateValue = new Date(value);
-          if (!isNaN(dateValue.getTime())) {
-            convertedValue = dateValue;
-          }
-          break;
+        break;
+      }
+      case 'date': {
+        const dateValue = new Date(value);
+        if (!isNaN(dateValue.getTime())) {
+          convertedValue = dateValue;
         }
+        break;
+      }
       }
     }
 
