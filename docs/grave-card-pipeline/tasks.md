@@ -65,8 +65,83 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
   - [x] 5.1 Update Config
     - Add `graveCard` settings (stitch padding, resolution) to `config.json`.
     - _Requirements: Non-functional_
-  - [ ] 5.2 End-to-End Verification
-    - Manual Run: Process sample PDF from `/Users/danieltierney/projects/historic-graves/11_Douglas`.
-    - Verify database entry.
-    - Verify CSV export format (Widened columns).
+
+- [ ] 6. Frontend Integration - Phase 1: Minimal Integration (~5 minutes)
+  - [ ] 6.1 Add Source Type Option
+    - Update `public/js/modules/index/sourceTypeSelection.js` to add "Grave Record Card" option to `SOURCE_TYPES` array.
+    - _Requirements: Frontend access to grave card processing_
+  - [ ] 6.2 Update Upload Validation
+    - Update `src/controllers/uploadHandler.js` to add `'grave_record_card'` to `validSourceTypes` array.
+    - _Requirements: Server-side validation_
+  - [ ] 6.3 Add Result Badge Styling
+    - Update `public/js/modules/results/main.js` to add grave card badge class (`badge-warning`) in `getSourceTypeBadgeClass()`.
+    - Update `formatSourceType()` to map `'grave_record_card'` to `'Grave Record Card'`.
+    - _Requirements: Results page display_
+  - [ ] 6.4 Manual Testing Phase 1
+    - Select "Grave Record Card" from dropdown on upload page.
+    - Upload 2-page PDF and verify processing.
+    - Verify result appears with amber badge on results page.
+    - Verify expandable row shows JSON data.
+
+- [ ] 7. Frontend Integration - Phase 2: Results Integration (~30 minutes)
+  - [ ] 7.1 Backend API Routes & Controller
+    - Create `src/routes/graveCardRoutes.js` with routes for listing and CSV export.
+    - Create `src/controllers/graveCardController.js` with request handlers.
+    - Register routes in `server.js`: `app.use('/api/grave-cards', graveCardRoutes)`.
+    - _Requirements: API endpoints for `GET /api/grave-cards` and `GET /api/grave-cards/csv`_
+  - [ ] 7.2 Frontend API Client
+    - Create `public/js/modules/api/graveCards.js` for API integration.
+    - _Requirements: Client-side API access_
+  - [ ] 7.3 Enhanced Results Display
+    - Update results page to show enhanced grave card layout in expanded rows.
+    - Display: location (section, grave number), status, burial count, interments table, inscription.
+    - Add "Export Grave Cards" button (visible only when grave cards exist).
+    - _Requirements: Enhanced UX for grave card data_
+  - [ ] 7.4 Manual Testing Phase 2
+    - Verify API returns all grave cards with parsed JSON.
+    - Test CSV download with flattened columns.
+    - Verify enhanced layout in expanded rows.
+    - Verify export button appears only when cards exist.
+
+- [ ] 8. Frontend Integration - Phase 3: Enhanced UX (~1-2 hours)
+  - [ ] 8.1 Upload Enhancements
+    - Add file type validation (PDF only for grave cards).
+    - Add dynamic help text based on source type.
+    - Add warning about 2-page requirement.
+    - _Requirements: Improved upload experience_
+  - [ ] 8.2 Results Enhancements
+    - Add summary cards (total cards, interments, occupied/vacant).
+    - Add section filter dropdown.
+    - Add grave number search.
+    - Implement combined filter logic.
+    - _Requirements: Improved results filtering and navigation_
+  - [ ] 8.3 Manual Testing Phase 3
+    - Verify upload validation prevents non-PDF files.
+    - Verify instructions update when switching source types.
+    - Verify summary cards show accurate statistics.
+    - Verify all filters work together.
+
+- [ ] 9. Manual End-to-End Verification
+  - [ ] 9.1 Backend Processing Verification
+    - Process sample 2-page PDF from `/Users/danieltierney/projects/historic-graves/11_Douglas`.
+    - Verify PDF is split into 2 images.
+    - Verify images are stitched vertically.
+    - Verify AI processing completes successfully.
+    - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2_
+  - [ ] 9.2 Database Storage Verification
+    - Verify grave card record exists in database.
+    - Verify `section` and `grave_number` columns are correctly populated.
+    - Verify `data_json` contains complete interment data.
+    - Verify `ai_provider` is recorded.
+    - _Requirements: 3.1, 3.2, 4.2_
+  - [ ] 9.3 CSV Export Verification
+    - Export grave cards to CSV.
+    - Verify nested interments are flattened (e.g., `interment_1_name`, `interment_2_name`).
+    - Verify all metadata columns are present.
+    - Verify CSV can be opened in spreadsheet software.
+    - _Requirements: 4.4, 4.5_
+  - [ ] 9.4 Full Pipeline Validation
+    - Upload multiple grave card PDFs through frontend.
+    - Verify all cards process successfully.
+    - Verify data integrity across upload → processing → storage → export.
     - _Requirements: All_
