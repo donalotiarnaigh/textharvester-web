@@ -103,12 +103,12 @@ jest.mock('../src/utils/modelProviders', () => {
   return {
     createProvider: (config) => {
       switch (config.AI_PROVIDER.toLowerCase()) {
-        case 'openai':
-          return new OpenAIProvider();
-        case 'anthropic':
-          return new AnthropicProvider();
-        default:
-          throw new Error('Invalid model selected');
+      case 'openai':
+        return new OpenAIProvider();
+      case 'anthropic':
+        return new AnthropicProvider();
+      default:
+        throw new Error('Invalid model selected');
       }
     },
     OpenAIProvider,

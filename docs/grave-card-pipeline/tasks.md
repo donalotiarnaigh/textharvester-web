@@ -73,7 +73,7 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
   - [x] 6.2 Update Upload Validation
     - Update `src/controllers/uploadHandler.js` to add `'grave_record_card'` to `validSourceTypes` array.
     - _Requirements: Server-side validation_
-  - [ ] 6.3 Add Result Badge Styling
+  - [x] 6.3 Add Result Badge Styling
     - Update `public/js/modules/results/main.js` to add grave card badge class (`badge-warning`) in `getSourceTypeBadgeClass()`.
     - Update `formatSourceType()` to map `'grave_record_card'` to `'Grave Record Card'`.
     - _Requirements: Results page display_

@@ -1,4 +1,4 @@
- 
+
 // main.js
 
 /**
@@ -66,21 +66,23 @@ const MAX_RETRY_ATTEMPTS = 3;
 // Source Type utility functions
 function formatSourceType(sourceType) {
   if (!sourceType) return 'Unknown';
-  
+
   const typeMap = {
     'record_sheet': 'Record Sheet',
-    'monument_photo': 'Monument Photo'
+    'monument_photo': 'Monument Photo',
+    'grave_record_card': 'Grave Record Card'
   };
-  
+
   return typeMap[sourceType] || sourceType.charAt(0).toUpperCase() + sourceType.slice(1);
 }
 
 function getSourceTypeBadgeClass(sourceType) {
   const classMap = {
     'record_sheet': 'badge-primary',
-    'monument_photo': 'badge-success'
+    'monument_photo': 'badge-success',
+    'grave_record_card': 'badge-warning'
   };
-  
+
   return classMap[sourceType] || 'badge-secondary';
 }
 
@@ -380,7 +382,7 @@ function displayErrorSummary(errors) {
   errors.forEach(error => {
     const listItem = document.createElement('li');
     // Use warning style for conflicts (resolved), error style for actual errors
-    const itemClass = error.errorType === 'page_number_conflict' 
+    const itemClass = error.errorType === 'page_number_conflict'
       ? 'list-group-item list-group-item-warning'
       : 'list-group-item list-group-item-danger';
     listItem.className = itemClass;
@@ -393,7 +395,7 @@ function displayErrorSummary(errors) {
     let message = `<strong>${safeFileName}</strong>: `;
 
     // Format message based on error type (using sanitized data)
-    switch(error.errorType) {
+    switch (error.errorType) {
     case 'empty_sheet':
       message += 'Empty or unreadable sheet detected.';
       break;
@@ -425,7 +427,7 @@ function createDetailRow(memorial, colSpan) {
 
   // Sanitize memorial data to prevent XSS
   const safeMemorial = SanitizeUtils.sanitizeMemorial(memorial);
-  
+
   // Use unique ID based on memorial ID (database primary key) instead of memorial_number
   // This ensures uniqueness even when memorial_number is duplicated across source types
   const uniqueId = memorial.id || memorial.memorial_id || `memorial-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -442,21 +444,21 @@ function createDetailRow(memorial, colSpan) {
 function toggleRow(memorialId) {
   const detailRow = document.getElementById(`detail-${memorialId}`);
   const toggleBtn = document.querySelector(`[data-toggle-memorial="${memorialId}"]`);
-  
+
   if (!detailRow) return;
-  
+
   if (expandedRows.has(memorialId)) {
     // Collapse the row
     detailRow.style.display = 'none';
     expandedRows.delete(memorialId);
-    
+
     // Update toggle button
     if (toggleBtn) {
       toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
       toggleBtn.classList.remove('btn-secondary');
       toggleBtn.classList.add('btn-outline-secondary');
     }
-    
+
     // Remove highlight from parent row
     const parentRow = detailRow.previousElementSibling;
     if (parentRow) {
@@ -466,20 +468,20 @@ function toggleRow(memorialId) {
     // Expand the row
     detailRow.style.display = 'table-row';
     expandedRows.add(memorialId);
-    
+
     // Update toggle button
     if (toggleBtn) {
       toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
       toggleBtn.classList.remove('btn-outline-secondary');
       toggleBtn.classList.add('btn-secondary');
     }
-    
+
     // Add highlight to parent row
     const parentRow = detailRow.previousElementSibling;
     if (parentRow) {
       parentRow.classList.add('table-active');
     }
-    
+
     // Smooth scroll to ensure detail is visible
     setTimeout(() => {
       detailRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -491,11 +493,11 @@ function toggleRow(memorialId) {
 function displayMemorials(memorials) {
   const tableBody = document.getElementById('resultsTableBody');
   const emptyState = document.getElementById('emptyState');
-  
+
   // Clear existing content and reset expanded rows
   tableBody.innerHTML = '';
   expandedRows.clear();
-  
+
   // Check if there are any memorials
   if (!memorials || memorials.length === 0) {
     if (emptyState) {
@@ -503,12 +505,12 @@ function displayMemorials(memorials) {
     }
     return;
   }
-  
+
   // Hide empty state
   if (emptyState) {
     emptyState.classList.add('d-none');
   }
-  
+
   // Create rows for each memorial
   memorials.forEach(memorial => {
     // Create main row with XSS protection
@@ -521,7 +523,7 @@ function displayMemorials(memorials) {
 
     // Generate unique ID for this memorial (same logic as in createDetailRow)
     const uniqueId = memorial.id || memorial.memorial_id || `memorial-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Store unique ID as data attribute for event delegation
     row.setAttribute('data-memorial-id', uniqueId);
 
@@ -647,7 +649,7 @@ function createBurialRegisterMainRowHTML(entry, uniqueId) {
  */
 function createBurialRegisterDetailHTML(entry, colSpan, uniqueId) {
   const safe = sanitizeBurialRegisterEntry(entry);
-  
+
   // Parse uncertainty flags if it's a JSON string
   let uncertaintyFlags = [];
   try {
@@ -782,11 +784,11 @@ function createBurialRegisterDetailRow(entry, colSpan) {
 function displayBurialRegisterEntries(entries) {
   const tableBody = document.getElementById('resultsTableBody');
   const emptyState = document.getElementById('emptyState');
-  
+
   // Clear existing content and reset expanded rows
   tableBody.innerHTML = '';
   expandedRows.clear();
-  
+
   // Check if there are any entries
   if (!entries || entries.length === 0) {
     if (emptyState) {
@@ -794,12 +796,12 @@ function displayBurialRegisterEntries(entries) {
     }
     return;
   }
-  
+
   // Hide empty state
   if (emptyState) {
     emptyState.classList.add('d-none');
   }
-  
+
   // Create rows for each entry
   entries.forEach(entry => {
     // Create main row
@@ -906,7 +908,7 @@ export async function loadResults() {
     if (data.sourceType === 'burial_register' && data.burialRegisterEntries) {
       updateTableHeaders('burial_register');
       displayBurialRegisterEntries(data.burialRegisterEntries);
-      
+
       // Update model info panel with data from the first entry
       if (data.burialRegisterEntries.length > 0) {
         const latestEntry = data.burialRegisterEntries.reduce((latest, current) =>
@@ -914,7 +916,7 @@ export async function loadResults() {
         );
         updateModelInfoPanel(latestEntry);
       }
-      
+
       // Initialize table enhancements
       if (data.burialRegisterEntries.length > 0) {
         tableEnhancements.init(data.burialRegisterEntries);
@@ -924,7 +926,7 @@ export async function loadResults() {
       // Default to memorials display
       updateTableHeaders('memorial');
       displayMemorials(data.memorials || []);
-      
+
       // Update model info panel with data from the first memorial (or aggregate)
       if (data.memorials && data.memorials.length > 0) {
         // Use the most recent memorial's data for the model info panel
@@ -940,7 +942,7 @@ export async function loadResults() {
         enableDownloadButtons();
       }
     }
-    
+
     // Display error summary (common for both types)
     displayErrorSummary(data.errors);
 
@@ -963,12 +965,12 @@ export async function loadResults() {
 }
 
 // Download functions
-window.downloadJsonResults = function(filenameInput, format) {
+window.downloadJsonResults = function (filenameInput, format) {
   const filename = filenameInput.value || 'results';
   window.location.href = `/download-json?filename=${encodeURIComponent(filename)}&format=${format}`;
 };
 
-window.downloadCsvResults = function(filenameInput) {
+window.downloadCsvResults = function (filenameInput) {
   const filename = filenameInput.value || 'results';
   window.location.href = `/download-csv?filename=${encodeURIComponent(filename)}`;
 };
@@ -976,10 +978,10 @@ window.downloadCsvResults = function(filenameInput) {
 // Initialize on document load
 document.addEventListener('DOMContentLoaded', () => {
   loadResults();
-  
+
   // Initialize clipboard functionality
   new ClipboardJS('.copy-info');
-  
+
   // Setup event delegation once on page load (prevents memory leaks)
   setupEventDelegation();
 
@@ -990,7 +992,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Event delegation for dynamic elements
-document.addEventListener('click', function(event) {
+document.addEventListener('click', function (event) {
   // Handle expand toggle button clicks
   if (event.target.closest('.expand-toggle')) {
     event.preventDefault();
@@ -999,7 +1001,7 @@ document.addEventListener('click', function(event) {
     const memorialId = button.getAttribute('data-toggle-memorial');
     toggleRow(memorialId);
   }
-  
+
   // Handle close detail button clicks
   if (event.target.closest('.close-detail')) {
     event.preventDefault();
@@ -1007,13 +1009,13 @@ document.addEventListener('click', function(event) {
     const memorialId = button.getAttribute('data-memorial');
     toggleRow(memorialId);
   }
-  
+
   // Handle copy inscription button clicks
   if (event.target.closest('.copy-inscription')) {
     event.preventDefault();
     const button = event.target.closest('.copy-inscription');
     const inscription = button.getAttribute('data-inscription');
-    
+
     // Create temporary textarea for copying
     const textarea = document.createElement('textarea');
     textarea.value = inscription.replace(/&quot;/g, '"');
@@ -1023,13 +1025,13 @@ document.addEventListener('click', function(event) {
     textarea.select();
     document.execCommand('copy');
     document.body.removeChild(textarea);
-    
+
     // Show feedback
     const originalText = button.innerHTML;
     button.innerHTML = '<i class="fas fa-check"></i> Copied!';
     button.classList.add('btn-success');
     button.classList.remove('btn-info');
-    
+
     setTimeout(() => {
       button.innerHTML = originalText;
       button.classList.remove('btn-success');
@@ -1039,7 +1041,7 @@ document.addEventListener('click', function(event) {
 });
 
 // Export functions and state for use by other modules
-export { expandedRows, toggleRow };
+export { expandedRows, toggleRow, formatSourceType, getSourceTypeBadgeClass };
 
 // Expose retry function globally for HTML button onclick handlers
 window.retryLoadResults = retryLoadResults;
