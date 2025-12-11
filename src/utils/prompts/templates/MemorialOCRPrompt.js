@@ -61,7 +61,11 @@ IMPORTANT RULES:
 - Look for the actual memorial identifier number to the top right of the record page
 - Extract only the year from death dates as INTEGER
 - If any field cannot be determined, use null
-- Preserve original spelling in the inscription text`;
+- Preserve original spelling in the inscription text
+
+TRANSCRIPTION NOTATION RULES:
+- Use single dashes (-) for each illegible character/digit (e.g., "J---")
+- Use pipes (|) for line breaks in the inscription, never newlines`;
   }
 
   /**
@@ -74,20 +78,20 @@ IMPORTANT RULES:
     const basePrompt = this.getPromptText();
 
     switch (provider.toLowerCase()) {
-    case 'openai':
-      return {
-        systemPrompt: 'You are an expert OCR system trained by OpenAI, specializing in heritage and genealogical data extraction.',
-        userPrompt: `${basePrompt}\n\nResponse Format:\n- Use response_format: { type: "json" }\n- All numeric values (year_of_death) MUST be actual integers\n- All text fields must be properly formatted strings`
-      };
+      case 'openai':
+        return {
+          systemPrompt: 'You are an expert OCR system trained by OpenAI, specializing in heritage and genealogical data extraction.',
+          userPrompt: `${basePrompt}\n\nResponse Format:\n- Use response_format: { type: "json" }\n- All numeric values (year_of_death) MUST be actual integers\n- All text fields must be properly formatted strings`
+        };
 
-    case 'anthropic':
-      return {
-        systemPrompt: 'You are Claude, an expert OCR system trained by Anthropic, specializing in heritage and genealogical data extraction.',
-        userPrompt: `${basePrompt}\n\nResponse Format:\n- Return valid JSON only\n- All numeric values (year_of_death) MUST be actual integers\n- All text fields must be properly formatted strings\n- Ensure strict adherence to field formats`
-      };
+      case 'anthropic':
+        return {
+          systemPrompt: 'You are Claude, an expert OCR system trained by Anthropic, specializing in heritage and genealogical data extraction.',
+          userPrompt: `${basePrompt}\n\nResponse Format:\n- Return valid JSON only\n- All numeric values (year_of_death) MUST be actual integers\n- All text fields must be properly formatted strings\n- Ensure strict adherence to field formats`
+        };
 
-    default:
-      return { userPrompt: basePrompt };
+      default:
+        return { userPrompt: basePrompt };
     }
   }
 
@@ -98,7 +102,7 @@ IMPORTANT RULES:
    */
   validateAndConvert(data) {
     logger.info('[MemorialOCRPrompt] Raw data input:', JSON.stringify(data, null, 2));
-    
+
     // Handle null or undefined data
     if (!data) {
       throw new ProcessingError(
@@ -114,13 +118,13 @@ IMPORTANT RULES:
         'empty_sheet'
       );
     }
-    
+
     // First check for required fields
     const requiredFields = this.fields.filter(field => field.required);
     for (const field of requiredFields) {
       const fieldValue = data[field.name];
       logger.info(`[MemorialOCRPrompt] Checking required field ${field.name}:`, fieldValue, typeof fieldValue);
-      
+
       if (!fieldValue || (typeof fieldValue === 'string' && fieldValue.trim() === '')) {
         throw new ProcessingError(
           `${field.name} could not be found - please check if the field is present on the memorial`,
@@ -148,7 +152,7 @@ IMPORTANT RULES:
     if (data.first_name || data.last_name) {
       const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ');
       const processedName = preprocessName(fullName);
-      
+
       result.first_name = processedName.firstName || data.first_name;
       result.last_name = processedName.lastName || data.last_name;
     }
@@ -158,7 +162,7 @@ IMPORTANT RULES:
       if (field.name !== 'first_name' && field.name !== 'last_name') {
         const value = data[field.name];
         logger.info(`[MemorialOCRPrompt] Processing field ${field.name}:`, value, typeof value);
-        
+
         if (value !== undefined) {
           try {
             result[field.name] = this.validateField(field.name, value);

@@ -155,7 +155,12 @@ Important instructions:
 - If a field is missing or unreadable, use null (or [] for uncertainty_flags).
 - Do not add extra fields or nesting beyond what is shown.
 - Maintain the original row order; set row_index_on_page starting at 1 and incrementing.
-- Return only the JSON object, nothing else.`;
+- Return only the JSON object, nothing else.
+
+TRANSCRIPTION NOTATION RULES:
+- Use single dashes (-) for each illegible character/digit
+- Use pipes (|) for line breaks in text fields, never newlines
+- Preserve original spelling exactly`;
   }
 
   /**
@@ -168,20 +173,20 @@ Important instructions:
     const basePrompt = this.getPromptText();
 
     switch (provider.toLowerCase()) {
-    case 'openai':
-      return {
-        systemPrompt: 'You are an expert OCR system trained by OpenAI, specialising in structured extraction from historical burial registers.',
-        userPrompt: `${basePrompt}\n\nResponse Format:\n- Use response_format: { type: "json" }\n- Return a single JSON object matching the schema above\n- Ensure numeric fields (page_number, row_index_on_page) are integers\n- Use null for missing text fields and [] for uncertainty_flags`
-      };
+      case 'openai':
+        return {
+          systemPrompt: 'You are an expert OCR system trained by OpenAI, specialising in structured extraction from historical burial registers.',
+          userPrompt: `${basePrompt}\n\nResponse Format:\n- Use response_format: { type: "json" }\n- Return a single JSON object matching the schema above\n- Ensure numeric fields (page_number, row_index_on_page) are integers\n- Use null for missing text fields and [] for uncertainty_flags`
+        };
 
-    case 'anthropic':
-      return {
-        systemPrompt: 'You are Claude, an expert OCR system trained by Anthropic, specialising in structured extraction from historical burial registers.',
-        userPrompt: `${basePrompt}\n\nResponse Format:\n- Return valid JSON only (no markdown)\n- Return a single JSON object matching the schema above\n- Ensure numeric fields (page_number, row_index_on_page) are integers\n- Use null for missing text fields and [] for uncertainty_flags`
-      };
+      case 'anthropic':
+        return {
+          systemPrompt: 'You are Claude, an expert OCR system trained by Anthropic, specialising in structured extraction from historical burial registers.',
+          userPrompt: `${basePrompt}\n\nResponse Format:\n- Return valid JSON only (no markdown)\n- Return a single JSON object matching the schema above\n- Ensure numeric fields (page_number, row_index_on_page) are integers\n- Use null for missing text fields and [] for uncertainty_flags`
+        };
 
-    default:
-      return { userPrompt: basePrompt };
+      default:
+        return { userPrompt: basePrompt };
     }
   }
 
@@ -302,36 +307,36 @@ Important instructions:
 
     if (typeof value === 'string' && value.trim() !== '') {
       switch (fieldType) {
-      case 'integer': {
-        const intValue = parseInt(value.trim(), 10);
-        if (!isNaN(intValue) && intValue.toString() === value.trim()) {
-          convertedValue = intValue;
+        case 'integer': {
+          const intValue = parseInt(value.trim(), 10);
+          if (!isNaN(intValue) && intValue.toString() === value.trim()) {
+            convertedValue = intValue;
+          }
+          break;
         }
-        break;
-      }
-      case 'float': {
-        const floatValue = parseFloat(value.trim());
-        if (!isNaN(floatValue)) {
-          convertedValue = floatValue;
+        case 'float': {
+          const floatValue = parseFloat(value.trim());
+          if (!isNaN(floatValue)) {
+            convertedValue = floatValue;
+          }
+          break;
         }
-        break;
-      }
-      case 'boolean': {
-        const lowerValue = value.toLowerCase().trim();
-        if (lowerValue === 'true') {
-          convertedValue = true;
-        } else if (lowerValue === 'false') {
-          convertedValue = false;
+        case 'boolean': {
+          const lowerValue = value.toLowerCase().trim();
+          if (lowerValue === 'true') {
+            convertedValue = true;
+          } else if (lowerValue === 'false') {
+            convertedValue = false;
+          }
+          break;
         }
-        break;
-      }
-      case 'date': {
-        const dateValue = new Date(value);
-        if (!isNaN(dateValue.getTime())) {
-          convertedValue = dateValue;
+        case 'date': {
+          const dateValue = new Date(value);
+          if (!isNaN(dateValue.getTime())) {
+            convertedValue = dateValue;
+          }
+          break;
         }
-        break;
-      }
       }
     }
 
