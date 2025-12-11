@@ -70,7 +70,7 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
   - [x] 6.1 Add Source Type Option
     - Update `public/js/modules/index/sourceTypeSelection.js` to add "Grave Record Card" option to `SOURCE_TYPES` array.
     - _Requirements: Frontend access to grave card processing_
-  - [ ] 6.2 Update Upload Validation
+  - [x] 6.2 Update Upload Validation
     - Update `src/controllers/uploadHandler.js` to add `'grave_record_card'` to `validSourceTypes` array.
     - _Requirements: Server-side validation_
   - [ ] 6.3 Add Result Badge Styling

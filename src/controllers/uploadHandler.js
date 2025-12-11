@@ -100,7 +100,7 @@ const validatePromptConfig = async (provider, template, version) => {
 const handleFileUpload = async (req, res) => {
   const uploadStartTime = Date.now();
   logger.info("Handling file upload request");
-  
+
   // Log request details for large file debugging
   const contentLength = req.headers['content-length'];
   if (contentLength) {
@@ -108,7 +108,7 @@ const handleFileUpload = async (req, res) => {
     logger.info(`Upload request size: ${sizeMB}MB`);
   }
 
-  const validSourceTypes = ['record_sheet', 'monument_photo', 'burial_register'];
+  const validSourceTypes = ['record_sheet', 'monument_photo', 'burial_register', 'grave_record_card'];
 
   try {
     const uploadMiddleware = multer(multerConfig).fields([{ name: 'file', maxCount: 10 }]);
