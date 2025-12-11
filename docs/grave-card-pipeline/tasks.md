@@ -2,17 +2,17 @@
 
 This plan follows a TDD approach. Tests are written first to define behavior (Red), then implementation follows to pass tests (Green), followed by refactoring.
 
-- [ ] 1. Core Data Structures & Database Migration (Foundation)
-  - [ ] 1.1 Create test database schema and migration script
+- [x] 1. Core Data Structures & Database Migration (Foundation)
+  - [x] 1.1 Create test database schema and migration script
     - Use `src/utils/graveCardStorage.js` as the target file.
     - Define SQLite schema as per design (columns: id, file_name, section, grave_number, data_json, processed_date, ai_provider).
     - _Requirements: 3.1, 4.2_
-  - [ ] 1.2 Write tests for GraveCardStorage (TDD)
+  - [x] 1.2 Write tests for GraveCardStorage (TDD)
     - **Happy Path**: Test `storeGraveCard` with valid full JSON object. Verify `data_json` stores full object and columns extract metadata correctly.
     - **Happy Path**: Test `exportCardsToCsv` with nested interments (confirm flattening to `interment_1_name`, etc.).
     - **Unhappy Path**: Test `storeGraveCard` with missing required fields (throw error).
     - _Requirements: 3.2, 4.4, 4.5_
-  - [ ] 1.3 Implement GraveCardStorage
+  - [x] 1.3 Implement GraveCardStorage
     - Implement `initialize` table logic.
     - Implement `storeGraveCard` with hybrid column/JSON approach.
     - Implement `exportCardsToCsv` with logic to flatten nested `interments` array into wide-format columns.
