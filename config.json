@@ -75,5 +75,9 @@
     "minHeight": 400,
     "aspectRatioMin": 0.5,
     "aspectRatioMax": 2.0
+  },
+  "graveCard": {
+    "stitchPadding": 20,
+    "minResolution": 1000
   }
 }

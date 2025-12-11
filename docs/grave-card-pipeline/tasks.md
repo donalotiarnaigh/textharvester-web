@@ -18,14 +18,14 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
     - Implement `exportCardsToCsv` with logic to flatten nested `interments` array into wide-format columns.
     - _Requirements: 3.1, 3.2, 4.5_
 
-- [ ] 2. GraveCardProcessor Component (Image Processing)
-  - [ ] 2.1 Write tests for PDF Stitching (TDD)
+- [x] 2. GraveCardProcessor Component (Image Processing)
+  - [x] 2.1 Write tests for PDF Stitching (TDD)
     - Target: `src/utils/imageProcessing/graveCardProcessor.test.js`.
     - **Happy Path**: Mock `pdftocairo` returning 2 images -> Verify `stitch` calls `sharp` to vertically join them.
     - **Unhappy Path**: Input PDF has 1 page -> Throw "InvalidPageCount".
     - **Unhappy Path**: Input PDF has 3 pages -> Throw "InvalidPageCount".
     - _Requirements: 1.1, 1.2, 4.1_
-  - [ ] 2.2 Implement GraveCardProcessor
+  - [x] 2.2 Implement GraveCardProcessor
     - Create `src/utils/imageProcessing/graveCardProcessor.js`.
     - Implement `processPdf` to call `pdftocairo`.
     - Implement validation logic for page count (strictly 2).
