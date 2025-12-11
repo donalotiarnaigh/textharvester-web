@@ -96,7 +96,7 @@ function initializeBurialRegisterTable() {
       return;
     }
     logger.info('Burial register entries table initialized');
-    
+
     // Create indexes
     const indexes = [
       'CREATE INDEX IF NOT EXISTS idx_burial_provider_volume_page ON burial_register_entries(ai_provider, volume_id, page_number)',
@@ -146,7 +146,7 @@ function storeMemorial(data) {
       data.prompt_template || null,
       data.prompt_version || null,
       data.source_type || null
-    ], function(err) {
+    ], function (err) {
       if (err) {
         logger.error('Error storing memorial:', err);
         reject(err);
@@ -197,7 +197,7 @@ const backupDatabase = async () => {
   }
   const timestamp = moment().format('YYYYMMDD_HHmmss');
   const backupPath = path.join(backupDir, `memorials_${timestamp}.db`);
-    
+
   return new Promise((resolve, reject) => {
     const backup = fs.createReadStream(dbPath).pipe(fs.createWriteStream(backupPath));
     backup.on('finish', () => {
@@ -211,6 +211,13 @@ const backupDatabase = async () => {
 // Initialize database on module load
 initializeDatabase();
 initializeBurialRegisterTable();
+
+// Initialize grave cards table
+// Import lazily to avoid circular dependency
+const graveCardStorage = require('./graveCardStorage');
+graveCardStorage.initialize().catch(err => {
+  logger.error('Error initializing grave cards table:', err);
+});
 
 module.exports = {
   storeMemorial,

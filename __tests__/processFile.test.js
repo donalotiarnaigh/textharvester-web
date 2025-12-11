@@ -78,6 +78,16 @@ jest.mock('../src/utils/imageProcessor', () => ({
   optimizeImageForProvider: jest.fn().mockResolvedValue('optimized_base64_string')
 }));
 
+jest.mock('../src/utils/graveCardStorage', () => ({
+  initialize: jest.fn().mockResolvedValue(undefined),
+  storeGraveCard: jest.fn().mockResolvedValue(1),
+  exportCardsToCsv: jest.fn().mockResolvedValue('')
+}));
+
+jest.mock('../src/utils/imageProcessing/graveCardProcessor', () => ({
+  processPdf: jest.fn().mockResolvedValue(Buffer.from('stitched-image-data'))
+}));
+
 // Mock the model providers
 jest.mock('../src/utils/modelProviders', () => {
   const OpenAIProvider = jest.fn().mockImplementation(() => ({
@@ -93,12 +103,12 @@ jest.mock('../src/utils/modelProviders', () => {
   return {
     createProvider: (config) => {
       switch (config.AI_PROVIDER.toLowerCase()) {
-      case 'openai':
-        return new OpenAIProvider();
-      case 'anthropic':
-        return new AnthropicProvider();
-      default:
-        throw new Error('Invalid model selected');
+        case 'openai':
+          return new OpenAIProvider();
+        case 'anthropic':
+          return new AnthropicProvider();
+        default:
+          throw new Error('Invalid model selected');
       }
     },
     OpenAIProvider,

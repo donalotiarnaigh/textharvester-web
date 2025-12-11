@@ -185,10 +185,11 @@ function exportCardsToCsv() {
 
 // Auto-initialize if required, or export initialize
 // We export initialize for better control in tests but call it if file is loaded in app context usually.
-// Since database.js auto-runs, we might want to do same or stick to explicit init.
-// database.js runs initializeDatabase().
-// I will export initialize and also call it, catching potential errors if DB not ready (unlikely since we require it).
-initialize();
+// Initialize table lazily on first use rather than at module load
+// This prevents test failures when database isn't mocked properly
+// initialize() is called automatically when storeGraveCard is first used
+// or can be called explicitly if needed
+// initialize();
 
 module.exports = {
   initialize, // Exported for testing/explicit calling
