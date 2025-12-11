@@ -4,7 +4,8 @@
 const SOURCE_TYPES = [
   { value: "record_sheet", label: "Record Sheet" },
   { value: "monument_photo", label: "Monument Photo" },
-  { value: "burial_register", label: "Burial Register" }
+  { value: "burial_register", label: "Burial Register" },
+  { value: "grave_record_card", label: "Grave Record Card" }
 ];
 
 /**

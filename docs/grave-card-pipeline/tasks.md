@@ -67,7 +67,7 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
     - _Requirements: Non-functional_
 
 - [ ] 6. Frontend Integration - Phase 1: Minimal Integration (~5 minutes)
-  - [ ] 6.1 Add Source Type Option
+  - [x] 6.1 Add Source Type Option
     - Update `public/js/modules/index/sourceTypeSelection.js` to add "Grave Record Card" option to `SOURCE_TYPES` array.
     - _Requirements: Frontend access to grave card processing_
   - [ ] 6.2 Update Upload Validation
