@@ -77,11 +77,6 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
     - Update `public/js/modules/results/main.js` to add grave card badge class (`badge-warning`) in `getSourceTypeBadgeClass()`.
     - Update `formatSourceType()` to map `'grave_record_card'` to `'Grave Record Card'`.
     - _Requirements: Results page display_
-  - [ ] 6.4 Manual Testing Phase 1
-    - Select "Grave Record Card" from dropdown on upload page.
-    - Upload 2-page PDF and verify processing.
-    - Verify result appears with amber badge on results page.
-    - Verify expandable row shows JSON data.
 
 - [ ] 7. Frontend Integration - Phase 2: Results Integration (~30 minutes)
   - [ ] 7.1 Backend API Routes & Controller
@@ -145,3 +140,8 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
     - Verify all cards process successfully.
     - Verify data integrity across upload → processing → storage → export.
     - _Requirements: All_
+  - [ ] 9.5 Manual Testing Phase 1 (Frontend Minimal Integration)
+    - Select "Grave Record Card" from dropdown on upload page.
+    - Upload 2-page PDF and verify processing.
+    - Verify result appears with amber badge on results page.
+    - Verify expandable row shows JSON data.
