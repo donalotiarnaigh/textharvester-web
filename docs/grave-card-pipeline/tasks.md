@@ -79,7 +79,7 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
     - _Requirements: Results page display_
 
 - [ ] 7. Frontend Integration - Phase 2: Results Integration (~30 minutes)
-  - [ ] 7.1 Backend API Routes & Controller
+  - [x] 7.1 Backend API Routes & Controller
     - Create `src/routes/graveCardRoutes.js` with routes for listing and CSV export.
     - Create `src/controllers/graveCardController.js` with request handlers.
     - Register routes in `server.js`: `app.use('/api/grave-cards', graveCardRoutes)`.

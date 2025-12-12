@@ -9,6 +9,13 @@ const {
   getProcessingProgress,
 } = require('./src/utils/fileQueue');
 const performanceRoutes = require('./src/routes/performanceRoutes');
+const graveCardRoutes = require('./src/routes/graveCardRoutes');
+const graveCardStorage = require('./src/utils/graveCardStorage');
+
+// Initialize grave cards table
+graveCardStorage.initialize().catch(err => {
+  logger.error('Error initializing grave cards table:', err);
+});
 
 require('dotenv').config(); // Load environment variables from .env file
 
@@ -50,12 +57,15 @@ app.post('/cancel-processing', (req, res) => {
   res.send({ status: 'cancelled' });
 });
 
+// Grave Card routes
+app.use('/api/grave-cards', graveCardRoutes);
+
 // Performance monitoring routes
 app.use('/api/performance', performanceRoutes);
 
 app.listen(port, async () => {
   logger.info(`Server is running on http://localhost:${port}`);
-  
+
   if (process.env.NODE_ENV === 'development') {
     // Launch local app in development mode
     await launchLocalApp();

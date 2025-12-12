@@ -213,11 +213,12 @@ initializeDatabase();
 initializeBurialRegisterTable();
 
 // Initialize grave cards table
-// Import lazily to avoid circular dependency
-const graveCardStorage = require('./graveCardStorage');
-graveCardStorage.initialize().catch(err => {
-  logger.error('Error initializing grave cards table:', err);
-});
+
+// Initialize grave cards table - MOVED TO server.js to avoid circular dependency
+// const graveCardStorage = require('./graveCardStorage');
+// graveCardStorage.initialize().catch(err => {
+//   logger.error('Error initializing grave cards table:', err);
+// });
 
 module.exports = {
   storeMemorial,

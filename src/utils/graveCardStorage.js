@@ -70,7 +70,44 @@ function storeGraveCard(data) {
       resolve(this.lastID);
     });
   });
+
 }
+
+/**
+ * Retrieve all grave cards.
+ * @returns {Promise<Array>} - List of grave cards with parsed JSON data.
+ */
+function getAllGraveCards() {
+  return new Promise((resolve, reject) => {
+    db.all('SELECT * FROM grave_cards ORDER BY processed_date DESC', [], (err, rows) => {
+      if (err) {
+        logger.error('Error retrieving grave cards:', err);
+        reject(err);
+        return;
+      }
+
+      const cards = rows.map(row => {
+        try {
+          // Parse the JSON data
+          const data = JSON.parse(row.data_json);
+          return {
+            ...row,
+            data
+          };
+        } catch (e) {
+          logger.warn(`Failed to parse JSON for grave card ${row.id}`, e);
+          return {
+            ...row,
+            data: null,
+            error: 'Invalid JSON data'
+          };
+        }
+      });
+      resolve(cards);
+    });
+  });
+}
+
 
 /**
  * Export all grave cards to a flattened CSV format.
@@ -194,5 +231,6 @@ function exportCardsToCsv() {
 module.exports = {
   initialize, // Exported for testing/explicit calling
   storeGraveCard,
-  exportCardsToCsv
+  exportCardsToCsv,
+  getAllGraveCards
 };
