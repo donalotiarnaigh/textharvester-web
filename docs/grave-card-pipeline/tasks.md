@@ -84,7 +84,7 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
     - Create `src/controllers/graveCardController.js` with request handlers.
     - Register routes in `server.js`: `app.use('/api/grave-cards', graveCardRoutes)`.
     - _Requirements: API endpoints for `GET /api/grave-cards` and `GET /api/grave-cards/csv`_
-  - [ ] 7.2 Frontend API Client
+  - [x] 7.2 Frontend API Client
     - Create `public/js/modules/api/graveCards.js` for API integration.
     - _Requirements: Client-side API access_
   - [ ] 7.3 Enhanced Results Display
