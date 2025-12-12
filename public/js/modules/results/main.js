@@ -576,17 +576,17 @@ function displayErrorSummary(errors) {
 
     // Format message based on error type (using sanitized data)
     switch (error.errorType) {
-    case 'empty_sheet':
-      message += 'Empty or unreadable sheet detected.';
-      break;
-    case 'processing_failed':
-      message += 'Processing failed after multiple attempts.';
-      break;
-    case 'page_number_conflict':
-      message += safeErrorMessage;
-      break;
-    default:
-      message += safeErrorMessage;
+      case 'empty_sheet':
+        message += 'Empty or unreadable sheet detected.';
+        break;
+      case 'processing_failed':
+        message += 'Processing failed after multiple attempts.';
+        break;
+      case 'page_number_conflict':
+        message += safeErrorMessage;
+        break;
+      default:
+        message += safeErrorMessage;
     }
 
     // Add model info if available (sanitized)
@@ -632,8 +632,8 @@ function createDetailRow(memorial, colSpan) {
 
 // Function to toggle row expansion
 function toggleRow(memorialId) {
-  const detailRow = document.getElementById(`detail - ${memorialId} `);
-  const toggleBtn = document.querySelector(`[data - toggle - memorial= "${memorialId}"]`);
+  const detailRow = document.getElementById(`detail-${memorialId}`);
+  const toggleBtn = document.querySelector(`[data-toggle-memorial="${memorialId}"]`);
 
   if (!detailRow) return;
 
@@ -815,7 +815,7 @@ function updateTableHeaders(sourceType) {
 
   if (sourceType === 'burial_register') {
     thead.innerHTML = `
-  < th style = "width: 50px;" ></th >
+  <th style="width: 50px;"></th>
       <th class="sortable" data-sort="entry_id">Entry ID <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="name_raw">Name <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="burial_date_raw">Burial Date <i class="fas fa-sort"></i></th>
@@ -827,7 +827,7 @@ function updateTableHeaders(sourceType) {
 `;
   } else if (sourceType === 'grave_record_card') {
     thead.innerHTML = `
-  < th style = "width: 50px;" ></th >
+  <th style="width: 50px;"></th>
       <th class="sortable" data-sort="file_name">File Name <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="section">Section <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="grave_number">Grave # <i class="fas fa-sort"></i></th>
@@ -839,7 +839,7 @@ function updateTableHeaders(sourceType) {
   } else {
     // Default memorial headers
     thead.innerHTML = `
-  < th style = "width: 50px;" ></th >
+  <th style="width: 50px;"></th>
       <th class="sortable" data-sort="memorial_number">Memorial # <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="name">Name <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="year_of_death">Year of Death <i class="fas fa-sort"></i></th>
@@ -898,13 +898,13 @@ function createBurialRegisterMainRowHTML(entry, uniqueId) {
   const safe = sanitizeBurialRegisterEntry(entry);
 
   return `
-  < td class="text-center" >
+  <td class="text-center">
     <button class="btn btn-sm btn-outline-secondary expand-toggle"
       data-toggle-memorial="${uniqueId}"
       title="Click to expand/collapse details">
       <i class="fas fa-chevron-down"></i>
     </button>
-    </td >
+    </td>
     <td>${safe.entry_id || 'N/A'}</td>
     <td>${safe.name_raw || 'N/A'}</td>
     <td>${safe.burial_date_raw || 'N/A'}</td>
@@ -939,7 +939,7 @@ function createBurialRegisterDetailHTML(entry, colSpan, uniqueId) {
   }
 
   return `
-  < td colspan = "${colSpan}" >
+  <td colspan="${colSpan}">
     <div class="detail-content p-3">
       <div class="row">
         <div class="col-12">
@@ -1032,7 +1032,7 @@ function createBurialRegisterDetailHTML(entry, colSpan, uniqueId) {
         </button>
       </div>
     </div>
-    </td >
+    </td>
   `;
 }
 
@@ -1047,8 +1047,8 @@ function createBurialRegisterDetailRow(entry, colSpan) {
   detailRow.className = 'detail-row';
   detailRow.style.display = 'none';
 
-  const uniqueId = entry.id || `burial - ${Date.now()} -${Math.random().toString(36).substr(2, 9)} `;
-  detailRow.id = `detail - ${uniqueId} `;
+  const uniqueId = entry.id || `burial-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  detailRow.id = `detail-${uniqueId}`;
   detailRow.setAttribute('data-memorial-id', uniqueId);
 
   detailRow.innerHTML = createBurialRegisterDetailHTML(entry, colSpan, uniqueId);
@@ -1086,7 +1086,7 @@ function displayBurialRegisterEntries(entries) {
     row.style.cursor = 'pointer';
 
     // Generate unique ID
-    const uniqueId = entry.id || `burial - ${Date.now()} -${Math.random().toString(36).substr(2, 9)} `;
+    const uniqueId = entry.id || `burial-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     row.setAttribute('data-memorial-id', uniqueId);
 
     // Use safe HTML generation
@@ -1243,12 +1243,12 @@ export async function loadResults() {
 // Download functions
 window.downloadJsonResults = function (filenameInput, format) {
   const filename = filenameInput.value || 'results';
-  window.location.href = `/ download - json ? filename = ${encodeURIComponent(filename)}& format=${format} `;
+  window.location.href = `/download-json?filename=${encodeURIComponent(filename)}&format=${format}`;
 };
 
 window.downloadCsvResults = function (filenameInput) {
   const filename = filenameInput.value || 'results';
-  window.location.href = `/ download - csv ? filename = ${encodeURIComponent(filename)} `;
+  window.location.href = `/download-csv?filename=${encodeURIComponent(filename)}`;
 };
 
 // Initialize on document load

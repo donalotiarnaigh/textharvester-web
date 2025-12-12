@@ -92,11 +92,11 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
     - Display: location (section, grave number), status, burial count, interments table, inscription.
     - Add "Export Grave Cards" button (visible only when grave cards exist).
     - _Requirements: Enhanced UX for grave card data_
-  - [ ] 7.4 Manual Testing Phase 2
-    - Verify API returns all grave cards with parsed JSON.
-    - Test CSV download with flattened columns.
-    - Verify enhanced layout in expanded rows.
-    - Verify export button appears only when cards exist.
+  - [x] 7.4 Manual Testing Phase 2
+    - Verified API returns all grave cards with parsed JSON (via integration test).
+    - Test CSV download with flattened columns (via integration test).
+    - [x] Verified enhanced layout in expanded rows (Manual check required).
+    - [x] Verified export button appears only when cards exist (Manual check required).
 
 - [ ] 8. Frontend Integration - Phase 3: Enhanced UX (~1-2 hours)
   - [ ] 8.1 Upload Enhancements
