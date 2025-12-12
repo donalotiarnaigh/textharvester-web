@@ -99,7 +99,7 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
     - [x] Verified export button appears only when cards exist (Manual check required).
 
 - [ ] 8. Frontend Integration - Phase 3: Enhanced UX (~1-2 hours)
-  - [ ] 8.1 Upload Enhancements
+  - [x] 8.1 Upload Enhancements
     - Add file type validation (PDF only for grave cards).
     - Add dynamic help text based on source type.
     - Add warning about 2-page requirement.
