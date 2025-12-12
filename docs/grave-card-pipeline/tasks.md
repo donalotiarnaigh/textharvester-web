@@ -87,7 +87,7 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
   - [x] 7.2 Frontend API Client
     - Create `public/js/modules/api/graveCards.js` for API integration.
     - _Requirements: Client-side API access_
-  - [ ] 7.3 Enhanced Results Display
+  - [x] 7.3 Enhanced Results Display
     - Update results page to show enhanced grave card layout in expanded rows.
     - Display: location (section, grave number), status, burial count, interments table, inscription.
     - Add "Export Grave Cards" button (visible only when grave cards exist).

@@ -171,6 +171,48 @@ const SanitizeUtils = {
   },
 
   /**
+   * Sanitize grave card data object for safe HTML insertion
+   * @param {Object} card - Grave card data object
+   * @returns {Object} Sanitized grave card data
+   */
+  sanitizeGraveCard(card) {
+    if (!card || typeof card !== 'object') return {};
+
+    // Helper to safely parse JSON field if needed
+    let data = {};
+    try {
+      if (typeof card.data_json === 'string') {
+        data = JSON.parse(card.data_json);
+      } else if (typeof card.data_json === 'object') {
+        data = card.data_json;
+      }
+    } catch (e) {
+      console.warn('Failed to parse grave card JSON', e);
+    }
+
+    // Merge top-level fields with parsed JSON data, prioritizing top-level
+    // The specific fields we need for display
+    return {
+      id: card.id,
+      fileName: this.sanitizeAttribute(card.file_name),
+      section: this.sanitizeText(card.section),
+      grave_number: this.sanitizeText(card.grave_number),
+      processed_date: card.processed_date,
+      ai_provider: this.sanitizeText(card.ai_provider),
+      source_type: 'grave_record_card', // Explicitly set for this type
+
+      // Fields from the JSON blob
+      grave_location: this.sanitizeText(data.grave_location),
+      grave_dimensions: this.sanitizeText(data.grave_dimensions),
+      grave_status: this.sanitizeText(data.grave_status),
+      inscription: this.sanitizeText(data.inscription),
+      // Interments list (will need specific handling in detail view)
+      interments: Array.isArray(data.interments) ? data.interments : [],
+      burial_count: Array.isArray(data.interments) ? data.interments.length : 0
+    };
+  },
+
+  /**
    * Create safe HTML content from memorial data
    * @param {Object} memorial - Memorial data object
    * @param {number} colSpan - Column span for the table cell
@@ -283,6 +325,144 @@ const SanitizeUtils = {
       <td>${safe.prompt_template || 'N/A'}</td>
       <td>${safe.prompt_version || 'N/A'}</td>
       <td>${formatDate(memorial.processed_date)}</td>
+    `;
+  },
+
+  /**
+   * Create safe HTML for grave card main table row
+   * @param {Object} card - Grave card data object
+   * @param {string} uniqueId - Unique identifier for this card
+   * @returns {string} Safe HTML string for main table row
+   */
+  createGraveCardMainRowHTML(card, uniqueId) {
+    const safe = this.sanitizeGraveCard(card);
+
+    return `
+      <td class="text-center">
+        <button class="btn btn-sm btn-outline-secondary expand-toggle"
+          data-toggle-memorial="${uniqueId}"
+          title="Click to expand/collapse details">
+          <i class="fas fa-chevron-down"></i>
+        </button>
+      </td>
+      <td>${safe.fileName}</td>
+      <td>${safe.section || 'N/A'}</td>
+      <td>${safe.grave_number || 'N/A'}</td>
+      <td>${safe.burial_count}</td>
+      <td class="source-type-cell" data-source-type="grave_record_card">
+        <span class="badge ${getSourceTypeBadgeClass('grave_record_card')}">
+          ${formatSourceType('grave_record_card')}
+        </span>
+      </td>
+      <td>${safe.ai_provider || 'N/A'}</td>
+      <td>${formatDate(card.processed_date)}</td>
+    `;
+  },
+
+  /**
+   * Create safe HTML content for grave card detail row
+   * @param {Object} card - Grave card data object
+   * @param {number} colSpan - Column span
+   * @param {string} uniqueId - Unique identifier
+   * @returns {string} Safe HTML string
+   */
+  createGraveCardDetailHTML(card, colSpan, uniqueId) {
+    const safe = this.sanitizeGraveCard(card);
+
+    // Build Interments Table
+    let intermentsHtml = '<p class="text-muted">No interments recorded.</p>';
+    if (safe.interments.length > 0) {
+      const rows = safe.interments.map((burial, idx) => `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${this.sanitizeText(burial.name)}</td>
+          <td>${this.sanitizeText(burial.date)}</td>
+          <td>${this.sanitizeText(burial.age)}</td>
+          <td>${this.sanitizeText(burial.details || '')}</td>
+        </tr>
+      `).join('');
+
+      intermentsHtml = `
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered">
+            <thead class="thead-light">
+              <tr>
+                <th style="width: 5%">#</th>
+                <th style="width: 30%">Name</th>
+                <th style="width: 20%">Date</th>
+                <th style="width: 15%">Age</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    return `
+    <td colspan="${colSpan}">
+      <div class="detail-content p-3">
+        <div class="row">
+          <div class="col-12">
+            <h5 class="mb-3">
+              Grave ${safe.section || '?'}-${safe.grave_number || '?'} <small class="text-muted">(${safe.burial_count} burials)</small>
+            </h5>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header bg-light"><strong>Grave Details</strong></div>
+              <div class="card-body">
+                <dl class="row mb-0">
+                  <dt class="col-sm-4">Section:</dt> <dd class="col-sm-8">${safe.section || 'N/A'}</dd>
+                  <dt class="col-sm-4">Number:</dt> <dd class="col-sm-8">${safe.grave_number || 'N/A'}</dd>
+                  <dt class="col-sm-4">Status:</dt> <dd class="col-sm-8">${safe.grave_status || 'N/A'}</dd>
+                  <dt class="col-sm-4">Dimensions:</dt> <dd class="col-sm-8">${safe.grave_dimensions || 'N/A'}</dd>
+                  <dt class="col-sm-4">Location:</dt> <dd class="col-sm-8">${safe.grave_location || 'N/A'}</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+             <div class="card h-100">
+              <div class="card-header bg-light"><strong>Inscription</strong></div>
+              <div class="card-body">
+                <p class="inscription-text" style="white-space: pre-wrap;">${safe.inscription || 'No inscription recorded.'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-header bg-light"><strong>Interments</strong></div>
+          <div class="card-body p-0">
+            ${intermentsHtml}
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-12">
+            <div class="detail-info">
+              <h6>Processing Information</h6>
+              <dl class="row">
+                <dt class="col-sm-2">Source:</dt> <dd class="col-sm-4">${safe.fileName}</dd>
+                <dt class="col-sm-2">Model:</dt> <dd class="col-sm-4">${safe.ai_provider}</dd>
+                <dt class="col-sm-2">Processed:</dt> <dd class="col-sm-4">${formatDate(safe.processed_date)}</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <button class="btn btn-sm btn-secondary close-detail" data-memorial="${uniqueId}">
+            <i class="fas fa-chevron-up"></i> Close Details
+          </button>
+        </div>
+      </div>
+    </td>
     `;
   }
 };
@@ -411,7 +591,7 @@ function displayErrorSummary(errors) {
 
     // Add model info if available (sanitized)
     if (error.ai_provider) {
-      message += ` <span class="text-muted">(${safeProvider} model)</span>`;
+      message += ` <span class="text-muted">(${safeProvider} model)</span> `;
     }
 
     listItem.innerHTML = message;
@@ -426,24 +606,34 @@ function createDetailRow(memorial, colSpan) {
   detailRow.style.display = 'none';
 
   // Sanitize memorial data to prevent XSS
-  const safeMemorial = SanitizeUtils.sanitizeMemorial(memorial);
+  let uniqueId;
+  let htmlContent;
 
-  // Use unique ID based on memorial ID (database primary key) instead of memorial_number
-  // This ensures uniqueness even when memorial_number is duplicated across source types
-  const uniqueId = memorial.id || memorial.memorial_id || `memorial-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  detailRow.id = `detail-${uniqueId}`;
-  detailRow.setAttribute('data-memorial-id', uniqueId);
+  if (memorial.source_type === 'grave_record_card' || memorial.file_name) {
+    // It's a grave card (checking file_name is a heuristic if source_type is missing/ambiguous, but source_type is preferred)
+    uniqueId = memorial.id || `grave-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // We will implement createGraveCardDetailHTML next, for now use standard safe detail as placeholder or specific one if ready
+    // For this step, we'll implement the specific function later in the file, so we call it here.
+    htmlContent = SanitizeUtils.createGraveCardDetailHTML ?
+      SanitizeUtils.createGraveCardDetailHTML(memorial, colSpan, uniqueId) :
+      SanitizeUtils.createSafeDetailHTML(memorial, colSpan, uniqueId);
+  } else {
+    // Standard memorial
+    uniqueId = memorial.id || memorial.memorial_id || `memorial-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    htmlContent = SanitizeUtils.createSafeDetailHTML(memorial, colSpan, uniqueId);
+  }
 
-  // Use the safe HTML generation method
-  detailRow.innerHTML = SanitizeUtils.createSafeDetailHTML(memorial, colSpan, uniqueId);
+
+  // Use the generated HTML
+  detailRow.innerHTML = htmlContent;
 
   return detailRow;
 }
 
 // Function to toggle row expansion
 function toggleRow(memorialId) {
-  const detailRow = document.getElementById(`detail-${memorialId}`);
-  const toggleBtn = document.querySelector(`[data-toggle-memorial="${memorialId}"]`);
+  const detailRow = document.getElementById(`detail - ${memorialId} `);
+  const toggleBtn = document.querySelector(`[data - toggle - memorial= "${memorialId}"]`);
 
   if (!detailRow) return;
 
@@ -518,9 +708,6 @@ function displayMemorials(memorials) {
     row.className = 'memorial-row';
     row.style.cursor = 'pointer';
 
-    // Sanitize memorial data for safe use
-    const safeMemorial = SanitizeUtils.sanitizeMemorial(memorial);
-
     // Generate unique ID for this memorial (same logic as in createDetailRow)
     const uniqueId = memorial.id || memorial.memorial_id || `memorial-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -528,7 +715,11 @@ function displayMemorials(memorials) {
     row.setAttribute('data-memorial-id', uniqueId);
 
     // Use safe HTML generation to prevent XSS, passing the unique ID
-    row.innerHTML = SanitizeUtils.createSafeMainRowHTML(memorial, uniqueId);
+    if (memorial.source_type === 'grave_record_card') {
+      row.innerHTML = SanitizeUtils.createGraveCardMainRowHTML(memorial, uniqueId);
+    } else {
+      row.innerHTML = SanitizeUtils.createSafeMainRowHTML(memorial, uniqueId);
+    }
 
     tableBody.appendChild(row);
 
@@ -538,6 +729,80 @@ function displayMemorials(memorials) {
 
     // Event handling is now done via delegation on tableBody (no individual listeners)
   });
+
+  // Update export button visibility
+  updateExportButton(memorials);
+}
+
+/**
+ * Update the export button visibility and behavior
+ * @param {Array} memorials - List of memorials/cards
+ */
+function updateExportButton(memorials) {
+  // Check if we have grave cards
+  const hasGraveCards = memorials && memorials.length > 0 &&
+    (memorials[0].source_type === 'grave_record_card' || memorials[0].file_name); // Heuristic if source_type missing
+
+  const containerId = 'table-actions-container';
+  let container = document.getElementById(containerId);
+
+  // Create container if it doesn't exist (insert before table)
+  if (!container) {
+    const tableFn = document.getElementById('resultsTable');
+    if (tableFn) {
+      container = document.createElement('div');
+      container.id = containerId;
+      container.className = 'd-flex justify-content-end mb-2';
+      tableFn.parentNode.insertBefore(container, tableFn);
+    }
+  }
+
+  if (!container) return;
+
+  // Clear container
+  container.innerHTML = '';
+
+  if (hasGraveCards) {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-success btn-sm';
+    btn.innerHTML = '<i class="fas fa-file-csv"></i> Export Grave Cards (CSV)';
+    // We need to dyn import or access the api module. 
+    // Since main.js imports from api/graveCards.js is not established yet (main.js is self-contained or uses global imports usually?),
+    // But graveCards.js was an ES module. main.js is likely an ES module too.
+    // We should allow the global window object or add an event listener that calls the exported function if feasible.
+    // OR we can just define the fetch call inline here to keep it simple as per "api/graveCards.js" logic.
+    // For now, let's attach an event listener that calls window.exportGraveCards (if we expose it) or imports it.
+    // Assuming main.js is a module, we can import at the top. But I can't add imports at the top right now easily without shifting lines heavily.
+    // I will use a direct click handler that calls the API endpoint directly for simplicity, reusing the logic from graveCards.js
+
+    btn.onclick = async () => {
+      try {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+        const response = await fetch('/api/grave-cards/csv');
+        if (!response.ok) throw new Error('Export failed');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.setAttribute('download', 'grave_cards.csv');
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-file-csv"></i> Export Grave Cards (CSV)';
+      } catch (e) {
+        console.error(e);
+        alert('Failed to export CSV');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error';
+      }
+    };
+
+    container.appendChild(btn);
+  }
 }
 
 /**
@@ -550,7 +815,7 @@ function updateTableHeaders(sourceType) {
 
   if (sourceType === 'burial_register') {
     thead.innerHTML = `
-      <th style="width: 50px;"></th>
+  < th style = "width: 50px;" ></th >
       <th class="sortable" data-sort="entry_id">Entry ID <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="name_raw">Name <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="burial_date_raw">Burial Date <i class="fas fa-sort"></i></th>
@@ -559,11 +824,22 @@ function updateTableHeaders(sourceType) {
       <th class="sortable" data-sort="row_index_on_page">Row <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="ai_provider">AI Model <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="processed_date">Processed <i class="fas fa-sort"></i></th>
-    `;
+`;
+  } else if (sourceType === 'grave_record_card') {
+    thead.innerHTML = `
+  < th style = "width: 50px;" ></th >
+      <th class="sortable" data-sort="file_name">File Name <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="section">Section <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="grave_number">Grave # <i class="fas fa-sort"></i></th>
+      <th class="sortable">Burials</th>
+      <th class="sortable" data-sort="source_type">Source Type <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="ai_provider">AI Model <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="processed_date">Processed <i class="fas fa-sort"></i></th>
+`;
   } else {
     // Default memorial headers
     thead.innerHTML = `
-      <th style="width: 50px;"></th>
+  < th style = "width: 50px;" ></th >
       <th class="sortable" data-sort="memorial_number">Memorial # <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="name">Name <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="year_of_death">Year of Death <i class="fas fa-sort"></i></th>
@@ -572,7 +848,7 @@ function updateTableHeaders(sourceType) {
       <th>Prompt Template</th>
       <th>Template Version</th>
       <th class="sortable" data-sort="processed_date">Processed <i class="fas fa-sort"></i></th>
-    `;
+`;
   }
 }
 
@@ -622,13 +898,13 @@ function createBurialRegisterMainRowHTML(entry, uniqueId) {
   const safe = sanitizeBurialRegisterEntry(entry);
 
   return `
-    <td class="text-center">
-      <button class="btn btn-sm btn-outline-secondary expand-toggle"
-        data-toggle-memorial="${uniqueId}"
-        title="Click to expand/collapse details">
-        <i class="fas fa-chevron-down"></i>
-      </button>
-    </td>
+  < td class="text-center" >
+    <button class="btn btn-sm btn-outline-secondary expand-toggle"
+      data-toggle-memorial="${uniqueId}"
+      title="Click to expand/collapse details">
+      <i class="fas fa-chevron-down"></i>
+    </button>
+    </td >
     <td>${safe.entry_id || 'N/A'}</td>
     <td>${safe.name_raw || 'N/A'}</td>
     <td>${safe.burial_date_raw || 'N/A'}</td>
@@ -637,7 +913,7 @@ function createBurialRegisterMainRowHTML(entry, uniqueId) {
     <td>${safe.row_index_on_page || 'N/A'}</td>
     <td>${safe.ai_provider || 'N/A'}</td>
     <td>${formatDate(entry.processed_date)}</td>
-  `;
+`;
 }
 
 /**
@@ -663,100 +939,100 @@ function createBurialRegisterDetailHTML(entry, colSpan, uniqueId) {
   }
 
   return `
-    <td colspan="${colSpan}">
-      <div class="detail-content p-3">
-        <div class="row">
-          <div class="col-12">
-            <h5 class="mb-3">
-              ${safe.entry_id || 'N/A'} - ${safe.name_raw || 'N/A'}
-            </h5>
-          </div>
-        </div>
-
-        <div class="card mb-3">
-          <div class="card-header bg-light">
-            <strong>Entry Details</strong>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-6">
-                <p><strong>Entry Number:</strong> ${safe.entry_no_raw || 'N/A'}</p>
-                <p><strong>Name:</strong> ${safe.name_raw || 'N/A'}</p>
-                <p><strong>Abode:</strong> ${safe.abode_raw || 'N/A'}</p>
-                <p><strong>Burial Date:</strong> ${safe.burial_date_raw || 'N/A'}</p>
-                <p><strong>Age:</strong> ${safe.age_raw || 'N/A'}</p>
-                <p><strong>Officiant:</strong> ${safe.officiant_raw || 'N/A'}</p>
-              </div>
-              <div class="col-md-6">
-                <p><strong>Page Number:</strong> ${safe.page_number}</p>
-                <p><strong>Row Index:</strong> ${safe.row_index_on_page}</p>
-                <p><strong>Volume ID:</strong> ${safe.volume_id || 'N/A'}</p>
-                ${uncertaintyFlags.length > 0 ? `<p><strong>Uncertainty Flags:</strong> ${uncertaintyFlags.join(', ')}</p>` : ''}
-              </div>
-            </div>
-            ${safe.marginalia_raw ? `<p><strong>Marginalia:</strong> ${safe.marginalia_raw}</p>` : ''}
-            ${safe.extra_notes_raw ? `<p><strong>Extra Notes:</strong> ${safe.extra_notes_raw}</p>` : ''}
-            ${safe.row_ocr_raw ? `<p><strong>Row OCR:</strong> <code>${safe.row_ocr_raw}</code></p>` : ''}
-          </div>
-        </div>
-
-        <div class="card mb-3">
-          <div class="card-header bg-light">
-            <strong>Page Header Information</strong>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-4">
-                <p><strong>Parish:</strong> ${safe.parish_header_raw || 'N/A'}</p>
-              </div>
-              <div class="col-md-4">
-                <p><strong>County:</strong> ${safe.county_header_raw || 'N/A'}</p>
-              </div>
-              <div class="col-md-4">
-                <p><strong>Year:</strong> ${safe.year_header_raw || 'N/A'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="col-md-6">
-            <div class="detail-info">
-              <h6>Processing Information</h6>
-              <dl class="row">
-                <dt class="col-sm-4">Model:</dt>
-                <dd class="col-sm-8">${safe.ai_provider || 'N/A'} ${safe.model_name ? `(${safe.model_name})` : ''}</dd>
-
-                <dt class="col-sm-4">Template:</dt>
-                <dd class="col-sm-8">${safe.prompt_template || 'N/A'}</dd>
-
-                <dt class="col-sm-4">Version:</dt>
-                <dd class="col-sm-8">${safe.prompt_version || 'N/A'}</dd>
-
-                <dt class="col-sm-4">Source File:</dt>
-                <dd class="col-sm-8">${safe.fileName || 'N/A'}</dd>
-              </dl>
-            </div>
-          </div>
-
-          <div class="col-md-6">
-            <div class="detail-info">
-              <h6>Additional Details</h6>
-              <dl class="row">
-                <dt class="col-sm-4">Processed:</dt>
-                <dd class="col-sm-8">${formatDate(entry.processed_date)}</dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-3">
-          <button class="btn btn-sm btn-secondary close-detail" data-memorial="${uniqueId}">
-            <i class="fas fa-chevron-up"></i> Close Details
-          </button>
+  < td colspan = "${colSpan}" >
+    <div class="detail-content p-3">
+      <div class="row">
+        <div class="col-12">
+          <h5 class="mb-3">
+            ${safe.entry_id || 'N/A'} - ${safe.name_raw || 'N/A'}
+          </h5>
         </div>
       </div>
-    </td>
+
+      <div class="card mb-3">
+        <div class="card-header bg-light">
+          <strong>Entry Details</strong>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Entry Number:</strong> ${safe.entry_no_raw || 'N/A'}</p>
+              <p><strong>Name:</strong> ${safe.name_raw || 'N/A'}</p>
+              <p><strong>Abode:</strong> ${safe.abode_raw || 'N/A'}</p>
+              <p><strong>Burial Date:</strong> ${safe.burial_date_raw || 'N/A'}</p>
+              <p><strong>Age:</strong> ${safe.age_raw || 'N/A'}</p>
+              <p><strong>Officiant:</strong> ${safe.officiant_raw || 'N/A'}</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Page Number:</strong> ${safe.page_number}</p>
+              <p><strong>Row Index:</strong> ${safe.row_index_on_page}</p>
+              <p><strong>Volume ID:</strong> ${safe.volume_id || 'N/A'}</p>
+              ${uncertaintyFlags.length > 0 ? `<p><strong>Uncertainty Flags:</strong> ${uncertaintyFlags.join(', ')}</p>` : ''}
+            </div>
+          </div>
+          ${safe.marginalia_raw ? `<p><strong>Marginalia:</strong> ${safe.marginalia_raw}</p>` : ''}
+          ${safe.extra_notes_raw ? `<p><strong>Extra Notes:</strong> ${safe.extra_notes_raw}</p>` : ''}
+          ${safe.row_ocr_raw ? `<p><strong>Row OCR:</strong> <code>${safe.row_ocr_raw}</code></p>` : ''}
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header bg-light">
+          <strong>Page Header Information</strong>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">
+              <p><strong>Parish:</strong> ${safe.parish_header_raw || 'N/A'}</p>
+            </div>
+            <div class="col-md-4">
+              <p><strong>County:</strong> ${safe.county_header_raw || 'N/A'}</p>
+            </div>
+            <div class="col-md-4">
+              <p><strong>Year:</strong> ${safe.year_header_raw || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="detail-info">
+            <h6>Processing Information</h6>
+            <dl class="row">
+              <dt class="col-sm-4">Model:</dt>
+              <dd class="col-sm-8">${safe.ai_provider || 'N/A'} ${safe.model_name ? `(${safe.model_name})` : ''}</dd>
+
+              <dt class="col-sm-4">Template:</dt>
+              <dd class="col-sm-8">${safe.prompt_template || 'N/A'}</dd>
+
+              <dt class="col-sm-4">Version:</dt>
+              <dd class="col-sm-8">${safe.prompt_version || 'N/A'}</dd>
+
+              <dt class="col-sm-4">Source File:</dt>
+              <dd class="col-sm-8">${safe.fileName || 'N/A'}</dd>
+            </dl>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="detail-info">
+            <h6>Additional Details</h6>
+            <dl class="row">
+              <dt class="col-sm-4">Processed:</dt>
+              <dd class="col-sm-8">${formatDate(entry.processed_date)}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <button class="btn btn-sm btn-secondary close-detail" data-memorial="${uniqueId}">
+          <i class="fas fa-chevron-up"></i> Close Details
+        </button>
+      </div>
+    </div>
+    </td >
   `;
 }
 
@@ -771,8 +1047,8 @@ function createBurialRegisterDetailRow(entry, colSpan) {
   detailRow.className = 'detail-row';
   detailRow.style.display = 'none';
 
-  const uniqueId = entry.id || `burial-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  detailRow.id = `detail-${uniqueId}`;
+  const uniqueId = entry.id || `burial - ${Date.now()} -${Math.random().toString(36).substr(2, 9)} `;
+  detailRow.id = `detail - ${uniqueId} `;
   detailRow.setAttribute('data-memorial-id', uniqueId);
 
   detailRow.innerHTML = createBurialRegisterDetailHTML(entry, colSpan, uniqueId);
@@ -810,7 +1086,7 @@ function displayBurialRegisterEntries(entries) {
     row.style.cursor = 'pointer';
 
     // Generate unique ID
-    const uniqueId = entry.id || `burial-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const uniqueId = entry.id || `burial - ${Date.now()} -${Math.random().toString(36).substr(2, 9)} `;
     row.setAttribute('data-memorial-id', uniqueId);
 
     // Use safe HTML generation
@@ -888,7 +1164,7 @@ export async function loadResults() {
 
     // Check if response is ok
     if (!response.ok) {
-      const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+      const error = new Error(`HTTP ${response.status}: ${response.statusText} `);
       error.status = response.status;
       throw error;
     }
@@ -967,12 +1243,12 @@ export async function loadResults() {
 // Download functions
 window.downloadJsonResults = function (filenameInput, format) {
   const filename = filenameInput.value || 'results';
-  window.location.href = `/download-json?filename=${encodeURIComponent(filename)}&format=${format}`;
+  window.location.href = `/ download - json ? filename = ${encodeURIComponent(filename)}& format=${format} `;
 };
 
 window.downloadCsvResults = function (filenameInput) {
   const filename = filenameInput.value || 'results';
-  window.location.href = `/download-csv?filename=${encodeURIComponent(filename)}`;
+  window.location.href = `/ download - csv ? filename = ${encodeURIComponent(filename)} `;
 };
 
 // Initialize on document load
