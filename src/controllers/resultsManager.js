@@ -218,6 +218,28 @@ async function detectSourceType() {
   });
 }
 
+/**
+ * Recursive function to flatten an object
+ * @param {Object} obj The object to flatten
+ * @param {String} prefix The prefix for current keys
+ * @param {Object} res The result object
+ * @returns {Object} The flattened object
+ */
+function flattenObject(obj, prefix = '', res = {}) {
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const val = obj[key];
+      const newKey = prefix ? `${prefix}_${key}` : key;
+      if (typeof val === 'object' && val !== null) {
+        flattenObject(val, newKey, res);
+      } else {
+        res[newKey] = val;
+      }
+    }
+  }
+  return res;
+}
+
 async function downloadResultsCSV(req, res) {
   try {
     // Detect which source type has the most recent data
@@ -252,14 +274,8 @@ async function downloadResultsCSV(req, res) {
       const results = await getAllGraveCards();
       entryCount = results.length;
 
-      // Use the storage utility's specific export function since it handles flattening nicely
-      // OR Flatten it manually here similarly to JSON export if specific format needed.
-      // The GraveCardStorage class has `exportCardsToCsv` but that returns a string directly?
-      // Let's check imports. getAllGraveCards is imported. exportCardsToCsv is NOT imported.
-      // We should stick to manual flattening to be consistent with resultManager style or import the helper.
-      // Given we don't have the helper imported, let's just flatten the top-level keys + parsed JSON.
-
-      const flattenedResults = results.map(card => {
+      // 1. Parse JSON and flatten each record
+      const flattenedRecords = results.map(card => {
         let cardData = {};
         try {
           if (typeof card.data_json === 'string') {
@@ -271,23 +287,42 @@ async function downloadResultsCSV(req, res) {
           logger.warn(`Failed to parse data_json for card ID ${card.id}`, e);
         }
 
-        // Flatten data for CSV
-        return {
+        // Merge top-level fields
+        const mergedData = {
           id: card.id,
           file_name: card.file_name,
-          section: cardData.card_metadata?.location_section || '',
-          grave_number: cardData.card_metadata?.grave_number || '',
-          number_buried: cardData.grave?.number_buried || 0,
-          inscription: cardData.inscription?.text || '',
-          ai_provider: card.ai_provider,
           processed_date: card.processed_date,
-          source_type: 'grave_record_card'
+          ai_provider: card.ai_provider,
+          prompt_version: card.prompt_version,
+          ...cardData
         };
+
+        return flattenObject(mergedData);
       });
 
-      csvData = jsonToCsv(flattenedResults);
+      // 2. Collect all unique keys for dynamic columns
+      const allKeys = new Set();
+      flattenedRecords.forEach(record => {
+        Object.keys(record).forEach(key => allKeys.add(key));
+      });
+
+      // Sort keys for deterministic order (put critical fields first)
+      const sortedKeys = Array.from(allKeys).sort((a, b) => {
+        // Prioritize specific ID/file fields
+        const priorityFields = ['id', 'file_name', 'processed_date', 'ai_provider'];
+        const aPriority = priorityFields.indexOf(a);
+        const bPriority = priorityFields.indexOf(b);
+
+        if (aPriority !== -1 && bPriority !== -1) return aPriority - bPriority;
+        if (aPriority !== -1) return -1;
+        if (bPriority !== -1) return 1;
+
+        return a.localeCompare(b);
+      });
+
+      csvData = jsonToCsv(flattenedRecords, sortedKeys);
       defaultFilename = `grave_cards_${moment().format('YYYYMMDD_HHmmss')}.csv`;
-      logger.info(`Exporting grave cards CSV: ${entryCount} entries`);
+      logger.info(`Exporting grave cards CSV: ${entryCount} entries with ${sortedKeys.length} columns`);
     } else {
       // Get memorials (default)
       const results = await getAllMemorials();

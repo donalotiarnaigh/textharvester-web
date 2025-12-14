@@ -110,20 +110,25 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
     - Add grave number search.
     - Implement combined filter logic.
     - _Requirements: Improved results filtering and navigation_
-  - [ ] 8.3 Manual Testing Phase 3
-    - [x] Verify upload validation prevents non-PDF files.
-    - [x] Verify instructions update when switching source types.
-    - [ ] Verify summary cards show accurate statistics.
-    - [ ] Verify all filters work together.
-
-- [ ] 9. Manual End-to-End Verification
-  - [ ] 9.1 Backend Processing Verification
+  - [x] 8.3 Manual Testing Phase 3
+    - [x] 1. Upload & Validation
+  - [x] 1.1 Source Type Selection
+  - [x] 1.2 File Validation
+- [x] 2. Pipeline Processing (End-to-End)
+  - [x] 2.1 Successful Processing
+- [x] 3. Results Display
+  - [x] 3.1 Badge & Metadata
+  - [x] 3.2 Detail View (Expand Row)
+  - [x] 3.3 Enhanced UI Controls
+  - [x] 3.4 Filtering Functionality
+- [x] 4. Data Export
+  - [x] 4.1 CSV Export (Flattened & Dynamic)
+- [x] 5. Database State (Optional)
+  - [x] 5.1 Verification
     - Process sample 2-page PDF from `/Users/danieltierney/projects/historic-graves/11_Douglas`.
     - Verify PDF is split into 2 images.
     - Verify images are stitched vertically.
     - Verify AI processing completes successfully.
-    - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2_
-  - [ ] 9.2 Database Storage Verification
     - Verify grave card record exists in database.
     - Verify `section` and `grave_number` columns are correctly populated.
     - Verify `data_json` contains complete interment data.
