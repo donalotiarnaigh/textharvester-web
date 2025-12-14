@@ -8,6 +8,29 @@
  * @param {Array} memorials 
  * @returns {Object} { totalCards, totalInterments, occupied, vacant }
  */
+/**
+ * Helper to safely parse grave card data
+ * @param {Object} item 
+ * @returns {Object} Parsed data object or empty object
+ */
+function parseGraveCardData(item) {
+  if (!item.data_json) return {};
+  try {
+    if (typeof item.data_json === 'string') {
+      return JSON.parse(item.data_json);
+    }
+    return item.data_json;
+  } catch (e) {
+    console.warn('Failed to parse grave card JSON', e);
+    return {};
+  }
+}
+
+/**
+ * Calculate summary statistics for a set of memorials/cards
+ * @param {Array} memorials 
+ * @returns {Object} { totalCards, totalInterments, occupied, vacant }
+ */
 export function calculateSummaryStats(memorials) {
   if (!memorials || !Array.isArray(memorials)) {
     return { totalCards: 0, totalInterments: 0, occupied: 0, vacant: 0 };
@@ -20,9 +43,10 @@ export function calculateSummaryStats(memorials) {
     let interments = [];
 
     // Handle different data structures
-    if (item.source_type === 'grave_record_card' && item.data_json) {
+    if (item.source_type === 'grave_record_card') {
       // Grave Card Structure
-      interments = item.data_json.interments || [];
+      const data = parseGraveCardData(item);
+      interments = data.interments || [];
     } else if (item.grave_list && item.grave_list.interments) {
       // Traditional Memorial Structure
       interments = item.grave_list.interments;
@@ -57,8 +81,11 @@ export function getUniqueSections(memorials) {
   memorials.forEach(item => {
     let section = null;
 
-    if (item.source_type === 'grave_record_card' && item.data_json && item.data_json.card_metadata) {
-      section = item.data_json.card_metadata.location_section;
+    if (item.source_type === 'grave_record_card') {
+      const data = parseGraveCardData(item);
+      if (data.card_metadata) {
+        section = data.card_metadata.location_section;
+      }
     } else {
       section = item.section;
     }
@@ -83,8 +110,12 @@ export function filterMemorials(memorials, { section, graveNumber }) {
   return memorials.filter(item => {
     // 1. Check Section
     let itemSection = '';
-    if (item.source_type === 'grave_record_card' && item.data_json && item.data_json.card_metadata) {
-      itemSection = item.data_json.card_metadata.location_section || '';
+
+    if (item.source_type === 'grave_record_card') {
+      const data = parseGraveCardData(item);
+      if (data.card_metadata) {
+        itemSection = data.card_metadata.location_section || '';
+      }
     } else {
       itemSection = item.section || '';
     }
@@ -95,8 +126,12 @@ export function filterMemorials(memorials, { section, graveNumber }) {
 
     // 2. Check Grave Number
     let itemGraveNum = '';
-    if (item.source_type === 'grave_record_card' && item.data_json && item.data_json.card_metadata) {
-      itemGraveNum = item.data_json.card_metadata.grave_number || '';
+
+    if (item.source_type === 'grave_record_card') {
+      const data = parseGraveCardData(item);
+      if (data.card_metadata) {
+        itemGraveNum = data.card_metadata.grave_number || '';
+      }
     } else {
       itemGraveNum = item.grave_number || '';
     }

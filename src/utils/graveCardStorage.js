@@ -29,6 +29,24 @@ function initialize() {
     });
   });
 }
+/**
+ * Clear all grave cards from the database.
+ * @returns {Promise<void>}
+ */
+function clearAllGraveCards() {
+  return new Promise((resolve, reject) => {
+    db.run('DELETE FROM grave_cards', (err) => {
+      if (err) {
+        logger.error('Error clearing grave_cards table:', err);
+        reject(err);
+        return;
+      }
+      logger.info('Cleared all grave cards from database');
+      resolve();
+    });
+  });
+}
+
 
 /**
  * Store a processed grave card record.
@@ -232,5 +250,6 @@ module.exports = {
   initialize, // Exported for testing/explicit calling
   storeGraveCard,
   exportCardsToCsv,
-  getAllGraveCards
+  getAllGraveCards,
+  clearAllGraveCards
 };

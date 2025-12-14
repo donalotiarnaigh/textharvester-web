@@ -5,6 +5,7 @@
 const MemorialOCRPrompt = require('./MemorialOCRPrompt');
 const BurialRegisterPrompt = require('./BurialRegisterPrompt');
 const MonumentPhotoOCRPrompt = require('./MonumentPhotoOCRPrompt');
+const GraveCardPrompt = require('./GraveCardPrompt');
 const ProviderPromptManager = require('../ProviderPromptManager');
 const { MEMORIAL_FIELDS } = require('../types/memorialFields');
 
@@ -114,6 +115,17 @@ const monumentPhotoOCRTemplates = {
   })
 };
 
+const graveCardTemplates = {
+  openai: new GraveCardPrompt({
+    version: '1.0.0',
+    provider: 'openai'
+  }),
+  anthropic: new GraveCardPrompt({
+    version: '1.0.0',
+    provider: 'anthropic'
+  })
+};
+
 /**
  * Get a prompt template for a provider
  * @param {string} provider The AI provider name
@@ -139,7 +151,16 @@ const getPrompt = (provider, templateName, version = 'latest') => {
     }
     return promptInstance;
   }
-  
+
+  // Handle grave card template
+  if (templateName === 'graveCard') {
+    const promptInstance = graveCardTemplates[provider];
+    if (!promptInstance) {
+      throw new Error(`No grave card template found for provider: ${provider}`);
+    }
+    return promptInstance;
+  }
+
   // Handle existing memorialOCR template
   if (templateName === 'memorialOCR') {
     const promptInstance = memorialOCRTemplates[provider];

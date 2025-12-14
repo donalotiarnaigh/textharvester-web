@@ -111,10 +111,10 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
     - Implement combined filter logic.
     - _Requirements: Improved results filtering and navigation_
   - [ ] 8.3 Manual Testing Phase 3
-    - Verify upload validation prevents non-PDF files.
-    - Verify instructions update when switching source types.
-    - Verify summary cards show accurate statistics.
-    - Verify all filters work together.
+    - [x] Verify upload validation prevents non-PDF files.
+    - [x] Verify instructions update when switching source types.
+    - [ ] Verify summary cards show accurate statistics.
+    - [ ] Verify all filters work together.
 
 - [ ] 9. Manual End-to-End Verification
   - [ ] 9.1 Backend Processing Verification

@@ -47,6 +47,9 @@ async function processFile(filePath, options = {}) {
     if (sourceType === 'burial_register') {
       base64Image = await fs.readFile(filePath, { encoding: 'base64' });
       logger.info(`File ${filePath} read successfully (burial register, no optimization). Proceeding with OCR processing.`);
+    } else if (sourceType === 'grave_record_card') {
+      logger.info(`File ${filePath} identified as grave record card. Skipping initial image optimization.`);
+      // Grave card processing handles its own file reading and conversion
     } else {
       // Analyze image to see if optimization is needed
       const analysis = await analyzeImageForProvider(filePath, providerName);

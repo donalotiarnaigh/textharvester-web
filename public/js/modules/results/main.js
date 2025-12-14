@@ -207,10 +207,13 @@ const SanitizeUtils = {
       source_type: 'grave_record_card', // Explicitly set for this type
 
       // Fields from the JSON blob
-      grave_location: this.sanitizeText(data.grave_location),
-      grave_dimensions: this.sanitizeText(data.grave_dimensions),
-      grave_status: this.sanitizeText(data.grave_status),
-      inscription: this.sanitizeText(data.inscription),
+      // Fields from the JSON blob - using safe optional chaining
+      grave_location: this.sanitizeText((data.location ?
+        `Section: ${data.location.section}, Grave: ${data.location.grave_number}` : '')),
+      grave_dimensions: this.sanitizeText((data.grave && data.grave.dimensions ?
+        (data.grave.dimensions.raw_text || '') : '')),
+      grave_status: this.sanitizeText((data.grave ? data.grave.status : '')),
+      inscription: this.sanitizeText((data.inscription ? data.inscription.text : '')),
       // Interments list (will need specific handling in detail view)
       interments: Array.isArray(data.interments) ? data.interments : [],
       burial_count: Array.isArray(data.interments) ? data.interments.length : 0
@@ -377,15 +380,31 @@ const SanitizeUtils = {
     // Build Interments Table
     let intermentsHtml = '<p class="text-muted">No interments recorded.</p>';
     if (safe.interments.length > 0) {
-      const rows = safe.interments.map((burial, idx) => `
+      const rows = safe.interments.map((burial, idx) => {
+        // Handle name object or string
+        const name = burial.name && typeof burial.name === 'object' ?
+          (burial.name.full_name || `${burial.name.given_names || ''} ${burial.name.surname || ''}`) :
+          (burial.name || 'N/A');
+
+        // Handle date object or string (prefer raw_text for display)
+        const date = burial.date_of_burial && typeof burial.date_of_burial === 'object' ?
+          (burial.date_of_burial.raw_text || burial.date_of_burial.iso || 'N/A') :
+          (burial.date_of_death && typeof burial.date_of_death === 'object' ?
+            (burial.date_of_death.raw_text || burial.date_of_death.iso || 'N/A') : 'N/A');
+
+        // Handle age (might be part of name block or separate in some schemas, assumie top level 'age_at_death' based on curl output)
+        const age = burial.age_at_death || 'N/A';
+        const details = burial.notes || '';
+
+        return `
         <tr>
           <td>${idx + 1}</td>
-          <td>${this.sanitizeText(burial.name)}</td>
-          <td>${this.sanitizeText(burial.date)}</td>
-          <td>${this.sanitizeText(burial.age)}</td>
-          <td>${this.sanitizeText(burial.details || '')}</td>
+          <td>${this.sanitizeText(name)}</td>
+          <td>${this.sanitizeText(date)}</td>
+          <td>${this.sanitizeText(age)}</td>
+          <td>${this.sanitizeText(details)}</td>
         </tr>
-      `).join('');
+      `}).join('');
 
       intermentsHtml = `
         <div class="table-responsive">
@@ -581,17 +600,17 @@ function displayErrorSummary(errors) {
 
     // Format message based on error type (using sanitized data)
     switch (error.errorType) {
-    case 'empty_sheet':
-      message += 'Empty or unreadable sheet detected.';
-      break;
-    case 'processing_failed':
-      message += 'Processing failed after multiple attempts.';
-      break;
-    case 'page_number_conflict':
-      message += safeErrorMessage;
-      break;
-    default:
-      message += safeErrorMessage;
+      case 'empty_sheet':
+        message += 'Empty or unreadable sheet detected.';
+        break;
+      case 'processing_failed':
+        message += 'Processing failed after multiple attempts.';
+        break;
+      case 'page_number_conflict':
+        message += safeErrorMessage;
+        break;
+      default:
+        message += safeErrorMessage;
     }
 
     // Add model info if available (sanitized)
@@ -605,31 +624,28 @@ function displayErrorSummary(errors) {
 }
 
 // Function to create expandable detail row with XSS protection
-function createDetailRow(memorial, colSpan) {
+function createDetailRow(memorial, colSpan, uniqueId) {
   const detailRow = document.createElement('tr');
   detailRow.className = 'detail-row';
   detailRow.style.display = 'none';
 
+  // Use provided ID or fallback (though provided ID should always be used if called from displayMemorials)
+  const id = uniqueId || memorial.id || `memorial-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  detailRow.id = `detail-${id}`;
+  detailRow.setAttribute('data-memorial-id', id);
+
   // Sanitize memorial data to prevent XSS
-  let uniqueId;
   let htmlContent;
 
-  if (memorial.source_type === 'grave_record_card' || memorial.file_name) {
-    // It's a grave card (checking file_name is a heuristic if source_type is missing/ambiguous, but source_type is preferred)
-    uniqueId = memorial.id || `grave-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    // We will implement createGraveCardDetailHTML next, for now use standard safe detail as placeholder or specific one if ready
-    // For this step, we'll implement the specific function later in the file, so we call it here.
+  if (memorial.source_type === 'grave_record_card') {
+    // For grave record cards, use the specific detail HTML function if available, otherwise fallback
     htmlContent = SanitizeUtils.createGraveCardDetailHTML ?
-      SanitizeUtils.createGraveCardDetailHTML(memorial, colSpan, uniqueId) :
-      SanitizeUtils.createSafeDetailHTML(memorial, colSpan, uniqueId);
+      SanitizeUtils.createGraveCardDetailHTML(memorial, colSpan, id) :
+      SanitizeUtils.createSafeDetailHTML(memorial, colSpan, id);
   } else {
-    // Standard memorial
-    uniqueId = memorial.id || memorial.memorial_id || `memorial-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    htmlContent = SanitizeUtils.createSafeDetailHTML(memorial, colSpan, uniqueId);
+    // For other memorial types, use the standard safe detail HTML function
+    htmlContent = SanitizeUtils.createSafeDetailHTML(memorial, colSpan, id);
   }
-
-
-  // Use the generated HTML
   detailRow.innerHTML = htmlContent;
 
   return detailRow;
@@ -743,71 +759,14 @@ function displayMemorials(memorials) {
  * Update the export button visibility and behavior
  * @param {Array} memorials - List of memorials/cards
  */
+/**
+ * Update the export button visibility and behavior
+ * @param {Array} memorials - List of memorials/cards
+ */
 function updateExportButton(memorials) {
-  // Check if we have grave cards
-  const hasGraveCards = memorials && memorials.length > 0 &&
-    (memorials[0].source_type === 'grave_record_card' || memorials[0].file_name); // Heuristic if source_type missing
-
-  const containerId = 'table-actions-container';
-  let container = document.getElementById(containerId);
-
-  // Create container if it doesn't exist (insert before table)
-  if (!container) {
-    const tableFn = document.getElementById('resultsTable');
-    if (tableFn) {
-      container = document.createElement('div');
-      container.id = containerId;
-      container.className = 'd-flex justify-content-end mb-2';
-      tableFn.parentNode.insertBefore(container, tableFn);
-    }
-  }
-
-  if (!container) return;
-
-  // Clear container
-  container.innerHTML = '';
-
-  if (hasGraveCards) {
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-success btn-sm';
-    btn.innerHTML = '<i class="fas fa-file-csv"></i> Export Grave Cards (CSV)';
-    // We need to dyn import or access the api module. 
-    // Since main.js imports from api/graveCards.js is not established yet (main.js is self-contained or uses global imports usually?),
-    // But graveCards.js was an ES module. main.js is likely an ES module too.
-    // We should allow the global window object or add an event listener that calls the exported function if feasible.
-    // OR we can just define the fetch call inline here to keep it simple as per "api/graveCards.js" logic.
-    // For now, let's attach an event listener that calls window.exportGraveCards (if we expose it) or imports it.
-    // Assuming main.js is a module, we can import at the top. But I can't add imports at the top right now easily without shifting lines heavily.
-    // I will use a direct click handler that calls the API endpoint directly for simplicity, reusing the logic from graveCards.js
-
-    btn.onclick = async () => {
-      try {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
-        const response = await fetch('/api/grave-cards/csv');
-        if (!response.ok) throw new Error('Export failed');
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.setAttribute('download', 'grave_cards.csv');
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-file-csv"></i> Export Grave Cards (CSV)';
-      } catch (e) {
-        console.error(e);
-        alert('Failed to export CSV');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error';
-      }
-    };
-
-    container.appendChild(btn);
-  }
+  // Functionality removed to prevent duplicate buttons. 
+  // Standard export buttons are handled by enableDownloadButtons()
+  return;
 }
 
 /**
@@ -1204,8 +1163,8 @@ export async function loadResults() {
         enableDownloadButtons();
       }
     } else {
-      // Default to memorials display
-      updateTableHeaders('memorial');
+      // Default to memorials (or grave cards) display
+      updateTableHeaders(data.sourceType || 'memorial');
       displayMemorials(data.memorials || []);
 
       // Update model info panel with data from the first memorial (or aggregate)
