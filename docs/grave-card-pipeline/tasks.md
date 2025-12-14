@@ -134,18 +134,18 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
     - Verify `data_json` contains complete interment data.
     - Verify `ai_provider` is recorded.
     - _Requirements: 3.1, 3.2, 4.2_
-  - [ ] 9.3 CSV Export Verification
+  - [x] 9.3 CSV Export Verification
     - Export grave cards to CSV.
     - Verify nested interments are flattened (e.g., `interment_1_name`, `interment_2_name`).
     - Verify all metadata columns are present.
     - Verify CSV can be opened in spreadsheet software.
     - _Requirements: 4.4, 4.5_
-  - [ ] 9.4 Full Pipeline Validation
+  - [x] 9.4 Full Pipeline Validation
     - Upload multiple grave card PDFs through frontend.
     - Verify all cards process successfully.
     - Verify data integrity across upload → processing → storage → export.
     - _Requirements: All_
-  - [ ] 9.5 Manual Testing Phase 1 (Frontend Minimal Integration)
+  - [x] 9.5 Manual Testing Phase 1 (Frontend Minimal Integration)
     - Select "Grave Record Card" from dropdown on upload page.
     - Upload 2-page PDF and verify processing.
     - Verify result appears with amber badge on results page.
