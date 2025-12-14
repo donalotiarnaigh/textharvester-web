@@ -38,7 +38,9 @@ class GraveCardProcessor {
       if (files.length !== 2) {
         // Cleanup immediately if invalid
         await this.cleanup(files, pdfPath);
-        throw new Error(`Invalid page count: Expected 2 pages, found ${files.length}. Grave cards must have exactly front and back.`);
+        const error = new Error(`Invalid page count: Expected 2 pages, found ${files.length}. Grave cards must have exactly front and back.`);
+        error.fatal = true; // Signal to fileQueue that this should not be retried
+        throw error;
       }
 
       // Stitch images
