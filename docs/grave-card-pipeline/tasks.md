@@ -104,7 +104,7 @@ This plan follows a TDD approach. Tests are written first to define behavior (Re
     - Add dynamic help text based on source type.
     - Add warning about 2-page requirement.
     - _Requirements: Improved upload experience_
-  - [ ] 8.2 Results Enhancements
+  - [x] 8.2 Results Enhancements
     - Add summary cards (total cards, interments, occupied/vacant).
     - Add section filter dropdown.
     - Add grave number search.

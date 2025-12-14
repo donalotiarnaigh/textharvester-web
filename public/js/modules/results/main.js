@@ -8,6 +8,7 @@
 import { formatDateTime as formatDate } from './date.js';
 import { tableEnhancements } from './tableEnhancements.js';
 import { updateModelInfoPanel } from './modelInfoPanel.js';
+import { calculateSummaryStats, getUniqueSections, filterMemorials } from './resultsLogic.js';
 
 // Error handling utilities
 const ErrorTypes = {
@@ -62,6 +63,10 @@ const ErrorMessages = {
 let currentError = null;
 let retryCount = 0;
 const MAX_RETRY_ATTEMPTS = 3;
+
+// Data state management
+let allMemorials = [];
+
 
 // Source Type utility functions
 function formatSourceType(sourceType) {
@@ -576,17 +581,17 @@ function displayErrorSummary(errors) {
 
     // Format message based on error type (using sanitized data)
     switch (error.errorType) {
-      case 'empty_sheet':
-        message += 'Empty or unreadable sheet detected.';
-        break;
-      case 'processing_failed':
-        message += 'Processing failed after multiple attempts.';
-        break;
-      case 'page_number_conflict':
-        message += safeErrorMessage;
-        break;
-      default:
-        message += safeErrorMessage;
+    case 'empty_sheet':
+      message += 'Empty or unreadable sheet detected.';
+      break;
+    case 'processing_failed':
+      message += 'Processing failed after multiple attempts.';
+      break;
+    case 'page_number_conflict':
+      message += safeErrorMessage;
+      break;
+    default:
+      message += safeErrorMessage;
     }
 
     // Add model info if available (sanitized)
@@ -1214,8 +1219,19 @@ export async function loadResults() {
 
       // Initialize table enhancements
       if (data.memorials && data.memorials.length > 0) {
-        tableEnhancements.init(data.memorials);
-        enableDownloadButtons();
+        allMemorials = data.memorials;
+
+        // Show summary stats container
+        const summaryStatsRow = document.getElementById('summaryStatsRow');
+        if (summaryStatsRow) summaryStatsRow.classList.remove('d-none');
+
+        // Populate Section Dropdown
+        populateSectionFilter(allMemorials);
+
+        // Apply filters (which will init tableEnhancements and update stats)
+        applyCustomFilters();
+
+        enableDownloadButtons(); // Ensure this is called
       }
     }
 
@@ -1318,6 +1334,60 @@ document.addEventListener('click', function (event) {
 
 // Export functions and state for use by other modules
 export { expandedRows, toggleRow, formatSourceType, getSourceTypeBadgeClass };
+
+// Custom Filter Logic Integration
+function populateSectionFilter(memorials) {
+  const sectionFilter = document.getElementById('sectionFilter');
+  if (!sectionFilter) return;
+
+  // Clear existing options except first
+  while (sectionFilter.options.length > 1) {
+    sectionFilter.remove(1);
+  }
+
+  const sections = getUniqueSections(memorials);
+  sections.forEach(section => {
+    const option = document.createElement('option');
+    option.value = section;
+    option.textContent = section;
+    sectionFilter.appendChild(option);
+  });
+}
+
+function applyCustomFilters() {
+  const sectionFilter = document.getElementById('sectionFilter');
+  const graveNumberInput = document.getElementById('graveNumberInput');
+
+  const section = sectionFilter ? sectionFilter.value : '';
+  const graveNumber = graveNumberInput ? graveNumberInput.value : '';
+
+  const filtered = filterMemorials(allMemorials, { section, graveNumber });
+
+  // Update Stats
+  updateSummaryStats(filtered);
+
+  // Re-initialize table enhancements with the filtered subset
+  // This effectively treats the subset as the "full" table for sorting/model-filtering
+  tableEnhancements.init(filtered);
+}
+
+function updateSummaryStats(memorials) {
+  const stats = calculateSummaryStats(memorials);
+
+  const setUserId = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
+
+  setUserId('statTotalCards', stats.totalCards);
+  setUserId('statTotalInterments', stats.totalInterments);
+  setUserId('statOccupied', stats.occupied);
+  setUserId('statVacant', stats.vacant);
+}
+
+// Call applyCustomFilters on input changes
+document.getElementById('sectionFilter')?.addEventListener('change', applyCustomFilters);
+document.getElementById('graveNumberInput')?.addEventListener('input', applyCustomFilters);
 
 // Expose retry function globally for HTML button onclick handlers
 window.retryLoadResults = retryLoadResults;
