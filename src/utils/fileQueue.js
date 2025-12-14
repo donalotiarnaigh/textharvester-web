@@ -41,8 +41,8 @@ function enqueueFiles(files) {
     const sourceType = file.source_type || file.sourceType;
     return sourceType === 'burial_register';
   });
-  const volumeId = allBurialRegister && files.length > 0 
-    ? (files[0].volume_id || files[0].volumeId) 
+  const volumeId = allBurialRegister && files.length > 0
+    ? (files[0].volume_id || files[0].volumeId)
     : null;
 
   if (allBurialRegister && volumeId) {
@@ -76,7 +76,7 @@ function enqueueFiles(files) {
   // Accumulate totals instead of resetting so multiple enqueue
   // calls can build up a single processing queue
   totalFiles += files.length;
-  
+
   // Record queue metrics
   queueMonitor.recordEnqueue(fileQueue.length);
 
@@ -118,7 +118,7 @@ function enqueueFileForRetry(file) {
     );
   } else {
     logger.error(`File processing failed after maximum retries: ${file.path}`);
-    
+
     // Add to processed results with error info
     processedResults.push({
       fileName: path.basename(file.path),
@@ -126,7 +126,7 @@ function enqueueFileForRetry(file) {
       errorType: 'processing_failed',
       errorMessage: `Processing failed after ${maxRetryCount} attempts`
     });
-    
+
     processedFiles++; // Count as processed even though it failed
     delete retryLimits[file.path];
   }
@@ -192,6 +192,34 @@ function checkAndProcessNextFile() {
       })
       .catch((error) => {
         logger.error(`Error processing file ${file.path}: ${error}`);
+
+        // If error is marked as fatal (e.g. validaton error), do not retry
+        if (error.fatal) {
+          logger.error(`Fatal error encountered for ${file.path}, skipping retries.`);
+
+          // Add to processed results with error info
+          processedResults.push({
+            fileName: path.basename(file.path),
+            error: true,
+            errorType: error.errorType || 'validation_failed',
+            errorMessage: error.message
+          });
+
+          processedFiles++;
+
+          // Clean up the file as it's invalid
+          fs.unlink(file.path, (err) => {
+            if (err && err.code !== 'ENOENT') {
+              logger.error(`Error deleting invalid file ${file.path}: ${err}`);
+            } else {
+              logger.info(`Deleted invalid file ${file.path}`);
+            }
+          });
+
+          // Fall through to finally block which handles worker decrement
+          return;
+        }
+
         setTimeout(() => {
           enqueueFileForRetry(file);
           logger.info(
@@ -241,7 +269,7 @@ function getProcessedResults() {
 function getProcessingProgress() {
   const totalFiles = getTotalFiles();
   const processedFiles = getProcessedFiles();
-  
+
   logger.debug('[FileQueue] Getting processing progress', {
     totalFiles,
     processedFiles
@@ -258,7 +286,7 @@ function getProcessingProgress() {
       progress: 100
     };
   }
-  
+
   // If there are no files and we haven't processed any, we're waiting
   if (totalFiles === 0) {
     logger.debug('[FileQueue] No files to process, waiting state');
@@ -270,7 +298,7 @@ function getProcessingProgress() {
 
   const progress = Math.round((processedFiles / totalFiles) * 100);
   const errors = processedResults.filter(r => r && r.error);
-  
+
   // Collect conflict warnings from successful results
   const conflictWarnings = [];
   processedResults.forEach(result => {
@@ -294,10 +322,10 @@ function getProcessingProgress() {
       });
     }
   });
-  
+
   // Combine errors and conflict warnings
   const allWarnings = [...errors, ...conflictWarnings];
-  
+
   if (errors.length > 0) {
     logger.warn('[FileQueue] Errors detected during processing', {
       errorCount: errors.length,
@@ -308,7 +336,7 @@ function getProcessingProgress() {
       }))
     });
   }
-  
+
   if (conflictWarnings.length > 0) {
     logger.info('[FileQueue] Page number conflicts detected and resolved', {
       conflictCount: conflictWarnings.length,
@@ -327,7 +355,7 @@ function getProcessingProgress() {
 
   // Get queue performance metrics
   const queueMetrics = queueMonitor.getPerformanceSummary();
-  
+
   return {
     state,
     progress,

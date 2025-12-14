@@ -9,6 +9,7 @@ const { clearProcessingCompleteFlag } = require("../utils/processingFlag");
 const { convertPdfToJpegs } = require("../utils/pdfConverter");
 const { clearAllMemorials } = require('../utils/database');
 const { clearAllBurialRegisterEntries } = require('../utils/burialRegisterStorage');
+const graveCardStorage = require('../utils/graveCardStorage');
 const { getPrompt } = require('../utils/prompts/templates/providerTemplates');
 const { promptManager } = require('../utils/prompts/templates/providerTemplates');
 
@@ -100,7 +101,7 @@ const validatePromptConfig = async (provider, template, version) => {
 const handleFileUpload = async (req, res) => {
   const uploadStartTime = Date.now();
   logger.info("Handling file upload request");
-  
+
   // Log request details for large file debugging
   const contentLength = req.headers['content-length'];
   if (contentLength) {
@@ -108,7 +109,7 @@ const handleFileUpload = async (req, res) => {
     logger.info(`Upload request size: ${sizeMB}MB`);
   }
 
-  const validSourceTypes = ['record_sheet', 'monument_photo', 'burial_register'];
+  const validSourceTypes = ['record_sheet', 'monument_photo', 'burial_register', 'grave_record_card'];
 
   try {
     const uploadMiddleware = multer(multerConfig).fields([{ name: 'file', maxCount: 10 }]);
@@ -186,6 +187,9 @@ const handleFileUpload = async (req, res) => {
       if (sourceType === 'burial_register') {
         await clearAllBurialRegisterEntries();
         logger.info("Cleared existing burial register entries as requested");
+      } else if (sourceType === 'grave_record_card') {
+        await graveCardStorage.clearAllGraveCards();
+        logger.info("Cleared existing grave cards as requested");
       } else {
         await clearAllMemorials();
         logger.info("Cleared existing memorial records as requested");
@@ -197,21 +201,37 @@ const handleFileUpload = async (req, res) => {
     for (const file of files) {
       try {
         if (file.mimetype === "application/pdf") {
-          logger.info(`Processing PDF file: ${file.originalname}`);
-          const imagePaths = await convertPdfToJpegs(file.path);
-          logger.info(`Converted PDF to images: ${imagePaths}`);
-          filesToQueue.push(
-            ...imagePaths.map((imagePath) => ({
-              path: imagePath,
-              mimetype: "image/jpeg",
+          // For grave cards, we process the whole PDF (2 pages) at once via GraveCardProcessor
+          // So we do NOT want to split it into generic JPEGs here.
+          if (sourceType === 'grave_record_card') {
+            logger.info(`Enqueuing Grave Card PDF for processing: ${file.originalname}`);
+            filesToQueue.push({
+              path: file.path,
+              mimetype: "application/pdf",
               provider: selectedModel,
               promptVersion: promptConfig.version,
               source_type: sourceType,
               sourceType,
-              ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
-              uploadDir: path.dirname(imagePath)
-            }))
-          );
+              uploadDir: path.dirname(file.path)
+            });
+          } else {
+            // For other types (e.g. legacy/standard PDF upload), split into images
+            logger.info(`Processing PDF file: ${file.originalname}`);
+            const imagePaths = await convertPdfToJpegs(file.path);
+            logger.info(`Converted PDF to images: ${imagePaths}`);
+            filesToQueue.push(
+              ...imagePaths.map((imagePath) => ({
+                path: imagePath,
+                mimetype: "image/jpeg",
+                provider: selectedModel,
+                promptVersion: promptConfig.version,
+                source_type: sourceType,
+                sourceType,
+                ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
+                uploadDir: path.dirname(imagePath)
+              }))
+            );
+          }
         } else {
           filesToQueue.push({
             ...file,

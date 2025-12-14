@@ -17,18 +17,18 @@ jest.mock('../src/utils/pdfConverter');
 describe('Upload Handler', () => {
   let mockReq;
   let mockRes;
-  
+
   beforeEach(() => {
     // Reset all mocks
     jest.clearAllMocks();
-    
+
     // Create mock request and response
     mockReq = httpMocks.createRequest({
       method: 'POST',
       url: '/upload'
     });
     mockRes = httpMocks.createResponse();
-    
+
     // Mock multer middleware
     const mockMiddleware = (req, res, next) => {
       req.files = {
@@ -52,12 +52,12 @@ describe('Upload Handler', () => {
     multer.mockReturnValue({
       fields: jest.fn().mockReturnValue(mockMiddleware)
     });
-    
+
     // Mock getPrompt and promptManager
     const mockTemplate = {
       version: '1.0'
     };
-    
+
     getPrompt.mockResolvedValue(mockTemplate);
     promptManager.validatePrompt = jest.fn().mockReturnValue({ isValid: true });
   });
@@ -66,7 +66,7 @@ describe('Upload Handler', () => {
     test('handles file upload with prompt configuration', async () => {
       // Execute
       await handleFileUpload(mockReq, mockRes);
-      
+
       // Assert
       expect(enqueueFiles).toHaveBeenCalledWith(
         expect.arrayContaining([
@@ -88,10 +88,10 @@ describe('Upload Handler', () => {
         aiProvider: 'openai',
         replaceExisting: 'false'
       };
-      
+
       // Execute
       await handleFileUpload(mockReq, mockRes);
-      
+
       // Assert
       expect(enqueueFiles).toHaveBeenCalledWith(
         expect.arrayContaining([
@@ -212,10 +212,10 @@ describe('Upload Handler', () => {
       // Setup
       mockReq.body.promptTemplate = 'invalidTemplate';
       getPrompt.mockRejectedValue(new Error('Invalid template'));
-      
+
       // Execute
       await handleFileUpload(mockReq, mockRes);
-      
+
       // Assert
       expect(mockRes._getStatusCode()).toBe(400);
       expect(JSON.parse(mockRes._getData())).toEqual(
@@ -229,10 +229,10 @@ describe('Upload Handler', () => {
       // Setup
       mockReq.body.promptVersion = 'invalidVersion';
       getPrompt.mockRejectedValue(new Error('Invalid version'));
-      
+
       // Execute
       await handleFileUpload(mockReq, mockRes);
-      
+
       // Assert
       expect(mockRes._getStatusCode()).toBe(400);
       expect(JSON.parse(mockRes._getData())).toEqual(
@@ -244,14 +244,14 @@ describe('Upload Handler', () => {
 
     test('validates prompt against provider', async () => {
       // Setup
-      promptManager.validatePrompt.mockReturnValue({ 
-        isValid: false, 
-        errors: ['Type not supported'] 
+      promptManager.validatePrompt.mockReturnValue({
+        isValid: false,
+        errors: ['Type not supported']
       });
-      
+
       // Execute
       await handleFileUpload(mockReq, mockRes);
-      
+
       // Assert
       expect(mockRes._getStatusCode()).toBe(400);
       expect(JSON.parse(mockRes._getData())).toEqual(
@@ -271,10 +271,10 @@ describe('Upload Handler', () => {
           throw multerError;
         })
       });
-      
+
       // Execute
       await handleFileUpload(mockReq, mockRes);
-      
+
       // Assert
       expect(mockRes._getStatusCode()).toBe(500);
       expect(mockRes._getData()).toContain('file upload');
@@ -288,10 +288,10 @@ describe('Upload Handler', () => {
           next();
         })
       });
-      
+
       // Execute
       await handleFileUpload(mockReq, mockRes);
-      
+
       // Assert
       expect(mockRes._getStatusCode()).toBe(400);
       expect(mockRes._getData()).toContain('No files uploaded');
@@ -344,14 +344,14 @@ describe('Upload Handler', () => {
         };
         next();
       });
-      
+
       multer.mockReturnValue({
         fields: multerFieldsSpy
       });
-      
+
       // Execute
       await handleFileUpload(mockReq, mockRes);
-      
+
       // Assert
       expect(mockRes._getStatusCode()).toBe(200);
       expect(enqueueFiles).toHaveBeenCalledWith(
@@ -372,10 +372,10 @@ describe('Upload Handler', () => {
         replaceExisting: 'false',
         source_type: 'monument_photo'
       };
-      
+
       // Execute
       await handleFileUpload(mockReq, mockRes);
-      
+
       // Assert
       expect(enqueueFiles).toHaveBeenCalledWith(
         expect.arrayContaining([
@@ -392,10 +392,10 @@ describe('Upload Handler', () => {
         aiProvider: 'openai',
         replaceExisting: 'false'
       };
-      
+
       // Execute
       await handleFileUpload(mockReq, mockRes);
-      
+
       // Assert
       expect(enqueueFiles).toHaveBeenCalledWith(
         expect.arrayContaining([
@@ -413,10 +413,10 @@ describe('Upload Handler', () => {
         replaceExisting: 'false',
         source_type: 'invalid_type'
       };
-      
+
       // Execute
       await handleFileUpload(mockReq, mockRes);
-      
+
       // Assert that invalid source_type is coerced to record_sheet
       expect(enqueueFiles).toHaveBeenCalledWith(
         expect.arrayContaining([
@@ -434,10 +434,10 @@ describe('Upload Handler', () => {
         replaceExisting: 'false',
         source_type: 'monument_photo'
       };
-      
+
       // Execute
       await handleFileUpload(mockReq, mockRes);
-      
+
       // Assert that valid monument_photo source_type is preserved
       expect(enqueueFiles).toHaveBeenCalledWith(
         expect.arrayContaining([
@@ -446,6 +446,56 @@ describe('Upload Handler', () => {
           })
         ])
       );
+    });
+
+    test('should accept valid grave_record_card source_type', async () => {
+      // Setup
+      mockReq.body = {
+        aiProvider: 'openai',
+        replaceExisting: 'false',
+        source_type: 'grave_record_card'
+      };
+
+      // Execute
+      await handleFileUpload(mockReq, mockRes);
+
+      // Assert that valid grave_record_card source_type is preserved (not coerced to record_sheet)
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            source_type: 'grave_record_card',
+            sourceType: 'grave_record_card'
+          })
+        ])
+      );
+    });
+
+    test('queues grave_record_card uploads with correct metadata', async () => {
+      mockReq.body = {
+        aiProvider: 'anthropic',
+        promptVersion: '1.0.0',
+        source_type: 'grave_record_card',
+        replaceExisting: 'false'
+      };
+
+      await handleFileUpload(mockReq, mockRes);
+
+      expect(enqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            provider: 'anthropic',
+            promptVersion: '1.0.0',
+            source_type: 'grave_record_card',
+            sourceType: 'grave_record_card'
+          })
+        ])
+      );
+
+      // Verify that grave cards do NOT have volume_id/volumeId (unlike burial registers)
+      const queuedFile = enqueueFiles.mock.calls[0][0][0];
+      expect(queuedFile).not.toHaveProperty('volume_id');
+      expect(queuedFile).not.toHaveProperty('volumeId');
+      expect(mockRes._getStatusCode()).toBe(200);
     });
   });
 

@@ -78,6 +78,16 @@ jest.mock('../src/utils/imageProcessor', () => ({
   optimizeImageForProvider: jest.fn().mockResolvedValue('optimized_base64_string')
 }));
 
+jest.mock('../src/utils/graveCardStorage', () => ({
+  initialize: jest.fn().mockResolvedValue(undefined),
+  storeGraveCard: jest.fn().mockResolvedValue(1),
+  exportCardsToCsv: jest.fn().mockResolvedValue('')
+}));
+
+jest.mock('../src/utils/imageProcessing/graveCardProcessor', () => ({
+  processPdf: jest.fn().mockResolvedValue(Buffer.from('stitched-image-data'))
+}));
+
 // Mock the model providers
 jest.mock('../src/utils/modelProviders', () => {
   const OpenAIProvider = jest.fn().mockImplementation(() => ({

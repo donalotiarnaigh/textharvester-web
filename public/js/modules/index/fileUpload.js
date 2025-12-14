@@ -9,13 +9,18 @@ export const handleFileUpload = (dropzoneInstance) => {
 
   // Handle manual file submission
   document.getElementById("submitFiles").onclick = function () {
-    console.log("Manual file submission triggered."); // Log when submission is triggered
     dropzoneInstance.processQueue(); // Manually trigger file submission
   };
 
 
   dropzoneInstance.on("complete", function (file) {
     console.log("File upload complete:", file.name); // Log when a file upload is complete
+
+    // With autoProcessQueue: false, we must manually trigger the next batch
+    if (dropzoneInstance.getQueuedFiles().length > 0 && dropzoneInstance.getUploadingFiles().length === 0) {
+      console.log("Triggering next batch of files...");
+      dropzoneInstance.processQueue();
+    }
   });
 
   dropzoneInstance.on("queuecomplete", function () {
@@ -26,10 +31,10 @@ export const handleFileUpload = (dropzoneInstance) => {
     const queuedFiles = dropzoneInstance.getQueuedFiles();
     const uploadingFiles = dropzoneInstance.getUploadingFiles();
     const acceptedFiles = dropzoneInstance.getAcceptedFiles();
-    
+
     // Check if any files were actually accepted and uploaded
     const hasSuccessfulUploads = acceptedFiles.some(file => file.status === 'success');
-    
+
     if (queuedFiles.length === 0 && uploadingFiles.length === 0 && hasSuccessfulUploads) {
       console.log("All files uploaded successfully. Redirecting to processing.html.");
       window.location.href = "/processing.html"; // Redirect when all files are uploaded
@@ -56,7 +61,7 @@ export const handleFileUpload = (dropzoneInstance) => {
   // Prevent auto-processing when files are added
   dropzoneInstance.on("addedfile", function (file) {
     console.log("File added:", file.name, `(${(file.size / 1024 / 1024).toFixed(2)}MB) - Waiting for manual submit`);
-    
+
     // Check file size (1GB limit)
     const maxSize = 1024 * 1024 * 1024; // 1GB
     if (file.size > maxSize) {
@@ -65,7 +70,7 @@ export const handleFileUpload = (dropzoneInstance) => {
       alert(`File "${file.name}" is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum file size is 1GB.`);
       return;
     }
-    
+
     // Ensure autoProcessQueue is still false
     if (dropzoneInstance.options.autoProcessQueue) {
       console.warn("WARNING: autoProcessQueue is enabled - disabling it");
@@ -78,10 +83,7 @@ export const handleFileUpload = (dropzoneInstance) => {
     const selectedModel = getSelectedModel();
     const sourceType = getSelectedSourceType();
     const volumeId = getVolumeId();
-    console.log('Replace existing checked:', replaceExisting); // Debug log
-    console.log('Selected model:', selectedModel); // Debug log
-    console.log('Selected source type:', sourceType); // Debug log
-    console.log('Volume ID:', volumeId); // Debug log
+
     formData.append('replaceExisting', replaceExisting.toString()); // Convert to string
     formData.append('aiProvider', selectedModel);
     formData.append('source_type', sourceType);

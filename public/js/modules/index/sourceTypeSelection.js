@@ -4,8 +4,68 @@
 const SOURCE_TYPES = [
   { value: "record_sheet", label: "Record Sheet" },
   { value: "monument_photo", label: "Monument Photo" },
-  { value: "burial_register", label: "Burial Register" }
+  { value: "burial_register", label: "Burial Register" },
+  { value: "grave_record_card", label: "Grave Record Card" }
 ];
+
+// Configuration for source type instructions
+const SOURCE_INSTRUCTIONS = {
+  record_sheet: {
+    text: "Drag and drop your JPEG images or PDF documents into the drop zone below, or click to select files. Files will be processed for text extraction.",
+    list: [
+      "• Supported files: JPEG, PDF (max 100MB per file)",
+      "• PDFs: Each page processed separately",
+      "• Note: PDFs must not be encrypted"
+    ],
+    acceptedFiles: ".jpg, .jpeg, .pdf"
+  },
+  monument_photo: {
+    text: "Upload photos of monuments or headstones. The AI will attempt to transcribe the inscription and identify the memorial number.",
+    list: [
+      "• Supported files: JPEG, PDF (max 100MB per file)",
+      "• Best results with clear, high-contrast images",
+      "• One monument per image recommended"
+    ],
+    acceptedFiles: ".jpg, .jpeg, .pdf"
+  },
+  burial_register: {
+    text: "Upload pages from burial registers. The system will extract rows and columns into structured data.",
+    list: [
+      "• Supported files: JPEG, PDF (max 100MB per file)",
+      "• Ensure pages are flat and well-lit",
+      "• Single page view preferred over double-page spreads"
+    ],
+    acceptedFiles: ".jpg, .jpeg, .pdf"
+  },
+  grave_record_card: {
+    text: "Upload 2-sided grave record cards as PDFs. The system will stitch the front and back pages and extract detailed interment data.",
+    list: [
+      "• <strong>Required:</strong> PDF files only",
+      "• <strong>Required:</strong> Exactly 2 pages per PDF (Front & Back)",
+      "• Files with != 2 pages will be rejected"
+    ],
+    acceptedFiles: ".pdf"
+  }
+};
+
+/**
+ * Update the instruction text elements based on selected type
+ * @param {string} sourceType 
+ */
+function updateInstructions(sourceType) {
+  const config = SOURCE_INSTRUCTIONS[sourceType] || SOURCE_INSTRUCTIONS.record_sheet;
+
+  const textEl = document.getElementById("instructionsText");
+  const listEl = document.getElementById("instructionsList");
+
+  if (textEl) {
+    textEl.textContent = config.text;
+  }
+
+  if (listEl) {
+    listEl.innerHTML = config.list.map(item => `<div class="mb-1">${item}</div>`).join("");
+  }
+}
 
 /**
  * Initialize the source type selection UI and interactions
@@ -26,13 +86,21 @@ export const initSourceTypeSelection = () => {
     return `<option value="${type.value}">${type.label}</option>`;
   }).join("");
 
-  const defaultValue = "record_sheet";
+  // Load saved preference or default to record_sheet
+  const STORAGE_KEY = 'historic_graves_source_type';
+  const savedType = localStorage.getItem(STORAGE_KEY);
+  const isValidSaved = SOURCE_TYPES.some(t => t.value === savedType);
+  const defaultValue = isValidSaved ? savedType : "record_sheet";
+
   sourceTypeSelect.value = defaultValue;
   toggleVolumeIdVisibility(defaultValue, volumeIdGroup);
+  updateInstructions(defaultValue); // Initial instruction update
 
   sourceTypeSelect.addEventListener("change", (event) => {
     const selectedType = event.target.value;
+    localStorage.setItem(STORAGE_KEY, selectedType);
     toggleVolumeIdVisibility(selectedType, volumeIdGroup);
+    updateInstructions(selectedType); // Update instructions on change
   });
 };
 
@@ -56,6 +124,15 @@ function toggleVolumeIdVisibility(sourceType, volumeIdGroup) {
 export const getSelectedSourceType = () => {
   const selectElement = document.getElementById("sourceTypeSelect");
   return selectElement ? selectElement.value : "record_sheet";
+};
+
+/**
+ * Get the accepted file extensions for the current source type
+ * @returns {string} Comma-separated extensions e.g. ".pdf" or ".jpg, .jpeg, .pdf"
+ */
+export const getAcceptedFileTypes = () => {
+  const type = getSelectedSourceType();
+  return (SOURCE_INSTRUCTIONS[type] || SOURCE_INSTRUCTIONS.record_sheet).acceptedFiles;
 };
 
 /**

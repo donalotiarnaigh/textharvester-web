@@ -42,6 +42,14 @@ jest.mock('../src/utils/imageProcessor', () => ({
   }),
   optimizeImageForProvider: jest.fn().mockResolvedValue('optimized-base64-data')
 }));
+jest.mock('../src/utils/graveCardStorage', () => ({
+  initialize: jest.fn().mockResolvedValue(undefined),
+  storeGraveCard: jest.fn().mockResolvedValue(1),
+  exportCardsToCsv: jest.fn().mockResolvedValue('')
+}));
+jest.mock('../src/utils/imageProcessing/graveCardProcessor', () => ({
+  processPdf: jest.fn().mockResolvedValue(Buffer.from('stitched-image-data'))
+}));
 jest.mock('../../config.json', () => ({
   dbPath: 'test/db',
   uploadPath: 'test/uploads'
@@ -67,11 +75,11 @@ describe('File Processing Module', () => {
   beforeEach(() => {
     // Reset all mocks before each test
     jest.clearAllMocks();
-    
+
     // Reset env
     process.env = { ...originalEnv };
     delete process.env.AI_PROVIDER;
-    
+
     // Setup default mock implementations
     mockFs.promises.readFile.mockResolvedValue(mockBase64Image);
     mockFs.promises.unlink.mockResolvedValue();
@@ -88,7 +96,7 @@ describe('File Processing Module', () => {
   describe('Basic Functionality', () => {
     test('processes a file with default options', async () => {
       const result = await processFile(mockFilePath);
-      
+
       expect(result).toEqual({
         ...mockExtractedData,
         fileName: 'image.jpg',
@@ -96,7 +104,7 @@ describe('File Processing Module', () => {
         model_version: 'test-model-v1',
         prompt_version: '1.0'
       });
-      
+
       expect(mockFs.promises.readFile).toHaveBeenCalledWith(mockFilePath, { encoding: 'base64' });
       expect(createProvider).toHaveBeenCalled();
       expect(storeMemorial).toHaveBeenCalled();
@@ -105,7 +113,7 @@ describe('File Processing Module', () => {
 
     test('uses specified provider from options', async () => {
       await processFile(mockFilePath, { provider: 'anthropic' });
-      
+
       expect(createProvider).toHaveBeenCalledWith(expect.objectContaining({
         AI_PROVIDER: 'anthropic'
       }));
@@ -114,7 +122,7 @@ describe('File Processing Module', () => {
     test('uses provider from environment variable', async () => {
       process.env.AI_PROVIDER = 'anthropic';
       const result = await processFile(mockFilePath);
-      
+
       expect(result.ai_provider).toBe('anthropic');
       expect(createProvider).toHaveBeenCalledWith(expect.objectContaining({
         AI_PROVIDER: 'anthropic'
@@ -125,7 +133,7 @@ describe('File Processing Module', () => {
   describe('Error Handling', () => {
     test('handles file read errors', async () => {
       mockFs.promises.readFile.mockRejectedValue(new Error('File not found'));
-      
+
       await expect(processFile(mockFilePath))
         .rejects
         .toThrow('File not found');
@@ -133,7 +141,7 @@ describe('File Processing Module', () => {
 
     test('handles provider processing errors', async () => {
       mockProcessImage.mockRejectedValue(new Error('API error'));
-      
+
       await expect(processFile(mockFilePath))
         .rejects
         .toThrow('API error');
@@ -141,7 +149,7 @@ describe('File Processing Module', () => {
 
     test('handles database storage errors', async () => {
       storeMemorial.mockRejectedValue(new Error('Database error'));
-      
+
       await expect(processFile(mockFilePath))
         .rejects
         .toThrow('Database error');
@@ -157,11 +165,11 @@ describe('File Processing Module', () => {
         year_of_death: '1900',
         inscription: 'RAW INSCRIPTION'
       };
-      
+
       mockProcessImage.mockResolvedValue(mockRawData);
-      
+
       await processFile(mockFilePath);
-      
+
       expect(getPrompt).toHaveBeenCalled();
       expect(mockValidateAndConvert).toHaveBeenCalledWith(mockRawData);
     });

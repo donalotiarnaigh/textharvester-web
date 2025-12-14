@@ -11,6 +11,8 @@ const burialRegisterStorage = require('./burialRegisterStorage');
 const { extractPageNumberFromFilename } = require('./burialRegisterStorage');
 const { getMemorialNumberForMonument } = require('./filenameParser');
 const { optimizeImageForProvider, analyzeImageForProvider } = require('./imageProcessor');
+const graveCardProcessor = require('./imageProcessing/graveCardProcessor');
+const graveCardStorage = require('./graveCardStorage');
 const config = require('../../config.json');
 
 /**
@@ -23,19 +25,21 @@ const config = require('../../config.json');
 async function processFile(filePath, options = {}) {
   const providerName = options.provider || process.env.AI_PROVIDER || 'openai';
   const sourceType = options.sourceType || options.source_type || 'record_sheet';
-  
+
   // Select template based on source_type (unless custom template is provided)
-  const promptTemplate = options.promptTemplate || 
+  const promptTemplate = options.promptTemplate ||
     (sourceType === 'burial_register'
       ? 'burialRegister'
-      : sourceType === 'monument_photo' 
+      : sourceType === 'monument_photo'
         ? 'monumentPhotoOCR'
-        : 'memorialOCR');
-  
+        : sourceType === 'grave_record_card'
+          ? 'graveCard'
+          : 'memorialOCR');
+
   const promptVersion = options.promptVersion || 'latest';
-  
+
   logger.info(`Processing ${path.basename(filePath)} with provider: ${providerName}, source: ${sourceType}, template: ${promptTemplate}`);
-  
+
   try {
     // For burial register, skip image optimization (handled differently)
     // For other types, analyze image to see if optimization is needed
@@ -43,6 +47,9 @@ async function processFile(filePath, options = {}) {
     if (sourceType === 'burial_register') {
       base64Image = await fs.readFile(filePath, { encoding: 'base64' });
       logger.info(`File ${filePath} read successfully (burial register, no optimization). Proceeding with OCR processing.`);
+    } else if (sourceType === 'grave_record_card') {
+      logger.info(`File ${filePath} identified as grave record card. Skipping initial image optimization.`);
+      // Grave card processing handles its own file reading and conversion
     } else {
       // Analyze image to see if optimization is needed
       const analysis = await analyzeImageForProvider(filePath, providerName);
@@ -62,6 +69,58 @@ async function processFile(filePath, options = {}) {
       ...options,
       AI_PROVIDER: providerName
     });
+
+    // Handle grave_record_card processing
+    if (sourceType === 'grave_record_card') {
+      const startTime = Date.now();
+      logger.info(`Processing grave record card via ${providerName}: ${filePath}`);
+
+      // Step 1: Process PDF through GraveCardProcessor
+      const stitchedBuffer = await graveCardProcessor.processPdf(filePath);
+      const base64Image = stitchedBuffer.toString('base64');
+
+      logger.info(`Grave card PDF processed and stitched successfully for ${filePath}`);
+
+      // Step 2: Get prompt instance
+      const promptInstance = getPrompt(providerName, 'graveCard', promptVersion);
+      const promptConfig = promptInstance.getProviderPrompt(providerName);
+
+      const userPrompt = typeof promptConfig === 'string' ? promptConfig : promptConfig.userPrompt;
+      const systemPrompt = typeof promptConfig === 'object' ? promptConfig.systemPrompt : undefined;
+
+      // Step 3: Process through AI provider
+      const rawExtractedData = await provider.processImage(base64Image, userPrompt, {
+        systemPrompt: systemPrompt,
+        promptTemplate: promptInstance
+      });
+
+      const apiDuration = Date.now() - startTime;
+      logger.info(`Grave card API call completed in ${apiDuration}ms for ${filePath}`);
+      logger.debugPayload(`Raw ${providerName} grave card response for ${filePath}:`, rawExtractedData);
+
+      // Step 4: Validate and convert
+      const validatedData = promptInstance.validateAndConvert(rawExtractedData);
+
+      logger.info(`${providerName} grave card response validated successfully for ${filePath}`);
+
+      // Step 5: Add metadata
+      const filename = path.basename(filePath);
+      validatedData.fileName = filename;
+      validatedData.ai_provider = providerName;
+      validatedData.model_version = provider.getModelVersion();
+      validatedData.prompt_template = 'graveCard';
+      validatedData.prompt_version = promptInstance.version;
+      validatedData.source_type = sourceType;
+
+      // Step 6: Store in database
+      await graveCardStorage.storeGraveCard(validatedData);
+
+      logger.info(`Grave card data for ${filePath} stored in database with model: ${providerName}`);
+
+      // Note: GraveCardProcessor already cleaned up intermediate files and the PDF
+
+      return validatedData;
+    }
 
     if (sourceType === 'burial_register') {
       const startTime = Date.now();
@@ -99,7 +158,7 @@ async function processFile(filePath, options = {}) {
       // Extract page number from filename for entry_id generation
       const filename = path.basename(filePath);
       const filenamePageNumber = extractPageNumberFromFilename(filename);
-      
+
       if (filenamePageNumber !== null) {
         logger.info(`Extracted page number ${filenamePageNumber} from filename ${filename} for entry_id generation`);
       } else {
@@ -148,7 +207,7 @@ async function processFile(filePath, options = {}) {
           };
 
           await burialRegisterStorage.storeBurialRegisterEntry(entryWithMetadata);
-          
+
           processedEntries.push(entryWithMetadata);
           validCount++;
         } catch (error) {
@@ -174,7 +233,7 @@ async function processFile(filePath, options = {}) {
         const lastEntryId = processedEntries[processedEntries.length - 1].entry_id;
         logger.info(`Stored ${processedEntries.length} burial register entries for page ${pageData.page_number} (${filePath}). Entry IDs: ${firstEntryId} to ${lastEntryId}`);
       } else {
-        const errorMessage = duplicateCount > 0 
+        const errorMessage = duplicateCount > 0
           ? `${duplicateCount} entries were duplicates and ${totalCount - duplicateCount} entries failed validation or storage.`
           : 'All entries failed validation or storage.';
         logger.warn(`No entries were stored for page ${pageData.page_number} (${filePath}). ${errorMessage}`);
@@ -183,34 +242,34 @@ async function processFile(filePath, options = {}) {
       await fs.unlink(filePath);
       logger.info(`Cleaned up processed burial register file: ${filePath}`);
 
-      return { 
-        entries: processedEntries, 
+      return {
+        entries: processedEntries,
         pageData
       };
     }
-    
+
     // Get the appropriate prompt for this provider
     const promptInstance = getPrompt(providerName, promptTemplate, promptVersion);
     const promptConfig = promptInstance.getProviderPrompt(providerName);
-    
+
     // Extract the user prompt (the actual prompt text) and pass systemPrompt via options
     const userPrompt = typeof promptConfig === 'string' ? promptConfig : promptConfig.userPrompt;
     const systemPrompt = typeof promptConfig === 'object' ? promptConfig.systemPrompt : undefined;
-    
+
     // Process the image using the selected provider
     const rawExtractedData = await provider.processImage(base64Image, userPrompt, {
       systemPrompt: systemPrompt,
       promptTemplate: promptInstance
     });
-    
+
     // Log the raw API response for debugging
     logger.debugPayload(`Raw ${providerName} API response for ${filePath}:`, rawExtractedData);
-    
+
     try {
       // For monument photos, inject memorial number from filename if not provided by OCR
       const filename = path.basename(filePath);
       const filenameMemorialNumber = getMemorialNumberForMonument(filename, sourceType);
-      
+
       // Enhance raw data with filename-based memorial number for monuments
       let enhancedData = { ...rawExtractedData };
       if (sourceType === 'monument_photo' && filenameMemorialNumber) {
@@ -222,13 +281,13 @@ async function processFile(filePath, options = {}) {
           logger.info(`[FileProcessing] OCR provided memorial number: ${enhancedData.memorial_number}, keeping it over filename: ${filenameMemorialNumber}`);
         }
       }
-      
+
       // Validate and convert the data according to our type definitions
       const extractedData = promptInstance.validateAndConvert(enhancedData);
-      
+
       logger.info(`${providerName} API response processed successfully for ${filePath}`);
       logger.debugPayload(`Processed ${providerName} data for ${filePath}:`, extractedData);
-      
+
       // Add metadata to the extracted data
       extractedData.fileName = filename;
       extractedData.ai_provider = providerName;
@@ -236,22 +295,22 @@ async function processFile(filePath, options = {}) {
       extractedData.prompt_template = promptTemplate;
       extractedData.prompt_version = promptInstance.version;
       extractedData.source_type = sourceType;
-      
+
       // Store in database
       await storeMemorial(extractedData);
-      
+
       logger.info(`OCR text for ${filePath} stored in database with model: ${providerName}`);
-      
+
       // Clean up the file after successful processing
       await fs.unlink(filePath);
       logger.info(`Cleaned up processed file: ${filePath}`);
-      
+
       return extractedData;
     } catch (error) {
       // Check if this is an empty sheet error
       if (isEmptySheetError(error)) {
         logger.warn(`Empty sheet detected for ${filePath}: ${error.message}`);
-        
+
         // Return error info instead of throwing
         const errorResult = {
           fileName: path.basename(filePath),
@@ -262,14 +321,14 @@ async function processFile(filePath, options = {}) {
           model_version: provider.getModelVersion(),
           source_type: sourceType
         };
-        
+
         // Clean up the file even for empty sheets
         await fs.unlink(filePath);
         logger.info(`Cleaned up empty sheet file: ${filePath}`);
-        
+
         return errorResult;
       }
-      
+
       // Re-throw other errors
       logger.error(`Validation error for ${filePath}: ${error.message}`);
       throw error;

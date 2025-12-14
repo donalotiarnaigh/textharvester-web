@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Grave Record Card",
+  "description": "Schema for genealogical and plot data extracted from historical Grave Record Cards",
+  "type": "object",
+  "required": ["location", "grave"],
+  "properties": {
+    "card_metadata": {
+      "type": "object",
+      "properties": {
+        "source_reference": { "type": "string", "description": "filename or id" },
+        "card_version": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "location": {
+      "type": "object",
+      "required": ["section", "grave_number"],
+      "properties": {
+        "section": { "type": "string" },
+        "grave_number": { 
+          "type": ["string", "number"],
+          "description": "The extracted grave number, may differ from card number"
+        },
+        "plot_identifier": { "type": "string" }
+      }
+    },
+    "grave": {
+      "type": "object",
+      "properties": {
+        "number_buried": { "type": ["number", "string"] },
+        "status": { 
+          "type": "string", 
+          "enum": ["occupied", "vacant", "unknown"],
+          "default": "unknown"
+        },
+        "description_of_grave": { "type": "string", "description": "e.g. Headstone" },
+        "structure_type": { "type": "string" },
+        "dimensions": {
+          "type": "object",
+          "properties": {
+            "raw_text": { "type": "string" },
+            "length_ft": { "type": "number" },
+            "width_ft": { "type": "number" },
+            "height_ft": { "type": "number" },
+            "unit": { "type": "string" }
+          }
+        },
+        "plot_owned_by": { "type": "string" },
+        "comments": { "type": "string" }
+      }
+    },
+    "interments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "sequence_number": { "type": "number" },
+          "name": {
+            "type": "object",
+            "properties": {
+              "surname": { "type": "string" },
+              "given_names": { "type": "string" },
+              "full_name": { "type": "string" }
+            }
+          },
+          "date_of_death": {
+            "type": "object",
+            "properties": {
+              "iso": { "type": "string", "format": "date" },
+              "raw_text": { "type": "string" },
+              "certainty": { "type": "string", "enum": ["certain", "estimated", "uncertain"] }
+            }
+          },
+          "date_of_burial": {
+            "type": "object",
+            "properties": {
+              "iso": { "type": "string", "format": "date" },
+              "raw_text": { "type": "string" }
+            }
+          },
+          "age_at_death": { "type": ["number", "string"] },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "inscription": {
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "scripture_or_quote_refs": { 
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "notes": { "type": "string" }
+      }
+    },
+    "sketch": {
+      "type": "object",
+      "properties": {
+        "present": { "type": "boolean" },
+        "description": { "type": "string" }
+      }
+    }
+  },
+  "validation_rules": [
+    "If grave.status is 'vacant', the 'interments' array MUST be empty."
+  ]
+}

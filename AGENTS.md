@@ -1,6 +1,6 @@
 # AGENTS.md
 
-**Guidance for AI coding agents working on textharvester-web (Burial Register Pilot)**
+**Guidance for AI coding agents working on textharvester-web (Grave Record Card Pipeline)**
 
 * * *
 
@@ -8,7 +8,7 @@
 
 You are an **autonomous coding agent**, acting as a _junior developer_ under human supervision.  
 
-Your job: Implement the Burial Register Pilot features in `textharvester-web`, **strictly according to the specification and WBS.**
+Your job: Implement the Grave Record Card Pipeline features in `textharvester-web`, **strictly according to the specification and implementation plan.**
 
 -   You must follow the existing architecture, style, and coding conventions.
 -   You must **not** refactor, generalise, or re-architect unrelated parts of the system.
@@ -18,20 +18,20 @@ Your job: Implement the Burial Register Pilot features in `textharvester-web`, *
 
 ## What Agents Are Allowed (Autonomous)
 
--   Read all existing source code, documentation (`docs/`), config, migrations, and test files.
+-   Read all existing source code, documentation (`docs/`), config, and test files.
 -   Create new files under the allowed paths (e.g. utils, scripts, prompt templates) when required by tasks.
--   Modify or extend code under allowed modules (see below) for burial-register integration.
+-   Modify or extend code under allowed modules (see below) for grave-card integration.
 -   Add new tests (unit, integration) under `__tests__/` or appropriate test directories.
 -   Run file-scoped commands for validation & local checks (lint, test, build) — see "Preferred Commands".
--   Update documentation under `docs/` related to burial-register (e.g. TASKS.md, WBS.md), when completing tasks.
+-   Update documentation under `docs/grave-card-pipeline/` when completing tasks.
 
 * * *
 
 ## What Agents Must Ask for Permission (Human Oversight Required)
 
 -   Modifying or removing `server.js`, core Express setup, or route structure.
--   Changing database schema except via new migration scripts.
--   Modifying existing memorial-processing code paths or data flows.
+-   Changing database schema except via specific new logic in `graveCardStorage.js`.
+-   Modifying existing memorial-processing or burial-register code paths.
 -   Altering dependencies (adding/removing packages in `package.json`).
 -   Rearranging project structure (renaming/moving files outside allowed paths).
 -   Changing configuration that affects deployment, secrets, environment variables, `.gitignore`, or production settings.
@@ -40,12 +40,12 @@ Your job: Implement the Burial Register Pilot features in `textharvester-web`, *
 
 ## What Agents Must Never Do (Hard Prohibitions)
 
--   Delete or rewrite existing functionality unrelated to burial register.
+-   Delete or rewrite existing functionality unrelated to grave cards.
 -   Remove or alter existing migrations, schemata, or DB tables.
--   Modify prompt templates for memorial OCR or provider integrations.
+-   Modify prompt templates for memorial OCR or burial registers.
 -   Introduce new dependencies or heavy refactors.
 -   Skip tests, linting, or documentation when adding/ modifying code.
--   Commit changes that break existing memorial workflows.
+-   Commit changes that break existing workflows.
 
 * * *
 
@@ -54,33 +54,28 @@ Your job: Implement the Burial Register Pilot features in `textharvester-web`, *
 ```
 textharvester-web/
 ├── src/
-│   ├── controllers/        
-│   ├── routes/              
 │   ├── utils/
 │   │   ├── prompts/        
-│   │   ├── modelProviders/  
-│   │   ├── database/       
+│   │   ├── imageProcessing/  
 │   │   ├── fileProcessing.js
-│   │   └── fileQueue.js
+│   │   └── graveCardStorage.js
 │   └── scripts/            
-├── docs/                   # design docs, WBS, task lists
-├── data/                   # uploaded files & generated outputs
+├── docs/                   
+│   └── grave-card-pipeline/ # Needs, Design, Tasks
+├── data/                    # uploaded files & generated outputs
 └── config.json
 ```
 
-### Files & Modules Agents May Create / Modify (for Burial Register only)
+### Files & Modules Agents May Create / Modify (for Grave Card Pipeline only)
 
--   `src/utils/prompts/templates/BurialRegisterPrompt.js`
--   `src/utils/burialRegisterFlattener.js`
--   `src/utils/burialRegisterStorage.js`
--   `scripts/migrate-add-burial-register-table.js`
--   `scripts/export-burial-register-csv.js`
--   (Optional) `src/routes/burialRegisterRoutes.js`
--   `src/utils/fileProcessing.js` — only the "burial_register" branch
--   `src/controllers/uploadHandler.js` — to accept `source_type: 'burial_register'`
--   `config.json` — add `burialRegister` config section (if required)
+-   `src/utils/prompts/templates/GraveCardPrompt.js`
+-   `src/utils/imageProcessing/graveCardProcessor.js`
+-   `src/utils/graveCardStorage.js`
+-   `src/utils/fileProcessing.js` — only the "grave_record_card" branch logic
+-   `config.json` — add `graveCard` config section (if required)
+-   `docs/grave-card-pipeline/*`
 
-Do **not** create modules outside these, or alter existing files outside their burial-register specific parts.
+Do **not** create modules outside these, or alter existing files outside their grave-card specific parts.
 
 * * *
 
@@ -94,7 +89,7 @@ npm run lint        # or lint specific file if supported
 npm test            # run full test suite (before PR)
 ```
 
-Only run full migrations or full builds when explicitly required (e.g. after schema changes, or before CSV export).
+Only run full tests or implementations when explicitly required.
 
 Agents should follow this pattern every time they produce a change.
 
@@ -117,30 +112,25 @@ Derived from public best practices and internal style rules.
 
 ## Workflow for Task Execution
 
-Tasks in TASKS.md are grouped into **PR-sized chunks**. Complete all tasks in a PR group before creating the pull request.
+Tasks in `docs/grave-card-pipeline/tasks.md` are your primary guide.
 
-**For each PR group (from TASKS.md):**
-
-1.  **Read the PR group description** (e.g., "PR 1: Setup and Branch (4.1.1-4.1.3)")
-2.  **Read all task descriptions in the group** (in `docs/burial-register-pilot/TASKS.md`)
-3.  **Read relevant part of Technical Design** (`TECH_DESIGN.md`)
-4.  **Decide if test-first makes sense** — if yes write tests first; else write code then tests
-5.  **Implement all tasks in the PR group** respecting all rules above
-6.  **Run local checks:**
+1.  **Read the task description** in `docs/grave-card-pipeline/tasks.md`.
+2.  **Read relevant part of Design** in `docs/grave-card-pipeline/design.md`.
+3.  **Test-Driven Development (TDD)**:
+    -   Write tests first (RED).
+    -   Implement strict minimum to pass (GREEN).
+    -   Refactor (REFACTOR).
+4.  **Run local checks:**
     ```bash
     npm run lint
     npm test
     ```
-    Fix any issues before proceeding.
-7.  **Run a quick manual functional test** — e.g. process a sample image / page to verify end-to-end behavior
-8.  **Ensure no impact on existing memorial workflows**
-9.  **Update TASKS.md** to mark all tasks in the PR group as completed
-10. **Create a single commit** for the PR group (e.g., `feat: add burial register prompt registration (1.2.1-1.2.6)`)
-11. **Create pull request** with descriptive title and description of the PR group
+5.  **Run a quick manual verification** if possible.
+6.  **Update `tasks.md`** to mark task as completed.
 
-**PR Naming Convention:**
-- Branch: `burial-register-pr-{phase}-{pr-number}` (e.g., `burial-register-pr-1-2`)
-- Commit: `feat: {brief description} ({task-range})` (e.g., `feat: add burial register prompt registration (1.2.1-1.2.6)`)
+**Branch Naming:**
+- Feature Branch: `feature/grave-card-pipeline`
+- Commit: `feat: {brief description} (task 1.x)`
 
 * * *
 
@@ -149,30 +139,18 @@ Tasks in TASKS.md are grouped into **PR-sized chunks**. Complete all tasks in a 
 When writing code, tests, or configs, follow these minimal example patterns (don't invent new styles).
 
 ```javascript
-// Example: clean function structure
-function generateEntryId(volumeId, pageNumber, rowIndex) {
-  const page = String(pageNumber).padStart(3, '0');
-  const row  = String(rowIndex).padStart(3, '0');
-  return `${volumeId}_p${page}_r${row}`;
+// Example: clean function logic (grave card specific)
+function stichCardImages(frontBuffer, backBuffer) {
+  // ... padding logic
+  return stitchedBuffer;
 }
 ```
 
 ```javascript
 // Example: simple test structure (using existing test setup)
-test('generateEntryId pads numbers correctly', () => {
-  expect(generateEntryId('vol1', 5, 7)).toBe('vol1_p005_r007');
+test('validateGraveRecord rejects invalid schema', () => {
+  expect(() => validate({})).toThrow('Missing card_metadata');
 });
-```
-
-```json
-// config.json — additions only
-{
-  "burialRegister": {
-    "outputDir": "./data/burial_register",
-    "volumeId": "vol1",
-    "csv": { "includeHeaders": true, "encoding": "utf-8" }
-  }
-}
 ```
 
 * * *
@@ -181,29 +159,13 @@ test('generateEntryId pads numbers correctly', () => {
 
 Because agents can make mistakes or mis-interpret prompts:
 
--   **All schema changes must go through a migration**
+-   **All schema changes must go through the storage utility**
 -   **Full test suite must pass before merging**
 -   **Human review required before deployment or production usage**
 -   **Do not store sensitive data** — environment variables, secrets, credentials are off-limits
 
 * * *
 
-## Further Reading & References
+**Last Updated:** 2025-12-11  
 
--   The open specification behind `AGENTS.md` as a README for AI coding agents [agents.md](https://agents.md/)
-
-    
-
--   Empirical studies showing effective agent-readme structure and common omission pitfalls (e.g. lack of security/performance constraints) [arxiv.org](https://arxiv.org/abs/2511.12884)
-
-    
-
--   Best practices for coding agents: clarity, explicit dos/don'ts, file-scoped commands, and incremental changes [agentsmd.io](https://agentsmd.io/agents-md-best-practices)
-
-    
-
-* * *
-
-**Last Updated:** 2025-01-XX  
-
-**Purpose:** Provide a robust, clear, and minimal-risk instruction set for AI coding agents working on the Burial Register Pilot in `textharvester-web`.
+**Purpose:** Provide a robust, clear, and minimal-risk instruction set for AI coding agents working on the Grave Record Card Pipeline in `textharvester-web`.
