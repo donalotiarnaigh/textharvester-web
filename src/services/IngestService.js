@@ -2,10 +2,12 @@ const { CLIError } = require('../cli/errors');
 const { processFile } = require('../utils/fileProcessing');
 const glob = require('glob');
 const fs = require('fs');
+const logger = require('../utils/logger');
 
 class IngestService {
-  constructor(config = {}) {
+  constructor(config = {}, loggerInstance = null) {
     this.config = config;
+    this.logger = loggerInstance || logger;
   }
 
   /**
@@ -18,35 +20,39 @@ class IngestService {
     // Merge config defaults with runtime options
     const effectiveOptions = { ...this.config, ...options };
 
+    // Validate source type
+    const validSourceTypes = ['memorial', 'burial_register', 'grave_record_card'];
+    if (effectiveOptions.sourceType && !validSourceTypes.includes(effectiveOptions.sourceType)) {
+      throw new CLIError('INVALID_SOURCE_TYPE', `Unknown source type: ${effectiveOptions.sourceType}`);
+    }
+
     const files = await this.expandPattern(pattern);
     if (files.length === 0) {
       throw new CLIError('NO_FILES_MATCHED', `No files matched: ${pattern}`);
     }
+    this.logger.info(`Found ${files.length} files matching pattern: ${pattern}`);
 
     const batchSize = effectiveOptions.batchSize || 1;
     const batches = this.chunk(files, batchSize);
-
-    // Validate source type early if possible, though processFile handles it too.
-    // We defer strictvalidation to processFile to avoid duplicating logic, 
-    // but the design doc mentions validating source type in CLI layer.
-    // For now we rely on processFile or the CLI command wrapper for validation.
 
     const successes = [];
     const failures = [];
 
     // Process batches sequentially
-    for (const batch of batches) {
+    for (let i = 0; i < batches.length; i++) {
+      const batch = batches[i];
+      this.logger.info(`Processing batch ${i + 1}/${batches.length} (${batch.length} files)`);
+
       const batchPromises = batch.map(file => this.processOne(file, effectiveOptions));
       const batchResults = await Promise.allSettled(batchPromises);
 
       batchResults.forEach((result, index) => {
         const file = batch[index];
         if (result.status === 'fulfilled') {
-          // processFile returns the data object on success
           successes.push(result.value);
         } else {
-          // Check for error properties or extract message
           const error = result.reason;
+          this.logger.error(`Failed to process ${file}`, error);
           failures.push({
             file,
             success: false,
@@ -56,6 +62,8 @@ class IngestService {
         }
       });
     }
+
+    this.logger.info(`Ingestion complete. Success: ${successes.length}, Failed: ${failures.length}`);
 
     return {
       total: files.length,
