@@ -21,7 +21,7 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
     - **Happy path**: Load from file, merge with env vars, CLI flags override
     - **Unhappy path**: Missing file, invalid JSON, missing required keys (API key)
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
-  - [ ] 1.4 Implement configuration loader (`src/cli/config.js`)
+  - [x] 1.4 Implement configuration loader (`src/cli/config.js`)
     - Load config.json with fallback to defaults
     - Merge environment variables (OPENAI_API_KEY, etc.)
     - Apply CLI flag precedence
