@@ -83,16 +83,16 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
     - `search(query, options)` - text search across fields
     - Use existing storage modules (memorials, burialRegister, graveCards)
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
-  - [ ] 4.3 Refactor QueryService
+  - [x] 4.3 Refactor QueryService
     - Optimize queries, add caching if needed
     - _Requirements: 2.1, 2.2, 2.3_
 
 - [ ] 5. ExportService implementation
-  - [ ] 5.1 Write tests for ExportService
+  - [x] 5.1 Write tests for ExportService
     - **Happy path**: CSV file created, JSON file valid, stdout output works, filtered export
     - **Unhappy path**: Non-existent dir error, invalid format error, file exists without --force, empty export
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
-  - [ ] 5.2 Implement ExportService (`src/services/ExportService.js`)
+  - [x] 5.2 Implement ExportService (`src/services/ExportService.js`)
     - `export(options)` - main export method
     - Reuse `jsonToCsv` and `formatJsonForExport` from dataConversion.js
     - File vs stdout output handling

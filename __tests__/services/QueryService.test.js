@@ -1,5 +1,5 @@
 const QueryService = require('../../src/services/QueryService');
-const { CLIError } = require('../../src/cli/errors');
+
 
 describe('QueryService', () => {
     let service;
@@ -136,6 +136,60 @@ describe('QueryService', () => {
         it('should throw INVALID_SOURCE_TYPE for unknown source', async () => {
             await expect(service.search('query', { sourceType: 'unknown' }))
                 .rejects.toThrow('Unknown source type');
+        });
+    });
+
+    describe('caching', () => {
+        beforeEach(() => {
+            // Setup default responses
+            mockStorage.memorials.getAll.mockResolvedValue([{ id: 1 }]);
+            mockStorage.burialRegister.getAll.mockResolvedValue([{ id: 2 }]);
+        });
+
+        it('should cache results for subsequent list calls', async () => {
+            await service.list({ sourceType: 'memorial' });
+            await service.list({ sourceType: 'memorial' });
+
+            // Should only be called once
+            expect(mockStorage.memorials.getAll).toHaveBeenCalledTimes(1);
+        });
+
+        it('should cache results for subsequent search calls', async () => {
+            await service.search('query', { sourceType: 'memorial' });
+            await service.search('other', { sourceType: 'memorial' });
+
+            // Should only be called once (memoizing the full dataset, not the search result)
+            expect(mockStorage.memorials.getAll).toHaveBeenCalledTimes(1);
+        });
+
+        it('should maintain separate caches for different source types', async () => {
+            await service.list({ sourceType: 'memorial' });
+            await service.list({ sourceType: 'burial_register' });
+
+            expect(mockStorage.memorials.getAll).toHaveBeenCalledTimes(1);
+            expect(mockStorage.burialRegister.getAll).toHaveBeenCalledTimes(1);
+        });
+
+        it('should expire cache after TTL', async () => {
+            // Configure service with short TTL
+            service = new QueryService({ ...mockConfig, cacheTTL: 100 }, mockStorage);
+
+            await service.list({ sourceType: 'memorial' });
+            expect(mockStorage.memorials.getAll).toHaveBeenCalledTimes(1);
+
+            // Wait for TTL to expire
+            await new Promise(resolve => setTimeout(resolve, 150));
+
+            await service.list({ sourceType: 'memorial' });
+            expect(mockStorage.memorials.getAll).toHaveBeenCalledTimes(2);
+        });
+
+        it('should allow manual cache clearing', async () => {
+            await service.list({ sourceType: 'memorial' });
+            service.clearCache();
+            await service.list({ sourceType: 'memorial' });
+
+            expect(mockStorage.memorials.getAll).toHaveBeenCalledTimes(2);
         });
     });
 });
