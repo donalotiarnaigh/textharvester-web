@@ -98,7 +98,7 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
     - File vs stdout output handling
     - Destination validation (dir exists, file overwrite)
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
-  - [ ] 5.3 Refactor ExportService
+  - [x] 5.3 Refactor ExportService
     - Add streaming for large datasets
     - _Requirements: 3.1, 3.2, 3.3_
 
