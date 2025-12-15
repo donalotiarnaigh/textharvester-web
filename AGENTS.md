@@ -1,6 +1,14 @@
 # AGENTS.md
 
-**Guidance for AI coding agents working on textharvester-web (Grave Record Card Pipeline)**
+**Guidance for AI coding agents working on textharvester-web (CLI Feature)**
+
+* * *
+
+## Active Feature
+
+| Feature | Documentation | Branch | Status |
+|---------|---------------|--------|--------|
+| CLI (Command Line Interface) | `docs/cli/` | `feature/cli` | Planning Complete |
 
 * * *
 
@@ -8,7 +16,7 @@
 
 You are an **autonomous coding agent**, acting as a _junior developer_ under human supervision.  
 
-Your job: Implement the Grave Record Card Pipeline features in `textharvester-web`, **strictly according to the specification and implementation plan.**
+Your job: Implement the CLI feature in `textharvester-web` **strictly according to the specification and implementation plan.**
 
 -   You must follow the existing architecture, style, and coding conventions.
 -   You must **not** refactor, generalise, or re-architect unrelated parts of the system.
@@ -19,19 +27,18 @@ Your job: Implement the Grave Record Card Pipeline features in `textharvester-we
 ## What Agents Are Allowed (Autonomous)
 
 -   Read all existing source code, documentation (`docs/`), config, and test files.
--   Create new files under the allowed paths (e.g. utils, scripts, prompt templates) when required by tasks.
--   Modify or extend code under allowed modules (see below) for grave-card integration.
+-   Create new files under the allowed paths when required by tasks.
+-   Modify or extend code under allowed modules (see below).
 -   Add new tests (unit, integration) under `__tests__/` or appropriate test directories.
 -   Run file-scoped commands for validation & local checks (lint, test, build) — see "Preferred Commands".
--   Update documentation under `docs/grave-card-pipeline/` when completing tasks.
+-   Update documentation under `docs/cli/` when completing tasks.
 
 * * *
 
 ## What Agents Must Ask for Permission (Human Oversight Required)
 
 -   Modifying or removing `server.js`, core Express setup, or route structure.
--   Changing database schema except via specific new logic in `graveCardStorage.js`.
--   Modifying existing memorial-processing or burial-register code paths.
+-   Changing database schema except via specific storage utilities.
 -   Altering dependencies (adding/removing packages in `package.json`).
 -   Rearranging project structure (renaming/moving files outside allowed paths).
 -   Changing configuration that affects deployment, secrets, environment variables, `.gitignore`, or production settings.
@@ -40,11 +47,9 @@ Your job: Implement the Grave Record Card Pipeline features in `textharvester-we
 
 ## What Agents Must Never Do (Hard Prohibitions)
 
--   Delete or rewrite existing functionality unrelated to grave cards.
+-   Delete or rewrite existing functionality unrelated to CLI feature.
 -   Remove or alter existing migrations, schemata, or DB tables.
--   Modify prompt templates for memorial OCR or burial registers.
--   Introduce new dependencies or heavy refactors.
--   Skip tests, linting, or documentation when adding/ modifying code.
+-   Skip tests, linting, or documentation when adding/modifying code.
 -   Commit changes that break existing workflows.
 
 * * *
@@ -53,29 +58,40 @@ Your job: Implement the Grave Record Card Pipeline features in `textharvester-we
 
 ```
 textharvester-web/
+├── bin/
+│   └── textharvester           # CLI entry point (NEW)
 ├── src/
-│   ├── utils/
-│   │   ├── prompts/        
-│   │   ├── imageProcessing/  
-│   │   ├── fileProcessing.js
-│   │   └── graveCardStorage.js
-│   └── scripts/            
-├── docs/                   
-│   └── grave-card-pipeline/ # Needs, Design, Tasks
-├── data/                    # uploaded files & generated outputs
+│   ├── cli/                    # CLI-specific code (NEW)
+│   │   ├── commands/           # Subcommand modules
+│   │   ├── config.js           # Config loading
+│   │   ├── output.js           # Output formatting
+│   │   └── errors.js           # CLI error classes
+│   ├── services/               # Shared service layer (NEW)
+│   │   ├── IngestService.js
+│   │   ├── QueryService.js
+│   │   ├── ExportService.js
+│   │   └── SystemService.js
+│   ├── controllers/            # Existing (refactor to use services)
+│   ├── routes/                 # Existing
+│   └── utils/                  # Existing core utilities
+├── docs/
+│   └── cli/                    # CLI feature docs
+│       ├── requirements.md     # 8 requirements, 56 acceptance criteria
+│       ├── design.md           # Architecture, components, test specs
+│       └── tasks.md            # Implementation plan (37 tasks)
+├── data/                       # Uploaded files & generated outputs
 └── config.json
 ```
 
-### Files & Modules Agents May Create / Modify (for Grave Card Pipeline only)
+### Files & Modules Agents May Create / Modify
 
--   `src/utils/prompts/templates/GraveCardPrompt.js`
--   `src/utils/imageProcessing/graveCardProcessor.js`
--   `src/utils/graveCardStorage.js`
--   `src/utils/fileProcessing.js` — only the "grave_record_card" branch logic
--   `config.json` — add `graveCard` config section (if required)
--   `docs/grave-card-pipeline/*`
+-   `bin/textharvester` — CLI entry point
+-   `src/cli/*` — all CLI-specific modules
+-   `src/services/*` — shared service layer
+-   `src/controllers/*.js` — refactor to use services (with care)
+-   `docs/cli/*` — CLI documentation
 
-Do **not** create modules outside these, or alter existing files outside their grave-card specific parts.
+Do **not** create modules outside these, or alter existing files outside their CLI-specific parts.
 
 * * *
 
@@ -84,20 +100,20 @@ Do **not** create modules outside these, or alter existing files outside their g
 To avoid expensive full builds or unnecessary CI runs, use **file-scoped commands** when possible.
 
 ```bash
-# Type / lint / test for a single file/package
-npm run lint        # or lint specific file if supported
-npm test            # run full test suite (before PR)
+# Lint / test
+npm run lint
+npm test
+
+# CLI-specific testing (once implemented)
+./bin/textharvester --help
+./bin/textharvester --version
 ```
 
 Only run full tests or implementations when explicitly required.
 
-Agents should follow this pattern every time they produce a change.
-
 * * *
 
 ## Coding & Style Conventions
-
-Derived from public best practices and internal style rules.
 
 -   Use **English** for all code, comments, commit messages.
 -   Follow existing naming conventions: camelCase for JS, snake_case for DB columns.
@@ -106,16 +122,16 @@ Derived from public best practices and internal style rules.
 -   Use early returns to reduce nesting and improve readability.
 -   For error handling: fail early, validate inputs, produce meaningful errors; no silent failures.
 -   Document non-obvious business logic, edge cases, or caveats in comments or docblocks.
--   Do not leave commented-out code or dead code — version control handles history.
+-   Do not leave commented-out code or dead code.
 
 * * *
 
 ## Workflow for Task Execution
 
-Tasks in `docs/grave-card-pipeline/tasks.md` are your primary guide.
+Tasks in `docs/cli/tasks.md` are your primary guide.
 
-1.  **Read the task description** in `docs/grave-card-pipeline/tasks.md`.
-2.  **Read relevant part of Design** in `docs/grave-card-pipeline/design.md`.
+1.  **Read the task description** in `docs/cli/tasks.md`.
+2.  **Read relevant part of Design** in `docs/cli/design.md`.
 3.  **Test-Driven Development (TDD)**:
     -   Write tests first (RED).
     -   Implement strict minimum to pass (GREEN).
@@ -129,35 +145,43 @@ Tasks in `docs/grave-card-pipeline/tasks.md` are your primary guide.
 6.  **Update `tasks.md`** to mark task as completed.
 
 **Branch Naming:**
-- Feature Branch: `feature/grave-card-pipeline`
-- Commit: `feat: {brief description} (task 1.x)`
+- Feature Branch: `feature/cli`
+- Commit: `feat: {brief description} (task X.Y)`
 
 * * *
 
 ## Example Output & Good Patterns
 
-When writing code, tests, or configs, follow these minimal example patterns (don't invent new styles).
-
 ```javascript
-// Example: clean function logic (grave card specific)
-function stichCardImages(frontBuffer, backBuffer) {
-  // ... padding logic
-  return stitchedBuffer;
+// Example: Service layer pattern
+class IngestService {
+  async ingest(pattern, options) {
+    const files = await this.expandPattern(pattern);
+    if (files.length === 0) {
+      throw new CLIError('NO_FILES_MATCHED', `No files matched: ${pattern}`);
+    }
+    // ... process files
+  }
 }
 ```
 
 ```javascript
-// Example: simple test structure (using existing test setup)
-test('validateGraveRecord rejects invalid schema', () => {
-  expect(() => validate({})).toThrow('Missing card_metadata');
-});
+// Example: CLI error handling
+class CLIError extends Error {
+  constructor(code, message, details = {}) {
+    super(message);
+    this.code = code;
+    this.details = details;
+  }
+  toJSON() {
+    return { success: false, error_code: this.code, message: this.message };
+  }
+}
 ```
 
 * * *
 
 ## Safety & Security Considerations
-
-Because agents can make mistakes or mis-interpret prompts:
 
 -   **All schema changes must go through the storage utility**
 -   **Full test suite must pass before merging**
@@ -166,6 +190,6 @@ Because agents can make mistakes or mis-interpret prompts:
 
 * * *
 
-**Last Updated:** 2025-12-11  
+**Last Updated:** 2025-12-15  
 
-**Purpose:** Provide a robust, clear, and minimal-risk instruction set for AI coding agents working on the Grave Record Card Pipeline in `textharvester-web`.
+**Purpose:** Provide a robust, clear, and minimal-risk instruction set for AI coding agents working on the TextHarvester CLI feature.

@@ -1,0 +1,252 @@
+# TextHarvester CLI Implementation Plan
+
+This implementation plan follows Test-Driven Development (TDD): write tests first (RED), implement to pass (GREEN), then refactor (REFACTOR). All unit tests for both happy and unhappy paths are **required**; integration/E2E tests marked with `*` are optional.
+
+---
+
+## Phase 1: Foundation
+
+- [ ] 1. Project setup and CLI entry point
+  - [ ] 1.1 Write tests for CLI entry point
+    - **Happy path**: `--version` returns version, `--help` lists commands, unknown command shows error
+    - **Unhappy path**: Invalid global options exit with code 1, conflicting flags (-q/-v) rejected
+    - _Requirements: 8.1, 8.2, 5.4_
+  - [ ] 1.2 Implement CLI entry point (`bin/textharvester`)
+    - Install Commander.js dependency
+    - Create `bin/textharvester` with global options (--config, -v, -q, --output)
+    - Register placeholder subcommands (ingest, query, export, system)
+    - Add `bin` entry to `package.json`
+    - _Requirements: 8.1, 8.2_
+  - [ ] 1.3 Write tests for configuration loading
+    - **Happy path**: Load from file, merge with env vars, CLI flags override
+    - **Unhappy path**: Missing file, invalid JSON, missing required keys (API key)
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
+  - [ ] 1.4 Implement configuration loader (`src/cli/config.js`)
+    - Load config.json with fallback to defaults
+    - Merge environment variables (OPENAI_API_KEY, etc.)
+    - Apply CLI flag precedence
+    - Validate required configuration
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
+
+---
+
+## Phase 2: Output and Error Handling
+
+- [ ] 2. Output formatting and error handling
+  - [ ] 2.1 Write tests for output formatter
+    - **Happy path**: JSON output valid and parseable, table format aligned, CSV format correct
+    - **Unhappy path**: Special characters escaped, errors go to stderr, non-TTY detection
+    - _Requirements: 8.1, 8.4, 7.4_
+  - [ ] 2.2 Implement output formatter (`src/cli/output.js`)
+    - `formatSuccess(data, command, metadata)` → JSON to stdout
+    - `formatError(error)` → JSON to stderr
+    - TTY detection for progress/tables
+    - _Requirements: 8.1, 8.4, 7.1, 7.4_
+  - [ ] 2.3 Write tests for CLI error class
+    - **Happy path**: CLIError serializes to consistent JSON schema
+    - **Unhappy path**: Unknown errors wrapped with INTERNAL_ERROR code, stack trace in details
+    - _Requirements: 8.4, 8.5_
+  - [ ] 2.4 Implement CLI error class (`src/cli/errors.js`)
+    - `CLIError` class with code, message, details
+    - `toJSON()` method for structured output
+    - Error code constants (VALIDATION_ERROR, etc.)
+    - _Requirements: 8.4, 8.5_
+
+---
+
+## Phase 3: Service Layer
+
+- [ ] 3. IngestService implementation
+  - [ ] 3.1 Write tests for IngestService
+    - **Happy path**: Single file processed, glob expansion works, batch size respected, provider routing
+    - **Unhappy path**: No files matched, invalid source type, unreadable file skipped, API error handling
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
+  - [ ] 3.2 Implement IngestService (`src/services/IngestService.js`)
+    - `expandPattern(pattern)` - glob expansion with validation
+    - `ingest(pattern, options)` - orchestrate processing
+    - `processOne(file, options)` - delegate to fileProcessing.js
+    - Concurrent batch processing with configurable size
+    - Collect successes/failures for structured result
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
+  - [ ] 3.3 Refactor IngestService
+    - Extract common patterns, optimize performance
+    - _Requirements: 1.1, 1.2, 1.3_
+
+- [ ] 4. QueryService implementation
+  - [ ] 4.1 Write tests for QueryService
+    - **Happy path**: List returns records, filter by source type, search finds matches, get returns single record
+    - **Unhappy path**: Non-existent ID error, empty DB returns empty array, invalid filter rejected, SQL injection safe
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
+  - [ ] 4.2 Implement QueryService (`src/services/QueryService.js`)
+    - `list(options)` - query with filters, pagination
+    - `get(id, sourceType)` - single record lookup
+    - `search(query, options)` - text search across fields
+    - Use existing storage modules (memorials, burialRegister, graveCards)
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
+  - [ ] 4.3 Refactor QueryService
+    - Optimize queries, add caching if needed
+    - _Requirements: 2.1, 2.2, 2.3_
+
+- [ ] 5. ExportService implementation
+  - [ ] 5.1 Write tests for ExportService
+    - **Happy path**: CSV file created, JSON file valid, stdout output works, filtered export
+    - **Unhappy path**: Non-existent dir error, invalid format error, file exists without --force, empty export
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
+  - [ ] 5.2 Implement ExportService (`src/services/ExportService.js`)
+    - `export(options)` - main export method
+    - Reuse `jsonToCsv` and `formatJsonForExport` from dataConversion.js
+    - File vs stdout output handling
+    - Destination validation (dir exists, file overwrite)
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
+  - [ ] 5.3 Refactor ExportService
+    - Add streaming for large datasets
+    - _Requirements: 3.1, 3.2, 3.3_
+
+- [ ] 6. SystemService implementation
+  - [ ] 6.1 Write tests for SystemService
+    - **Happy path**: init-db creates tables, status returns counts, clear-queue with confirm works
+    - **Unhappy path**: Permission denied, missing --confirm flag, unknown subcommand, DB locked
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
+  - [ ] 6.2 Implement SystemService (`src/services/SystemService.js`)
+    - `initDb()` - create tables if not exist
+    - `getStatus()` - return queue length, record counts, timestamps
+    - `clearQueue(confirm)` - require confirmation flag
+    - Reuse existing storage initialization logic
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
+  - [ ] 6.3 Refactor SystemService
+    - Error recovery, cleanup handlers
+    - _Requirements: 4.1, 4.2, 4.3_
+
+---
+
+## Phase 4: CLI Commands
+
+- [ ] 7. Ingest command
+  - [ ] 7.1 Write tests for ingest command
+    - **Happy path**: Command parses args correctly, calls IngestService, outputs JSON result
+    - **Unhappy path**: Missing required args, invalid options, service errors formatted correctly
+    - _Requirements: 1.1, 1.2, 1.3, 8.1, 8.3_
+  - [ ] 7.2 Implement ingest command (`src/cli/commands/ingest.js`)
+    - Parse options: --source-type, --provider, --batch-size, --replace
+    - Validate inputs, call IngestService
+    - Format output with progress (if TTY) or JSON
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
+
+- [ ] 8. Query command
+  - [ ] 8.1 Write tests for query command
+    - **Happy path**: `list`, `get <id>`, `search` subcommands work correctly
+    - **Unhappy path**: Invalid ID format, missing search term, service errors surfaced
+    - _Requirements: 2.1, 2.2, 2.3, 8.1, 8.3_
+  - [ ] 8.2 Implement query command (`src/cli/commands/query.js`)
+    - Subcommands: list, get, search
+    - Parse options: --source-type, --limit, --year, etc.
+    - Call QueryService, format output
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
+
+- [ ] 9. Export command
+  - [ ] 9.1 Write tests for export command
+    - **Happy path**: --format and --destination parsed, service called, output written
+    - **Unhappy path**: Invalid format rejected, stdout output for piping
+    - _Requirements: 3.1, 3.2, 3.3, 8.1, 8.3_
+  - [ ] 9.2 Implement export command (`src/cli/commands/export.js`)
+    - Parse options: --format, --destination, --source-type, --force
+    - Call ExportService, handle file/stdout
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
+
+- [ ] 10. System command
+  - [ ] 10.1 Write tests for system command
+    - **Happy path**: Subcommands (init-db, status, clear-queue) route correctly
+    - **Unhappy path**: Unknown subcommand error, missing --confirm
+    - _Requirements: 4.1, 4.2, 4.3, 8.1, 8.3_
+  - [ ] 10.2 Implement system command (`src/cli/commands/system.js`)
+    - Subcommands: init-db, status, clear-queue
+    - Parse options: --confirm
+    - Call SystemService, format output
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
+
+---
+
+## Phase 5: Logging and Progress
+
+- [ ] 11. Logging system
+  - [ ] 11.1 Write tests for CLI logger
+    - **Happy path**: Verbosity levels (-v, -vv) produce correct output, --debug-api logs payloads
+    - **Unhappy path**: Conflicting -q/-v rejected, log file errors handled gracefully
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
+  - [ ] 11.2 Implement CLI logger (`src/cli/logger.js`)
+    - Integrate with existing logger.js
+    - Verbosity level handling (0=quiet, 1=info, 2=debug)
+    - --debug-api payload logging
+    - JSON log format option
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
+
+- [ ] 12. Progress reporting
+  - [ ] 12.1 Write tests for progress reporter
+    - **Happy path**: Progress bar updates, spinner animates, summary displayed
+    - **Unhappy path**: Non-TTY uses simple output, SIGINT shows partial summary
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7_
+  - [ ] 12.2 Implement progress reporter (`src/cli/progress.js`)
+    - Progress bar for batch operations (use cli-progress or ora)
+    - TTY detection for animations
+    - Batch summary on completion
+    - SIGINT handler for graceful shutdown
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7_
+
+---
+
+## Phase 6: Integration and Verification
+
+- [ ] 13. Web controller refactoring
+  - [ ] 13.1 Refactor resultsManager to use QueryService
+    - Extract query logic to QueryService
+    - resultsManager calls service, formats HTTP response
+    - Verify existing tests still pass
+    - _Requirements: Backward compatibility_
+  - [ ] 13.2 Refactor uploadHandler to use IngestService
+    - Extract ingestion logic to IngestService
+    - uploadHandler calls service, formats HTTP response
+    - Verify existing tests still pass
+    - _Requirements: Backward compatibility_
+
+- [ ]* 14. Integration tests
+  - [ ]* 14.1 CLI integration tests
+    - Full ingest → query → export pipeline via CLI
+    - Test with real files and database
+    - _Requirements: All_
+  - [ ]* 14.2 Cross-platform verification
+    - Test on macOS, Linux
+    - Verify TTY detection works correctly
+    - _Requirements: 7.4_
+
+- [ ] 15. Documentation and cleanup
+  - [ ] 15.1 Update package.json
+    - Add `bin` entry for `th` command
+    - Add any new dependencies (commander, cli-progress, ora)
+    - Add CLI-related npm scripts
+    - _Requirements: All_
+  - [ ] 15.2 Create CLI documentation
+    - Update README.md with CLI usage
+    - Create `docs/cli/usage.md` with examples
+    - Document all commands, options, and exit codes
+    - _Requirements: 8.2_
+  - [ ] 15.3 Final verification
+    - Run full test suite (`npm test`)
+    - Run linting (`npm run lint`)
+    - Manual CLI testing for each command
+    - _Requirements: All_
+
+---
+
+## Task Summary
+
+| Phase | Tasks | Unit Tests Required | Integration Tests* |
+|-------|-------|---------------------|-------------------|
+| 1. Foundation | 4 | 4 | - |
+| 2. Output/Errors | 4 | 4 | - |
+| 3. Services | 12 | 8 | - |
+| 4. Commands | 8 | 8 | - |
+| 5. Logging/Progress | 4 | 4 | - |
+| 6. Integration | 5 | 2 | 2* |
+| **Total** | **37** | **30** | **2*** |
+
+*Tasks marked with `*` are optional integration/E2E tests.
