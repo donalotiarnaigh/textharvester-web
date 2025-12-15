@@ -1,0 +1,79 @@
+const { CLIError } = require('../cli/errors');
+
+class QueryService {
+    constructor(config, storageModules) {
+        this.config = config;
+        this.storage = storageModules;
+    }
+
+    async list(options = {}) {
+        const { sourceType, limit = 50, offset = 0 } = options;
+        const storage = this.getStorageForType(sourceType);
+        const allRecords = await storage.getAll();
+
+        // In-memory pagination since storage modules don't support it yet
+        const records = allRecords.slice(offset, offset + limit);
+
+        return {
+            records,
+            count: records.length,
+            offset,
+            limit,
+            total: allRecords.length
+        };
+    }
+
+    async get(id, sourceType) {
+        const storage = this.getStorageForType(sourceType);
+        const record = await storage.getById(id);
+        if (!record) {
+            throw new CLIError('RECORD_NOT_FOUND', `Record not found: ${id}`);
+        }
+        return record;
+    }
+
+    async search(query, options = {}) {
+        const { sourceType, limit = 50, offset = 0 } = options;
+        const storage = this.getStorageForType(sourceType);
+        const allRecords = await storage.getAll();
+
+        if (!query) {
+            // Degrade to list behavior if no query
+            return this.list(options);
+        }
+
+        const lowerQuery = query.toLowerCase();
+
+        const filtered = allRecords.filter(record => {
+            // Search across all string values in the record
+            return Object.values(record).some(value => {
+                if (value === null || value === undefined) return false;
+                return String(value).toLowerCase().includes(lowerQuery);
+            });
+        });
+
+        // In-memory pagination
+        const records = filtered.slice(offset, offset + limit);
+
+        return {
+            records,
+            count: records.length,
+            offset,
+            limit,
+            total: filtered.length
+        };
+    }
+    getStorageForType(type) {
+        const map = {
+            memorial: this.storage.memorials,
+            burial_register: this.storage.burialRegister,
+            grave_record_card: this.storage.graveCards
+        };
+        if (!map[type]) {
+            throw new CLIError('INVALID_SOURCE_TYPE', `Unknown source type: ${type}`);
+        }
+        return map[type];
+    }
+}
+
+module.exports = QueryService;

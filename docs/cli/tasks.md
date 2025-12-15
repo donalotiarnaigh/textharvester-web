@@ -73,11 +73,11 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
     - _Requirements: 1.1, 1.2, 1.3_
 
 - [ ] 4. QueryService implementation
-  - [ ] 4.1 Write tests for QueryService
+  - [x] 4.1 Write tests for QueryService
     - **Happy path**: List returns records, filter by source type, search finds matches, get returns single record
     - **Unhappy path**: Non-existent ID error, empty DB returns empty array, invalid filter rejected, SQL injection safe
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
-  - [ ] 4.2 Implement QueryService (`src/services/QueryService.js`)
+  - [x] 4.2 Implement QueryService (`src/services/QueryService.js`)
     - `list(options)` - query with filters, pagination
     - `get(id, sourceType)` - single record lookup
     - `search(query, options)` - text search across fields
