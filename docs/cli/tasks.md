@@ -11,7 +11,7 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
     - **Happy path**: `--version` returns version, `--help` lists commands, unknown command shows error
     - **Unhappy path**: Invalid global options exit with code 1, conflicting flags (-q/-v) rejected
     - _Requirements: 8.1, 8.2, 5.4_
-  - [ ] 1.2 Implement CLI entry point (`bin/textharvester`)
+  - [x] 1.2 Implement CLI entry point (`bin/textharvester`)
     - Install Commander.js dependency
     - Create `bin/textharvester` with global options (--config, -v, -q, --output)
     - Register placeholder subcommands (ingest, query, export, system)
