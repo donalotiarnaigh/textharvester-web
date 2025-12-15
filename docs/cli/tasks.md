@@ -7,7 +7,7 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
 ## Phase 1: Foundation
 
 - [ ] 1. Project setup and CLI entry point
-  - [ ] 1.1 Write tests for CLI entry point
+  - [x] 1.1 Write tests for CLI entry point
     - **Happy path**: `--version` returns version, `--help` lists commands, unknown command shows error
     - **Unhappy path**: Invalid global options exit with code 1, conflicting flags (-q/-v) rejected
     - _Requirements: 8.1, 8.2, 5.4_
