@@ -33,7 +33,7 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
 ## Phase 2: Output and Error Handling
 
 - [ ] 2. Output formatting and error handling
-  - [ ] 2.1 Write tests for output formatter
+  - [x] 2.1 Write tests for output formatter
     - **Happy path**: JSON output valid and parseable, table format aligned, CSV format correct
     - **Unhappy path**: Special characters escaped, errors go to stderr, non-TTY detection
     - _Requirements: 8.1, 8.4, 7.4_
