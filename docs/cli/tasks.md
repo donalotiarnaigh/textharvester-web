@@ -57,11 +57,11 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
 ## Phase 3: Service Layer
 
 - [ ] 3. IngestService implementation
-  - [ ] 3.1 Write tests for IngestService
+  - [x] 3.1 Write tests for IngestService
     - **Happy path**: Single file processed, glob expansion works, batch size respected, provider routing
     - **Unhappy path**: No files matched, invalid source type, unreadable file skipped, API error handling
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
-  - [ ] 3.2 Implement IngestService (`src/services/IngestService.js`)
+  - [x] 3.2 Implement IngestService (`src/services/IngestService.js`)
     - `expandPattern(pattern)` - glob expansion with validation
     - `ingest(pattern, options)` - orchestrate processing
     - `processOne(file, options)` - delegate to fileProcessing.js
