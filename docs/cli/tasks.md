@@ -37,16 +37,16 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
     - **Happy path**: JSON output valid and parseable, table format aligned, CSV format correct
     - **Unhappy path**: Special characters escaped, errors go to stderr, non-TTY detection
     - _Requirements: 8.1, 8.4, 7.4_
-  - [ ] 2.2 Implement output formatter (`src/cli/output.js`)
+  - [x] 2.2 Implement output formatter (`src/cli/output.js`)
     - `formatSuccess(data, command, metadata)` → JSON to stdout
     - `formatError(error)` → JSON to stderr
     - TTY detection for progress/tables
     - _Requirements: 8.1, 8.4, 7.1, 7.4_
-  - [ ] 2.3 Write tests for CLI error class
+  - [x] 2.3 Write tests for CLI error class
     - **Happy path**: CLIError serializes to consistent JSON schema
     - **Unhappy path**: Unknown errors wrapped with INTERNAL_ERROR code, stack trace in details
     - _Requirements: 8.4, 8.5_
-  - [ ] 2.4 Implement CLI error class (`src/cli/errors.js`)
+  - [x] 2.4 Implement CLI error class (`src/cli/errors.js`)
     - `CLIError` class with code, message, details
     - `toJSON()` method for structured output
     - Error code constants (VALIDATION_ERROR, etc.)
