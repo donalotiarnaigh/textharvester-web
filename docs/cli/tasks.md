@@ -17,7 +17,7 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
     - Register placeholder subcommands (ingest, query, export, system)
     - Add `bin` entry to `package.json`
     - _Requirements: 8.1, 8.2_
-  - [ ] 1.3 Write tests for configuration loading
+  - [x] 1.3 Write tests for configuration loading
     - **Happy path**: Load from file, merge with env vars, CLI flags override
     - **Unhappy path**: Missing file, invalid JSON, missing required keys (API key)
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
