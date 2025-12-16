@@ -103,17 +103,17 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
     - _Requirements: 3.1, 3.2, 3.3_
 
 - [ ] 6. SystemService implementation
-  - [ ] 6.1 Write tests for SystemService
+  - [x] 6.1 Write tests for SystemService
     - **Happy path**: init-db creates tables, status returns counts, clear-queue with confirm works
     - **Unhappy path**: Permission denied, missing --confirm flag, unknown subcommand, DB locked
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
-  - [ ] 6.2 Implement SystemService (`src/services/SystemService.js`)
+  - [x] 6.2 Implement SystemService (`src/services/SystemService.js`)
     - `initDb()` - create tables if not exist
     - `getStatus()` - return queue length, record counts, timestamps
     - `clearQueue(confirm)` - require confirmation flag
     - Reuse existing storage initialization logic
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
-  - [ ] 6.3 Refactor SystemService
+  - [x] 6.3 Refactor SystemService
     - Error recovery, cleanup handlers
     - _Requirements: 4.1, 4.2, 4.3_
 

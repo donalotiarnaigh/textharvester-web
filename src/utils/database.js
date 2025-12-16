@@ -225,5 +225,7 @@ module.exports = {
   getAllMemorials,
   clearAllMemorials,
   backupDatabase,
+  initializeDatabase,
+  initializeBurialRegisterTable,
   db // Exported for closing connection when needed
 }; 
