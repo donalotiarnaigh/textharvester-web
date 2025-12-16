@@ -156,11 +156,11 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
 
 - [ ] 10. System command
-  - [ ] 10.1 Write tests for system command
+  - [x] 10.1 Write tests for system command
     - **Happy path**: Subcommands (init-db, status, clear-queue) route correctly
     - **Unhappy path**: Unknown subcommand error, missing --confirm
     - _Requirements: 4.1, 4.2, 4.3, 8.1, 8.3_
-  - [ ] 10.2 Implement system command (`src/cli/commands/system.js`)
+  - [x] 10.2 Implement system command (`src/cli/commands/system.js`)
     - Subcommands: init-db, status, clear-queue
     - Parse options: --confirm
     - Call SystemService, format output

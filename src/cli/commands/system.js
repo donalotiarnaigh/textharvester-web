@@ -6,6 +6,9 @@
  */
 
 const { Command } = require('commander');
+const { loadConfig } = require('../config');
+const SystemService = require('../../services/SystemService');
+const { formatOutput, formatError } = require('../output');
 
 const system = new Command('system')
   .description('System administration commands');
@@ -14,28 +17,32 @@ const system = new Command('system')
 system
   .command('init-db')
   .description('Initialize database tables')
-  .action(() => {
-    console.log(JSON.stringify({
-      success: false,
-      error_code: 'NOT_IMPLEMENTED',
-      message: 'System init-db command not yet implemented',
-      metadata: { command: 'system init-db' }
-    }));
-    process.exit(1);
+  .action(async (options) => {
+    try {
+      const config = await loadConfig(options);
+      const service = new SystemService(config);
+      const result = await service.initDb();
+      formatOutput(result, 'system init-db', options);
+    } catch (error) {
+      formatError(error);
+      process.exit(1);
+    }
   });
 
 // status subcommand
 system
   .command('status')
   .description('Show system status (queue, record counts)')
-  .action(() => {
-    console.log(JSON.stringify({
-      success: false,
-      error_code: 'NOT_IMPLEMENTED',
-      message: 'System status command not yet implemented',
-      metadata: { command: 'system status' }
-    }));
-    process.exit(1);
+  .action(async (options) => {
+    try {
+      const config = await loadConfig(options);
+      const service = new SystemService(config);
+      const result = await service.getStatus();
+      formatOutput(result, 'system status', options);
+    } catch (error) {
+      formatError(error);
+      process.exit(1);
+    }
   });
 
 // clear-queue subcommand
@@ -43,14 +50,16 @@ system
   .command('clear-queue')
   .description('Clear the processing queue')
   .option('--confirm', 'Confirm destructive operation (required in non-interactive mode)')
-  .action((options) => {
-    console.log(JSON.stringify({
-      success: false,
-      error_code: 'NOT_IMPLEMENTED',
-      message: 'System clear-queue command not yet implemented',
-      metadata: { command: 'system clear-queue' }
-    }));
-    process.exit(1);
+  .action(async (options) => {
+    try {
+      const config = await loadConfig(options);
+      const service = new SystemService(config);
+      const result = await service.clearQueue(options.confirm);
+      formatOutput(result, 'system clear-queue', options);
+    } catch (error) {
+      formatError(error);
+      process.exit(1);
+    }
   });
 
 module.exports = system;
