@@ -146,9 +146,11 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
 - [ ] 9. Export command
   - [ ] 9.1 Write tests for export command
     - **Happy path**: --format and --destination parsed, service called, output written
-    - **Unhappy path**: Invalid format rejected, stdout output for piping
-    - _Requirements: 3.1, 3.2, 3.3, 8.1, 8.3_
-  - [ ] 9.2 Implement export command (`src/cli/commands/export.js`)
+  - [x] 9.1 Write tests for export command
+    - **Happy path**: JSON/CSV export, local file writing, stdout output
+    - **Unhappy path**: File exists/permission errors, invalid format
+    - _Requirements: 6.1, 6.2, 6.3, 8.1, 8.3_
+  - [x] 9.2 Implement export command (`src/cli/commands/export.js`)
     - Parse options: --format, --destination, --source-type, --force
     - Call ExportService, handle file/stdout
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
