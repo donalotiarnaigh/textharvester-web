@@ -122,11 +122,11 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
 ## Phase 4: CLI Commands
 
 - [ ] 7. Ingest command
-  - [ ] 7.1 Write tests for ingest command
+  - [x] 7.1 Write tests for ingest command
     - **Happy path**: Command parses args correctly, calls IngestService, outputs JSON result
     - **Unhappy path**: Missing required args, invalid options, service errors formatted correctly
     - _Requirements: 1.1, 1.2, 1.3, 8.1, 8.3_
-  - [ ] 7.2 Implement ingest command (`src/cli/commands/ingest.js`)
+  - [x] 7.2 Implement ingest command (`src/cli/commands/ingest.js`)
     - Parse options: --source-type, --provider, --batch-size, --replace
     - Validate inputs, call IngestService
     - Format output with progress (if TTY) or JSON
