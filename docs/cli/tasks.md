@@ -133,14 +133,14 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
 
 - [ ] 8. Query command
-  - [ ] 8.1 Write tests for query command
+  - [x] 8.1 Write tests for query command
     - **Happy path**: `list`, `get <id>`, `search` subcommands work correctly
     - **Unhappy path**: Invalid ID format, missing search term, service errors surfaced
     - _Requirements: 2.1, 2.2, 2.3, 8.1, 8.3_
-  - [ ] 8.2 Implement query command (`src/cli/commands/query.js`)
-    - Subcommands: list, get, search
-    - Parse options: --source-type, --limit, --year, etc.
-    - Call QueryService, format output
+  - [x] 8.2 Implement query command (`src/cli/commands/query.js`)
+    - Factory/Service instantiation
+    - `list`, `get`, `search` action handlers
+    - Format output using `formatOutput`
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
 
 - [ ] 9. Export command

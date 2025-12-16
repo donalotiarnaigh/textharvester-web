@@ -61,7 +61,7 @@ async function storePageJSON(pageData, provider, volumeId, pageNumber) {
 
   const paddedPage = padPageNumber(pageNumber);
   const pagesDir = path.join(getBurialRegisterBaseDir(), volumeId, 'pages', provider);
-  
+
   try {
     await fs.promises.mkdir(pagesDir, { recursive: true });
   } catch (err) {
@@ -215,7 +215,7 @@ async function storeBurialRegisterEntry(entry) {
   const params = buildBurialEntryParams(entry);
 
   return new Promise((resolve, reject) => {
-    db.run(sql, params, function(err) {
+    db.run(sql, params, function (err) {
       if (err) {
         // Check if this is a unique constraint violation (true duplicate)
         if (err.code === 'SQLITE_CONSTRAINT' && err.message && err.message.includes('UNIQUE constraint failed')) {
@@ -239,10 +239,10 @@ async function storeBurialRegisterEntry(entry) {
           return;
         }
       }
-      
+
       // Success
       logger.debug(`Successfully stored burial register entry with ID: ${this.lastID}, entry_id=${entry.entry_id}`);
-      resolve({ 
+      resolve({
         rowId: this.lastID
       });
     });
@@ -298,11 +298,31 @@ function getAllBurialRegisterEntries() {
   });
 }
 
+/**
+ * Retrieve a single burial register entry by ID.
+ * @param {number|string} id 
+ * @returns {Promise<Object|null>}
+ */
+function getBurialRegisterEntryById(id) {
+  return new Promise((resolve, reject) => {
+    logger.info(`Attempting to retrieve burial register entry with ID: ${id}`);
+    db.get('SELECT * FROM burial_register_entries WHERE id = ?', [id], (err, row) => {
+      if (err) {
+        logger.error(`Error retrieving burial register entry ${id}:`, err);
+        reject(err);
+        return;
+      }
+      resolve(row || null);
+    });
+  });
+}
+
 module.exports = {
   storePageJSON,
   storeBurialRegisterEntry,
   getBurialRegisterBaseDir,
   clearAllBurialRegisterEntries,
   getAllBurialRegisterEntries,
+  getBurialRegisterEntryById,
   extractPageNumberFromFilename
 };

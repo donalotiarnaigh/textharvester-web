@@ -174,6 +174,21 @@ function getAllMemorials() {
   });
 }
 
+// Retrieve a single memorial by ID
+function getMemorialById(id) {
+  return new Promise((resolve, reject) => {
+    logger.info(`Attempting to retrieve memorial with ID: ${id}`);
+    db.get('SELECT * FROM memorials WHERE id = ?', [id], (err, row) => {
+      if (err) {
+        logger.error(`Error retrieving memorial ${id}:`, err);
+        reject(err);
+        return;
+      }
+      resolve(row || null);
+    });
+  });
+}
+
 // Add this function to database.js
 function clearAllMemorials() {
   return new Promise((resolve, reject) => {
@@ -223,6 +238,7 @@ initializeBurialRegisterTable();
 module.exports = {
   storeMemorial,
   getAllMemorials,
+  getMemorialById,
   clearAllMemorials,
   backupDatabase,
   initializeDatabase,

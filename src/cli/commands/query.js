@@ -6,6 +6,9 @@
  */
 
 const { Command } = require('commander');
+const { loadConfig } = require('../config');
+const QueryService = require('../../services/QueryService');
+const { formatOutput, formatError } = require('../output');
 
 const query = new Command('query')
   .description('Query and search processed records');
@@ -17,14 +20,54 @@ query
   .option('-t, --source-type <type>', 'Filter by source type')
   .option('-l, --limit <n>', 'Maximum records to return', '50')
   .option('-o, --offset <n>', 'Offset for pagination', '0')
-  .action((options) => {
-    console.log(JSON.stringify({
-      success: false,
-      error_code: 'NOT_IMPLEMENTED',
-      message: 'Query list command not yet implemented',
-      metadata: { command: 'query list' }
-    }));
-    process.exit(1);
+  .action(async (options) => {
+    try {
+      const config = await loadConfig(options);
+
+      const storageAdapters = {
+        memorials: {
+          getAll: require('../../utils/database').getAllMemorials,
+          getById: require('../../utils/database').getMemorialById
+        },
+        burialRegister: {
+          getAll: require('../../utils/burialRegisterStorage').getAllBurialRegisterEntries,
+          getById: require('../../utils/burialRegisterStorage').getBurialRegisterEntryById
+        },
+        graveCards: {
+          getAll: require('../../utils/graveCardStorage').getAllGraveCards,
+          getById: require('../../utils/graveCardStorage').getGraveCardById
+        }
+      };
+
+      const service = new QueryService(config, storageAdapters);
+
+      // Coerce limit/offset to numbers
+      const queryOptions = {
+        ...options,
+        limit: options.limit ? parseInt(options.limit, 10) : 50,
+        offset: options.offset ? parseInt(options.offset, 10) : 0
+      };
+
+      // Default source type if not provided? Service handles validation if missing.
+      // But let's check if we want a default here or let service fail.
+      // Requirements say "Filter by source type", implying it might be optional?
+      // QueryService.list implementation: `const { sourceType... } = options;`
+      // `_getCachedOrFetch(sourceType)` -> `getStorageForType(sourceType)` -> throws INVALID_SOURCE_TYPE if missing.
+      // So sourceType IS required by the service currently.
+      // We should probably default it or require it. The help text says option.
+      // Let's default to 'memorial' if not provided, similar to ingest? 
+      // Or require user to specify.
+      if (!queryOptions.sourceType) {
+        queryOptions.sourceType = 'memorial';
+      }
+
+      const result = await service.list(queryOptions);
+
+      formatOutput(result, 'query list', options);
+    } catch (error) {
+      formatError(error);
+      process.exit(1);
+    }
   });
 
 // get subcommand
@@ -32,14 +75,37 @@ query
   .command('get <id>')
   .description('Get a single record by ID')
   .option('-t, --source-type <type>', 'Source type of the record')
-  .action((id, options) => {
-    console.log(JSON.stringify({
-      success: false,
-      error_code: 'NOT_IMPLEMENTED',
-      message: 'Query get command not yet implemented',
-      metadata: { command: 'query get' }
-    }));
-    process.exit(1);
+  .action(async (id, options) => {
+    try {
+      const config = await loadConfig(options);
+
+      const storageAdapters = {
+        memorials: {
+          getAll: require('../../utils/database').getAllMemorials,
+          getById: require('../../utils/database').getMemorialById
+        },
+        burialRegister: {
+          getAll: require('../../utils/burialRegisterStorage').getAllBurialRegisterEntries,
+          getById: require('../../utils/burialRegisterStorage').getBurialRegisterEntryById
+        },
+        graveCards: {
+          getAll: require('../../utils/graveCardStorage').getAllGraveCards,
+          getById: require('../../utils/graveCardStorage').getGraveCardById
+        }
+      };
+
+      const service = new QueryService(config, storageAdapters);
+
+      // Default source type if missing
+      const sourceType = options.sourceType || 'memorial';
+
+      const result = await service.get(id, sourceType);
+
+      formatOutput(result, 'query get', options);
+    } catch (error) {
+      formatError(error);
+      process.exit(1);
+    }
   });
 
 // search subcommand
@@ -49,14 +115,33 @@ query
   .option('-t, --source-type <type>', 'Filter by source type')
   .option('-y, --year <year>', 'Filter by year')
   .option('-l, --limit <n>', 'Maximum records to return', '50')
-  .action((searchQuery, options) => {
-    console.log(JSON.stringify({
-      success: false,
-      error_code: 'NOT_IMPLEMENTED',
-      message: 'Query search command not yet implemented',
-      metadata: { command: 'query search' }
-    }));
-    process.exit(1);
+  .action(async (searchQuery, options) => {
+    try {
+      const config = await loadConfig(options);
+
+      const storageAdapters = {
+        memorials: {
+          getAll: require('../../utils/database').getAllMemorials,
+          getById: require('../../utils/database').getMemorialById
+        },
+        burialRegister: {
+          getAll: require('../../utils/burialRegisterStorage').getAllBurialRegisterEntries,
+          getById: require('../../utils/burialRegisterStorage').getBurialRegisterEntryById
+        },
+        graveCards: {
+          getAll: require('../../utils/graveCardStorage').getAllGraveCards,
+          getById: require('../../utils/graveCardStorage').getGraveCardById
+        }
+      };
+
+      const service = new QueryService(config, storageAdapters);
+      const result = await service.search(searchQuery, options);
+
+      formatOutput(result, 'query search', options);
+    } catch (error) {
+      formatError(error);
+      process.exit(1);
+    }
   });
 
 module.exports = query;
