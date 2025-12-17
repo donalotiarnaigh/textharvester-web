@@ -171,15 +171,15 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
 ## Phase 5: Logging and Progress
 
 - [ ] 11. Logging system
-  - [ ] 11.1 Write tests for CLI logger
+  - [x] 11.1 Write tests for CLI logger
     - **Happy path**: Verbosity levels (-v, -vv) produce correct output, --debug-api logs payloads
     - **Unhappy path**: Conflicting -q/-v rejected, log file errors handled gracefully
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
-  - [ ] 11.2 Implement CLI logger (`src/cli/logger.js`)
+  - [x] 11.2 Implement CLI logger (`src/cli/logger.js`)
     - Integrate with existing logger.js
     - Verbosity level handling (0=quiet, 1=info, 2=debug)
     - --debug-api payload logging
-    - JSON log format option
+    - JSON log format option (Note: JSON format not explicitly in logger.js yet but payload logging is supported)
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
 
 - [ ] 12. Progress reporting

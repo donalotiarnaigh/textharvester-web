@@ -12,6 +12,7 @@ const defaultConfig = {
     combinedLogFile: path.join(process.cwd(), 'logs', 'combined.log'),
     // New configuration options for issue #41
     verboseMode: process.env.VERBOSE_LOGGING === 'true',
+    quietMode: false,
     payloadTruncation: {
       enabled: true,
       maxLength: 500 // characters
@@ -44,13 +45,13 @@ class Logger {
       failureCount: 0,
       totalFiles: 0
     };
-    
+
     // Sampling counters for performance tracking
     this.sampleCounters = {
       performanceMetrics: 0,
       payloadLogs: 0
     };
-    
+
     // Ensure log directory exists if we're not in test environment
     if (process.env.NODE_ENV !== 'test') {
       const logDir = path.dirname(config.logging?.errorLogFile || defaultConfig.logging.errorLogFile);
@@ -61,21 +62,25 @@ class Logger {
   }
 
   info(message, ...args) {
-    console.log(`[INFO] ${message}`, ...args);
+    if (!config.logging.quietMode) {
+      console.log(`[INFO] ${message}`, ...args);
+    }
     this._writeToLog('info', message, args);
   }
-  
+
   error(message, error, context = {}) {
     console.error(`[ERROR] ${message}`, error);
     this._writeToLog('error', message, [error, context]);
     this._trackErrorPattern(error, context);
   }
-  
+
   warn(message, ...args) {
-    console.warn(`[WARN] ${message}`, ...args);
+    if (!config.logging.quietMode) {
+      console.warn(`[WARN] ${message}`, ...args);
+    }
     this._writeToLog('warn', message, args);
   }
-  
+
   debug(message, ...args) {
     if (process.env.NODE_ENV === 'development' || config.logging.verboseMode) {
       console.debug(`[DEBUG] ${message}`, ...args);
@@ -92,13 +97,13 @@ class Logger {
   debugPayload(message, payload, options = {}) {
     // Only log if verbose mode is enabled or if we're sampling
     const shouldSample = this._shouldSamplePayload();
-    
+
     if (!config.logging.verboseMode && !shouldSample) {
       return;
     }
 
     let logPayload = payload;
-    
+
     // Apply truncation if enabled
     if (config.logging.payloadTruncation.enabled && !config.logging.verboseMode) {
       logPayload = this._truncatePayload(payload, config.logging.payloadTruncation.maxLength);
@@ -156,7 +161,7 @@ class Logger {
       // Log performance metrics with structured format and sampling
       if (type === 'api_performance') {
         const shouldSample = this._shouldSamplePerformanceMetric();
-        
+
         if (shouldSample || data.status === 'error') {
           // Always log errors, sample successes
           this.info(`[METRICS] API Performance: ${data.provider}/${data.model} - ${data.responseTime}ms - ${data.status}`);
@@ -208,6 +213,14 @@ class Logger {
   }
 
   /**
+   * Enable or disable quiet mode (suppress console info/warn)
+   * @param {boolean} enabled - Whether to enable quiet mode
+   */
+  setQuietMode(enabled) {
+    config.logging.quietMode = enabled;
+  }
+
+  /**
    * Update sampling rates
    * @param {Object} rates - New sampling rates
    */
@@ -223,7 +236,7 @@ class Logger {
    */
   _shouldSamplePerformanceMetric() {
     if (!config.logging.samplingRate.enabled) return true;
-    
+
     this.sampleCounters.performanceMetrics++;
     const sampleRate = config.logging.samplingRate.performanceMetrics;
     return (this.sampleCounters.performanceMetrics % Math.ceil(1 / sampleRate)) === 0;
@@ -236,7 +249,7 @@ class Logger {
    */
   _shouldSamplePayload() {
     if (!config.logging.samplingRate.enabled) return true;
-    
+
     this.sampleCounters.payloadLogs++;
     const sampleRate = config.logging.samplingRate.payloadLogging;
     return (this.sampleCounters.payloadLogs % Math.ceil(1 / sampleRate)) === 0;
@@ -260,7 +273,7 @@ class Logger {
     const lastBrace = truncated.lastIndexOf('{');
     const lastBracket = truncated.lastIndexOf('[');
     const cutPoint = Math.max(lastBrace, lastBracket, maxLength - 50);
-    
+
     return {
       _truncated: true,
       _originalLength: jsonStr.length,

@@ -7,6 +7,7 @@
 
 const { Command } = require('commander');
 const { loadConfig } = require('../config');
+const { configureLogger } = require('../logger');
 const ExportService = require('../../services/ExportService');
 const QueryService = require('../../services/QueryService');
 const { formatOutput, formatError } = require('../output');
@@ -20,6 +21,7 @@ const exportCmd = new Command('export')
   .action(async (options) => {
     try {
       const config = await loadConfig(options);
+      configureLogger(config);
 
       const storageAdapters = {
         memorials: {

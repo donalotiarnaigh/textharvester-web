@@ -5,6 +5,7 @@
 
 const { Command } = require('commander');
 const { loadConfig } = require('../config');
+const { configureLogger } = require('../logger');
 const { IngestService } = require('../../services/IngestService');
 const { formatOutput, formatError } = require('../output');
 const logger = require('../../utils/logger'); // Assuming logger is needed for service injection if required, or just global config
@@ -40,6 +41,9 @@ const ingest = new Command('ingest')
       };
 
       const finalConfig = await loadConfig(cliConfig);
+
+      // Configure the logger with the final merged configuration
+      configureLogger(finalConfig);
 
       // 2. Instantiate Service
       // IngestService constructor takes (config, logger).

@@ -7,6 +7,7 @@
 
 const { Command } = require('commander');
 const { loadConfig } = require('../config');
+const { configureLogger } = require('../logger');
 const SystemService = require('../../services/SystemService');
 const { formatOutput, formatError } = require('../output');
 
@@ -20,6 +21,7 @@ system
   .action(async (options) => {
     try {
       const config = await loadConfig(options);
+      configureLogger(config);
       const service = new SystemService(config);
       const result = await service.initDb();
       formatOutput(result, 'system init-db', options);
@@ -36,6 +38,7 @@ system
   .action(async (options) => {
     try {
       const config = await loadConfig(options);
+      configureLogger(config);
       const service = new SystemService(config);
       const result = await service.getStatus();
       formatOutput(result, 'system status', options);
@@ -53,6 +56,7 @@ system
   .action(async (options) => {
     try {
       const config = await loadConfig(options);
+      configureLogger(config);
       const service = new SystemService(config);
       const result = await service.clearQueue(options.confirm);
       formatOutput(result, 'system clear-queue', options);

@@ -7,6 +7,7 @@
 
 const { Command } = require('commander');
 const { loadConfig } = require('../config');
+const { configureLogger } = require('../logger');
 const QueryService = require('../../services/QueryService');
 const { formatOutput, formatError } = require('../output');
 
@@ -23,6 +24,7 @@ query
   .action(async (options) => {
     try {
       const config = await loadConfig(options);
+      configureLogger(config);
 
       const storageAdapters = {
         memorials: {
@@ -78,6 +80,7 @@ query
   .action(async (id, options) => {
     try {
       const config = await loadConfig(options);
+      configureLogger(config);
 
       const storageAdapters = {
         memorials: {
@@ -118,6 +121,7 @@ query
   .action(async (searchQuery, options) => {
     try {
       const config = await loadConfig(options);
+      configureLogger(config);
 
       const storageAdapters = {
         memorials: {
