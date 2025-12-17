@@ -11,6 +11,7 @@
  */
 
 const { program } = require('commander');
+require('dotenv').config();
 const pkg = require('../package.json');
 
 // Register global options

@@ -221,17 +221,17 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
     - _Requirements: 7.4_
 
 - [ ] 15. Documentation and cleanup
-  - [ ] 15.1 Update package.json
+  - [x] 15.1 Update package.json
     - Add `bin` entry for `th` command
     - Add any new dependencies (commander, cli-progress, ora)
     - Add CLI-related npm scripts
     - _Requirements: All_
-  - [ ] 15.2 Create CLI documentation
+  - [x] 15.2 Create CLI documentation
     - Update README.md with CLI usage
     - Create `docs/cli/usage.md` with examples
     - Document all commands, options, and exit codes
     - _Requirements: 8.2_
-  - [ ] 15.3 Final verification
+  - [x] 15.3 Final verification
     - Run full test suite (`npm test`)
     - Run linting (`npm run lint`)
     - Manual CLI testing for each command
@@ -249,6 +249,16 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
 | 4. Commands | 8 | 8 | - |
 | 5. Logging/Progress | 4 | 4 | - |
 | 6. Integration | 5 | 2 | 2* |
-| **Total** | **37** | **30** | **2*** |
 
-*Tasks marked with `*` are optional integration/E2E tests.
+---
+
+## Phase 7: Comprehensive Testing
+
+- [x] 16. Comprehensive CLI Verification
+  - [x] 16.1 Create detailed test plan
+  - [x] 16.2 Verify Global Options
+  - [x] 16.3 Verify Ingest Command
+  - [x] 16.4 Verify Query Command
+  - [x] 16.5 Verify Export Command
+  - [x] 16.6 Verify System Command
+
