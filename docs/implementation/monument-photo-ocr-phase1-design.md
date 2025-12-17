@@ -18,7 +18,7 @@ Introduce an automated cropping step that detects the monument’s bounds and re
 ### 4.1 New Module: `MonumentCropper`
 - Location: `src/utils/imageProcessing/monumentCropper.js`
 - Responsibilities:
-  - Detect monument region using OpenCV edge and contour analysis
+  - Detect monument region using color and edge analysis via Sharp
   - Return bounding box coordinates `{ x, y, width, height }`
   - Crop the image with Sharp and return a buffer
 - Configurable thresholds (min area, aspect ratio, compactness) read from environment variables.
@@ -66,7 +66,7 @@ MONUMENT_ASPECT_RATIO_MAX=2.0
 ## 8. Risks & Mitigations
 | Risk | Mitigation |
 |------|------------|
-| OpenCV dependency size or build failures | Use prebuilt `opencv4nodejs` binaries; fall back to original image on error |
+| Node module vulnerabilities | Regular security audits; pin safe versions |
 | Incorrect cropping removes text | Conservative thresholds and extensive test fixtures |
 | Performance impact | Crop only when `source_type` is `monument_photo` and feature flag enabled |
 
@@ -76,9 +76,6 @@ MONUMENT_ASPECT_RATIO_MAX=2.0
 - Optional preview/adjustment UI for manual overrides
 
 ## 10. Alternatives Considered
-- **Sharp `.trim()` only** – dropping OpenCV entirely and relying on Sharp’s built‑in edge trimming would be simpler to implement, but tests with diverse monuments showed it frequently leaves large background regions because monuments rarely share a uniform border color.
-- **Fixed center crop** – blindly cropping the center of each photo is trivial but risks removing important inscriptions when the monument is off‑center.
-
-Given those drawbacks, the OpenCV contour approach above is the simplest method that reliably isolates monuments across varied lighting and backgrounds.
+Given those drawbacks, the Sharp-based edge detection approach above is the simplest method that reliably isolates monuments across varied lighting and backgrounds.
 
 *Status: draft – January 2025*
