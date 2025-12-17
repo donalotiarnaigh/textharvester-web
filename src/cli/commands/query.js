@@ -21,9 +21,10 @@ query
   .option('-t, --source-type <type>', 'Filter by source type')
   .option('-l, --limit <n>', 'Maximum records to return', '50')
   .option('-o, --offset <n>', 'Offset for pagination', '0')
-  .action(async (options) => {
+  .action(async (options, command) => {
     try {
-      const config = await loadConfig(options);
+      const optsWithGlobals = command.optsWithGlobals();
+      const config = await loadConfig(optsWithGlobals);
       configureLogger(config);
 
       const storageAdapters = {
@@ -77,9 +78,10 @@ query
   .command('get <id>')
   .description('Get a single record by ID')
   .option('-t, --source-type <type>', 'Source type of the record')
-  .action(async (id, options) => {
+  .action(async (id, options, command) => {
     try {
-      const config = await loadConfig(options);
+      const optsWithGlobals = command.optsWithGlobals();
+      const config = await loadConfig(optsWithGlobals);
       configureLogger(config);
 
       const storageAdapters = {
@@ -118,9 +120,10 @@ query
   .option('-t, --source-type <type>', 'Filter by source type')
   .option('-y, --year <year>', 'Filter by year')
   .option('-l, --limit <n>', 'Maximum records to return', '50')
-  .action(async (searchQuery, options) => {
+  .action(async (searchQuery, options, command) => {
     try {
-      const config = await loadConfig(options);
+      const optsWithGlobals = command.optsWithGlobals();
+      const config = await loadConfig(optsWithGlobals);
       configureLogger(config);
 
       const storageAdapters = {

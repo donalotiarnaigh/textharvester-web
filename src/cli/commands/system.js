@@ -18,9 +18,10 @@ const system = new Command('system')
 system
   .command('init-db')
   .description('Initialize database tables')
-  .action(async (options) => {
+  .action(async (options, command) => {
     try {
-      const config = await loadConfig(options);
+      const optsWithGlobals = command.optsWithGlobals();
+      const config = await loadConfig(optsWithGlobals);
       configureLogger(config);
       const service = new SystemService(config);
       const result = await service.initDb();
@@ -35,9 +36,10 @@ system
 system
   .command('status')
   .description('Show system status (queue, record counts)')
-  .action(async (options) => {
+  .action(async (options, command) => {
     try {
-      const config = await loadConfig(options);
+      const optsWithGlobals = command.optsWithGlobals();
+      const config = await loadConfig(optsWithGlobals);
       configureLogger(config);
       const service = new SystemService(config);
       const result = await service.getStatus();
@@ -53,9 +55,10 @@ system
   .command('clear-queue')
   .description('Clear the processing queue')
   .option('--confirm', 'Confirm destructive operation (required in non-interactive mode)')
-  .action(async (options) => {
+  .action(async (options, command) => {
     try {
-      const config = await loadConfig(options);
+      const optsWithGlobals = command.optsWithGlobals();
+      const config = await loadConfig(optsWithGlobals);
       configureLogger(config);
       const service = new SystemService(config);
       const result = await service.clearQueue(options.confirm);

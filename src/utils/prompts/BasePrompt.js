@@ -18,7 +18,7 @@ class BasePrompt {
     this.version = config.version || '1.0.0';
     this.description = config.description || '';
     this.fields = this._validateFields(config.fields || {});
-    this.providers = config.providers || ['openai', 'anthropic'];
+    this.providers = config.providers || ['openai', 'anthropic', 'mock'];
   }
 
   /**
@@ -35,8 +35,8 @@ class BasePrompt {
 
     // Original object validation logic
     for (const [fieldName, field] of Object.entries(fields)) {
-      if (!field.type || (typeof field.type === 'string' && !dataTypes.isValidType(field.type)) || 
-          (typeof field.type === 'object' && !field.type.name)) {
+      if (!field.type || (typeof field.type === 'string' && !dataTypes.isValidType(field.type)) ||
+        (typeof field.type === 'object' && !field.type.name)) {
         throw new Error(`Unsupported field type: ${field.type}`);
       }
       if (!field.description) {
@@ -54,7 +54,7 @@ class BasePrompt {
    */
   validateField(fieldName, value) {
     // Handle both array and object field formats
-    const field = Array.isArray(this.fields) 
+    const field = Array.isArray(this.fields)
       ? this.fields.find(f => f.name === fieldName)
       : this.fields[fieldName];
 
@@ -83,46 +83,46 @@ class BasePrompt {
     // Convert string values to appropriate types
     if (typeof value === 'string' && value.trim() !== '') {
       switch (fieldType) {
-      case 'integer': {
-        const intValue = parseInt(value.trim(), 10);
-        if (!isNaN(intValue) && intValue.toString() === value.trim()) {
-          convertedValue = intValue;
+        case 'integer': {
+          const intValue = parseInt(value.trim(), 10);
+          if (!isNaN(intValue) && intValue.toString() === value.trim()) {
+            convertedValue = intValue;
+          }
+          break;
         }
-        break;
-      }
-      case 'float': {
-        const floatValue = parseFloat(value.trim());
-        if (!isNaN(floatValue)) {
-          convertedValue = floatValue;
+        case 'float': {
+          const floatValue = parseFloat(value.trim());
+          if (!isNaN(floatValue)) {
+            convertedValue = floatValue;
+          }
+          break;
         }
-        break;
-      }
-      case 'boolean': {
-        const lowerValue = value.toLowerCase().trim();
-        if (lowerValue === 'true') {
-          convertedValue = true;
-        } else if (lowerValue === 'false') {
-          convertedValue = false;
+        case 'boolean': {
+          const lowerValue = value.toLowerCase().trim();
+          if (lowerValue === 'true') {
+            convertedValue = true;
+          } else if (lowerValue === 'false') {
+            convertedValue = false;
+          }
+          break;
         }
-        break;
-      }
-      case 'date': {
-        const dateValue = new Date(value);
-        if (!isNaN(dateValue.getTime())) {
-          convertedValue = dateValue;
+        case 'date': {
+          const dateValue = new Date(value);
+          if (!isNaN(dateValue.getTime())) {
+            convertedValue = dateValue;
+          }
+          break;
         }
-        break;
-      }
       }
     }
 
     const result = dataTypes.validateValue(convertedValue, fieldType, field.metadata);
-    
+
     if (result.errors.length > 0) {
       const errorMessages = result.errors.map(error => {
         // Transform error messages to match expected format
         let transformedError = error.replace('Value', fieldName.charAt(0).toUpperCase() + fieldName.slice(1));
-        
+
         // Fix specific error message formats
         if (transformedError.includes('Invalid integer value:')) {
           // Extract the value from the original error message
@@ -142,7 +142,7 @@ class BasePrompt {
         if (transformedError.includes('Invalid date value:')) {
           transformedError = transformedError.replace('Invalid date value:', 'Invalid date value');
         }
-        
+
         return transformedError;
       });
       throw new Error(errorMessages[0]);
@@ -202,22 +202,22 @@ class BasePrompt {
     const validatedData = this.validateAndConvert(data);
 
     switch (provider.toLowerCase()) {
-    case 'openai':
-      return {
-        response_format: { type: 'json' },
-        content: validatedData
-      };
-      
-    case 'anthropic':
-      return {
-        messages: [{
-          role: 'assistant',
-          content: JSON.stringify(validatedData, null, 2)
-        }]
-      };
-      
-    default:
-      throw new Error(`Unsupported provider: ${provider}`);
+      case 'openai':
+        return {
+          response_format: { type: 'json' },
+          content: validatedData
+        };
+
+      case 'anthropic':
+        return {
+          messages: [{
+            role: 'assistant',
+            content: JSON.stringify(validatedData, null, 2)
+          }]
+        };
+
+      default:
+        throw new Error(`Unsupported provider: ${provider}`);
     }
   }
 
@@ -231,22 +231,22 @@ class BasePrompt {
     const config = createProviderConfig(provider);
 
     switch (provider.toLowerCase()) {
-    case 'openai':
-      return {
-        maxTokens: config.maxTokens,
-        temperature: config.temperature,
-        responseFormat: { type: 'json' }
-      };
-      
-    case 'anthropic':
-      return {
-        maxTokens: config.maxTokens,
-        temperature: config.temperature,
-        format: 'json'
-      };
-      
-    default:
-      throw new Error(`Unsupported provider: ${provider}`);
+      case 'openai':
+        return {
+          maxTokens: config.maxTokens,
+          temperature: config.temperature,
+          responseFormat: { type: 'json' }
+        };
+
+      case 'anthropic':
+        return {
+          maxTokens: config.maxTokens,
+          temperature: config.temperature,
+          format: 'json'
+        };
+
+      default:
+        throw new Error(`Unsupported provider: ${provider}`);
     }
   }
 
@@ -260,30 +260,30 @@ class BasePrompt {
     this.validateProvider(provider);
 
     switch (provider.toLowerCase()) {
-    case 'openai':
-      if (!response.response_format || response.response_format.type !== 'json') {
-        throw new Error('Invalid OpenAI response format');
+      case 'openai':
+        if (!response.response_format || response.response_format.type !== 'json') {
+          throw new Error('Invalid OpenAI response format');
+        }
+        if (response.content?.error === 'token_limit_exceeded') {
+          throw new Error('OpenAI token limit exceeded');
+        }
+        break;
+
+      case 'anthropic': {
+        if (!response.messages || !Array.isArray(response.messages)) {
+          throw new Error('Invalid Anthropic response format');
+        }
+        const content = response.messages[0]?.content;
+        try {
+          JSON.parse(content);
+        } catch (error) {
+          throw new Error('Invalid JSON in Anthropic response');
+        }
+        break;
       }
-      if (response.content?.error === 'token_limit_exceeded') {
-        throw new Error('OpenAI token limit exceeded');
-      }
-      break;
-      
-    case 'anthropic': {
-      if (!response.messages || !Array.isArray(response.messages)) {
-        throw new Error('Invalid Anthropic response format');
-      }
-      const content = response.messages[0]?.content;
-      try {
-        JSON.parse(content);
-      } catch (error) {
-        throw new Error('Invalid JSON in Anthropic response');
-      }
-      break;
-    }
-      
-    default:
-      throw new Error(`Unsupported provider: ${provider}`);
+
+      default:
+        throw new Error(`Unsupported provider: ${provider}`);
     }
   }
 
@@ -321,7 +321,7 @@ class BasePrompt {
   validateAndConvert(data) {
     const result = {};
     const errors = [];
-    
+
     // First pass: validate required fields are present
     for (const [fieldName, field] of Object.entries(this.fields)) {
       if (field.metadata?.required && !(fieldName in data)) {

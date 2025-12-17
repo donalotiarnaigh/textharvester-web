@@ -6,7 +6,7 @@
 const { Command } = require('commander');
 const { loadConfig } = require('../config');
 const { configureLogger } = require('../logger');
-const { IngestService } = require('../../services/IngestService');
+const IngestService = require('../../services/IngestService');
 const { formatOutput, formatError } = require('../output');
 const logger = require('../../utils/logger'); // Assuming logger is needed for service injection if required, or just global config
 
@@ -29,15 +29,15 @@ const ingest = new Command('ingest')
       // config.js doesn't explicitly list all defaults but the Config interface in design.md has 'replaceExisting'.
       // The CLI flag is --replace (-r).
 
+      const optsWithGlobals = command.optsWithGlobals();
       const cliConfig = {
-        ...options,
+        ...optsWithGlobals,
         // Map --replace to replaceExisting if needed, or just let service handle 'replace' if it uses that.
         // IngestService uses options passed to it.
         // Let's check IngestService implementation or design.
         // Design says: options.batchSize, options.replaceExisting. 
         // CLI options: replace.
         replaceExisting: options.replace,
-        config: command.parent?.opts().config // Get global config path if needed
       };
 
       const finalConfig = await loadConfig(cliConfig);

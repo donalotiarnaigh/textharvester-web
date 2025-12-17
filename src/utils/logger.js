@@ -63,7 +63,11 @@ class Logger {
 
   info(message, ...args) {
     if (!config.logging.quietMode) {
-      console.log(`[INFO] ${message}`, ...args);
+      if (process.env.LOG_TO_STDERR === 'true') {
+        console.error(`[INFO] ${message}`, ...args);
+      } else {
+        console.log(`[INFO] ${message}`, ...args);
+      }
     }
     this._writeToLog('info', message, args);
   }

@@ -88,6 +88,11 @@ const memorialOCRTemplates = {
     version: '2.0.0',
     provider: 'anthropic',
     fields: MEMORIAL_FIELDS
+  }),
+  mock: new MemorialOCRPrompt({
+    version: '1.0.0',
+    provider: 'mock',
+    fields: MEMORIAL_FIELDS
   })
 };
 
@@ -99,6 +104,10 @@ const burialRegisterTemplates = {
   anthropic: new BurialRegisterPrompt({
     version: '1.0.0',
     provider: 'anthropic'
+  }),
+  mock: new BurialRegisterPrompt({
+    version: '1.0.0',
+    provider: 'mock'
   })
 };
 
@@ -112,6 +121,11 @@ const monumentPhotoOCRTemplates = {
     version: '1.0.0',
     provider: 'anthropic',
     fields: MEMORIAL_FIELDS
+  }),
+  mock: new MonumentPhotoOCRPrompt({
+    version: '1.0.0',
+    provider: 'mock',
+    fields: MEMORIAL_FIELDS
   })
 };
 
@@ -123,6 +137,10 @@ const graveCardTemplates = {
   anthropic: new GraveCardPrompt({
     version: '1.0.0',
     provider: 'anthropic'
+  }),
+  mock: new GraveCardPrompt({
+    version: '1.0.0',
+    provider: 'mock'
   })
 };
 

@@ -20,7 +20,7 @@ class MonumentPhotoOCRPrompt extends BasePrompt {
       version: '1.0.0',
       description: 'OCR prompt for extracting memorial data from monument photos with weathered stone considerations',
       fields: MEMORIAL_FIELDS,
-      providers: ['openai', 'anthropic'],
+      providers: ['openai', 'anthropic', 'mock'],
       ...config
     });
   }
@@ -130,7 +130,7 @@ Follow genealogical transcription standards - transcribe exactly what is visible
    */
   getProviderPrompt(provider) {
     const basePrompt = this.getPromptText();
-    
+
     if (provider === 'openai') {
       return {
         systemPrompt: 'You are an expert OCR system specializing in reading weathered stone monuments and headstones for genealogical records. You follow genealogical transcription standards, transcribing exactly what is visible without interpretation or guessing. You excel at extracting structured data from monument photos, handling challenges like weathered stone, carved text at angles, and partially obscured inscriptions. CRITICAL: Use single dashes (-) for illegible characters, never use brackets like [?] or [WEATHERED]. Use | for line breaks, never \\n.',
@@ -142,7 +142,7 @@ Follow genealogical transcription standards - transcribe exactly what is visible
         userPrompt: `${basePrompt}\n\nCRITICAL FORMATTING REQUIREMENTS:\n- Use ONLY single dashes (-) for illegible text, NEVER [?], [WEATHERED], [5?]\n- Use ONLY | for line breaks, NEVER \\n\n- Return valid JSON only\n- year_of_death can be integer (1500-2030) OR string with dashes for illegible portions (e.g., "19--")\n- All text fields must be properly formatted strings\n- Follow genealogical transcription standards exactly\n- Do not include any explanatory text, only return the JSON object`
       };
     }
-    
+
     throw new Error(`Unsupported provider: ${provider}`);
   }
 
@@ -201,7 +201,7 @@ Follow genealogical transcription standards - transcribe exactly what is visible
           // Different names - process normally
           const fullName = [rawData.first_name, rawData.last_name].filter(Boolean).join(' ');
           const processedName = preprocessName(fullName);
-          
+
           result.first_name = processedName.firstName || rawData.first_name;
           result.last_name = processedName.lastName || rawData.last_name;
         }
@@ -213,7 +213,7 @@ Follow genealogical transcription standards - transcribe exactly what is visible
       if (field.name !== 'first_name' && field.name !== 'last_name') {
         const value = rawData[field.name];
         logger.info(`[MonumentPhotoOCRPrompt] Processing field ${field.name}:`, value, typeof value);
-        
+
         if (value !== undefined) {
           try {
             // Special handling for memorial_number - use provided value or null
@@ -258,23 +258,23 @@ Follow genealogical transcription standards - transcribe exactly what is visible
     // Handle string values that may contain dashes for illegible characters
     if (typeof value === 'string') {
       const trimmed = value.trim();
-      
+
       // Allow single dash for completely illegible year
       if (trimmed === '-') {
         return '-';
       }
-      
+
       // Allow dash patterns like "19--", "1-84", etc.
       if (/^\d*-+\d*$/.test(trimmed) && trimmed.length >= 2) {
         return trimmed;
       }
-      
+
       // Try to parse as integer if no dashes
       const parsed = parseInt(trimmed, 10);
       if (!isNaN(parsed) && parsed >= 1500 && parsed <= 2030) {
         return parsed;
       }
-      
+
       // If it's not a valid pattern, return as-is for genealogical accuracy
       return trimmed;
     }
@@ -306,7 +306,7 @@ Follow genealogical transcription standards - transcribe exactly what is visible
     // Ensure line breaks are properly formatted with | separator
     // Replace any \n that might have slipped through with |
     processed = processed.replace(/\\n/g, '|').replace(/\n/g, '|');
-    
+
     return processed;
   }
 }

@@ -7,16 +7,15 @@
 
 const { Command } = require('commander');
 const ingestCommand = require('../../../src/cli/commands/ingest');
-const { IngestService } = require('../../../src/services/IngestService');
+const IngestService = require('../../../src/services/IngestService');
 const { CLIError } = require('../../../src/cli/errors');
 
 // Mock IngestService
+// Mock IngestService
 jest.mock('../../../src/services/IngestService', () => {
-  return {
-    IngestService: jest.fn().mockImplementation(() => ({
-      ingest: jest.fn()
-    }))
-  };
+  return jest.fn().mockImplementation(() => ({
+    ingest: jest.fn()
+  }));
 });
 
 describe('Ingest Command', () => {
@@ -57,7 +56,8 @@ describe('Ingest Command', () => {
     // returns our object with user-controllable spies.
 
     // Re-acquire the mock to set up return values for this test
-    const IngestServiceClass = require('../../../src/services/IngestService').IngestService;
+    // Re-acquire the mock to set up return values for this test
+    const IngestServiceClass = require('../../../src/services/IngestService');
     mockIngestMethod = jest.fn();
     IngestServiceClass.mockImplementation(() => ({
       ingest: mockIngestMethod
@@ -95,7 +95,8 @@ describe('Ingest Command', () => {
       await runCommand(['ingest', 'scans/*.jpg', '--source-type', 'burial_register', '--provider', 'anthropic']);
 
       // Verify Service was instantiated
-      expect(require('../../../src/services/IngestService').IngestService).toHaveBeenCalled();
+      // Verify Service was instantiated
+      expect(require('../../../src/services/IngestService')).toHaveBeenCalled();
 
       // Verify ingest was called with correct args
       expect(mockIngestMethod).toHaveBeenCalledWith('scans/*.jpg', expect.objectContaining({

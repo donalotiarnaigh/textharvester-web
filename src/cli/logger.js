@@ -23,6 +23,23 @@ function configureLogger(options, logger = defaultLogger) {
         logger.updateSamplingRates({ payloadLogging: 1.0 });
         logger.setVerboseMode(true); // Ensure verbose is on to see payloads if not implicit
     }
+
+    // Force all logs to stderr to keep stdout clean for JSON output
+    // Monkey patch the info method (which normally uses console.log)
+    const originalInfo = logger.info.bind(logger);
+    logger.info = function (message, ...args) {
+        if (!options.quiet) {
+            console.error(`[INFO] ${message}`, ...args);
+        }
+        // Call original to preserve file logging logic (but we bind it so it might log to console.log again if we call originalInfo... wait)
+        // logger.info source:
+        // if (!quiet) console.log(...)
+        // _writeToLog(...)
+        // We want to skip console.log but keep _writeToLog.
+        // We can't easily skip just the console.log part without modifying Logger class or duplicating logic.
+        // But since we are patching, we can just do:
+        this._writeToLog('info', message, args);
+    };
 }
 
 module.exports = { configureLogger };

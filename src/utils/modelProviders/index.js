@@ -1,5 +1,6 @@
 const OpenAIProvider = require('./openaiProvider');
 const AnthropicProvider = require('./anthropicProvider');
+const MockProvider = require('./mockProvider');
 const path = require('path');
 const fs = require('fs');
 
@@ -22,23 +23,26 @@ try {
 function createProvider(customConfig = {}) {
   // Merge custom config with default config
   const mergedConfig = { ...config, ...customConfig };
-  
+
   // Get provider from config, environment variable, or default to OpenAI
   const provider = mergedConfig.AI_PROVIDER || process.env.AI_PROVIDER || 'openai';
-  
+
   switch (provider.toLowerCase()) {
-  case 'openai':
-    return new OpenAIProvider(mergedConfig);
-  case 'anthropic':
-    return new AnthropicProvider(mergedConfig);
-  default:
-    console.warn(`Unsupported AI provider: ${provider}, falling back to OpenAI`);
-    return new OpenAIProvider(mergedConfig);
+    case 'openai':
+      return new OpenAIProvider(mergedConfig);
+    case 'anthropic':
+      return new AnthropicProvider(mergedConfig);
+    case 'mock':
+      return new MockProvider(mergedConfig);
+    default:
+      console.warn(`Unsupported AI provider: ${provider}, falling back to OpenAI`);
+      return new OpenAIProvider(mergedConfig);
   }
 }
 
-module.exports = { 
+module.exports = {
   createProvider,
   OpenAIProvider,
-  AnthropicProvider
+  AnthropicProvider,
+  MockProvider
 }; 

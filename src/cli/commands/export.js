@@ -18,9 +18,10 @@ const exportCmd = new Command('export')
   .option('-d, --destination <path>', 'Destination file path (stdout if not specified)')
   .option('-t, --source-type <type>', 'Filter by source type')
   .option('--force', 'Overwrite existing file without confirmation')
-  .action(async (options) => {
+  .action(async (options, command) => {
     try {
-      const config = await loadConfig(options);
+      const optsWithGlobals = command.optsWithGlobals();
+      const config = await loadConfig(optsWithGlobals);
       configureLogger(config);
 
       const storageAdapters = {

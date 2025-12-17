@@ -47,7 +47,16 @@ program.on('command:*', (operands) => {
 });
 
 // Parse and execute
-program.parse(process.argv);
+// Parse and execute
+program.parseAsync(process.argv)
+  .then(() => {
+    // Explicitly exit to prevent hanging on open handles (e.g. DB connections)
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
 
 // If no command provided, show help
 if (process.argv.length === 2) {

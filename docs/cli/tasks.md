@@ -211,7 +211,7 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
     - _Requirements: Backward compatibility_
 
 - [ ]* 14. Integration tests
-  - [ ]* 14.1 CLI integration tests
+  - [x]* 14.1 CLI integration tests
     - Full ingest → query → export pipeline via CLI
     - Test with real files and database
     - _Requirements: All_
