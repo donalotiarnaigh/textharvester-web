@@ -117,16 +117,10 @@ describe('IngestService', () => {
     test('should throw NO_FILES_MATCHED if pattern matches nothing', async () => {
       glob.mockImplementation((pattern, cb) => cb(null, []));
 
-      await expect(service.ingest('*.jpg', { sourceType: 'memorial' }))
-        .rejects
-        .toThrow('No files matched: *.jpg');
-
-      try {
-        await service.ingest('*.jpg', { sourceType: 'memorial' });
-      } catch (error) {
-        expect(error).toBeInstanceOf(CLIError);
-        expect(error.code).toBe('NO_FILES_MATCHED');
-      }
+      const ingestPromise = service.ingest('*.jpg', { sourceType: 'memorial' });
+      await expect(ingestPromise).rejects.toThrow('No files matched: *.jpg');
+      await expect(ingestPromise).rejects.toBeInstanceOf(CLIError);
+      await expect(ingestPromise).rejects.toHaveProperty('code', 'NO_FILES_MATCHED');
     });
 
     test('should collect failures for individual file errors', async () => {

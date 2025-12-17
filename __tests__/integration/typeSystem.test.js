@@ -1,11 +1,9 @@
-const { 
-  StringType, 
-  IntegerType, 
-  validateValue 
+const {
+  StringType,
+  IntegerType
 } = require('../../src/utils/prompts/types/dataTypes');
 
 const {
-  MEMORIAL_FIELDS,
   validateMemorialData,
   transformMemorialData
 } = require('../../src/utils/prompts/types/memorialFields');
@@ -14,11 +12,11 @@ describe('Type System Integration', () => {
   describe('Data Types Integration', () => {
     it('should validate and convert string types', () => {
       const stringType = new StringType();
-      
+
       // Test validation
       expect(stringType.validate('test').errors).toHaveLength(0);
       expect(stringType.validate(123).errors).toHaveLength(1);
-      
+
       // Test conversion
       expect(stringType.validate('test').value).toBe('test');
       expect(stringType.validate('  test  ').value).toBe('test');
@@ -26,11 +24,11 @@ describe('Type System Integration', () => {
 
     it('should validate and convert integer types', () => {
       const integerType = new IntegerType();
-      
+
       // Test validation
       expect(integerType.validate(123).errors).toHaveLength(0);
       expect(integerType.validate('123').errors).toHaveLength(1);
-      
+
       // Test conversion
       expect(integerType.validate(123).value).toBe(123);
       expect(integerType.validate(-123).value).toBe(-123);
@@ -60,7 +58,7 @@ describe('Type System Integration', () => {
       };
 
       const transformed = transformMemorialData(data);
-      
+
       expect(transformed.memorial_number).toBe('123');
       expect(transformed.first_name).toBe('JOHN'); // Accept uppercase as is
       expect(transformed.last_name).toBe('DOE'); // Accept uppercase as is

@@ -55,8 +55,7 @@ jest.mock('../../config.json', () => ({
   uploadPath: 'test/uploads'
 }), { virtual: true });
 
-const path = require('path');
-const { processFile } = require('../src/utils/fileProcessing');
+const { processFile } = require('../src/utils/fileProcessing.js');
 const { createProvider } = require('../src/utils/modelProviders');
 const { storeMemorial } = require('../src/utils/database');
 const { getPrompt } = require('../src/utils/prompts/templates/providerTemplates');

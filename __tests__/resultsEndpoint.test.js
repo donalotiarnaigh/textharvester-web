@@ -1,5 +1,3 @@
-const request = require('supertest');
-const express = require('express');
 const httpMocks = require('node-mocks-http');
 
 // Auto-mock QueryService

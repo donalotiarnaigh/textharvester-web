@@ -404,7 +404,8 @@ const SanitizeUtils = {
           <td>${this.sanitizeText(age)}</td>
           <td>${this.sanitizeText(details)}</td>
         </tr>
-      `;}).join('');
+      `;
+      }).join('');
 
       intermentsHtml = `
         <div class="table-responsive">
@@ -763,7 +764,7 @@ function displayMemorials(memorials) {
  * Update the export button visibility and behavior
  * @param {Array} memorials - List of memorials/cards
  */
-function updateExportButton(memorials) {
+function updateExportButton() {
   // Functionality removed to prevent duplicate buttons. 
   // Standard export buttons are handled by enableDownloadButtons()
   return;
@@ -898,7 +899,7 @@ function createBurialRegisterDetailHTML(entry, colSpan, uniqueId) {
     } else if (Array.isArray(safe.uncertainty_flags)) {
       uncertaintyFlags = safe.uncertainty_flags;
     }
-  } catch (e) {
+  } catch {
     // If parsing fails, leave as empty array
   }
 

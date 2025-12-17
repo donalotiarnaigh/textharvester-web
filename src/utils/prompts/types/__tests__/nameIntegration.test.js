@@ -91,7 +91,7 @@ describe('Name Processing Integration', () => {
     expect(smithComponents.last_name).toBe('SMITH');
     expect(smithComponents.first_name).toBe('');
 
-    edgeCases.forEach(name => {
+    edgeCases.forEach(() => {
       // Special handling for the initial case using the field's transform method
       const firstNameField = getField('first_name');
       const initialData = {

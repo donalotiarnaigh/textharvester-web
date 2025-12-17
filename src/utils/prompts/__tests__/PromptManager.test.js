@@ -1,7 +1,7 @@
 // Mock dependencies
 jest.mock('../types/dataTypes', () => ({
   isValidType: () => true,
-  validateValue: (value, type) => ({ value, errors: [] })
+  validateValue: (value) => ({ value, errors: [] })
 }));
 
 jest.mock('../providers/providerConfig', () => ({
@@ -77,23 +77,6 @@ class TestPrompt extends MockBasePrompt {
   }
 }
 
-class AnotherTestPrompt extends MockBasePrompt {
-  constructor(config = {}) {
-    super({
-      version: '2.0.0',
-      description: 'Another test prompt',
-      fields: {
-        fieldA: { type: 'string', description: 'Test field A' }
-      },
-      ...config
-    });
-  }
-
-  getPromptText() {
-    return 'Another test prompt text';
-  }
-}
-
 describe('PromptManager', () => {
   let manager;
 
@@ -110,7 +93,7 @@ describe('PromptManager', () => {
     });
 
     it('should throw error when registering invalid prompt class', () => {
-      class InvalidPrompt {}
+      class InvalidPrompt { }
       expect(() => {
         manager.registerPromptClass('invalid', InvalidPrompt);
       }).toThrow('Invalid prompt class: Must extend BasePrompt');

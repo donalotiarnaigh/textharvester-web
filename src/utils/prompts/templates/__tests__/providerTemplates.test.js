@@ -1,6 +1,5 @@
 const { promptManager, openaiTemplate, anthropicTemplate, getPrompt } = require('../providerTemplates');
 const BasePrompt = require('../../BasePrompt');
-const { MEMORIAL_FIELDS } = require('../../types/memorialFields');
 const BurialRegisterPrompt = require('../BurialRegisterPrompt');
 
 // Test prompt class using field-based approach
@@ -10,7 +9,7 @@ class TestPrompt extends BasePrompt {
       version: '1.0.0',
       description: 'Test prompt',
       fields: {
-        memorial_number: { 
+        memorial_number: {
           type: 'string',
           description: 'Memorial identifier',
           required: true
@@ -21,7 +20,7 @@ class TestPrompt extends BasePrompt {
           required: false
         },
         year_of_death: {
-          type: 'integer', 
+          type: 'integer',
           description: 'Year of death',
           required: false,
           constraints: { min: 1500, max: 2100 }

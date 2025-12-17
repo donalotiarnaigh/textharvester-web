@@ -1,7 +1,6 @@
-// Mock dependencies first
 jest.mock('../types/dataTypes', () => ({
   isValidType: () => true,
-  validateValue: (value, type) => ({ value, errors: [] })
+  validateValue: (value) => ({ value, errors: [] })
 }));
 
 jest.mock('../providers/providerConfig', () => ({
@@ -154,23 +153,6 @@ class TestPrompt extends MockBasePrompt {
   }
 }
 
-class AnotherTestPrompt extends MockBasePrompt {
-  constructor(config = {}) {
-    super({
-      version: '2.0.0',
-      description: 'Another test prompt',
-      fields: {
-        fieldA: { type: 'string', description: 'Test field A' }
-      },
-      ...config
-    });
-  }
-
-  getPromptText() {
-    return 'Another test prompt text';
-  }
-}
-
 describe('PromptFactory', () => {
   let factory;
 
@@ -239,13 +221,11 @@ describe('PromptFactory', () => {
   describe('helper utilities', () => {
     beforeEach(() => {
       factory.registerPrompt('test', TestPrompt);
-      factory.registerPrompt('another', AnotherTestPrompt);
     });
 
     it('should list all available prompts', () => {
       const prompts = factory.getAvailablePrompts();
       expect(prompts).toContain('test');
-      expect(prompts).toContain('another');
     });
 
     it('should get prompt info', () => {

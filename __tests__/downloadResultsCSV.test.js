@@ -1,6 +1,5 @@
 const { downloadResultsJSON } = require('../src/controllers/resultsManager'); // Adjust path as needed
 const httpMocks = require('node-mocks-http'); // Mock HTTP request/response
-const path = require('path');
 const { downloadResultsCSV } = require('../src/controllers/resultsManager');
 
 jest.mock('../src/utils/database', () => ({
@@ -20,7 +19,7 @@ describe('downloadResultsJSON', () => {
     });
 
     await downloadResultsJSON(req, res);
-    
+
     expect(res._getHeaders()['content-disposition'])
       .toBe('attachment; filename="test_filename.json"');
   });
@@ -36,7 +35,7 @@ describe('downloadResultsCSV', () => {
     });
 
     await downloadResultsCSV(req, res);
-    
+
     expect(res._getHeaders()['content-disposition'])
       .toBe('attachment; filename="test_filename.csv"');
   });

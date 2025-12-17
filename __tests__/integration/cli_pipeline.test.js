@@ -22,7 +22,8 @@ const runCLI = async (args) => {
   const cmd = `${cliPath} ${args}`;
   try {
     const { stdout, stderr } = await execPromise(cmd, {
-      env: { ...process.env, AI_PROVIDER: 'mock', LOG_TO_STDERR: 'true' } // Force mock provider & clean stdout
+      env: { ...process.env, AI_PROVIDER: 'mock', LOG_TO_STDERR: 'true' }, // Force mock provider & clean stdout
+      maxBuffer: 1024 * 1024 // 1MB buffer to prevent truncation
     });
     return { stdout, stderr, exitCode: 0 };
   } catch (error) {
@@ -44,6 +45,12 @@ describe('CLI Integration Pipeline', () => {
   };
 
   beforeAll(async () => {
+    // Clean up main database to prevent accumulated test data
+    const mainDbPath = path.resolve(__dirname, '../../data/memorials.db');
+    if (fs.existsSync(mainDbPath)) {
+      fs.unlinkSync(mainDbPath);
+    }
+
     // Setup temp dir
     try {
       if (fs.existsSync(TEST_DIR)) {
@@ -70,7 +77,7 @@ describe('CLI Integration Pipeline', () => {
   afterAll(() => {
     // Cleanup
     if (fs.existsSync(TEST_DIR)) {
-      // fs.rmSync(TEST_DIR, { recursive: true, force: true });
+      fs.rmSync(TEST_DIR, { recursive: true, force: true });
     }
   });
 

@@ -7,7 +7,6 @@
 
 const { Command } = require('commander');
 const ingestCommand = require('../../../src/cli/commands/ingest');
-const IngestService = require('../../../src/services/IngestService');
 const { CLIError } = require('../../../src/cli/errors');
 
 // Mock IngestService
@@ -21,8 +20,6 @@ jest.mock('../../../src/services/IngestService', () => {
 describe('Ingest Command', () => {
   let program;
   let mockConsoleLog;
-  let mockConsoleError;
-  let mockProcessExit;
   let mockIngestMethod;
 
   beforeEach(() => {
@@ -41,8 +38,8 @@ describe('Ingest Command', () => {
 
     // Mock console.log to capture output
     mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => { });
-    mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => { });
-    mockProcessExit = jest.spyOn(process, 'exit').mockImplementation(() => { });
+    jest.spyOn(console, 'error').mockImplementation(() => { });
+    jest.spyOn(process, 'exit').mockImplementation(() => { });
 
     // Setup Service Mocks
     // Note: We need to get the mock instance that will be created

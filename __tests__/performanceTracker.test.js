@@ -25,7 +25,7 @@ describe('PerformanceTracker', () => {
   describe('trackAPICall', () => {
     test('should track successful API calls', async () => {
       const mockFn = jest.fn().mockResolvedValue({ success: true });
-      
+
       const result = await PerformanceTracker.trackAPICall(
         'openai',
         'gpt-4o',
@@ -47,7 +47,7 @@ describe('PerformanceTracker', () => {
     test('should track failed API calls', async () => {
       const mockError = new Error('API Error');
       const mockFn = jest.fn().mockRejectedValue(mockError);
-      
+
       await expect(
         PerformanceTracker.trackAPICall(
           'anthropic',
@@ -70,7 +70,7 @@ describe('PerformanceTracker', () => {
           setTimeout(() => resolve({ success: true }), 100);
         });
       });
-      
+
       await PerformanceTracker.trackAPICall(
         'openai',
         'gpt-4o',
@@ -93,7 +93,7 @@ describe('PerformanceTracker', () => {
 
     test('should filter stats by provider', async () => {
       const mockFn = jest.fn().mockResolvedValue({ success: true });
-      
+
       await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', mockFn);
       await PerformanceTracker.trackAPICall('anthropic', 'claude-4-sonnet-20250514', 'processImage', mockFn);
 
@@ -109,14 +109,14 @@ describe('PerformanceTracker', () => {
     test('should calculate success rate', async () => {
       const successFn = jest.fn().mockResolvedValue({ success: true });
       const failFn = jest.fn().mockRejectedValue(new Error('Failed'));
-      
+
       await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', successFn);
       await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', successFn);
-      
+
       try {
         await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', failFn);
-      } catch (e) {
-        // Expected to fail
+      } catch {
+        // Expected
       }
 
       const stats = tracker.getStats();
@@ -127,19 +127,19 @@ describe('PerformanceTracker', () => {
   describe('generateSummary', () => {
     test('should generate comprehensive summary', async () => {
       const mockFn = jest.fn().mockResolvedValue({ success: true });
-      
+
       await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', mockFn);
       await PerformanceTracker.trackAPICall('anthropic', 'claude-4-sonnet-20250514', 'processImage', mockFn);
 
       const summary = tracker.generateSummary();
-      
+
       expect(summary.totalProviders).toBe(2);
       expect(summary.totalModels).toBe(2);
       expect(summary.totalCalls).toBe(2);
       expect(summary.totalSuccessful).toBe(2);
       expect(summary.totalFailed).toBe(0);
       expect(summary.overallSuccessRate).toBe(100);
-      
+
       expect(summary.providerComparison.openai).toBeDefined();
       expect(summary.providerComparison.anthropic).toBeDefined();
       expect(summary.modelComparison['openai-gpt-4o']).toBeDefined();
@@ -150,7 +150,7 @@ describe('PerformanceTracker', () => {
   describe('getRecentMetrics', () => {
     test('should return recent metrics', async () => {
       const mockFn = jest.fn().mockResolvedValue({ success: true });
-      
+
       await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', mockFn);
       await PerformanceTracker.trackAPICall('anthropic', 'claude-4-sonnet-20250514', 'processImage', mockFn);
 
@@ -162,7 +162,7 @@ describe('PerformanceTracker', () => {
 
     test('should limit recent metrics', async () => {
       const mockFn = jest.fn().mockResolvedValue({ success: true });
-      
+
       for (let i = 0; i < 10; i++) {
         await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', mockFn);
       }
@@ -175,17 +175,17 @@ describe('PerformanceTracker', () => {
   describe('clearMetrics', () => {
     test('should clear all metrics', async () => {
       const mockFn = jest.fn().mockResolvedValue({ success: true });
-      
+
       await PerformanceTracker.trackAPICall('openai', 'gpt-4o', 'processImage', mockFn);
-      
+
       let stats = tracker.getStats();
       expect(Object.keys(stats)).toHaveLength(1);
-      
+
       tracker.clearMetrics();
-      
+
       stats = tracker.getStats();
       expect(Object.keys(stats)).toHaveLength(0);
-      
+
       const recentMetrics = tracker.getRecentMetrics();
       expect(recentMetrics).toHaveLength(0);
     });

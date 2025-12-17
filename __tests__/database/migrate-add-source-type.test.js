@@ -3,10 +3,6 @@
  * Tests database migration functionality using TDD approach
  */
 
-const sqlite3 = require('sqlite3').verbose();
-const fs = require('fs');
-const path = require('path');
-
 // Mock the logger
 jest.mock('../../src/utils/logger', () => ({
   error: jest.fn(),
@@ -16,7 +12,6 @@ jest.mock('../../src/utils/logger', () => ({
 }));
 
 describe('Database Migration: Add source_type Column', () => {
-  let addSourceTypeColumn;
   let logger;
 
   beforeAll(async () => {
@@ -44,32 +39,32 @@ describe('Database Migration: Add source_type Column', () => {
       const fs = require('fs');
       const originalExistsSync = fs.existsSync;
       fs.existsSync = jest.fn().mockReturnValue(false);
-      
+
       // Clear module cache and re-require to get fresh instance with mocked fs
       delete require.cache[require.resolve('../../scripts/migrate-add-source-type')];
       const { addSourceTypeColumn } = require('../../scripts/migrate-add-source-type');
-      
+
       // Point to non-existent database
       const nonExistentDbPath = '/tmp/non_existent_test_db_' + Date.now() + '.db';
-      
+
       // Test that the function resolves quickly
       const startTime = Date.now();
       const result = await addSourceTypeColumn(nonExistentDbPath);
       const endTime = Date.now();
-      
+
       expect(result).toBe(true); // Should resolve successfully
       expect(endTime - startTime).toBeLessThan(1000); // Should complete in less than 1 second
       expect(logger.info).toHaveBeenCalledWith('Database file does not exist. Migration not needed.');
-      
+
       // Restore original fs.existsSync
       fs.existsSync = originalExistsSync;
     }, 5000); // Back to 5 seconds since it should be fast now
 
     it('should be a function that returns a promise', () => {
       const { addSourceTypeColumn } = require('../../scripts/migrate-add-source-type');
-      
+
       expect(typeof addSourceTypeColumn).toBe('function');
-      
+
       // Test that it returns a promise (for async behavior)
       const result = addSourceTypeColumn(':memory:');
       expect(result).toBeInstanceOf(Promise);
@@ -79,7 +74,7 @@ describe('Database Migration: Add source_type Column', () => {
   describe('Command Line Execution', () => {
     it('should export the migration function for programmatic use', () => {
       const migration = require('../../scripts/migrate-add-source-type');
-      
+
       expect(typeof migration.addSourceTypeColumn).toBe('function');
     });
 
@@ -87,7 +82,7 @@ describe('Database Migration: Add source_type Column', () => {
       // This test verifies the script can be run standalone
       // The actual execution is tested in integration tests
       const migration = require('../../scripts/migrate-add-source-type');
-      
+
       expect(migration.addSourceTypeColumn).toBeDefined();
     });
   });

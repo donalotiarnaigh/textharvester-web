@@ -1,6 +1,4 @@
 const BasePrompt = require('../BasePrompt');
-const { PROVIDER_TYPES, createProviderConfig } = require('../providers/providerConfig');
-const dataTypes = require('../types/dataTypes');
 
 describe('BasePrompt', () => {
   describe('constructor', () => {

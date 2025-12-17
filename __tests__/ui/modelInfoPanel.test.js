@@ -3,7 +3,7 @@
  */
 
 // Mock clipboard.js
- 
+
 global.ClipboardJS = jest.fn().mockImplementation(() => ({
   on: jest.fn((event, callback) => {
     if (event === 'success') {
@@ -16,7 +16,7 @@ global.ClipboardJS = jest.fn().mockImplementation(() => ({
 
 // Mock jQuery and Bootstrap collapse functionality
 const mockCollapse = jest.fn();
-global.$ = jest.fn((selector) => ({
+global.$ = jest.fn(() => ({
   collapse: mockCollapse,
   on: jest.fn(),
   data: jest.fn()
@@ -35,16 +35,16 @@ describe('Model Info Panel', () => {
   beforeEach(() => {
     // Enable fake timers
     jest.useFakeTimers();
-    
+
     // Reset mocks
     global.$.mockClear();
     global.ClipboardJS.mockClear();
     mockCollapse.mockClear();
-    
+
     // Set up DOM
     container = document.createElement('div');
     document.body.appendChild(container);
-    
+
     // Add required HTML structure
     container.innerHTML = `
       <div class="model-info-panel card mb-4">
@@ -97,7 +97,7 @@ describe('Model Info Panel', () => {
     it('should have collapsible content', () => {
       const collapseButton = container.querySelector('[data-toggle="collapse"]');
       const collapseContent = container.querySelector('#modelInfoContent');
-      
+
       expect(collapseButton).toBeTruthy();
       expect(collapseContent).toBeTruthy();
       expect(collapseContent.classList.contains('collapse')).toBeTruthy();
@@ -139,20 +139,20 @@ describe('Model Info Panel', () => {
 
     it('should handle successful copy', () => {
       window.initializeModelInfoPanel();
-      
+
       // Create test button
       const button = document.createElement('button');
       button.innerHTML = '<i class="fas fa-copy"></i> Copy';
-      
+
       // Call the success handler directly
       window.handleCopySuccess({ trigger: button });
-      
+
       expect(button.innerHTML).toContain('fa-check');
       expect(button.innerHTML).toContain('Copied!');
-      
+
       // Fast-forward timers
       jest.advanceTimersByTime(2000);
-      
+
       expect(button.innerHTML).toBe('<i class="fas fa-copy"></i> Copy');
     });
   });
@@ -164,9 +164,9 @@ describe('Model Info Panel', () => {
         preventDefault: jest.fn(),
         currentTarget: button
       };
-      
+
       window.handleCollapseToggle(mockEvent);
-      
+
       expect(mockEvent.preventDefault).toHaveBeenCalled();
       expect(global.$).toHaveBeenCalledWith('#modelInfoContent');
       expect(mockCollapse).toHaveBeenCalledWith('toggle');

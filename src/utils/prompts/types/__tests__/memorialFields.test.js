@@ -2,17 +2,14 @@
  * Unit tests for memorial fields
  */
 
-const { 
-  MemorialField, 
-  MEMORIAL_FIELDS, 
-  validateMemorialData, 
-  transformMemorialData 
+const {
+  MemorialField,
+  MEMORIAL_FIELDS,
+  validateMemorialData,
+  transformMemorialData
 } = require('../memorialFields');
 
-const { StringType, IntegerType } = require('../dataTypes');
-
-// Import the name processing utilities
-const { preprocessName, formatName } = require('../../../nameProcessing');
+const { StringType } = require('../dataTypes');
 
 describe('MemorialField', () => {
   it('should create a field with default values', () => {
@@ -28,7 +25,7 @@ describe('MemorialField', () => {
       maxLength: 100,
       transform: (value) => value.toUpperCase()
     });
-    
+
     expect(field.required).toBe(true);
     expect(field.metadata.format).toBe('name');
     expect(field.metadata.maxLength).toBe(100);
@@ -60,7 +57,7 @@ describe('MEMORIAL_FIELDS', () => {
   describe('first_name field', () => {
     it('should allow valid first names', () => {
       const field = MEMORIAL_FIELDS.find(f => f.name === 'first_name');
-      
+
       // Should not throw for valid names
       expect(field.validate('John').errors).toHaveLength(0);
       expect(field.validate('Mary-Jane').errors).toHaveLength(0);
@@ -70,13 +67,13 @@ describe('MEMORIAL_FIELDS', () => {
 
     it('should transform first names correctly', () => {
       const field = MEMORIAL_FIELDS.find(f => f.name === 'first_name');
-      
+
       // Basic transformation
       expect(field.validate('john').value).toBe('JOHN');
-      
+
       // Should handle null by returning empty string
       expect(field.validate(null).value).toBe('');
-      
+
       // Should handle initials
       expect(field.validate('j.r.').value).toBe('J.R.');
       expect(field.validate('J R').value).toBe('J.R.');
@@ -86,7 +83,7 @@ describe('MEMORIAL_FIELDS', () => {
   describe('last_name field', () => {
     it('should allow valid last names', () => {
       const field = MEMORIAL_FIELDS.find(f => f.name === 'last_name');
-      
+
       // Should not throw for valid names
       expect(field.validate('Smith').errors).toHaveLength(0);
       expect(field.validate('O\'Brien').errors).toHaveLength(0);
@@ -96,13 +93,13 @@ describe('MEMORIAL_FIELDS', () => {
 
     it('should transform last names correctly', () => {
       const field = MEMORIAL_FIELDS.find(f => f.name === 'last_name');
-      
+
       // Basic transformation
       expect(field.validate('smith').value).toBe('SMITH');
-      
+
       // Should handle null safely
       expect(field.validate(null).value).toBe(null);
-      
+
       // Should handle compound names
       expect(field.validate('o\'brien-smith').value).toBe('O\'BRIEN-SMITH');
     });
@@ -134,7 +131,7 @@ describe('validateMemorialData', () => {
       last_name: 'Smith'
       // Missing required memorial_number
     };
-    
+
     const result = validateMemorialData(invalidData);
     expect(result.errors.length).toBeGreaterThan(0);
     expect(result.errors[0]).toContain('memorial_number');
@@ -170,7 +167,7 @@ describe('transformMemorialData', () => {
     };
 
     const transformed = transformMemorialData(data);
-    
+
     expect(transformed.memorial_number).toBe('123');
     expect(transformed.first_name).toBe('JOHN');
     expect(transformed.last_name).toBe('SMITH');
@@ -188,7 +185,7 @@ describe('transformMemorialData', () => {
     };
 
     const transformed = transformMemorialData(data);
-    
+
     expect(transformed.memorial_number).toBe('123');
     expect(transformed.first_name).toBe('');  // Returns empty string for first_name
     expect(transformed.last_name).toBe('SMITH');
@@ -205,7 +202,7 @@ describe('transformMemorialData', () => {
     };
 
     const transformed = transformMemorialData(data);
-    
+
     expect(transformed.memorial_number).toBe('123');
     expect(transformed.first_name).toBe('JOHN');
     expect(transformed.last_name).toBe('SMITH');

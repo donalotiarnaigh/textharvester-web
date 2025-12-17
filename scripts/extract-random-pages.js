@@ -24,7 +24,7 @@ async function getPdfPageCount(pdfPath) {
       return parseInt(match[1], 10);
     }
     throw new Error('Could not determine page count');
-  } catch (error) {
+  } catch {
     // Fallback: try pdftocairo to get page count
     try {
       const { stdout } = await execAsync(`pdftocairo -list "${pdfPath}" 2>&1 || echo "0"`); // eslint-disable-line no-unused-vars
@@ -109,7 +109,7 @@ async function main() {
   // Validate PDF exists
   try {
     await fs.access(pdfPath);
-  } catch (error) {
+  } catch {
     console.error(`Error: PDF file not found: ${pdfPath}`);
     process.exit(1);
   }
@@ -169,8 +169,8 @@ async function main() {
       console.log(`  - ${path.basename(file)}`);
     });
 
-  } catch (error) {
-    console.error(`\nError: ${error.message}`);
+  } catch {
+    console.error('\nError extracting pages');
     process.exit(1);
   }
 }

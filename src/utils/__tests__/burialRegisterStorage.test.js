@@ -279,13 +279,13 @@ describe('burialRegisterStorage', () => {
 
     await expect(storeBurialRegisterEntry(entry)).rejects.toThrow(/Duplicate entry/);
 
-    try {
-      await storeBurialRegisterEntry(entry);
-      throw new Error('Expected duplicate entry to be rejected');
-    } catch (error) {
-      expect(error.message).toMatch(/Duplicate entry/);
-      expect(error.isDuplicate).toBe(true);
-    }
+    await expect(storeBurialRegisterEntry(entry)).rejects.toThrow(/Duplicate entry/);
+
+    // Test the specific error properties using rejects.toThrow and matching the error object if needed,
+    // but the duplicate check is usually enough and handled by the database constraint.
+    const duplicateError = await storeBurialRegisterEntry(entry).catch(e => e);
+    expect(duplicateError.message).toMatch(/Duplicate entry/);
+    expect(duplicateError.isDuplicate).toBe(true);
   });
 
   test('storeBurialRegisterEntry requires file_name', async () => {

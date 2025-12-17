@@ -50,14 +50,11 @@ jest.mock('moment', () => () => ({
 
 const {
   getResults,
-  downloadResultsJSON,
-  downloadResultsCSV
+  downloadResultsJSON
 } = require('../resultsManager'); // Require AFTER mocking
 
 const { getProcessedResults } = require('../../utils/fileQueue');
 const QueryService = require('../../services/QueryService');
-const { getAllMemorials } = require('../../utils/database');
-const { validateAndConvertRecords } = require('../../utils/dataValidation');
 // Capture the mock method from the instance created when resultsManager was required
 const mockList = QueryService.mock.instances[0].list;
 

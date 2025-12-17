@@ -22,7 +22,6 @@ describe('System Command', () => {
   let program;
   let mockConsoleLog;
   let mockConsoleError;
-  let mockProcessExit;
   let mockInitDb;
   let mockGetStatus;
   let mockClearQueue;
@@ -41,7 +40,7 @@ describe('System Command', () => {
 
     mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => { });
     mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => { });
-    mockProcessExit = jest.spyOn(process, 'exit').mockImplementation(() => { });
+    jest.spyOn(process, 'exit').mockImplementation(() => { });
 
     // Setup Service Mocks
     const SystemServiceClass = require('../../../src/services/SystemService');

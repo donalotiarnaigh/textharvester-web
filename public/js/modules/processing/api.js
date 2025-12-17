@@ -1,20 +1,20 @@
-/* eslint-disable quotes */
+
 // api.js
 
-import { getStatusMessage } from "./modelTracking.js";
+
 
 /**
  * Progress API module for handling processing state and completion
  */
 
-let stateManager = null;
+
 
 /**
  * Setup the progress API with a state manager instance
  * @param {ProcessingStateManager} manager State manager instance
  */
-function setupProgressAPI(manager) {
-  stateManager = manager;
+function setupProgressAPI() {
+  // manager instance removed as unused
 }
 
 /**
@@ -78,7 +78,7 @@ async function verifyCompletion() {
       errors: result.errors,
       validationErrors: result.validationErrors
     };
-  } catch (error) {
+  } catch {
     throw new Error('Failed to verify completion');
   }
 }
@@ -101,7 +101,7 @@ async function cleanupProcessing() {
     }
 
     return await response.json();
-  } catch (error) {
+  } catch {
     throw new Error('Failed to cleanup processing');
   }
 }

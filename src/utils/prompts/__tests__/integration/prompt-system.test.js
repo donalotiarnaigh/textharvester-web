@@ -1,6 +1,4 @@
 const BasePrompt = require('../../BasePrompt');
-const { PROVIDER_TYPES } = require('../../providers/providerConfig');
-const dataTypes = require('../../types/dataTypes');
 
 class TestPrompt extends BasePrompt {
   getPromptText() {

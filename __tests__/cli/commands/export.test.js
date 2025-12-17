@@ -18,9 +18,7 @@ jest.mock('../../../src/services/ExportService', () => {
 
 describe('Export Command', () => {
   let program;
-  let mockConsoleLog;
   let mockConsoleError;
-  let mockProcessExit;
   let mockStdoutWrite;
   let mockExportMethod;
 
@@ -36,9 +34,9 @@ describe('Export Command', () => {
 
     program.addCommand(exportCommand);
 
-    mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => { });
+    jest.spyOn(console, 'log').mockImplementation(() => { });
     mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => { });
-    mockProcessExit = jest.spyOn(process, 'exit').mockImplementation(() => { });
+    jest.spyOn(process, 'exit').mockImplementation(() => { });
     mockStdoutWrite = jest.spyOn(process.stdout, 'write').mockImplementation(() => { }); // Added this line
 
     // Setup Service Mocks

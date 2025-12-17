@@ -12,7 +12,7 @@ async function renameFiles(directory) {
   try {
     const files = await fs.readdir(directory);
     const renamed = [];
-    
+
     for (const file of files) {
       // Match pattern: page_XXX.jpg-YYY.jpg
       const match = file.match(/^(page_\d+\.jpg)-(\d+)\.jpg$/);
@@ -20,31 +20,31 @@ async function renameFiles(directory) {
         const newName = match[1]; // Just keep page_XXX.jpg
         const oldPath = path.join(directory, file);
         const newPath = path.join(directory, newName);
-        
+
         await fs.rename(oldPath, newPath);
         renamed.push({ old: file, new: newName });
         console.log(`Renamed: ${file} → ${newName}`);
       }
     }
-    
+
     console.log(`\n✓ Renamed ${renamed.length} files`);
     return renamed;
-  } catch (error) {
-    console.error(`Error renaming files: ${error.message}`);
+  } catch {
+    console.error('Error renaming files');
     process.exit(1);
   }
 }
 
 async function main() {
   const directory = process.argv[2] || path.join(__dirname, '..', 'data', 'burial_register', 'vol1', 'extracted_pages');
-  
+
   try {
     await fs.access(directory);
-  } catch (error) {
+  } catch {
     console.error(`Error: Directory not found: ${directory}`);
     process.exit(1);
   }
-  
+
   console.log(`Renaming files in: ${directory}\n`);
   await renameFiles(directory);
 }

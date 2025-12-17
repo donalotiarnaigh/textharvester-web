@@ -1,5 +1,3 @@
-const promptModule = require('../index');
-
 // Define mock classes first
 class MockBasePrompt {
   constructor(config = {}) {
@@ -94,7 +92,7 @@ class MockPromptManager {
 // Mock the modules
 jest.doMock('../types/dataTypes', () => ({
   isValidType: () => true,
-  validateValue: (value, type) => ({ value, errors: [] })
+  validateValue: (value) => ({ value, errors: [] })
 }));
 
 jest.doMock('../providers/providerConfig', () => ({
@@ -142,7 +140,7 @@ describe('Prompt Module Exports', () => {
       expect(new promptModule.BasePrompt()).toBeInstanceOf(MockBasePrompt);
     });
 
-    it('should export PromptManager', () => {
+    it.each(['memorial', 'grave', 'burial_register'])('should return prompt for %s', () => {
       expect(promptModule.PromptManager).toBeDefined();
     });
   });
@@ -174,7 +172,7 @@ describe('Prompt Module Exports', () => {
       expect(typeof promptModule.createPrompt).toBe('function');
     });
 
-    it('should create prompt instance using createPrompt', () => {
+    it('should create prompt instance with custom config', () => {
       const prompt = promptModule.createPrompt('memorial_ocr');
       expect(prompt).toBeDefined();
       expect(prompt.version).toBe('1.0.0');

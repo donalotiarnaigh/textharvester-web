@@ -3,7 +3,6 @@
  */
 jest.unmock('fs');
 const ExportService = require('../../src/services/ExportService');
-const { CLIError } = require('../../src/cli/errors');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -33,7 +32,9 @@ describe('ExportService Streaming', () => {
     // Cleanup temp dir
     try {
       fs.rmSync(tempDir, { recursive: true, force: true });
-    } catch (e) { }
+    } catch {
+      // Expected
+    }
   });
 
   test('should stream JSON export in batches', async () => {

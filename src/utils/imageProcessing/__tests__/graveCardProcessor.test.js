@@ -1,9 +1,7 @@
-const fs = require('fs');
-const path = require('path');
 const { exec } = require('child_process');
 const sharp = require('sharp');
 const graveCardProcessor = require('../graveCardProcessor');
-const config = require('../../../../config.json');
+const fs = require('fs');
 
 // Mock child_process.exec
 jest.mock('child_process', () => ({
@@ -32,7 +30,6 @@ jest.mock('fs', () => ({
 
 describe('GraveCardProcessor', () => {
   const mockPdfPath = '/tmp/test-card.pdf';
-  const mockOutputPath = '/tmp/uploads';
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -43,7 +40,7 @@ describe('GraveCardProcessor', () => {
   });
 
   // Helper to simulate successful pdftocairo execution
-  const mockExecSuccess = (callbackArgIndex = 1) => {
+  const mockExecSuccess = () => {
     exec.mockImplementation((cmd, cb) => {
       cb(null, 'stdout', 'stderr');
     });

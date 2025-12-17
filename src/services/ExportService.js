@@ -182,7 +182,7 @@ class ExportService {
     // Check directory exists
     try {
       await fsPromises.access(dir);
-    } catch (err) {
+    } catch {
       throw new CLIError('DIRECTORY_NOT_FOUND', `Directory does not exist: ${dir}`);
     }
 

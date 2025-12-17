@@ -6,7 +6,6 @@ const {
 } = require('../../src/utils/imageProcessor');
 const sharp = require('sharp');
 const fs = require('fs').promises;
-const path = require('path');
 
 // Mock dependencies
 jest.mock('sharp');
@@ -28,19 +27,19 @@ describe('ImageProcessor', () => {
   beforeEach(() => {
     // Reset all mocks
     jest.clearAllMocks();
-    
+
     // Mock buffer for image data
     mockBuffer = Buffer.from('mock-image-data');
     mockBuffer.toString = jest.fn().mockReturnValue('bW9jay1pbWFnZS1kYXRh'); // base64 mock
-    
+
     // Mock fs.stat for both sync and async versions
     fs.stat = jest.fn().mockResolvedValue({ size: 6 * 1024 * 1024 });
     require('fs').stat = jest.fn().mockResolvedValue({ size: 6 * 1024 * 1024 });
-    
+
     // Mock fs.readFile for both sync and async versions
     fs.readFile = jest.fn().mockResolvedValue(mockBuffer);
     require('fs').readFile = jest.fn().mockResolvedValue(mockBuffer);
-    
+
     // Mock sharp instance with method chaining
     mockSharpInstance = {
       metadata: jest.fn().mockResolvedValue({
@@ -53,7 +52,7 @@ describe('ImageProcessor', () => {
       rotate: jest.fn().mockReturnThis(),
       toBuffer: jest.fn().mockResolvedValue(mockBuffer)
     };
-    
+
     // Mock sharp constructor
     sharp.mockReturnValue(mockSharpInstance);
     sharp.kernel = { lanczos3: 'lanczos3' };
@@ -104,7 +103,7 @@ describe('ImageProcessor', () => {
       fs.stat.mockResolvedValue({
         size: 6 * 1024 * 1024 // 6MB
       });
-      
+
       mockSharpInstance.metadata.mockResolvedValue({
         width: 2000,
         height: 1500
@@ -113,7 +112,7 @@ describe('ImageProcessor', () => {
 
     it('should identify images that need optimization for Anthropic', async () => {
       const result = await analyzeImageForProvider('/test/image.jpg', 'anthropic');
-      
+
       expect(result).toEqual({
         originalSize: 6 * 1024 * 1024,
         originalSizeMB: '6.00',
@@ -130,14 +129,14 @@ describe('ImageProcessor', () => {
       fs.stat.mockResolvedValue({
         size: 2 * 1024 * 1024 // 2MB
       });
-      
+
       mockSharpInstance.metadata.mockResolvedValue({
         width: 1200,
         height: 800
       });
 
       const result = await analyzeImageForProvider('/test/image.jpg', 'anthropic');
-      
+
       expect(result).toEqual({
         originalSize: 2 * 1024 * 1024,
         originalSizeMB: '2.00',
@@ -149,7 +148,7 @@ describe('ImageProcessor', () => {
 
     it('should handle different providers', async () => {
       const result = await analyzeImageForProvider('/test/image.jpg', 'openai');
-      
+
       expect(result.needsOptimization).toBe(false); // 6MB < 20MB limit for OpenAI and 2000 < 3072
       expect(result.reasons).toEqual([]); // No optimization needed for OpenAI with these dimensions
     });
@@ -162,7 +161,7 @@ describe('ImageProcessor', () => {
         width: 5000,
         height: 4000
       });
-      
+
       // Mock a small final buffer (under 5MB)
       const smallBuffer = Buffer.alloc(3 * 1024 * 1024); // 3MB
       smallBuffer.toString = jest.fn().mockReturnValue('optimized-base64-data');
@@ -209,7 +208,7 @@ describe('ImageProcessor', () => {
         width: 5000,
         height: 4000
       });
-      
+
       // Mock initial compression still too large
       const largeBuffer = Buffer.alloc(7 * 1024 * 1024); // 7MB
       const smallBuffer = Buffer.alloc(4 * 1024 * 1024); // 4MB

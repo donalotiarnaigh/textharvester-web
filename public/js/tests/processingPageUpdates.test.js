@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { initModelTracking, getSelectedModel, getStatusMessage } from '../modules/processing/modelTracking.js';
+import { initModelTracking, getStatusMessage } from '../modules/processing/modelTracking.js';
 
 describe('Processing Page Model Selection Features', () => {
   beforeEach(() => {
@@ -12,7 +12,7 @@ describe('Processing Page Model Selection Features', () => {
       <div id="progressBar" class="progress-bar"></div>
       <div id="statusMessage"></div>
     `;
-    
+
     // Clear localStorage before each test
     localStorage.clear();
   });
@@ -36,12 +36,12 @@ describe('Processing Page Model Selection Features', () => {
     test('should update progress bar correctly', () => {
       localStorage.setItem('selectedModel', 'anthropic');
       initModelTracking();
-      
+
       // Manually update progress bar to simulate updateProgress function
       const progressBar = document.getElementById('progressBar');
       progressBar.style.width = '50%';
       progressBar.setAttribute('aria-valuenow', '50');
-      
+
       expect(progressBar.style.width).toBe('50%');
       expect(progressBar.getAttribute('aria-valuenow')).toBe('50');
     });
@@ -49,12 +49,12 @@ describe('Processing Page Model Selection Features', () => {
     test('should handle 100% progress correctly', () => {
       localStorage.setItem('selectedModel', 'anthropic');
       initModelTracking();
-      
+
       // Manually update progress bar to simulate updateProgress function
       const progressBar = document.getElementById('progressBar');
       progressBar.style.width = '100%';
       progressBar.setAttribute('aria-valuenow', '100');
-      
+
       expect(progressBar.style.width).toBe('100%');
       expect(progressBar.getAttribute('aria-valuenow')).toBe('100');
     });

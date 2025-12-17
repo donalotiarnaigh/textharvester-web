@@ -2,7 +2,6 @@ const SystemService = require('../../src/services/SystemService');
 const { CLIError } = require('../../src/cli/errors');
 const database = require('../../src/utils/database');
 const fileQueue = require('../../src/utils/fileQueue');
-const logger = require('../../src/utils/logger');
 const burialRegisterStorage = require('../../src/utils/burialRegisterStorage');
 const graveCardStorage = require('../../src/utils/graveCardStorage');
 
@@ -67,9 +66,6 @@ describe('SystemService', () => {
       burialRegisterStorage.getAllBurialRegisterEntries.mockResolvedValue([1]); // length 1
       graveCardStorage.getAllGraveCards.mockResolvedValue([1, 2]); // length 2
 
-      // Mock timestamp
-      const now = new Date().toISOString();
-
       const status = await service.getStatus();
 
       expect(status).toHaveProperty('queue');
@@ -94,16 +90,17 @@ describe('SystemService', () => {
     });
 
     it('should throw error when confirmation missing', async () => {
-      await expect(service.clearQueue(false))
+      const clearQueuePromise = service.clearQueue(false);
+      await expect(clearQueuePromise)
         .rejects
         .toThrow('Destructive operation requires --confirm flag');
 
-      try {
-        await service.clearQueue(false);
-      } catch (error) {
-        expect(error).toBeInstanceOf(CLIError);
-        expect(error.code).toBe('CONFIRMATION_REQUIRED');
-      }
+      await expect(clearQueuePromise)
+        .rejects
+        .toBeInstanceOf(CLIError);
+      await expect(clearQueuePromise)
+        .rejects
+        .toHaveProperty('code', 'CONFIRMATION_REQUIRED');
 
       expect(fileQueue.cancelProcessing).not.toHaveBeenCalled();
     });

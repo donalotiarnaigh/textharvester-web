@@ -1,5 +1,4 @@
 const ExportService = require('../../src/services/ExportService');
-const { CLIError } = require('../../src/cli/errors');
 const fs = require('fs').promises;
 
 // Mock dependencies
