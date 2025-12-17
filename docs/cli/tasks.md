@@ -183,11 +183,11 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
 
 - [ ] 12. Progress reporting
-  - [ ] 12.1 Write tests for progress reporter
+  - [x] 12.1 Write tests for progress reporter
     - **Happy path**: Progress bar updates, spinner animates, summary displayed
     - **Unhappy path**: Non-TTY uses simple output, SIGINT shows partial summary
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7_
-  - [ ] 12.2 Implement progress reporter (`src/cli/progress.js`)
+  - [x] 12.2 Implement progress reporter (`src/cli/progress.js`)
     - Progress bar for batch operations (use cli-progress or ora)
     - TTY detection for animations
     - Batch summary on completion
