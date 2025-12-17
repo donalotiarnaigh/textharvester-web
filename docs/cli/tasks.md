@@ -262,3 +262,8 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
   - [x] 16.5 Verify Export Command
   - [x] 16.6 Verify System Command
 
+- [x] 17. Pipeline Verification with Sample Data
+  - [x] 17.1 Verify Memorial Pipeline
+  - [x] 17.2 Verify Burial Register Pipeline
+  - [x] 17.3 Verify Grave Card Pipeline
+
