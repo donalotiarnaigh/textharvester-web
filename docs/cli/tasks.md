@@ -199,12 +199,12 @@ This implementation plan follows Test-Driven Development (TDD): write tests firs
 ## Phase 6: Integration and Verification
 
 - [ ] 13. Web controller refactoring
-  - [ ] 13.1 Refactor resultsManager to use QueryService
+  - [x] 13.1 Refactor resultsManager to use QueryService
     - Extract query logic to QueryService
     - resultsManager calls service, formats HTTP response
     - Verify existing tests still pass
     - _Requirements: Backward compatibility_
-  - [ ] 13.2 Refactor uploadHandler to use IngestService
+  - [x] 13.2 Refactor uploadHandler to use IngestService
     - Extract ingestion logic to IngestService
     - uploadHandler calls service, formats HTTP response
     - Verify existing tests still pass

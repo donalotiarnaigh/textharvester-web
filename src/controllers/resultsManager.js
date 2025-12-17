@@ -1,14 +1,30 @@
-const fs = require('fs');
-const path = require('path');
 const logger = require('../utils/logger'); // Adjust the path as needed
 const config = require('../../config.json'); // Adjust the path as needed
 const { jsonToCsv, formatJsonForExport } = require('../utils/dataConversion'); // Adjust path as needed
 const moment = require('moment'); // Ensure moment is installed and imported
-const { getTotalFiles, getProcessedFiles, getProcessedResults, getProcessingProgress } = require('../utils/fileQueue.js'); // Adjust the path as needed
-const { getAllMemorials, db } = require('../utils/database');
-const { getAllBurialRegisterEntries } = require('../utils/burialRegisterStorage');
-const { getAllGraveCards } = require('../utils/graveCardStorage');
+const { getProcessedResults, getProcessingProgress } = require('../utils/fileQueue.js'); // Adjust the path as needed
+const { getAllMemorials, getMemorialById, db } = require('../utils/database');
+const { getAllBurialRegisterEntries, getBurialRegisterEntryById } = require('../utils/burialRegisterStorage');
+const { getAllGraveCards, getGraveCardById } = require('../utils/graveCardStorage');
 const { validateAndConvertRecords } = require('../utils/dataValidation');
+const QueryService = require('../services/QueryService');
+
+// Instantiate QueryService
+const storageAdapters = {
+  memorials: {
+    getAll: getAllMemorials,
+    getById: getMemorialById
+  },
+  burialRegister: {
+    getAll: getAllBurialRegisterEntries,
+    getById: getBurialRegisterEntryById
+  },
+  graveCards: {
+    getAll: getAllGraveCards,
+    getById: getGraveCardById
+  }
+};
+const queryService = new QueryService(config, storageAdapters);
 
 // Burial register CSV column order (matches pilot plan format)
 const BURIAL_REGISTER_CSV_COLUMNS = [
@@ -86,7 +102,8 @@ async function downloadResultsJSON(req, res) {
 
     if (sourceType === 'burial_register') {
       // Get burial register entries
-      const results = await getAllBurialRegisterEntries();
+      const { records } = await queryService.list({ sourceType: 'burial_register', limit: 1000000 });
+      const results = records;
 
       // Transform database field names to match frontend expectations
       const transformedResults = results.map(entry => ({
@@ -105,7 +122,8 @@ async function downloadResultsJSON(req, res) {
       defaultFilename = `burials_${moment().format('YYYYMMDD_HHmmss')}.json`;
     } else if (sourceType === 'grave_record_card') {
       // Get grave cards
-      const results = await getAllGraveCards();
+      const { records } = await queryService.list({ sourceType: 'grave_record_card', limit: 1000000 });
+      const results = records;
 
       // Transform and parse data_json
       validatedResults = results.map(card => {
@@ -133,7 +151,8 @@ async function downloadResultsJSON(req, res) {
       logger.info(`Exporting grave cards JSON: ${results.length} entries`);
     } else {
       // Get memorials (default)
-      const results = await getAllMemorials();
+      const { records } = await queryService.list({ sourceType: 'memorial', limit: 1000000 });
+      const results = records;
 
       // Transform database field names to match frontend expectations
       const transformedResults = results.map(memorial => ({
@@ -251,7 +270,8 @@ async function downloadResultsCSV(req, res) {
 
     if (sourceType === 'burial_register') {
       // Get burial register entries
-      const results = await getAllBurialRegisterEntries();
+      const { records } = await queryService.list({ sourceType: 'burial_register', limit: 1000000 });
+      const results = records;
       entryCount = results.length;
 
       // Extract volume_id from first entry if available
@@ -271,7 +291,8 @@ async function downloadResultsCSV(req, res) {
       defaultFilename = `burials_${moment().format('YYYYMMDD_HHmmss')}.csv`;
     } else if (sourceType === 'grave_record_card') {
       // Get grave cards
-      const results = await getAllGraveCards();
+      const { records } = await queryService.list({ sourceType: 'grave_record_card', limit: 1000000 });
+      const results = records;
       entryCount = results.length;
 
       // 1. Parse JSON and flatten each record
@@ -325,7 +346,8 @@ async function downloadResultsCSV(req, res) {
       logger.info(`Exporting grave cards CSV: ${entryCount} entries with ${sortedKeys.length} columns`);
     } else {
       // Get memorials (default)
-      const results = await getAllMemorials();
+      const { records } = await queryService.list({ sourceType: 'memorial', limit: 1000000 });
+      const results = records;
       entryCount = results.length;
 
       // Transform database field names to match frontend expectations
@@ -397,7 +419,8 @@ async function getResults(req, res) {
 
     if (sourceType === 'burial_register') {
       // Get burial register entries
-      const dbResults = await getAllBurialRegisterEntries();
+      const { records } = await queryService.list({ sourceType: 'burial_register', limit: 1000000 });
+      const dbResults = records;
 
       // Transform database field names to match frontend expectations
       const transformedResults = dbResults.map(entry => ({
@@ -413,7 +436,8 @@ async function getResults(req, res) {
       });
     } else if (sourceType === 'grave_record_card') {
       // Get grave cards
-      const dbResults = await getAllGraveCards();
+      const { records } = await queryService.list({ sourceType: 'grave_record_card', limit: 1000000 });
+      const dbResults = records;
 
       // Transform to match frontend expectations
       // We map them to "memorials" key because the frontend currently handles "memorials" or "burialRegisterEntries"
@@ -431,7 +455,8 @@ async function getResults(req, res) {
       });
     } else {
       // Get memorials (default)
-      const dbResults = await getAllMemorials();
+      const { records } = await queryService.list({ sourceType: 'memorial', limit: 1000000 });
+      const dbResults = records;
 
       // Transform database field names to match frontend expectations
       const transformedResults = dbResults.map(memorial => ({

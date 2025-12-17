@@ -15,7 +15,12 @@ jest.mock('fs', () => ({
     },
     constants: {
         R_OK: 1
-    }
+    },
+    // Add synchronous methods used by fileQueue side-effects
+    existsSync: jest.fn(() => true),
+    mkdirSync: jest.fn(),
+    // Keep internal state if needed by the mock setup
+    _mockAccess: mockAccess
 }));
 
 const IngestService = require('../../src/services/IngestService');

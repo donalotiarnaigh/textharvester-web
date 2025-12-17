@@ -3,15 +3,11 @@ const fs = require("fs");
 const multer = require("multer");
 const path = require("path");
 const config = require("../../config.json");
-const { enqueueFiles } = require("../utils/fileQueue");
 const logger = require("../utils/logger");
-const { clearProcessingCompleteFlag } = require("../utils/processingFlag");
-const { convertPdfToJpegs } = require("../utils/pdfConverter");
-const { clearAllMemorials } = require('../utils/database');
-const { clearAllBurialRegisterEntries } = require('../utils/burialRegisterStorage');
-const graveCardStorage = require('../utils/graveCardStorage');
-const { getPrompt } = require('../utils/prompts/templates/providerTemplates');
-const { promptManager } = require('../utils/prompts/templates/providerTemplates');
+const IngestService = require("../services/IngestService");
+
+// Instantiate IngestService
+const ingestService = new IngestService(config, logger);
 
 function createUniqueName(file) {
   const originalName = path.basename(
@@ -58,44 +54,12 @@ const storage = multer.diskStorage({
   },
 });
 
-// In production, we would use multer's actual API:
-// const upload = multer({
-//   storage: storage,
-//   fileFilter: fileFilter,
-//   limits: { fileSize: 100 * 1024 * 1024 }
-// }).fields([...]);
-
 // For test compatibility, we use a simpler configuration that matches the test mock
 // Increased file size limit to 1GB to support large PDF files (e.g., 210-page burial registers)
 const multerConfig = {
   storage: storage,
   fileFilter: fileFilter,
   limits: { fileSize: 1024 * 1024 * 1024 } // 1GB limit for large PDFs
-};
-
-const validatePromptConfig = async (provider, template, version) => {
-  const defaultTemplate = 'memorialOCR';
-  const defaultVersion = 'latest';
-
-  const templateName = template || defaultTemplate;
-  const templateVersion = version || defaultVersion;
-
-  const promptTemplate = await getPrompt(provider, templateName, templateVersion);
-  if (!promptTemplate) {
-    throw new Error(`Invalid template: ${templateName}`);
-  }
-
-  // Use the provider prompt manager to validate the template
-  const validation = promptManager.validatePrompt(promptTemplate, provider);
-  if (!validation.isValid) {
-    throw new Error(`Template validation failed: ${validation.errors.join(', ')}`);
-  }
-
-  return {
-    template: templateName,
-    version: templateVersion,
-    config: promptTemplate
-  };
 };
 
 const handleFileUpload = async (req, res) => {
@@ -172,10 +136,10 @@ const handleFileUpload = async (req, res) => {
   }
 
   try {
-    // Validate prompt configuration
+    // Validate prompt configuration via IngestService
     let promptConfig;
     try {
-      promptConfig = await validatePromptConfig(selectedModel, promptTemplate, promptVersion);
+      promptConfig = await ingestService.validatePromptConfig(selectedModel, promptTemplate, promptVersion);
     } catch (error) {
       logger.error("Prompt validation error:", error);
       return res.status(400).json({
@@ -183,83 +147,21 @@ const handleFileUpload = async (req, res) => {
       });
     }
 
+    // Handle replace logic via IngestService
     if (shouldReplace) {
-      if (sourceType === 'burial_register') {
-        await clearAllBurialRegisterEntries();
-        logger.info("Cleared existing burial register entries as requested");
-      } else if (sourceType === 'grave_record_card') {
-        await graveCardStorage.clearAllGraveCards();
-        logger.info("Cleared existing grave cards as requested");
-      } else {
-        await clearAllMemorials();
-        logger.info("Cleared existing memorial records as requested");
-      }
+      await ingestService.clearData(sourceType);
     }
 
-    // Collect all files to enqueue in a single batch to preserve sequential processing
-    const filesToQueue = [];
-    for (const file of files) {
-      try {
-        if (file.mimetype === "application/pdf") {
-          // For grave cards, we process the whole PDF (2 pages) at once via GraveCardProcessor
-          // So we do NOT want to split it into generic JPEGs here.
-          if (sourceType === 'grave_record_card') {
-            logger.info(`Enqueuing Grave Card PDF for processing: ${file.originalname}`);
-            filesToQueue.push({
-              path: file.path,
-              mimetype: "application/pdf",
-              provider: selectedModel,
-              promptVersion: promptConfig.version,
-              source_type: sourceType,
-              sourceType,
-              uploadDir: path.dirname(file.path)
-            });
-          } else {
-            // For other types (e.g. legacy/standard PDF upload), split into images
-            logger.info(`Processing PDF file: ${file.originalname}`);
-            const imagePaths = await convertPdfToJpegs(file.path);
-            logger.info(`Converted PDF to images: ${imagePaths}`);
-            filesToQueue.push(
-              ...imagePaths.map((imagePath) => ({
-                path: imagePath,
-                mimetype: "image/jpeg",
-                provider: selectedModel,
-                promptVersion: promptConfig.version,
-                source_type: sourceType,
-                sourceType,
-                ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
-                uploadDir: path.dirname(imagePath)
-              }))
-            );
-          }
-        } else {
-          filesToQueue.push({
-            ...file,
-            provider: selectedModel,
-            promptVersion: promptConfig.version,
-            source_type: sourceType,
-            sourceType,
-            ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
-            uploadDir: path.dirname(file.path)
-          });
-        }
-      } catch (conversionError) {
-        logger.error(
-          `Error converting file ${file.originalname}:`,
-          conversionError
-        );
-        throw conversionError;
-      }
-    }
+    // Queue files via IngestService
+    const queueOptions = {
+      sourceType,
+      volumeId,
+      provider: selectedModel,
+      promptVersion: promptConfig.version
+    };
 
-    // Enqueue all files in a single call to maintain sequential processing order
-    enqueueFiles(filesToQueue);
+    await ingestService.prepareAndQueue(files, queueOptions);
 
-    if (sourceType === 'burial_register') {
-      logger.info(`Enqueued ${filesToQueue.length} burial register files for processing (volume_id=${volumeId}, provider=${selectedModel})`);
-    }
-
-    clearProcessingCompleteFlag();
     const uploadDuration = Date.now() - uploadStartTime;
     logger.info(`Processing complete. Upload took ${uploadDuration}ms. Redirecting to results page.`);
 
