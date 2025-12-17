@@ -26,7 +26,6 @@ function configureLogger(options, logger = defaultLogger) {
 
   // Force all logs to stderr to keep stdout clean for JSON output
   // Monkey patch the info method (which normally uses console.log)
-  const originalInfo = logger.info.bind(logger);
   logger.info = function (message, ...args) {
     if (!options.quiet) {
       console.error(`[INFO] ${message}`, ...args);

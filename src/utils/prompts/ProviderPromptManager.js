@@ -65,7 +65,7 @@ class ProviderPromptManager {
     }
 
     const providerVersions = this.templateVersions.get(providerName);
-    
+
     // If version is 'latest' or not found, return the latest version
     if (version === 'latest' || !providerVersions.has(version)) {
       return this.templates.get(providerName);
@@ -129,7 +129,7 @@ ${template.formatInstructions}`;
 
     // Check if all types in the prompt are supported by the provider
     if (prompt.fields) {
-      Object.entries(prompt.fields).forEach(([fieldName, field]) => {
+      Object.entries(prompt.fields).forEach(([, field]) => {
         // Handle field.type as either string or object
         const typeKey = typeof field.type === 'object' ? field.type.name : field.type;
         if (!template.typeFormatting[typeKey]) {

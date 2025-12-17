@@ -1,7 +1,6 @@
 const BasePrompt = require('../BasePrompt');
 const { MEMORIAL_FIELDS } = require('../types/memorialFields');
 const { ProcessingError } = require('../../errorTypes');
-const { standardizeNameParsing } = require('../../standardNameParser');
 const { preprocessName } = require('../../nameProcessing');
 const logger = require('../../logger');
 
@@ -78,20 +77,20 @@ TRANSCRIPTION NOTATION RULES:
     const basePrompt = this.getPromptText();
 
     switch (provider.toLowerCase()) {
-      case 'openai':
-        return {
-          systemPrompt: 'You are an expert OCR system trained by OpenAI, specializing in heritage and genealogical data extraction.',
-          userPrompt: `${basePrompt}\n\nResponse Format:\n- Use response_format: { type: "json" }\n- All numeric values (year_of_death) MUST be actual integers\n- All text fields must be properly formatted strings`
-        };
+    case 'openai':
+      return {
+        systemPrompt: 'You are an expert OCR system trained by OpenAI, specializing in heritage and genealogical data extraction.',
+        userPrompt: `${basePrompt}\n\nResponse Format:\n- Use response_format: { type: "json" }\n- All numeric values (year_of_death) MUST be actual integers\n- All text fields must be properly formatted strings`
+      };
 
-      case 'anthropic':
-        return {
-          systemPrompt: 'You are Claude, an expert OCR system trained by Anthropic, specializing in heritage and genealogical data extraction.',
-          userPrompt: `${basePrompt}\n\nResponse Format:\n- Return valid JSON only\n- All numeric values (year_of_death) MUST be actual integers\n- All text fields must be properly formatted strings\n- Ensure strict adherence to field formats`
-        };
+    case 'anthropic':
+      return {
+        systemPrompt: 'You are Claude, an expert OCR system trained by Anthropic, specializing in heritage and genealogical data extraction.',
+        userPrompt: `${basePrompt}\n\nResponse Format:\n- Return valid JSON only\n- All numeric values (year_of_death) MUST be actual integers\n- All text fields must be properly formatted strings\n- Ensure strict adherence to field formats`
+      };
 
-      default:
-        return { userPrompt: basePrompt };
+    default:
+      return { userPrompt: basePrompt };
     }
   }
 

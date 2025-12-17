@@ -11,123 +11,123 @@ const { CLIError } = require('../../../src/cli/errors');
 
 // Mock QueryService
 jest.mock('../../../src/services/QueryService', () => {
-    return jest.fn().mockImplementation(() => ({
-        list: jest.fn(),
-        get: jest.fn(),
-        search: jest.fn()
-    }));
+  return jest.fn().mockImplementation(() => ({
+    list: jest.fn(),
+    get: jest.fn(),
+    search: jest.fn()
+  }));
 });
 
 describe('Query Command', () => {
-    let program;
-    let mockConsoleLog;
-    let mockConsoleError;
-    let mockProcessExit;
-    let mockListMethod;
-    let mockGetMethod;
-    let mockSearchMethod;
+  let program;
+  let mockConsoleLog;
+  let mockConsoleError;
+  let mockProcessExit;
+  let mockListMethod;
+  let mockGetMethod;
+  let mockSearchMethod;
 
-    beforeEach(() => {
-        jest.clearAllMocks();
+  beforeEach(() => {
+    jest.clearAllMocks();
 
-        program = new Command();
-        program.exitOverride();
-        program.configureOutput({
-            writeOut: () => { },
-            writeErr: () => { }
-        });
-
-        program.addCommand(queryCommand);
-
-        mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => { });
-        mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => { });
-        mockProcessExit = jest.spyOn(process, 'exit').mockImplementation(() => { });
-
-        // Setup Service Mocks
-        const QueryServiceClass = require('../../../src/services/QueryService');
-        mockListMethod = jest.fn();
-        mockGetMethod = jest.fn();
-        mockSearchMethod = jest.fn();
-
-        QueryServiceClass.mockImplementation(() => ({
-            list: mockListMethod,
-            get: mockGetMethod,
-            search: mockSearchMethod
-        }));
+    program = new Command();
+    program.exitOverride();
+    program.configureOutput({
+      writeOut: () => { },
+      writeErr: () => { }
     });
 
-    afterEach(() => {
-        jest.restoreAllMocks();
+    program.addCommand(queryCommand);
+
+    mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => { });
+    mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => { });
+    mockProcessExit = jest.spyOn(process, 'exit').mockImplementation(() => { });
+
+    // Setup Service Mocks
+    const QueryServiceClass = require('../../../src/services/QueryService');
+    mockListMethod = jest.fn();
+    mockGetMethod = jest.fn();
+    mockSearchMethod = jest.fn();
+
+    QueryServiceClass.mockImplementation(() => ({
+      list: mockListMethod,
+      get: mockGetMethod,
+      search: mockSearchMethod
+    }));
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  const runCommand = async (args) => {
+    try {
+      await program.parseAsync(args, { from: 'user' });
+    } catch (err) {
+      if (err.code !== 'commander.exit') {
+        throw err;
+      }
+    }
+  };
+
+  describe('list subcommand', () => {
+    it('should call QueryService.list with correct options', async () => {
+      mockListMethod.mockResolvedValue({
+        records: [],
+        count: 0
+      });
+
+      await runCommand(['query', 'list', '--source-type', 'memorial', '--limit', '10']);
+
+      expect(require('../../../src/services/QueryService')).toHaveBeenCalled();
+      expect(mockListMethod).toHaveBeenCalledWith(expect.objectContaining({
+        sourceType: 'memorial',
+        limit: 10 // Expect integer
+      }));
+
+      expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('"success": true'));
+    });
+  });
+
+  describe('get subcommand', () => {
+    it('should call QueryService.get with correct ID', async () => {
+      mockGetMethod.mockResolvedValue({ id: 123 });
+
+      await runCommand(['query', 'get', '123', '--source-type', 'memorial']);
+
+      expect(mockGetMethod).toHaveBeenCalledWith('123', 'memorial');
+      expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('"success": true'));
     });
 
-    const runCommand = async (args) => {
-        try {
-            await program.parseAsync(args, { from: 'user' });
-        } catch (err) {
-            if (err.code !== 'commander.exit') {
-                throw err;
-            }
-        }
-    };
-
-    describe('list subcommand', () => {
-        it('should call QueryService.list with correct options', async () => {
-            mockListMethod.mockResolvedValue({
-                records: [],
-                count: 0
-            });
-
-            await runCommand(['query', 'list', '--source-type', 'memorial', '--limit', '10']);
-
-            expect(require('../../../src/services/QueryService')).toHaveBeenCalled();
-            expect(mockListMethod).toHaveBeenCalledWith(expect.objectContaining({
-                sourceType: 'memorial',
-                limit: 10 // Expect integer
-            }));
-
-            expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('"success": true'));
-        });
+    it('should exit with error if source-type is missing (if required by design)', async () => {
+      // Depending on strictness. Design implies source type is needed for get.
+      // Let's assume passed validation or service handles it.
+      // If strictly required by command, maybe not.
+      // But let's test unhappy path of service throwing error.
     });
+  });
 
-    describe('get subcommand', () => {
-        it('should call QueryService.get with correct ID', async () => {
-            mockGetMethod.mockResolvedValue({ id: 123 });
+  describe('search subcommand', () => {
+    it('should call QueryService.search with query string', async () => {
+      mockSearchMethod.mockResolvedValue({ records: [] });
 
-            await runCommand(['query', 'get', '123', '--source-type', 'memorial']);
+      await runCommand(['query', 'search', 'Smith', '--year', '1850']);
 
-            expect(mockGetMethod).toHaveBeenCalledWith('123', 'memorial');
-            expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('"success": true'));
-        });
-
-        it('should exit with error if source-type is missing (if required by design)', async () => {
-            // Depending on strictness. Design implies source type is needed for get.
-            // Let's assume passed validation or service handles it.
-            // If strictly required by command, maybe not.
-            // But let's test unhappy path of service throwing error.
-        });
+      expect(mockSearchMethod).toHaveBeenCalledWith('Smith', expect.objectContaining({
+        year: '1850'
+      }));
     });
+  });
 
-    describe('search subcommand', () => {
-        it('should call QueryService.search with query string', async () => {
-            mockSearchMethod.mockResolvedValue({ records: [] });
+  describe('Unhappy Path', () => {
+    it('should handle service errors', async () => {
+      const error = new CLIError('RECORD_NOT_FOUND', 'Not found');
+      mockGetMethod.mockRejectedValue(error);
 
-            await runCommand(['query', 'search', 'Smith', '--year', '1850']);
+      await runCommand(['query', 'get', '999']);
 
-            expect(mockSearchMethod).toHaveBeenCalledWith('Smith', expect.objectContaining({
-                year: '1850'
-            }));
-        });
+      expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining('RECORD_NOT_FOUND'));
+      expect(process.exit).toHaveBeenCalledWith(1);
     });
-
-    describe('Unhappy Path', () => {
-        it('should handle service errors', async () => {
-            const error = new CLIError('RECORD_NOT_FOUND', 'Not found');
-            mockGetMethod.mockRejectedValue(error);
-
-            await runCommand(['query', 'get', '999']);
-
-            expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining('RECORD_NOT_FOUND'));
-            expect(process.exit).toHaveBeenCalledWith(1);
-        });
-    });
+  });
 });

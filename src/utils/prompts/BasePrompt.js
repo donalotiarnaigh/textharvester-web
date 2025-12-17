@@ -1,4 +1,4 @@
-const { PROVIDER_TYPES, createProviderConfig } = require('./providers/providerConfig');
+const { createProviderConfig } = require('./providers/providerConfig');
 const dataTypes = require('./types/dataTypes');
 
 /**
@@ -83,36 +83,36 @@ class BasePrompt {
     // Convert string values to appropriate types
     if (typeof value === 'string' && value.trim() !== '') {
       switch (fieldType) {
-        case 'integer': {
-          const intValue = parseInt(value.trim(), 10);
-          if (!isNaN(intValue) && intValue.toString() === value.trim()) {
-            convertedValue = intValue;
-          }
-          break;
+      case 'integer': {
+        const intValue = parseInt(value.trim(), 10);
+        if (!isNaN(intValue) && intValue.toString() === value.trim()) {
+          convertedValue = intValue;
         }
-        case 'float': {
-          const floatValue = parseFloat(value.trim());
-          if (!isNaN(floatValue)) {
-            convertedValue = floatValue;
-          }
-          break;
+        break;
+      }
+      case 'float': {
+        const floatValue = parseFloat(value.trim());
+        if (!isNaN(floatValue)) {
+          convertedValue = floatValue;
         }
-        case 'boolean': {
-          const lowerValue = value.toLowerCase().trim();
-          if (lowerValue === 'true') {
-            convertedValue = true;
-          } else if (lowerValue === 'false') {
-            convertedValue = false;
-          }
-          break;
+        break;
+      }
+      case 'boolean': {
+        const lowerValue = value.toLowerCase().trim();
+        if (lowerValue === 'true') {
+          convertedValue = true;
+        } else if (lowerValue === 'false') {
+          convertedValue = false;
         }
-        case 'date': {
-          const dateValue = new Date(value);
-          if (!isNaN(dateValue.getTime())) {
-            convertedValue = dateValue;
-          }
-          break;
+        break;
+      }
+      case 'date': {
+        const dateValue = new Date(value);
+        if (!isNaN(dateValue.getTime())) {
+          convertedValue = dateValue;
         }
+        break;
+      }
       }
     }
 
@@ -202,22 +202,22 @@ class BasePrompt {
     const validatedData = this.validateAndConvert(data);
 
     switch (provider.toLowerCase()) {
-      case 'openai':
-        return {
-          response_format: { type: 'json' },
-          content: validatedData
-        };
+    case 'openai':
+      return {
+        response_format: { type: 'json' },
+        content: validatedData
+      };
 
-      case 'anthropic':
-        return {
-          messages: [{
-            role: 'assistant',
-            content: JSON.stringify(validatedData, null, 2)
-          }]
-        };
+    case 'anthropic':
+      return {
+        messages: [{
+          role: 'assistant',
+          content: JSON.stringify(validatedData, null, 2)
+        }]
+      };
 
-      default:
-        throw new Error(`Unsupported provider: ${provider}`);
+    default:
+      throw new Error(`Unsupported provider: ${provider}`);
     }
   }
 
@@ -231,22 +231,22 @@ class BasePrompt {
     const config = createProviderConfig(provider);
 
     switch (provider.toLowerCase()) {
-      case 'openai':
-        return {
-          maxTokens: config.maxTokens,
-          temperature: config.temperature,
-          responseFormat: { type: 'json' }
-        };
+    case 'openai':
+      return {
+        maxTokens: config.maxTokens,
+        temperature: config.temperature,
+        responseFormat: { type: 'json' }
+      };
 
-      case 'anthropic':
-        return {
-          maxTokens: config.maxTokens,
-          temperature: config.temperature,
-          format: 'json'
-        };
+    case 'anthropic':
+      return {
+        maxTokens: config.maxTokens,
+        temperature: config.temperature,
+        format: 'json'
+      };
 
-      default:
-        throw new Error(`Unsupported provider: ${provider}`);
+    default:
+      throw new Error(`Unsupported provider: ${provider}`);
     }
   }
 
@@ -260,30 +260,30 @@ class BasePrompt {
     this.validateProvider(provider);
 
     switch (provider.toLowerCase()) {
-      case 'openai':
-        if (!response.response_format || response.response_format.type !== 'json') {
-          throw new Error('Invalid OpenAI response format');
-        }
-        if (response.content?.error === 'token_limit_exceeded') {
-          throw new Error('OpenAI token limit exceeded');
-        }
-        break;
-
-      case 'anthropic': {
-        if (!response.messages || !Array.isArray(response.messages)) {
-          throw new Error('Invalid Anthropic response format');
-        }
-        const content = response.messages[0]?.content;
-        try {
-          JSON.parse(content);
-        } catch (error) {
-          throw new Error('Invalid JSON in Anthropic response');
-        }
-        break;
+    case 'openai':
+      if (!response.response_format || response.response_format.type !== 'json') {
+        throw new Error('Invalid OpenAI response format');
       }
+      if (response.content?.error === 'token_limit_exceeded') {
+        throw new Error('OpenAI token limit exceeded');
+      }
+      break;
 
-      default:
-        throw new Error(`Unsupported provider: ${provider}`);
+    case 'anthropic': {
+      if (!response.messages || !Array.isArray(response.messages)) {
+        throw new Error('Invalid Anthropic response format');
+      }
+      const content = response.messages[0]?.content;
+      try {
+        JSON.parse(content);
+      } catch {
+        throw new Error('Invalid JSON in Anthropic response');
+      }
+      break;
+    }
+
+    default:
+      throw new Error(`Unsupported provider: ${provider}`);
     }
   }
 
@@ -330,7 +330,7 @@ class BasePrompt {
     }
 
     // Second pass: validate and convert each field
-    for (const [fieldName, field] of Object.entries(this.fields)) {
+    for (const [fieldName] of Object.entries(this.fields)) {
       try {
         const value = fieldName in data ? data[fieldName] : null;
         result[fieldName] = this.validateField(fieldName, value);

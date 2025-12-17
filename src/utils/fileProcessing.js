@@ -6,7 +6,6 @@ const { storeMemorial } = require('./database');
 const { getPrompt } = require('./prompts/templates/providerTemplates');
 const { isEmptySheetError } = require('./errorTypes');
 const burialRegisterFlattener = require('./burialRegisterFlattener');
-const { generateEntryId } = require('./burialRegisterFlattener');
 const burialRegisterStorage = require('./burialRegisterStorage');
 const { extractPageNumberFromFilename } = require('./burialRegisterStorage');
 const { getMemorialNumberForMonument } = require('./filenameParser');

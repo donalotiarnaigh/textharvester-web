@@ -404,7 +404,7 @@ const SanitizeUtils = {
           <td>${this.sanitizeText(age)}</td>
           <td>${this.sanitizeText(details)}</td>
         </tr>
-      `}).join('');
+      `;}).join('');
 
       intermentsHtml = `
         <div class="table-responsive">
@@ -600,17 +600,17 @@ function displayErrorSummary(errors) {
 
     // Format message based on error type (using sanitized data)
     switch (error.errorType) {
-      case 'empty_sheet':
-        message += 'Empty or unreadable sheet detected.';
-        break;
-      case 'processing_failed':
-        message += 'Processing failed after multiple attempts.';
-        break;
-      case 'page_number_conflict':
-        message += safeErrorMessage;
-        break;
-      default:
-        message += safeErrorMessage;
+    case 'empty_sheet':
+      message += 'Empty or unreadable sheet detected.';
+      break;
+    case 'processing_failed':
+      message += 'Processing failed after multiple attempts.';
+      break;
+    case 'page_number_conflict':
+      message += safeErrorMessage;
+      break;
+    default:
+      message += safeErrorMessage;
     }
 
     // Add model info if available (sanitized)

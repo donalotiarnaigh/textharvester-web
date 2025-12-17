@@ -35,13 +35,13 @@ export class ProgressClient {
 
       const data = await response.json();
       console.log('[ProgressClient] Raw server response:', data);
-      
+
       const normalizedData = this._normalizeProgressData(data);
       console.log('[ProgressClient] Normalized data:', normalizedData);
       return normalizedData;
     } catch (error) {
       console.error('[ProgressClient] Progress fetch failed:', error);
-      
+
       // Handle retries
       if (this.retryCount < this.maxRetries) {
         this.retryCount++;
@@ -49,7 +49,7 @@ export class ProgressClient {
         await new Promise(resolve => setTimeout(resolve, this.retryDelay));
         return this.getProgress();
       }
-      
+
       throw error;
     }
   }
@@ -64,21 +64,21 @@ export class ProgressClient {
 
       const progressData = await this.getProgress();
       console.log('[ProgressClient] Completion check response:', progressData);
-      
+
       // Consider it complete if either:
       // 1. State is explicitly 'complete'
       // 2. Progress is 100% and we've been in this state for a while
       const isComplete = progressData && (
-        progressData.state === 'complete' || 
+        progressData.state === 'complete' ||
         (progressData.progress === 100 && progressData.state === 'processing')
       );
-      
+
       console.log('[ProgressClient] Completion verification result:', {
         isComplete,
         state: progressData?.state,
         progress: progressData?.progress
       });
-      
+
       return isComplete;
     } catch (error) {
       console.error('[ProgressClient] Completion verification failed:', error);
@@ -109,7 +109,7 @@ export class ProgressClient {
    */
   _normalizeProgressData(data) {
     console.log('[ProgressClient] Normalizing data:', data);
-    
+
     // Parse progress value and handle invalid cases
     let progressValue = 0;
     try {
@@ -124,7 +124,7 @@ export class ProgressClient {
         console.warn('[ProgressClient] Server returned negative progress, setting to 0:', progressValue);
         progressValue = 0;
       }
-    } catch (_error) {
+    } catch {
       console.error('[ProgressClient] Failed to parse progress value:', data.progress);
       progressValue = 0;
     }

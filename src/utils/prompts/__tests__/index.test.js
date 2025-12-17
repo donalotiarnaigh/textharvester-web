@@ -1,5 +1,4 @@
-const { getPrompt, registerPrompt, listPrompts, clearRegistry } = require('../index');
-const MemorialOCRPrompt = require('../templates/MemorialOCRPrompt');
+const promptModule = require('../index');
 
 // Define mock classes first
 class MockBasePrompt {

@@ -15,7 +15,7 @@ class CompletionVerifier {
    */
   async verifyCompletion() {
     const completionState = this.stateManager.state.completionState;
-    
+
     // Check if we've exceeded max attempts
     if (completionState.verificationAttempts >= this.maxVerificationAttempts) {
       return false;
@@ -70,7 +70,7 @@ class CompletionVerifier {
   async _verifyResultsIntegrity() {
     try {
       const files = Array.from(this.stateManager.state.files.values());
-      
+
       // Check each file has corresponding results
       for (const file of files) {
         const result = await this.resultStore.getResult(file.id);
@@ -104,7 +104,7 @@ class CompletionVerifier {
   async _verifyStorageState() {
     try {
       const files = Array.from(this.stateManager.state.files.values());
-      
+
       // Verify temporary processing files are cleaned up
       for (const file of files) {
         const tempFiles = await this._checkTemporaryFiles(file.id);
@@ -125,7 +125,7 @@ class CompletionVerifier {
   _validateResultStructure(result) {
     // Required fields for a valid result
     const requiredFields = ['id', 'text', 'metadata', 'timestamp'];
-    
+
     // Check all required fields exist
     for (const field of requiredFields) {
       if (!(field in result)) return false;
@@ -143,7 +143,7 @@ class CompletionVerifier {
    * Check for temporary processing files
    * @private
    */
-  async _checkTemporaryFiles(_fileId) {
+  async _checkTemporaryFiles() {
     let result = [];
     try {
       // Implementation depends on your file storage system

@@ -281,7 +281,7 @@ describe('burialRegisterStorage', () => {
 
     try {
       await storeBurialRegisterEntry(entry);
-      fail('Expected duplicate entry to be rejected');
+      throw new Error('Expected duplicate entry to be rejected');
     } catch (error) {
       expect(error.message).toMatch(/Duplicate entry/);
       expect(error.isDuplicate).toBe(true);

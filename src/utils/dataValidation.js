@@ -1,4 +1,3 @@
-const { memorialTypes } = require('./prompts/types/memorialTypes');
 const logger = require('./logger');
 
 /**

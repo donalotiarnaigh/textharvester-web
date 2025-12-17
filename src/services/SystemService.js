@@ -1,5 +1,4 @@
 const fs = require('fs').promises;
-const path = require('path');
 const { CLIError } = require('../cli/errors');
 const logger = require('../utils/logger');
 const database = require('../utils/database');

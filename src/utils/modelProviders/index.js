@@ -28,15 +28,15 @@ function createProvider(customConfig = {}) {
   const provider = mergedConfig.AI_PROVIDER || process.env.AI_PROVIDER || 'openai';
 
   switch (provider.toLowerCase()) {
-    case 'openai':
-      return new OpenAIProvider(mergedConfig);
-    case 'anthropic':
-      return new AnthropicProvider(mergedConfig);
-    case 'mock':
-      return new MockProvider(mergedConfig);
-    default:
-      console.warn(`Unsupported AI provider: ${provider}, falling back to OpenAI`);
-      return new OpenAIProvider(mergedConfig);
+  case 'openai':
+    return new OpenAIProvider(mergedConfig);
+  case 'anthropic':
+    return new AnthropicProvider(mergedConfig);
+  case 'mock':
+    return new MockProvider(mergedConfig);
+  default:
+    console.warn(`Unsupported AI provider: ${provider}, falling back to OpenAI`);
+    return new OpenAIProvider(mergedConfig);
   }
 }
 

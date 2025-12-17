@@ -29,7 +29,7 @@ const defaultConfig = {
 let config;
 try {
   config = require('../../config.json');
-} catch (err) {
+} catch (err) { // eslint-disable-line no-unused-vars
   config = defaultConfig;
 }
 
@@ -98,7 +98,7 @@ class Logger {
    * @param {Object} payload - Raw payload to log
    * @param {Object} options - Logging options
    */
-  debugPayload(message, payload, options = {}) {
+  debugPayload(message, payload, /* eslint-disable-line no-unused-vars */ options = {}) {
     // Only log if verbose mode is enabled or if we're sampling
     const shouldSample = this._shouldSamplePayload();
 

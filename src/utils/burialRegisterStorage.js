@@ -1,9 +1,8 @@
-const fs = require('fs');
-const path = require('path');
 const { db } = require('./database');
 const logger = require('./logger');
 const config = require('../../config.json');
-const { generateEntryId } = require('./burialRegisterFlattener');
+const path = require('path');
+const fs = require('fs');
 
 const burialRegisterConfig = config.burialRegister || {};
 
