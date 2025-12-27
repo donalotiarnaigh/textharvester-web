@@ -30,9 +30,9 @@ class DataType {
 
     // Check type before conversion
     if (!this.validator(value)) {
-      return { 
-        value: null, 
-        errors: [`Invalid ${this.name} value: ${value}`] 
+      return {
+        value: null,
+        errors: [`Invalid ${this.name} value: ${value}`]
       };
     }
 
@@ -47,9 +47,9 @@ class DataType {
 
       return { value: convertedValue, errors: [] };
     } catch (error) {
-      return { 
-        value: null, 
-        errors: [error.message] 
+      return {
+        value: null,
+        errors: [error.message]
       };
     }
   }
@@ -76,7 +76,7 @@ class DataType {
    * @param {Object} metadata - Metadata for conversion
    * @returns {*} - The converted value
    */
-  convert(value, metadata = {}) {
+  convert(value, metadata) { // eslint-disable-line no-unused-vars
     // Base class provides identity conversion
     return value;
   }
@@ -94,27 +94,27 @@ class StringType extends DataType {
     if (value === null || value === undefined) {
       return null;
     }
-    
+
     // Convert to string and trim
     const converted = String(value).trim();
-    
+
     // If empty string and field is not required, return null
     if (converted === '' && !metadata.required) {
       return null;
     }
-    
+
     // Validate metadata
     const errors = this.validateMetadata(converted, metadata);
     if (errors.length > 0) {
       throw new Error(errors[0]);
     }
-    
+
     return converted;
   }
 
   validateMetadata(value, metadata) {
     const errors = [];
-    
+
     if (value === null || value === '') {
       return errors;
     }
@@ -164,12 +164,12 @@ class IntegerType extends DataType {
     if (value === null || value === undefined) {
       return null;
     }
-    
+
     // Only accept actual integers
     if (!Number.isInteger(value)) {
       throw new Error(`Cannot convert value "${value}" to integer`);
     }
-    
+
     // Validate range if specified - use same logic as validateMetadata
     if (metadata.min !== undefined && metadata.max !== undefined) {
       if (value < metadata.min || value > metadata.max) {
@@ -183,13 +183,13 @@ class IntegerType extends DataType {
         throw new Error(`Value must be less than or equal to ${metadata.max}`);
       }
     }
-    
+
     return value;
   }
 
   validateMetadata(value, metadata) {
     const errors = [];
-    
+
     if (value === null) {
       return errors;
     }
@@ -221,11 +221,11 @@ class FloatType extends DataType {
     super('float', (value) => typeof value === 'number' && !isNaN(value));
   }
 
-  convert(value, metadata = {}) {
+  convert(value, metadata) {
     if (value === null || value === undefined) {
       return null;
     }
-    
+
     // Only accept actual numbers
     if (typeof value !== 'number' || isNaN(value)) {
       throw new Error(`Cannot convert value "${value}" to float`);
@@ -249,7 +249,7 @@ class FloatType extends DataType {
 
   validateMetadata(value, metadata) {
     const errors = super.validateMetadata(value, metadata);
-    
+
     if (value === null) {
       return errors;
     }
@@ -277,22 +277,22 @@ class BooleanType extends DataType {
     super('boolean', (value) => typeof value === 'boolean');
   }
 
-  convert(value, metadata = {}) {
+  convert(value, metadata) { // eslint-disable-line no-unused-vars
     if (value === null || value === undefined) {
       return null;
     }
-    
+
     // Only accept actual booleans
     if (typeof value !== 'boolean') {
       throw new Error(`Cannot convert value "${value}" to boolean`);
     }
-    
+
     return value;
   }
 
-  validateMetadata(value, metadata) {
+  validateMetadata(value, metadata) { // eslint-disable-line no-unused-vars
     const errors = [];
-    
+
     if (value === null) {
       return errors;
     }
@@ -313,22 +313,22 @@ class DateType extends DataType {
     super('date', (value) => value instanceof Date && !isNaN(value));
   }
 
-  convert(value, metadata = {}) {
+  convert(value, metadata) { // eslint-disable-line no-unused-vars
     if (value === null || value === undefined) {
       return null;
     }
-    
+
     // Only accept actual Date objects
     if (!(value instanceof Date) || isNaN(value.getTime())) {
       throw new Error(`Cannot convert value "${value}" to date`);
     }
-    
+
     return value;
   }
 
   validateMetadata(value, metadata) {
     const errors = super.validateMetadata(value, metadata);
-    
+
     if (value === null) {
       return errors;
     }
@@ -369,9 +369,9 @@ function isValidType(type) {
  * @param {Object} metadata Metadata for validation
  * @returns {Object} Validation result with value and errors
  */
-function validateValue(value, type, metadata = {}) {
+function validateValue(value, type, metadata) {
   let typeInstance;
-  
+
   if (type instanceof DataType) {
     typeInstance = type;
   } else if (typeof type === 'string') {
@@ -382,7 +382,7 @@ function validateValue(value, type, metadata = {}) {
   } else {
     throw new Error('Type must be a string or DataType instance');
   }
-  
+
   return typeInstance.validate(value, metadata);
 }
 

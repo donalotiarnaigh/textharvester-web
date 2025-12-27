@@ -118,10 +118,7 @@ jest.mock('../src/utils/modelProviders', () => {
 
 // Then import modules
 const fs = require('fs').promises;
-const OpenAI = require('openai');
-const Anthropic = require('@anthropic-ai/sdk');
 const { processFile } = require('../src/utils/fileProcessing.js');
-const logger = require('../src/utils/logger.js');
 const providerTemplates = require('../src/utils/prompts/templates/providerTemplates');
 const burialRegisterFlattener = require('../src/utils/burialRegisterFlattener');
 const burialRegisterStorage = require('../src/utils/burialRegisterStorage');

@@ -1,4 +1,3 @@
-const fs = require('fs');
 const path = require('path');
 const {
   enqueueFiles,
@@ -11,7 +10,6 @@ const { ProcessingError } = require('../errorTypes');
 
 // We need to access internal state for testing the race condition
 // Let's create a test that can directly manipulate the state
-let fileQueueModule;
 
 // Mock dependencies
 jest.mock('fs', () => ({
@@ -63,27 +61,27 @@ describe('Enhanced File Queue with Error Handling', () => {
       };
     });
   });
-  
+
   it('should process files in queue successfully', async () => {
     const files = [
       { path: 'uploads/file1.jpg', originalname: 'file1.jpg' },
       { path: 'uploads/file2.jpg', originalname: 'file2.jpg' }
     ];
-    
+
     enqueueFiles(files);
-    
+
     // Allow queue processing to complete
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     expect(processFile).toHaveBeenCalledTimes(2);
     expect(processFile).toHaveBeenCalledWith('uploads/file1.jpg', expect.any(Object));
     expect(processFile).toHaveBeenCalledWith('uploads/file2.jpg', expect.any(Object));
-    
+
     const progress = getProcessingProgress();
     expect(progress.state).toBe('complete');
     expect(progress.progress).toBe(100);
   });
-  
+
   it('should continue processing when empty sheet errors occur', async () => {
     // First file processes normally, second file has empty sheet error
     processFile
@@ -99,24 +97,24 @@ describe('Enhanced File Queue with Error Handling', () => {
         errorType: 'empty_sheet',
         errorMessage: 'No readable text found on the sheet'
       });
-    
+
     const files = [
       { path: 'uploads/file1.jpg', originalname: 'file1.jpg' },
       { path: 'uploads/file2.jpg', originalname: 'file2.jpg' }
     ];
-    
+
     enqueueFiles(files);
-    
+
     // Allow queue processing to complete
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     expect(processFile).toHaveBeenCalledTimes(2);
-    
+
     // Should complete with 100% progress even with error
     const progress = getProcessingProgress();
     expect(progress.state).toBe('complete');
     expect(progress.progress).toBe(100);
-    
+
     // Should have both successful and error results
     const results = getProcessedResults();
     expect(results.length).toBe(2);
@@ -124,13 +122,13 @@ describe('Enhanced File Queue with Error Handling', () => {
     expect(results[1].error).toBe(true);
     expect(results[1].errorType).toBe('empty_sheet');
   });
-  
+
   it('should retry files with non-empty-sheet errors', async () => {
     // Mock processFile to fail with validation error on first attempt
     // and succeed on second attempt
     const validationError = new ProcessingError('Invalid name format', 'validation');
     let attempts = 0;
-    
+
     processFile.mockImplementation(async (filePath) => {
       if (filePath === 'uploads/file2.jpg' && attempts === 0) {
         attempts++;
@@ -143,17 +141,17 @@ describe('Enhanced File Queue with Error Handling', () => {
         fileName: path.basename(filePath)
       };
     });
-    
+
     const files = [
       { path: 'uploads/file1.jpg', originalname: 'file1.jpg' },
       { path: 'uploads/file2.jpg', originalname: 'file2.jpg' }
     ];
-    
+
     enqueueFiles(files);
-    
+
     // Allow queue processing to complete with retry delay
     await new Promise(resolve => setTimeout(resolve, 1000)); // Increased timeout further
-    
+
     // Verify file1 was processed
     expect(processFile).toHaveBeenCalledWith('uploads/file1.jpg', expect.any(Object));
     // Verify file2 was processed
@@ -178,12 +176,12 @@ describe('Enhanced File Queue with Error Handling', () => {
     it('should NOT mark as complete when queue is empty but processing is still active', () => {
       // This test verifies the fix: we should not mark complete if processing is active
       // even if the queue is temporarily empty
-      
+
       // We'll need to test this after implementing the fix
       // For now, this documents the expected behavior
-      
+
       const progress = getProcessingProgress();
-      
+
       // After the fix, this should never be complete if processing is active
       // The fix will check both totalFiles === 0 AND activeWorkers === 0
       expect(progress.state).not.toBe('complete');
@@ -191,11 +189,11 @@ describe('Enhanced File Queue with Error Handling', () => {
 
     it('should mark as complete only when all files processed AND no active processing', async () => {
       // This test verifies the correct behavior after the fix
-      
+
       processFile.mockImplementation(async (filePath) => {
         // Simulate processing delay
         await new Promise(resolve => setTimeout(resolve, 30));
-        
+
         return {
           memorial_number: 'HG-123',
           first_name: 'JOHN',
@@ -203,24 +201,24 @@ describe('Enhanced File Queue with Error Handling', () => {
           fileName: path.basename(filePath)
         };
       });
-      
+
       const files = [
         { path: 'uploads/file1.jpg', originalname: 'file1.jpg' },
         { path: 'uploads/file2.jpg', originalname: 'file2.jpg' }
       ];
-      
+
       enqueueFiles(files);
-      
+
       // Check progress during processing
       await new Promise(resolve => setTimeout(resolve, 25)); // During first file processing
 
       const progressDuring = getProcessingProgress();
       expect(progressDuring.state).toBe('processing');
       expect(progressDuring.progress).toBeLessThan(100);
-      
+
       // Wait for all files to complete
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       const finalProgress = getProcessingProgress();
       expect(finalProgress.state).toBe('complete');
       expect(finalProgress.progress).toBe(100);

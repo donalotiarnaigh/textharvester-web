@@ -33,7 +33,7 @@ async function verifyPipeline(pdfPath) {
   // Validate PDF exists
   try {
     await fs.access(pdfPath);
-  } catch (error) {
+  } catch {
     console.error(`❌ ERROR: PDF file not found: ${pdfPath}`);
     console.error('Please provide a valid path to a 2-page grave card PDF.');
     process.exit(1);
@@ -95,8 +95,8 @@ async function verifyPipeline(pdfPath) {
       console.log('\n  Interments:');
       result.interments.forEach((interment, index) => {
         const name = interment.name?.full_name ||
-                    `${interment.name?.given_names || ''} ${interment.name?.surname || ''}`.trim() ||
-                    'Unknown';
+          `${interment.name?.given_names || ''} ${interment.name?.surname || ''}`.trim() ||
+          'Unknown';
         const date = interment.date_of_death?.iso || interment.date_of_death?.raw_text || 'N/A';
         console.log(`    ${index + 1}. ${name} (d. ${date})`);
       });

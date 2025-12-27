@@ -3,14 +3,8 @@
  */
 
 describe('Progress Tracking with Error Handling', () => {
-  // Mock DOM elements
-  let progressBar;
-  let statusMessage;
-  let errorContainer;
-  
   // Import modules - these will be mocked
   let progressModule;
-  let errorHandlerModule;
 
   beforeEach(() => {
     // Set up DOM elements
@@ -22,33 +16,29 @@ describe('Progress Tracking with Error Handling', () => {
         <div id="errorList"></div>
       </div>
     `;
-    
+
     // Get references to DOM elements
-    progressBar = document.getElementById('progressBar');
-    statusMessage = document.getElementById('statusMessage');
-    errorContainer = document.getElementById('errorContainer');
-    
+
     // Reset fetch mock
     global.fetch = jest.fn();
-    
+
     // Clear mocks between tests
     jest.resetModules();
-    
+
     // Mock error handler module
     jest.mock('../errorHandler', () => ({
       updateErrorMessages: jest.fn()
     }));
-    
+
     // Import modules
     progressModule = require('../ProgressBarUI');
-    errorHandlerModule = require('../errorHandler');
   });
 
   it('should update progress bar with percentage', () => {
     // Create a ProgressBarUI instance
     const progressBarUI = new progressModule.ProgressBarUI('progressBar');
     progressBarUI.updateProgress(50, 'Processing');
-    
+
     const fillElement = document.querySelector('.progress-bar__fill');
     expect(fillElement.style.width).toBe('50%');
     expect(fillElement.textContent).toBe('50%');
@@ -58,7 +48,7 @@ describe('Progress Tracking with Error Handling', () => {
     // Create a ProgressBarUI instance  
     const progressBarUI = new progressModule.ProgressBarUI('progressBar');
     progressBarUI.updateProgress(25, 'Testing progress');
-    
+
     const statusElement = document.querySelector('.progress-bar__status');
     expect(statusElement.textContent).toBe('Testing progress');
   });
@@ -83,13 +73,13 @@ describe('Progress Tracking with Error Handling', () => {
         ]
       })
     });
-    
+
     // Import the module that uses fetch
     const apiModule = require('../api');
-    
+
     // Call the checkProgress function
     const result = await apiModule.checkProgress();
-    
+
     // Verify the API was called correctly
     expect(global.fetch).toHaveBeenCalledWith('/api/progress', {
       method: 'GET',
@@ -97,14 +87,14 @@ describe('Progress Tracking with Error Handling', () => {
         'Content-Type': 'application/json'
       }
     });
-    
+
     // Verify the result structure
     expect(result).toHaveProperty('files');
     expect(result).toHaveProperty('totalFiles');
     expect(result).toHaveProperty('processedFiles');
     expect(result).toHaveProperty('phase');
   });
-  
+
   it('should redirect to results page when complete, even with errors', async () => {
     // Mock fetch to return successful response
     global.fetch.mockResolvedValue({
@@ -125,13 +115,13 @@ describe('Progress Tracking with Error Handling', () => {
         ]
       })
     });
-    
+
     // Import the module that uses fetch
     const apiModule = require('../api');
-    
+
     // Call the checkProgress function
     const result = await apiModule.checkProgress();
-    
+
     // Verify the API was called correctly
     expect(global.fetch).toHaveBeenCalledWith('/api/progress', {
       method: 'GET',
@@ -139,7 +129,7 @@ describe('Progress Tracking with Error Handling', () => {
         'Content-Type': 'application/json'
       }
     });
-    
+
     // Verify completion state
     expect(result.phase).toBe('complete');
     expect(result.processedFiles).toBe(1);

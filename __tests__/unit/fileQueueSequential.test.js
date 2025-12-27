@@ -2,7 +2,7 @@
  * Ensures the file queue processes files sequentially across multiple enqueue calls.
  */
 
-const fs = require('fs');
+
 
 jest.mock('fs', () => ({
   existsSync: jest.fn().mockReturnValue(true),
@@ -38,8 +38,8 @@ describe('FileQueue sequential processing', () => {
   let processFile;
 
   beforeAll(() => {
-    const fileQueue = require('../../src/utils/fileQueue');
-    enqueueFiles = fileQueue.enqueueFiles;
+    // Only import what's needed
+    enqueueFiles = require('../../src/utils/fileQueue').enqueueFiles;
     processFile = require('../../src/utils/fileProcessing').processFile;
   });
 

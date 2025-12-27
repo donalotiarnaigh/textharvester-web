@@ -1,6 +1,5 @@
 const { processFile } = require('../fileProcessing');
 const { ProcessingError } = require('../errorTypes');
-const path = require('path');
 
 // Mock dependencies
 const fs = require('fs');

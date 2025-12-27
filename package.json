@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Text extraction tool for Historic Graves",
   "main": "index.js",
+  "bin": {
+    "th": "./bin/textharvester"
+  },
   "scripts": {
     "test": "jest --config jest.config.cjs",
     "start": "node server.js",
@@ -14,7 +17,11 @@
     "migrate:add-source-type": "node scripts/migrate-add-source-type.js",
     "init-db": "node scripts/init-db.js",
     "stress-test": "node scripts/stress-test.js",
-    "create-test-images": "node scripts/create-test-images.js"
+    "create-test-images": "node scripts/create-test-images.js",
+    "th": "node bin/textharvester",
+    "th:ingest": "node bin/textharvester ingest",
+    "th:query": "node bin/textharvester query",
+    "th:help": "node bin/textharvester --help"
   },
   "keywords": [],
   "author": "Daniel Tierney",
@@ -22,20 +29,22 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "axios": "^1.8.2",
-    "chalk": "^5.4.1",
+    "chalk": "^4.1.2",
+    "cli-progress": "^3.12.0",
+    "commander": "^14.0.2",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "dropzone": "^6.0.0-beta.2",
     "express": "^4.17.1",
     "form-data": "^4.0.2",
+    "glob": "^8.1.0",
     "helmet": "^7.1.0",
     "moment": "^2.30.1",
     "morgan": "^1.10.0",
     "multer": "^2.0.1",
     "open": "^10.1.2",
     "openai": "^4.24.0",
-    "opencv.js": "^1.2.1",
     "pdf-poppler": "^0.2.1",
     "sharp": "^0.32.6",
     "winston": "^3.12.0"

@@ -25,7 +25,7 @@ class BaseVisionProvider {
    * @param {Object} options - Additional options for processing
    * @returns {Promise<Object>} - Parsed JSON response
    */
-  async processImage(base64Image, prompt, options = {}) {
+  async processImage(base64Image, prompt, /* eslint-disable-line no-unused-vars */ options = {}) {
     throw new Error('processImage() must be implemented by subclass');
   }
 
@@ -43,7 +43,7 @@ class BaseVisionProvider {
    * @param {BasePrompt} promptTemplate The prompt template to validate
    * @returns {Object} Validation result
    */
-  validatePromptTemplate(promptTemplate) {
+  validatePromptTemplate(promptTemplate) { // eslint-disable-line no-unused-vars
     throw new Error('validatePromptTemplate() must be implemented by subclass');
   }
 }

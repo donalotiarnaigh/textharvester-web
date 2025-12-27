@@ -2,8 +2,7 @@
  * Test suite for source_type parameter threading through the processing pipeline
  */
 
-const fs = require('fs');
-const path = require('path');
+
 
 // Mock dependencies
 jest.mock('fs', () => ({
@@ -36,22 +35,21 @@ jest.mock('../../config.json', () => ({
 }), { virtual: true });
 
 describe('Source Type Threading', () => {
-  let enqueueFiles, getProcessingProgress;
+  let enqueueFiles;
   let processFile;
 
   beforeAll(() => {
     // Import after mocks are set up
     const fileQueue = require('../../src/utils/fileQueue');
     enqueueFiles = fileQueue.enqueueFiles;
-    getProcessingProgress = fileQueue.getProcessingProgress;
-    
+
     const fileProcessing = require('../../src/utils/fileProcessing');
     processFile = fileProcessing.processFile;
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Default successful processing
     processFile.mockImplementation(async (filePath, options = {}) => {
       return {
@@ -163,14 +161,14 @@ describe('Source Type Threading', () => {
           source_type: 'monument_photo'
         })
       );
-      
+
       expect(processFile).toHaveBeenCalledWith(
         'record1.jpg',
         expect.objectContaining({
           source_type: 'record_sheet'
         })
       );
-      
+
       expect(processFile).toHaveBeenCalledWith(
         'default1.jpg',
         expect.objectContaining({
@@ -300,9 +298,9 @@ describe('Source Type Threading', () => {
 
       // Verify source_type was consistent across retries
       expect(processFile).toHaveBeenCalledTimes(2);
-      expect(processFile).toHaveBeenNthCalledWith(1, 'retry_test.jpg', 
+      expect(processFile).toHaveBeenNthCalledWith(1, 'retry_test.jpg',
         expect.objectContaining({ source_type: 'monument_photo' }));
-      expect(processFile).toHaveBeenNthCalledWith(2, 'retry_test.jpg', 
+      expect(processFile).toHaveBeenNthCalledWith(2, 'retry_test.jpg',
         expect.objectContaining({ source_type: 'monument_photo' }));
     });
   });

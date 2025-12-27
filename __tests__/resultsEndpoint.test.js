@@ -1,32 +1,31 @@
-const request = require('supertest');
-const express = require('express');
 const httpMocks = require('node-mocks-http');
-const { getResults } = require('../src/controllers/resultsManager');
-const { memorialTypes } = require('../src/utils/prompts/types/memorialTypes');
 
-// Mock database module where getAllMemorials is actually defined
-jest.mock('../src/utils/database');
+// Auto-mock QueryService
+jest.mock('../src/services/QueryService');
 jest.mock('../src/utils/fileQueue.js');
-jest.mock('../src/utils/burialRegisterStorage');
+jest.mock('../src/utils/database'); // mocking database for detecting source type DB calls if any
 
-const { getAllMemorials, db } = require('../src/utils/database');
+const QueryService = require('../src/services/QueryService');
+const { getResults } = require('../src/controllers/resultsManager'); // Require AFTER mocking
 const { getProcessedResults } = require('../src/utils/fileQueue.js');
-const { getAllBurialRegisterEntries } = require('../src/utils/burialRegisterStorage');
+const { db } = require('../src/utils/database');
 
 describe('Results Endpoint', () => {
   let req, res;
+  // Capture the mock method from the instance created when resultsManager was required
+  const mockList = QueryService.mock.instances[0].list;
 
   beforeEach(() => {
     req = httpMocks.createRequest();
     res = httpMocks.createResponse();
     jest.clearAllMocks();
-    
+
+    // Default QueryService mock behavior
+    mockList.mockResolvedValue({ records: [], total: 0 });
+
     // Mock getProcessedResults to return no errors by default
     getProcessedResults.mockReturnValue([]);
-    
-    // Mock getAllBurialRegisterEntries to return empty array
-    getAllBurialRegisterEntries.mockResolvedValue([]);
-    
+
     // Mock db.get for detectSourceType queries
     db.get = jest.fn((query, params, callback) => {
       if (query.includes('SELECT MAX(processed_date)')) {
@@ -47,7 +46,7 @@ describe('Results Endpoint', () => {
 
   describe('getResults', () => {
     it('should return results with proper data types', async () => {
-      const mockDbResults = [
+      const mockRecords = [
         {
           memorial_number: 123,
           first_name: 'John',
@@ -58,16 +57,16 @@ describe('Results Endpoint', () => {
         }
       ];
 
-      getAllMemorials.mockResolvedValue(mockDbResults);
-      
+      mockList.mockResolvedValue({ records: mockRecords, total: 1 });
+
       // Mock res methods to be chainable
       res.json = jest.fn().mockReturnValue(res);
-      
+
       await getResults(req, res);
 
-      expect(getAllMemorials).toHaveBeenCalled();
+      expect(mockList).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalled();
-      
+
       // Check the response structure
       const responseData = res.json.mock.calls[0][0];
       expect(responseData).toHaveProperty('memorials');
@@ -76,7 +75,7 @@ describe('Results Endpoint', () => {
     });
 
     it('should handle missing optional fields', async () => {
-      const mockDbResults = [
+      const mockRecords = [
         {
           memorial_number: 123,
           first_name: null,
@@ -87,9 +86,9 @@ describe('Results Endpoint', () => {
         }
       ];
 
-      getAllMemorials.mockResolvedValue(mockDbResults);
+      mockList.mockResolvedValue({ records: mockRecords, total: 1 });
       res.json = jest.fn().mockReturnValue(res);
-      
+
       await getResults(req, res);
 
       const responseData = res.json.mock.calls[0][0];
@@ -99,7 +98,7 @@ describe('Results Endpoint', () => {
     });
 
     it('should include error information in response', async () => {
-      const mockDbResults = [
+      const mockRecords = [
         {
           memorial_number: 123,
           first_name: 'John',
@@ -114,10 +113,10 @@ describe('Results Endpoint', () => {
         { error: 'File processing error', fileName: 'error_file.jpg' }
       ];
 
-      getAllMemorials.mockResolvedValue(mockDbResults);
+      mockList.mockResolvedValue({ records: mockRecords, total: 1 });
       getProcessedResults.mockReturnValue(mockErrors);
       res.json = jest.fn().mockReturnValue(res);
-      
+
       await getResults(req, res);
 
       const responseData = res.json.mock.calls[0][0];
@@ -125,12 +124,12 @@ describe('Results Endpoint', () => {
     });
 
     it('should handle database errors gracefully', async () => {
-      getAllMemorials.mockRejectedValue(new Error('Database error'));
-      
+      mockList.mockRejectedValue(new Error('Database error'));
+
       // Mock res.status and res.json to be chainable
       res.status = jest.fn().mockReturnValue(res);
       res.json = jest.fn().mockReturnValue(res);
-      
+
       await getResults(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
@@ -140,7 +139,7 @@ describe('Results Endpoint', () => {
     });
 
     it('should validate and convert data types before sending response', async () => {
-      const mockDbResults = [
+      const mockRecords = [
         {
           memorial_number: '123', // String that should be converted to number
           first_name: 'John',
@@ -151,22 +150,22 @@ describe('Results Endpoint', () => {
         }
       ];
 
-      getAllMemorials.mockResolvedValue(mockDbResults);
+      mockList.mockResolvedValue({ records: mockRecords, total: 1 });
       res.json = jest.fn().mockReturnValue(res);
-      
+
       await getResults(req, res);
 
-      expect(getAllMemorials).toHaveBeenCalled();
+      expect(mockList).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalled();
-      
+
       // Get the actual response data
       const responseData = res.json.mock.calls[0][0];
-      
+
       // Verify data types are converted properly in the memorials array
       expect(responseData.memorials).toBeDefined();
       expect(Array.isArray(responseData.memorials)).toBe(true);
       expect(responseData.memorials.length).toBeGreaterThan(0);
-      
+
       const result = responseData.memorials[0];
       expect(typeof result.memorial_number).toBe('string'); // Changed to string to preserve leading zeros
       expect(typeof result.year_of_death).toBe('number');

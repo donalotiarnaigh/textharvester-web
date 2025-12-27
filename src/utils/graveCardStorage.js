@@ -126,6 +126,34 @@ function getAllGraveCards() {
   });
 }
 
+/**
+ * Retrieve a single grave card by ID.
+ * @param {number|string} id 
+ * @returns {Promise<Object|null>}
+ */
+function getGraveCardById(id) {
+  return new Promise((resolve, reject) => {
+    db.get('SELECT * FROM grave_cards WHERE id = ?', [id], (err, row) => {
+      if (err) {
+        logger.error(`Error retrieving grave card ${id}:`, err);
+        reject(err);
+        return;
+      }
+      if (!row) {
+        resolve(null);
+        return;
+      }
+      try {
+        const data = JSON.parse(row.data_json);
+        resolve({ ...row, data });
+      } catch (e) {
+        logger.warn(`Failed to parse JSON for grave card ${row.id}`, e);
+        resolve({ ...row, data: null, error: 'Invalid JSON data' });
+      }
+    });
+  });
+}
+
 
 /**
  * Export all grave cards to a flattened CSV format.
@@ -251,5 +279,6 @@ module.exports = {
   storeGraveCard,
   exportCardsToCsv,
   getAllGraveCards,
+  getGraveCardById,
   clearAllGraveCards
 };

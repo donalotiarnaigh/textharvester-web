@@ -17,6 +17,29 @@ Welcome to the Text Harvester, a community-driven web application designed to pr
 - **Persistent Storage**: SQLite database ensures your data is safely stored and easily accessible
 - **Automatic Backups**: Database backups are created automatically in the `backups/` directory
 
+## Command Line Interface (CLI)
+
+TextHarvester includes a full-featured CLI for headless operation, batch processing, and automation.
+
+### Quick Start
+
+```bash
+# Check version
+npm run th -- --version
+
+# View help
+npm run th -- --help
+```
+
+### Key Commands
+
+- **`ingest`**: Batch process images using glob patterns.
+- **`query`**: Search and filter processed records.
+- **`export`**: Export data to JSON or CSV.
+- **`system`**: Manage database and system status.
+
+For detailed usage instructions, see [CLI Usage Guide](docs/cli/usage.md).
+
 ## Database
 
 The application uses SQLite to store memorial records. The database file is located in `data/memorials.db`.

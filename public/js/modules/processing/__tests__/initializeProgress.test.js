@@ -1,5 +1,3 @@
-const ProgressController = require('../ProgressController');
-
 // Tell Jest to use our mock implementation
 jest.mock('../initializeProgress');
 
@@ -14,18 +12,20 @@ describe('Progress Initialization', () => {
 
     container = document.createElement('div');
     container.innerHTML = `
-            <div id="progress-container">
-                <div class="progress-bar">
-                    <div class="progress-bar__fill"></div>
-                </div>
-                <div class="progress-bar__status"></div>
-            </div>
-        `;
+      <div id="progress-container">
+        <div class="progress-bar">
+          <div class="progress-bar__fill"></div>
+        </div>
+        <div class="progress-bar__status"></div>
+      </div>
+    `;
     document.body.appendChild(container);
   });
 
   afterEach(() => {
-    document.body.removeChild(container);
+    if (container && container.parentNode) {
+      document.body.removeChild(container);
+    }
     jest.clearAllMocks();
   });
 
@@ -39,7 +39,7 @@ describe('Progress Initialization', () => {
   test('setupProgressTracking should set up event listeners', () => {
     const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
     setupProgressTracking();
-        
+
     expect(addEventListenerSpy).toHaveBeenCalledWith('processing:start', expect.any(Function));
     expect(addEventListenerSpy).toHaveBeenCalledWith('processing:stop', expect.any(Function));
   });
@@ -48,7 +48,7 @@ describe('Progress Initialization', () => {
     const mockController = _getMockController();
     setupProgressTracking();
     document.dispatchEvent(new Event('processing:start'));
-        
+
     expect(mockController.startPolling).toHaveBeenCalled();
   });
 
@@ -56,7 +56,7 @@ describe('Progress Initialization', () => {
     const mockController = _getMockController();
     setupProgressTracking();
     document.dispatchEvent(new Event('processing:stop'));
-        
+
     expect(mockController.stopPolling).toHaveBeenCalled();
   });
-}); 
+});

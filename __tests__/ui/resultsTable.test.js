@@ -4,7 +4,7 @@
 
 describe('Results Table UI', () => {
   let container;
-  
+
   // Mock jQuery
   global.$ = jest.fn(() => ({
     modal: jest.fn(),
@@ -14,7 +14,7 @@ describe('Results Table UI', () => {
   beforeEach(() => {
     // Reset jQuery mock
     global.$.mockClear();
-    
+
     // Set up a DOM element as a render target
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -93,17 +93,17 @@ describe('Results Table UI', () => {
 
     // Import the displayMemorials function from the results module
     const resultsModule = require('../../public/js/modules/results/main.js');
-    
+
     // Mock the populateResultsTable function by creating a wrapper around displayMemorials
-    window.populateResultsTable = function(data) {
+    window.populateResultsTable = function (data) {
       // Use the actual displayMemorials function
-      const displayMemorials = resultsModule.displayMemorials || function(memorials) {
+      const displayMemorials = resultsModule.displayMemorials || function (memorials) {
         const tableBody = document.getElementById('resultsTableBody');
         const emptyState = document.getElementById('emptyState');
-        
+
         // Clear existing content
         tableBody.innerHTML = '';
-        
+
         // Check if there are any memorials
         if (!memorials || memorials.length === 0) {
           if (emptyState) {
@@ -111,23 +111,23 @@ describe('Results Table UI', () => {
           }
           return;
         }
-        
+
         // Hide empty state
         if (emptyState) {
           emptyState.classList.add('d-none');
         }
-        
+
         // Create a row for each memorial
         memorials.forEach(memorial => {
           const row = document.createElement('tr');
-          
+
           // Properly escape the memorial data for HTML attributes
           const memorialDataEscaped = JSON.stringify(memorial)
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
-          
+
           // Populate row with memorial data
           row.innerHTML = `
             <td>${memorial.memorial_number || 'N/A'}</td>
@@ -144,14 +144,14 @@ describe('Results Table UI', () => {
               </button>
             </td>
           `;
-          
+
           tableBody.appendChild(row);
         });
-        
+
         // Initialize tooltips
         global.$('[data-toggle="tooltip"]');
       };
-      
+
       displayMemorials(data);
     };
   });
@@ -180,9 +180,7 @@ describe('Results Table UI', () => {
     });
 
     it('should be responsive', () => {
-      const tableContainer = container.querySelector('.table-responsive');
-      expect(tableContainer).toBeTruthy();
-      expect(tableContainer.classList.contains('mt-4')).toBeTruthy();
+      expect(container.querySelector('.table-responsive').classList.contains('mt-4')).toBeTruthy();
     });
   });
 
@@ -209,7 +207,7 @@ describe('Results Table UI', () => {
     it('should display prompt metadata correctly', () => {
       const row = container.querySelector('#resultsTableBody tr');
       const cells = Array.from(row.querySelectorAll('td'));
-      
+
       expect(cells[4].textContent.trim()).toBe('memorial_ocr'); // Prompt Template
       expect(cells[5].textContent.trim()).toBe('1.0.0'); // Template Version
     });
@@ -218,12 +216,12 @@ describe('Results Table UI', () => {
       const row = container.querySelector('#resultsTableBody tr');
       const templateCell = row.querySelectorAll('td')[4];
       const versionCell = row.querySelectorAll('td')[5];
-      
+
       expect(templateCell.getAttribute('data-toggle')).toBe('tooltip');
       expect(versionCell.getAttribute('data-toggle')).toBe('tooltip');
       expect(templateCell.getAttribute('title')).toBe('Standard memorial OCR template for inscription extraction');
       expect(versionCell.getAttribute('title')).toBe('Initial release version');
-      
+
       // Verify tooltip initialization was called
       expect(global.$).toHaveBeenCalledWith('[data-toggle="tooltip"]');
     });
@@ -244,8 +242,6 @@ describe('Results Table UI', () => {
 
     beforeEach(() => {
       window.populateResultsTable(mockData);
-      const viewButton = container.querySelector('.view-details');
-      
       // Manually populate modal since click handler is complex
       document.getElementById('modalTemplate').textContent = 'memorial_ocr';
       document.getElementById('modalVersion').textContent = '1.0.0';
@@ -271,7 +267,7 @@ describe('Results Table UI', () => {
         }
       `;
       document.head.appendChild(style);
-      
+
       // Verify that the style is applied
       expect(document.head.contains(style)).toBeTruthy();
     });

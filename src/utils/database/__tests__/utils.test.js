@@ -1,11 +1,7 @@
-const sqlite3 = require('sqlite3');
-const path = require('path');
-const { initializeDatabase } = require('../schema');
 const dbUtils = require('../utils');
-const logger = require('../../logger');
 
-// Mock the logger
-jest.mock('../../logger');
+// No logs expected in these tests
+// jest.mock('../../logger');
 
 describe('Database Utility Functions', () => {
   let db;

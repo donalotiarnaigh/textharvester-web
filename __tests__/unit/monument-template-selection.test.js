@@ -45,17 +45,15 @@ describe('Monument Template Selection', () => {
   let createProvider;
   let getPrompt;
   let storeMemorial;
-  let logger;
 
   beforeAll(async () => {
     // Import after mocks are set up
     const fileProcessing = require('../../src/utils/fileProcessing');
     processFile = fileProcessing.processFile;
-    
+
     createProvider = require('../../src/utils/modelProviders').createProvider;
     getPrompt = require('../../src/utils/prompts/templates/providerTemplates').getPrompt;
     storeMemorial = require('../../src/utils/database').storeMemorial;
-    logger = require('../../src/utils/logger');
   });
 
   beforeEach(() => {

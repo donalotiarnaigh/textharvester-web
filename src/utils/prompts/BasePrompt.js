@@ -1,4 +1,4 @@
-const { PROVIDER_TYPES, createProviderConfig } = require('./providers/providerConfig');
+const { createProviderConfig } = require('./providers/providerConfig');
 const dataTypes = require('./types/dataTypes');
 
 /**
@@ -18,7 +18,7 @@ class BasePrompt {
     this.version = config.version || '1.0.0';
     this.description = config.description || '';
     this.fields = this._validateFields(config.fields || {});
-    this.providers = config.providers || ['openai', 'anthropic'];
+    this.providers = config.providers || ['openai', 'anthropic', 'mock'];
   }
 
   /**
@@ -35,8 +35,8 @@ class BasePrompt {
 
     // Original object validation logic
     for (const [fieldName, field] of Object.entries(fields)) {
-      if (!field.type || (typeof field.type === 'string' && !dataTypes.isValidType(field.type)) || 
-          (typeof field.type === 'object' && !field.type.name)) {
+      if (!field.type || (typeof field.type === 'string' && !dataTypes.isValidType(field.type)) ||
+        (typeof field.type === 'object' && !field.type.name)) {
         throw new Error(`Unsupported field type: ${field.type}`);
       }
       if (!field.description) {
@@ -54,7 +54,7 @@ class BasePrompt {
    */
   validateField(fieldName, value) {
     // Handle both array and object field formats
-    const field = Array.isArray(this.fields) 
+    const field = Array.isArray(this.fields)
       ? this.fields.find(f => f.name === fieldName)
       : this.fields[fieldName];
 
@@ -117,12 +117,12 @@ class BasePrompt {
     }
 
     const result = dataTypes.validateValue(convertedValue, fieldType, field.metadata);
-    
+
     if (result.errors.length > 0) {
       const errorMessages = result.errors.map(error => {
         // Transform error messages to match expected format
         let transformedError = error.replace('Value', fieldName.charAt(0).toUpperCase() + fieldName.slice(1));
-        
+
         // Fix specific error message formats
         if (transformedError.includes('Invalid integer value:')) {
           // Extract the value from the original error message
@@ -142,7 +142,7 @@ class BasePrompt {
         if (transformedError.includes('Invalid date value:')) {
           transformedError = transformedError.replace('Invalid date value:', 'Invalid date value');
         }
-        
+
         return transformedError;
       });
       throw new Error(errorMessages[0]);
@@ -207,7 +207,7 @@ class BasePrompt {
         response_format: { type: 'json' },
         content: validatedData
       };
-      
+
     case 'anthropic':
       return {
         messages: [{
@@ -215,7 +215,7 @@ class BasePrompt {
           content: JSON.stringify(validatedData, null, 2)
         }]
       };
-      
+
     default:
       throw new Error(`Unsupported provider: ${provider}`);
     }
@@ -237,14 +237,14 @@ class BasePrompt {
         temperature: config.temperature,
         responseFormat: { type: 'json' }
       };
-      
+
     case 'anthropic':
       return {
         maxTokens: config.maxTokens,
         temperature: config.temperature,
         format: 'json'
       };
-      
+
     default:
       throw new Error(`Unsupported provider: ${provider}`);
     }
@@ -268,7 +268,7 @@ class BasePrompt {
         throw new Error('OpenAI token limit exceeded');
       }
       break;
-      
+
     case 'anthropic': {
       if (!response.messages || !Array.isArray(response.messages)) {
         throw new Error('Invalid Anthropic response format');
@@ -276,12 +276,12 @@ class BasePrompt {
       const content = response.messages[0]?.content;
       try {
         JSON.parse(content);
-      } catch (error) {
+      } catch {
         throw new Error('Invalid JSON in Anthropic response');
       }
       break;
     }
-      
+
     default:
       throw new Error(`Unsupported provider: ${provider}`);
     }
@@ -321,7 +321,7 @@ class BasePrompt {
   validateAndConvert(data) {
     const result = {};
     const errors = [];
-    
+
     // First pass: validate required fields are present
     for (const [fieldName, field] of Object.entries(this.fields)) {
       if (field.metadata?.required && !(fieldName in data)) {
@@ -330,7 +330,7 @@ class BasePrompt {
     }
 
     // Second pass: validate and convert each field
-    for (const [fieldName, field] of Object.entries(this.fields)) {
+    for (const [fieldName] of Object.entries(this.fields)) {
       try {
         const value = fieldName in data ? data[fieldName] : null;
         result[fieldName] = this.validateField(fieldName, value);

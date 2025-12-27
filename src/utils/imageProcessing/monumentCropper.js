@@ -59,7 +59,7 @@ async function detectAndCrop(imagePath) {
       box: { left: minX, top: minY, width, height },
       original: { width: info.width, height: info.height }
     };
-  } catch (err) {
+  } catch (err) { // eslint-disable-line no-unused-vars
     return null;
   }
 }

@@ -95,9 +95,8 @@ class FileProcessor {
    */
   async _trackProgress(fileId, operation, progressCallback) {
     // Start progress tracking
-    const startTime = Date.now();
     let progressValue = 0;
-    
+
     // Create a progress interval that simulates progress
     const interval = setInterval(() => {
       if (!this._isCancelled(fileId)) {
@@ -105,18 +104,18 @@ class FileProcessor {
         progressCallback(progressValue);
       }
     }, 50); // Update every 50ms
-    
+
     this.progressIntervals.set(fileId, interval);
-    
+
     try {
       // Execute the operation
       const result = await operation();
-      
+
       // Complete the progress to 100%
       if (!this._isCancelled(fileId)) {
         progressCallback(100);
       }
-      
+
       return result;
     } finally {
       // Clean up the interval

@@ -74,7 +74,7 @@ export function mockPermissionDenied(targetFile) {
   const error = new Error(`EACCES: permission denied, access '${targetFile}'`);
   error.code = 'EACCES';
 
-  fs.existsSync.mockImplementation((path) => true);
+  fs.existsSync.mockImplementation(() => true);
   fs.writeFile.mockImplementation((path, data, options, callback) => {
     if (typeof options === 'function') {
       callback = options;

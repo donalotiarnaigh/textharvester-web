@@ -4,7 +4,8 @@
  */
 const PROVIDER_TYPES = {
   OPENAI: 'openai',
-  ANTHROPIC: 'anthropic'
+  ANTHROPIC: 'anthropic',
+  MOCK: 'mock'
 };
 
 /**
@@ -41,6 +42,12 @@ const PROVIDER_CONFIGS = {
     responseFormat: {
       type: 'markdown'
     }
+  },
+  [PROVIDER_TYPES.MOCK]: {
+    systemPromptTemplate: 'You are a mock AI assistant.',
+    responseFormat: {
+      type: 'json'
+    }
   }
 };
 
@@ -54,6 +61,13 @@ const TYPE_FORMATS = {
   },
   [PROVIDER_TYPES.ANTHROPIC]: {
     string: 'text',
+    integer: 'number',
+    float: 'number',
+    boolean: 'boolean',
+    date: 'string'
+  },
+  [PROVIDER_TYPES.MOCK]: {
+    string: 'string',
     integer: 'number',
     float: 'number',
     boolean: 'boolean',
@@ -72,7 +86,7 @@ class ProviderConfig {
     if (!Object.values(PROVIDER_TYPES).includes(type)) {
       throw new Error(`Invalid provider type: ${type}`);
     }
-    
+
     this.type = type;
     this.maxTokens = DEFAULT_CONFIG.maxTokens;
     this.temperature = DEFAULT_CONFIG.temperature;

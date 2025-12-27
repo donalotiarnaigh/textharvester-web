@@ -1,5 +1,4 @@
 const fs = require('fs').promises;
-const path = require('path');
 const { analyzeTranscriptionAccuracy } = require('../src/utils/transcriptionAnalysis');
 
 // Mock fs.promises module
@@ -19,8 +18,6 @@ jest.mock('../src/utils/logger', () => ({
 }));
 
 describe('Memorial Record Transcription Accuracy Tests', () => {
-  let baselineResults;
-  let testResults;
 
   beforeAll(async () => {
     // Mock baseline results data structure
@@ -135,27 +132,6 @@ describe('Memorial Record Transcription Accuracy Tests', () => {
       'other_file.txt' // should be filtered out
     ]);
 
-    baselineResults = mockBaselineData;
-  });
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    // Re-setup mocks for each test
-    fs.readFile.mockImplementation((filePath) => {
-      if (filePath.includes('results_all_1-5_2025-05-19T20-20-51-898Z.json')) {
-        return Promise.resolve(JSON.stringify(baselineResults));
-      }
-      return Promise.resolve(JSON.stringify({
-        timestamp: '2025-05-19T21:00:00.000Z',
-        results: baselineResults.results
-      }));
-    });
-
-    fs.readdir.mockResolvedValue([
-      'results_all_1-5_2025-05-19T20-20-51-898Z.json',
-      'results_all_1-5_2025-05-19T21-00-00-000Z.json',
-      'results_all_1-5_2025-05-19T22-00-00-000Z.json'
-    ]);
   });
 
   describe('Dataset Analysis', () => {
@@ -237,13 +213,13 @@ describe('Memorial Record Transcription Accuracy Tests', () => {
       const analysis = await analyzeTranscriptionAccuracy();
       expect(analysis.baselineComparison.improvements).toBeInstanceOf(Array);
       expect(analysis.baselineComparison.regressions).toBeInstanceOf(Array);
-      
+
       // Each improvement/regression should have detailed information
       const improvements = analysis.baselineComparison.improvements;
-      
+
       // Always verify the structure exists
       expect(improvements).toBeDefined();
-      
+
       // If there are improvements, verify their structure
       improvements.forEach(improvement => {
         expect(improvement).toHaveProperty('field');
@@ -272,5 +248,4 @@ describe('Memorial Record Transcription Accuracy Tests', () => {
         })
       );
     });
-  });
-}); 
+  });});

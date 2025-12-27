@@ -1,7 +1,6 @@
 const BasePrompt = require('../BasePrompt');
 const { MEMORIAL_FIELDS } = require('../types/memorialFields');
 const { ProcessingError } = require('../../errorTypes');
-const { standardizeNameParsing } = require('../../standardNameParser');
 const { preprocessName } = require('../../nameProcessing');
 const logger = require('../../logger');
 
@@ -19,7 +18,7 @@ class MemorialOCRPrompt extends BasePrompt {
       version: '2.0.0',
       description: 'Standard OCR prompt for extracting basic memorial inscription data with type validation',
       fields: MEMORIAL_FIELDS,
-      providers: ['openai', 'anthropic'],
+      providers: ['openai', 'anthropic', 'mock'],
       ...config
     });
   }

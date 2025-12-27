@@ -1,5 +1,4 @@
 const { ProcessingStateManager } = require('../ProcessingStateManager');
-const { CompletionVerifier } = require('../../modules/processing/CompletionVerifier');
 
 describe('ProcessingStateManager', () => {
   let stateManager;
@@ -26,11 +25,11 @@ describe('ProcessingStateManager', () => {
 
     it('should notify completion listeners when all files are complete', async () => {
       stateManager.addFiles(['file1.jpg', 'file2.jpg']);
-      
+
       // Mock storage methods to return success
       mockStorage.getProcessedFile.mockResolvedValue({ exists: true, size: 1024 });
       mockStorage.validateResults.mockResolvedValue({ isValid: true });
-      
+
       // Complete all phases for both files
       await stateManager.updateProgress('file1.jpg', 'upload', 100);
       await stateManager.updateProgress('file1.jpg', 'ocr', 100);
@@ -41,7 +40,7 @@ describe('ProcessingStateManager', () => {
       await stateManager.updateProgress('file2.jpg', 'ocr', 100);
       await stateManager.updateProgress('file2.jpg', 'analysis', 100);
       await stateManager.updateProgress('file2.jpg', 'validation', 100);
-      
+
       expect(completionListener).toHaveBeenCalledWith({
         isComplete: true,
         validFiles: ['file1.jpg', 'file2.jpg'],
@@ -61,7 +60,7 @@ describe('ProcessingStateManager', () => {
 
     it('should handle completion verification failures', async () => {
       stateManager.addFiles(['file1.jpg']);
-      
+
       // Complete all phases
       await stateManager.updateProgress('file1.jpg', 'upload', 100);
       await stateManager.updateProgress('file1.jpg', 'ocr', 100);
@@ -81,7 +80,7 @@ describe('ProcessingStateManager', () => {
 
     it('should cleanup states after successful completion', async () => {
       stateManager.addFiles(['file1.jpg']);
-      
+
       // Complete all phases
       await stateManager.updateProgress('file1.jpg', 'upload', 100);
       await stateManager.updateProgress('file1.jpg', 'ocr', 100);
@@ -90,14 +89,14 @@ describe('ProcessingStateManager', () => {
 
       mockStorage.getProcessedFile.mockResolvedValue({ exists: true, size: 1024 });
       mockStorage.validateResults.mockResolvedValue({ isValid: true });
-      
+
       await stateManager.cleanupCompletedFiles();
       expect(mockStorage.cleanupTempFiles).toHaveBeenCalledWith('file1.jpg');
     });
 
     it('should not cleanup incomplete files', async () => {
       stateManager.addFiles(['file1.jpg', 'file2.jpg']);
-      
+
       // Complete file1
       await stateManager.updateProgress('file1.jpg', 'upload', 100);
       await stateManager.updateProgress('file1.jpg', 'ocr', 100);
@@ -109,7 +108,7 @@ describe('ProcessingStateManager', () => {
 
       mockStorage.getProcessedFile.mockResolvedValue({ exists: true, size: 1024 });
       mockStorage.validateResults.mockResolvedValue({ isValid: true });
-      
+
       await stateManager.cleanupCompletedFiles();
       expect(mockStorage.cleanupTempFiles).toHaveBeenCalledWith('file1.jpg');
       expect(mockStorage.cleanupTempFiles).not.toHaveBeenCalledWith('file2.jpg');

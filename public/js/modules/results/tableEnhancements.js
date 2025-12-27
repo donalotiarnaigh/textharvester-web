@@ -36,7 +36,7 @@ export class TableEnhancements {
     // Sorting
     document.querySelectorAll('.sortable').forEach(header => {
       header.style.cursor = 'pointer';
-      header.addEventListener('click', (e) => {
+      header.addEventListener('click', () => {
         const field = header.getAttribute('data-sort');
         this.sort(field);
       });
@@ -139,7 +139,7 @@ export class TableEnhancements {
     document.querySelectorAll('.sortable i').forEach(icon => {
       icon.className = 'fas fa-sort';
     });
-    
+
     const currentHeader = document.querySelector(`[data-sort="${field}"] i`);
     if (currentHeader) {
       currentHeader.className = this.sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
@@ -186,10 +186,10 @@ export class TableEnhancements {
         const fullName = `${memorial.first_name || ''} ${memorial.last_name || ''}`.toLowerCase();
         const memorialNumber = (memorial.memorial_number || '').toString().toLowerCase();
         const inscription = (memorial.inscription || '').toLowerCase();
-        
-        if (!fullName.includes(searchTerm) && 
-            !memorialNumber.includes(searchTerm) &&
-            !inscription.includes(searchTerm)) {
+
+        if (!fullName.includes(searchTerm) &&
+          !memorialNumber.includes(searchTerm) &&
+          !inscription.includes(searchTerm)) {
           return false;
         }
       }
@@ -216,7 +216,7 @@ export class TableEnhancements {
     } else {
       this.render();
     }
-    
+
     this.updateCounts();
   }
 
@@ -233,10 +233,10 @@ export class TableEnhancements {
     // Reset form controls
     const searchInput = document.getElementById('searchInput');
     if (searchInput) searchInput.value = '';
-    
+
     const modelFilter = document.getElementById('modelFilter');
     if (modelFilter) modelFilter.value = '';
-    
+
     const yearFilter = document.getElementById('yearFilter');
     if (yearFilter) yearFilter.value = '';
 
@@ -249,7 +249,7 @@ export class TableEnhancements {
   updateCounts() {
     const visibleCount = document.getElementById('visibleCount');
     const totalCount = document.getElementById('totalCount');
-    
+
     if (visibleCount) visibleCount.textContent = this.filteredMemorials.length;
     if (totalCount) totalCount.textContent = this.memorials.length;
   }

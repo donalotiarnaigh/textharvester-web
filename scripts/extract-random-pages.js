@@ -24,20 +24,20 @@ async function getPdfPageCount(pdfPath) {
       return parseInt(match[1], 10);
     }
     throw new Error('Could not determine page count');
-  } catch (error) {
+  } catch {
     // Fallback: try pdftocairo to get page count
     try {
-      const { stdout } = await execAsync(`pdftocairo -list "${pdfPath}" 2>&1 || echo "0"`);
+      const { stdout } = await execAsync(`pdftocairo -list "${pdfPath}" 2>&1 || echo "0"`); // eslint-disable-line no-unused-vars
       // If pdftocairo doesn't support -list, try a different approach
       // Extract first page to test, then count
-      const testOutput = await execAsync(`pdftocairo -jpeg -f 1 -l 1 "${pdfPath}" /tmp/test_page 2>&1 || true`);
+      const testOutput = await execAsync(`pdftocairo -jpeg -f 1 -l 1 "${pdfPath}" /tmp/test_page 2>&1 || true`); // eslint-disable-line no-unused-vars
       // Use pdfinfo if available, otherwise estimate
       const { stdout: info } = await execAsync(`pdfinfo "${pdfPath}" 2>&1 || echo ""`);
       const pageMatch = info.match(/Pages:\s+(\d+)/);
       if (pageMatch) {
         return parseInt(pageMatch[1], 10);
       }
-    } catch (e) {
+    } catch {
       // If pdfinfo not available, try to extract all and count
     }
     throw new Error('Could not determine page count. Make sure pdfinfo or pdftocairo is installed.');
@@ -59,19 +59,19 @@ async function extractPage(pdfPath, pageNumber, outputPath) {
   const finalOutputFile = path.join(outputPath, `page_${String(pageNumber).padStart(3, '0')}.jpg`);
   // pdftocairo appends -001 when extracting single pages, so we extract to a temp name first
   const tempOutputFile = path.join(outputPath, `page_${String(pageNumber).padStart(3, '0')}_temp`);
-  
+
   // Use pdftocairo to extract specific page (it will create tempOutputFile-001.jpg)
   const command = `pdftocairo -jpeg -scale-to 2048 -f ${pageNumber} -l ${pageNumber} "${pdfPath}" "${tempOutputFile}"`;
-  
+
   try {
     await execAsync(command);
-    
+
     // pdftocairo appends -001, -002, etc. to the output filename
     // Find the actual file that was created (e.g., page_001_temp-001.jpg)
     const files = await fs.readdir(outputPath);
     const tempPrefix = `page_${String(pageNumber).padStart(3, '0')}_temp`;
     const createdFile = files.find(f => f.startsWith(tempPrefix) && f.endsWith('.jpg'));
-    
+
     if (createdFile) {
       const createdFilePath = path.join(outputPath, createdFile);
       // Rename to the final filename
@@ -94,7 +94,7 @@ function parsePageNumbers() {
     const pages = pagesStr.split(',').map(p => parseInt(p.trim(), 10)).filter(p => !isNaN(p) && p > 0);
     return pages.length > 0 ? pages : null;
   }
-  
+
   return null;
 }
 
@@ -109,7 +109,7 @@ async function main() {
   // Validate PDF exists
   try {
     await fs.access(pdfPath);
-  } catch (error) {
+  } catch {
     console.error(`Error: PDF file not found: ${pdfPath}`);
     process.exit(1);
   }
@@ -133,7 +133,7 @@ async function main() {
 
     // Check for --all flag
     const extractAll = process.argv.includes('--all');
-    
+
     // Determine which pages to extract
     let selectedPages;
     if (extractAll) {
@@ -169,8 +169,8 @@ async function main() {
       console.log(`  - ${path.basename(file)}`);
     });
 
-  } catch (error) {
-    console.error(`\nError: ${error.message}`);
+  } catch {
+    console.error('\nError extracting pages');
     process.exit(1);
   }
 }

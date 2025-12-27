@@ -1,6 +1,4 @@
 const BasePrompt = require('../BasePrompt');
-const { PROVIDER_TYPES, createProviderConfig } = require('../providers/providerConfig');
-const dataTypes = require('../types/dataTypes');
 
 describe('BasePrompt', () => {
   describe('constructor', () => {
@@ -9,7 +7,7 @@ describe('BasePrompt', () => {
       expect(prompt.version).toBe('1.0.0');
       expect(prompt.description).toBe('');
       expect(prompt.fields).toEqual({});
-      expect(prompt.providers).toEqual(['openai', 'anthropic']);
+      expect(prompt.providers).toEqual(['openai', 'anthropic', 'mock']);
     });
 
     it('should initialize with provided config values', () => {
@@ -132,7 +130,7 @@ describe('BasePrompt', () => {
       expect(() => {
         prompt.validateProvider('invalid');
       }).toThrow('Provider not supported: invalid');
-      
+
       expect(() => {
         prompt.validateProvider('openai');
       }).not.toThrow();
@@ -145,13 +143,13 @@ describe('BasePrompt', () => {
     beforeEach(() => {
       prompt = new BasePrompt({
         fields: {
-          name: { 
-            type: 'string', 
+          name: {
+            type: 'string',
             description: 'Full name',
             metadata: { required: true }
           },
-          age: { 
-            type: 'integer', 
+          age: {
+            type: 'integer',
             description: 'Age in years',
             metadata: { required: true }
           },
@@ -334,8 +332,8 @@ describe('BasePrompt', () => {
     beforeEach(() => {
       prompt = new BasePrompt({
         fields: {
-          name: { 
-            type: 'string', 
+          name: {
+            type: 'string',
             description: 'Full name',
             metadata: {
               maxLength: 100,
@@ -343,8 +341,8 @@ describe('BasePrompt', () => {
               format: 'name'
             }
           },
-          age: { 
-            type: 'integer', 
+          age: {
+            type: 'integer',
             description: 'Age in years',
             metadata: {
               min: 0,
@@ -465,7 +463,7 @@ describe('BasePrompt', () => {
       } catch (error) {
         caughtError = error;
       }
-      
+
       expect(caughtError).toBeDefined();
       expect(caughtError.details).toBeDefined();
       expect(caughtError.details).toEqual([

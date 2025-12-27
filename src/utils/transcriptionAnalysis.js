@@ -11,7 +11,7 @@ async function analyzeTranscriptionAccuracy() {
     // Load all test results from the specified date
     const testResultsDir = path.join(__dirname, '../../sample_data/test_results');
     const baselineFile = 'results_all_1-5_2025-05-19T20-20-51-898Z.json';
-    
+
     // Load baseline results
     const baselineData = JSON.parse(
       await fs.readFile(path.join(testResultsDir, baselineFile), 'utf8')
@@ -19,9 +19,9 @@ async function analyzeTranscriptionAccuracy() {
 
     // Load all result files from the test date
     const files = await fs.readdir(testResultsDir);
-    const resultFiles = files.filter(f => 
-      f.includes('2025-05-19') && 
-      f.endsWith('.json') && 
+    const resultFiles = files.filter(f =>
+      f.includes('2025-05-19') &&
+      f.endsWith('.json') &&
       f !== baselineFile
     );
 
@@ -79,7 +79,7 @@ function analyzePages(baselineResults) {
     // Compare OpenAI and Anthropic results
     const openaiAccuracy = calculateFieldAccuracy(page.openai || {});
     const anthropicAccuracy = calculateFieldAccuracy(page.anthropic || {});
-    
+
     // Calculate overall success rate as average of both providers
     const openaiSuccessRate = calculateOverallSuccessRate(openaiAccuracy);
     const anthropicSuccessRate = calculateOverallSuccessRate(anthropicAccuracy);
@@ -92,7 +92,7 @@ function analyzePages(baselineResults) {
         openai: openaiAccuracy[field],
         anthropic: anthropicAccuracy[field],
         agreement: openaiAccuracy[field].valid === anthropicAccuracy[field].valid &&
-                  page.openai?.[field] === page.anthropic?.[field]
+          page.openai?.[field] === page.anthropic?.[field]
       };
     });
 
@@ -196,7 +196,7 @@ function calculateOverallSuccessRate(fieldAccuracy) {
  */
 function compareRuns(allResults) {
   if (!allResults || allResults.length === 0) return [];
-  
+
   return allResults.map(run => ({
     timestamp: run.timestamp,
     averageAccuracy: calculateAverageAccuracy(run.results || []),
@@ -210,7 +210,7 @@ function compareRuns(allResults) {
  * @returns {Object} Multi-line analysis metrics
  */
 function analyzeMultiLineEntries(baselineResults) {
-  const multiLineEntries = baselineResults.filter(page => 
+  const multiLineEntries = baselineResults.filter(page =>
     (page.openai?.inscription && page.openai.inscription.includes('\n')) ||
     (page.anthropic?.inscription && page.anthropic.inscription.includes('\n'))
   );
@@ -235,26 +235,26 @@ function analyzeMultiLineEntries(baselineResults) {
  * @param {Array} allResults - All test runs
  * @returns {Object} Baseline comparison metrics
  */
-function compareToBaseline(baselineResults, allResults) {
+function compareToBaseline(baselineResults, /* eslint-disable-line no-unused-vars */ allResults) {
   const improvements = [];
   const regressions = [];
 
   baselineResults.forEach((page, pageIndex) => {
     const fields = ['memorial_number', 'first_name', 'last_name', 'year_of_death', 'inscription'];
-    
+
     fields.forEach(field => {
       const openaiValue = page.openai?.[field];
       const anthropicValue = page.anthropic?.[field];
       const agreement = openaiValue === anthropicValue;
-      
+
       if (agreement && openaiValue !== null && openaiValue !== undefined) {
         improvements.push({
           field,
           pageNumber: pageIndex + 1,
           percentageImprovement: 100
         });
-      } else if (openaiValue !== null && openaiValue !== undefined && 
-                 anthropicValue !== null && anthropicValue !== undefined) {
+      } else if (openaiValue !== null && openaiValue !== undefined &&
+        anthropicValue !== null && anthropicValue !== undefined) {
         regressions.push({
           field,
           pageNumber: pageIndex + 1,
@@ -310,7 +310,7 @@ function calculateNameConfidence(name) {
 
 function calculateAverageAccuracy(results) {
   if (!results || results.length === 0) return 0;
-  
+
   return results.reduce((acc, page) => {
     const openaiAccuracy = calculateOverallSuccessRate(calculateFieldAccuracy(page.openai || {}));
     const anthropicAccuracy = calculateOverallSuccessRate(calculateFieldAccuracy(page.anthropic || {}));
@@ -320,14 +320,14 @@ function calculateAverageAccuracy(results) {
 
 function calculateConsistencyScore(results) {
   if (!results || results.length === 0) return 0;
-  
+
   let agreements = 0;
   let total = 0;
-  
+
   results.forEach(page => {
     ['memorial_number', 'first_name', 'last_name', 'year_of_death', 'inscription'].forEach(field => {
       if (page.openai?.[field] !== null && page.openai?.[field] !== undefined &&
-          page.anthropic?.[field] !== null && page.anthropic?.[field] !== undefined) {
+        page.anthropic?.[field] !== null && page.anthropic?.[field] !== undefined) {
         total++;
         if (page.openai[field] === page.anthropic[field]) {
           agreements++;
@@ -335,15 +335,15 @@ function calculateConsistencyScore(results) {
       }
     });
   });
-  
+
   return total === 0 ? 0 : (agreements / total) * 100;
 }
 
 function calculateFormattingConsistency(entries) {
   if (!entries || entries.length === 0) return 0;
-  
+
   let consistentFormatting = 0;
-  
+
   entries.forEach(page => {
     if (page.openai?.inscription && page.anthropic?.inscription) {
       const openaiFormat = page.openai.inscription.replace(/\s+/g, ' ').trim();
@@ -353,7 +353,7 @@ function calculateFormattingConsistency(entries) {
       }
     }
   });
-  
+
   return (consistentFormatting / entries.length) * 100;
 }
 
@@ -362,18 +362,18 @@ function analyzeAbbreviations(results) {
     total: 0,
     accurate: 0
   };
-  
+
   results.forEach(page => {
     if (page.openai?.inscription && page.openai.inscription.match(/[A-Z]\./g)) {
       abbreviations.total++;
-      if (page.anthropic?.inscription && 
-          page.openai.inscription.match(/[A-Z]\./g).length === 
-          page.anthropic.inscription.match(/[A-Z]\./g)?.length) {
+      if (page.anthropic?.inscription &&
+        page.openai.inscription.match(/[A-Z]\./g).length ===
+        page.anthropic.inscription.match(/[A-Z]\./g)?.length) {
         abbreviations.accurate++;
       }
     }
   });
-  
+
   return {
     total: abbreviations.total,
     accuracy: abbreviations.total === 0 ? 0 : (abbreviations.accurate / abbreviations.total) * 100
@@ -384,7 +384,7 @@ function analyzeDateFormats(results) {
   const formats = new Set();
   let totalDates = 0;
   let accurateDates = 0;
-  
+
   results.forEach(page => {
     if (page.openai?.year_of_death) {
       totalDates++;
@@ -393,21 +393,21 @@ function analyzeDateFormats(results) {
       }
       formats.add('YYYY');
     }
-    
+
     // Check for other date formats in inscriptions
     const datePatterns = [
       /\d{1,2}(?:st|nd|rd|th)?\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}/i,
       /\d{1,2}[-/]\d{1,2}[-/]\d{4}/,
       /\d{4}[-/]\d{1,2}[-/]\d{1,2}/
     ];
-    
+
     datePatterns.forEach(pattern => {
       if (page.openai?.inscription && page.openai.inscription.match(pattern)) {
         formats.add(pattern.toString());
       }
     });
   });
-  
+
   return {
     formats: Array.from(formats),
     accuracy: totalDates === 0 ? 0 : (accurateDates / totalDates) * 100
@@ -419,7 +419,7 @@ function analyzeSpecialCharacters(results) {
     total: 0,
     accurate: 0
   };
-  
+
   results.forEach(page => {
     if (page.openai?.inscription) {
       const matches = page.openai.inscription.match(/[^a-zA-Z0-9\s]/g);
@@ -434,7 +434,7 @@ function analyzeSpecialCharacters(results) {
       }
     }
   });
-  
+
   return {
     total: specialChars.total,
     accuracy: specialChars.total === 0 ? 0 : (specialChars.accurate / specialChars.total) * 100
@@ -452,12 +452,12 @@ function countAbbreviatedNames(results) {
 function calculateAbbreviationAccuracy(results) {
   let total = 0;
   let accurate = 0;
-  
+
   results.forEach(page => {
     if (page.openai?.inscription && page.anthropic?.inscription) {
       const openaiAbbr = page.openai.inscription.match(/[A-Z]\./g);
       const anthropicAbbr = page.anthropic.inscription.match(/[A-Z]\./g);
-      
+
       if (openaiAbbr || anthropicAbbr) {
         total++;
         if (openaiAbbr && anthropicAbbr && openaiAbbr.length === anthropicAbbr.length) {
@@ -466,7 +466,7 @@ function calculateAbbreviationAccuracy(results) {
       }
     }
   });
-  
+
   return total === 0 ? 0 : (accurate / total) * 100;
 }
 
@@ -481,12 +481,12 @@ function countSpecialCharacters(results) {
 function calculateSpecialCharacterAccuracy(results) {
   let total = 0;
   let accurate = 0;
-  
+
   results.forEach(page => {
     if (page.openai?.inscription && page.anthropic?.inscription) {
       const openaiSpecial = page.openai.inscription.match(/[^a-zA-Z0-9\s]/g);
       const anthropicSpecial = page.anthropic.inscription.match(/[^a-zA-Z0-9\s]/g);
-      
+
       if (openaiSpecial || anthropicSpecial) {
         total++;
         if (openaiSpecial && anthropicSpecial && openaiSpecial.length === anthropicSpecial.length) {
@@ -495,7 +495,7 @@ function calculateSpecialCharacterAccuracy(results) {
       }
     }
   });
-  
+
   return total === 0 ? 0 : (accurate / total) * 100;
 }
 

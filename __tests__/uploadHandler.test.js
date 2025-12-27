@@ -2,16 +2,12 @@ const httpMocks = require('node-mocks-http');
 const multer = require('multer');
 const { handleFileUpload } = require('../src/controllers/uploadHandler');
 const { enqueueFiles } = require('../src/utils/fileQueue');
-const { clearAllMemorials } = require('../src/utils/database');
 const { getPrompt, promptManager } = require('../src/utils/prompts/templates/providerTemplates');
-const logger = require('../src/utils/logger');
 
 // Mock dependencies
 jest.mock('multer');
 jest.mock('../src/utils/fileQueue');
-jest.mock('../src/utils/database');
 jest.mock('../src/utils/prompts/templates/providerTemplates');
-jest.mock('../src/utils/logger');
 jest.mock('../src/utils/pdfConverter');
 
 describe('Upload Handler', () => {

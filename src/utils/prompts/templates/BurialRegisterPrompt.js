@@ -109,7 +109,7 @@ class BurialRegisterPrompt extends BasePrompt {
       version: '1.0.0',
       description: 'Prompt template for extracting burial register data',
       fields: PAGE_FIELDS,
-      providers: ['openai', 'anthropic'],
+      providers: ['openai', 'anthropic', 'mock'],
       ...config
     });
 

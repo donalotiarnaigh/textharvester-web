@@ -115,7 +115,7 @@ describe('Results UI: source_type Column Display', () => {
         </div>
       </div>
     `;
-    
+
     // Reset any mocks
     jest.clearAllMocks();
   });
@@ -124,21 +124,21 @@ describe('Results UI: source_type Column Display', () => {
     it('should include Source Type column header in the table', () => {
       const headers = document.querySelectorAll('#resultsTable thead th');
       const headerTexts = Array.from(headers).map(th => th.textContent.trim());
-      
+
       expect(headerTexts).toContain('Source Type');
-      
+
       // Verify the column is in the correct position (after Year of Death, before AI Model)
       const sourceTypeIndex = headerTexts.indexOf('Source Type');
       const yearOfDeathIndex = headerTexts.indexOf('Year of Death');
       const aiModelIndex = headerTexts.indexOf('AI Model');
-      
+
       expect(sourceTypeIndex).toBeGreaterThan(yearOfDeathIndex);
       expect(sourceTypeIndex).toBeLessThan(aiModelIndex);
     });
 
     it('should make Source Type column sortable', () => {
       const sourceTypeHeader = document.querySelector('th[data-sort="source_type"]');
-      
+
       expect(sourceTypeHeader).toBeTruthy();
       expect(sourceTypeHeader.classList.contains('sortable')).toBe(true);
       expect(sourceTypeHeader.querySelector('i.fas.fa-sort')).toBeTruthy();
@@ -151,8 +151,6 @@ describe('Results UI: source_type Column Display', () => {
   });
 
   describe('Source Type Display in Table Rows', () => {
-    let displayMemorials;
-    let SanitizeUtils;
     let formatSourceType;
     let getSourceTypeBadgeClass;
     let formatDate;
@@ -161,12 +159,12 @@ describe('Results UI: source_type Column Display', () => {
       // Define utility functions that would be available in the actual implementation
       formatSourceType = (sourceType) => {
         if (!sourceType) return 'Unknown';
-        
+
         const typeMap = {
           'record_sheet': 'Record Sheet',
           'monument_photo': 'Monument Photo'
         };
-        
+
         return typeMap[sourceType] || sourceType.charAt(0).toUpperCase() + sourceType.slice(1);
       };
 
@@ -175,7 +173,7 @@ describe('Results UI: source_type Column Display', () => {
           'record_sheet': 'badge-primary',
           'monument_photo': 'badge-success'
         };
-        
+
         return classMap[sourceType] || 'badge-secondary';
       };
 
@@ -279,12 +277,12 @@ describe('Results UI: source_type Column Display', () => {
         // Test the expected behavior of formatSourceType function
         const formatSourceType = (sourceType) => {
           if (!sourceType) return 'Unknown';
-          
+
           const typeMap = {
             'record_sheet': 'Record Sheet',
             'monument_photo': 'Monument Photo'
           };
-          
+
           return typeMap[sourceType] || sourceType.charAt(0).toUpperCase() + sourceType.slice(1);
         };
 
@@ -305,7 +303,7 @@ describe('Results UI: source_type Column Display', () => {
             'monument_photo': 'badge-success',
             'unknown': 'badge-secondary'
           };
-          
+
           return classMap[sourceType] || classMap['unknown'];
         };
 
@@ -395,33 +393,31 @@ describe('Results UI: source_type Column Display', () => {
       // Test that the source_type column can be sorted
       const sortableHeaders = document.querySelectorAll('th.sortable[data-sort]');
       const sortableColumns = Array.from(sortableHeaders).map(th => th.getAttribute('data-sort'));
-      
+
       expect(sortableColumns).toContain('source_type');
     });
 
-    it('should sort records correctly by source_type', () => {
-      expect(() => {
-        // Mock sorting function
-        const sortBySourceType = (memorials, ascending = true) => {
-          return [...memorials].sort((a, b) => {
-            const aType = a.source_type || 'unknown';
-            const bType = b.source_type || 'unknown';
-            
-            if (ascending) {
-              return aType.localeCompare(bType);
-            } else {
-              return bType.localeCompare(aType);
-            }
-          });
-        };
+    it('should show correct icons and colors based on source type', () => {
+      // Mock sorting function
+      const sortBySourceType = (memorials, ascending = true) => {
+        return [...memorials].sort((a, b) => {
+          const aType = a.source_type || 'unknown';
+          const bType = b.source_type || 'unknown';
 
-        const sorted = sortBySourceType(mockMemorialsWithSourceType);
-        
-        // Should sort: monument_photo, record_sheet, unknown (null becomes 'unknown')
-        expect(sorted[0].source_type).toBe('monument_photo');
-        expect(sorted[1].source_type).toBe('record_sheet');
-        expect(sorted[2].source_type).toBe(null);
-      }).not.toThrow();
+          if (ascending) {
+            return aType.localeCompare(bType);
+          } else {
+            return bType.localeCompare(aType);
+          }
+        });
+      };
+
+      const sorted = sortBySourceType(mockMemorialsWithSourceType);
+
+      // Should sort: monument_photo, record_sheet, unknown (null becomes 'unknown')
+      expect(sorted[0].source_type).toBe('monument_photo');
+      expect(sorted[1].source_type).toBe('record_sheet');
+      expect(sorted[2].source_type).toBe(null);
     });
   });
 
@@ -454,7 +450,7 @@ describe('Results UI: source_type Column Display', () => {
     it('should have proper responsive design for the new column', () => {
       const sourceTypeHeader = document.querySelector('th[data-sort="source_type"]');
       expect(sourceTypeHeader).toBeTruthy();
-      
+
       // The column should exist and be properly positioned
       expect(sourceTypeHeader.textContent.trim()).toBe('Source Type');
     });

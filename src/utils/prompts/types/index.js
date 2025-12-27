@@ -18,7 +18,7 @@ const {
  * @param {boolean} [config.required=false] - Whether the type is required
  * @returns {StringType} A configured string type
  */
-function createStringType(config = {}) {
+function createStringType(/* eslint-disable-line no-unused-vars */ config = {}) {
   return new StringType();
 }
 
@@ -28,7 +28,7 @@ function createStringType(config = {}) {
  * @param {boolean} [config.required=false] - Whether the type is required
  * @returns {IntegerType} A configured integer type
  */
-function createIntegerType(config = {}) {
+function createIntegerType(/* eslint-disable-line no-unused-vars */ config = {}) {
   return new IntegerType();
 }
 
@@ -38,7 +38,7 @@ function createIntegerType(config = {}) {
  * @param {boolean} [config.required=false] - Whether the type is required
  * @returns {BooleanType} A configured boolean type
  */
-function createBooleanType(config = {}) {
+function createBooleanType(/* eslint-disable-line no-unused-vars */ config = {}) {
   return new BooleanType();
 }
 

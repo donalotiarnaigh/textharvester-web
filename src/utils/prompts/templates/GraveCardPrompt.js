@@ -14,7 +14,7 @@ class GraveCardPrompt extends BasePrompt {
       version: '1.0.0',
       description: 'Prompt for extracting structured data from grave record cards',
       fields: {},
-      providers: ['openai', 'anthropic'],
+      providers: ['openai', 'anthropic', 'mock'],
       ...config
     });
   }
