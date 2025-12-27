@@ -1,0 +1,38 @@
+{
+  "pages": [
+    {
+      "index": 0,
+      "markdown": "|  SECTION: | GRAVE NO: | BO. BURIED:  |\n| --- | --- | --- |\n|  A | 3 | 4  |\n|  NAMES OF DECEASED: |   | DATES OF DEATH  |\n|  SURNAME\n1. GRAY\n4. HOWARD\n2. GRAY\n3. GRAY | CHRISTIAN NAME\n1. CAPT. R.T.\n4. ANNE\n2. JANE ALICIA\nRICHARD REEVES | 1. 12TH SEPT. 1904\n28TH FEB. 23YRS\n2. 22ND JULY 1879\nMAY 18TH 1904  |\n|  DATES OF BURIAL: | DESCRIPTION OF GRAVE:  |   |\n|  1. SEPTEMBER 15TH 1904\n2.\n3. MAY 20TH 1904\n4. | RAILED IN 82 HEADSTONES\n14' X 12'  |   |\n|  PLOT OWNED BY: | CONTENTS:  |   |\n|  CAPTAIN R.T. GRAY | PLOT WAS BOUGHT IN 1879  |   |",
+      "images": [],
+      "tables": [],
+      "hyperlinks": [],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 991,
+        "width": 902
+      }
+    },
+    {
+      "index": 1,
+      "markdown": "INSCRIPTION:\n\n(1st) R.T.S\n\nIN MEMORY OF CAPTAIN R.T. GRAY OF LOTA VILLE DIED 12TH SEPT. 1904 AGED 76 YEARS PEACE PERFECT PEACE IN THIS DARK WORLD OF SUN THE VOICE OF SESUS WHISPERS PEACE WITHIN\n\n(2nd) J.A.S. DMC CARTHY\n\nJANE ALICIA GRAY WIFE OF CAPT. R.T. GRAY LOTA VILLE WHO DEPARTED THIS LIFE JULY 22ND 1879\n\nIN SURE AND CERTAIN HOPE OF THE RESURRECTION TO ETERNAL LIFE THROUGH OUR LORD SESUS CHRIST\n\n\"AS FOR ME, I WILL BEHOLD THE PRESENCE IN RIGHTEOUSNESS AND WHEN I AWAKE UP AFTER THE LIKENESS, I SHALL BE SATISFIED\" PSALMXVII.16\n\nTHIS MONUMENT WAS ERECTED BY A FOND HUSBAND AND CHILDREN IN LOVING REMEMBRANCE OF A GOOD WIFE AND MOTHER\n\nG.\n\nSKETCH\n\nG. 5\n\nG. 5",
+      "images": [],
+      "tables": [],
+      "hyperlinks": [],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 988,
+        "width": 908
+      }
+    }
+  ],
+  "model": "mistral-ocr-latest",
+  "document_annotation": null,
+  "usage_info": {
+    "pages_processed": 2,
+    "doc_size_bytes": 353094
+  }
+}

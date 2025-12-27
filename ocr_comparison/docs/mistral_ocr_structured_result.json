@@ -1,0 +1,38 @@
+{
+  "pages": [
+    {
+      "index": 0,
+      "markdown": "|  SECTION: | GRAVE NO: | BO. BURIED:  |\n| --- | --- | --- |\n|  A | 3 | 4  |\n|  NAMES OF DECEASED: |   | DATES OF DEATH  |\n|  SURNAME\n1. GRAY\n4. HOWARD\n2. GRAY\n3. GRAY | CHRISTIAN NAME\n1. CAPT. R.T.\n4. ANNE\n2. JANE ALICIA\nRICHARD REEVES | 1. 12TH SEPT. 1904\n28TH FEB. 23YRS\n2. 22ND JULY 1879\nMAY 18TH 1904  |\n|  DATES OF BURIAL: | DESCRIPTION OF GRAVE:  |   |\n|  1. SEPTEMBER 15TH 1904\n2.\n3. MAY 20TH 1904\n4. | RAILED IN 82 HEADSTONES\n14' X 12'  |   |\n|  PLOT OWNED BY: | CONTENTS:  |   |\n|  CAPTAIN R.T. GRAY | PLOT WAS BOUGHT IN 1879  |   |",
+      "images": [],
+      "tables": [],
+      "hyperlinks": [],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 991,
+        "width": 902
+      }
+    },
+    {
+      "index": 1,
+      "markdown": "INSCRIPTION:\n\n(1st) R.T.S\n\nIN MEMORY OF CAPTAIN R.T. GRAY OF LOTA VILLE DIED 12TH SEPT. 1904 AGED 76 YEARS PEACE PERFECT PEACE IN THIS DARK WORLD OF SUN THE VOICE OF SESUS WHISPERS PEACE WITHIN\n\n(2nd) J.A.S. DMC CARTHY\n\nJANE ALICIA GRAY WIFE OF CAPT. R.T. GRAY LOTA VILLE WHO DEPARTED THIS LIFE JULY 22ND 1879\n\nIN SURE AND CERTAIN HOPE OF THE RESURRECTION TO ETERNAL LIFE THROUGH OUR LORD SESUS CHRIST\n\n\"AS FOR ME, I WILL BEHOLD THE PRESENCE IN RIGHTEOUSNESS AND WHEN I AWAKE UP AFTER THE LIKENESS, I SHALL BE SATISFIED\" PSALMXVII.16\n\nTHIS MONUMENT WAS ERECTED BY A FOND HUSBAND AND CHILDREN IN LOVING REMEMBRANCE OF A GOOD WIFE AND MOTHER\n\nG.\n\nSKETCH\n\nG. 5",
+      "images": [],
+      "tables": [],
+      "hyperlinks": [],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 988,
+        "width": 908
+      }
+    }
+  ],
+  "model": "mistral-ocr-latest",
+  "document_annotation": "{\n  \"title\": \"Grave Record Card\",\n  \"description\": \"Schema for genealogical and plot data extracted from historical Grave Record Cards\",\n  \"type\": \"object\",\n  \"required\": [\"location\", \"grave\"],\n  \"properties\": {\n    \"card_metadata\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"source_reference\": {\n          \"type\": \"string\",\n          \"description\": \"filename or id\"\n        },\n        \"card_version\": {\n          \"type\": \"string\"\n        },\n        \"notes\": {\n          \"type\": \"string\"\n        }\n      }\n    },\n    \"location\": {\n      \"type\": \"object\",\n      \"required\": [\"section\", \"grave_number\"],\n      \"properties\": {\n        \"section\": {\n          \"type\": \"string\"\n        },\n        \"grave_number\": {\n          \"type\": [\"string\", \"number\"],\n          \"description\": \"The extracted grave number, may differ from card number\"\n        },\n        \"plot_identifier\": {\n          \"type\": \"string\"\n        }\n      }\n    },\n    \"grave\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"number_buried\": {\n          \"type\": [\"number\", \"string\"]\n        },\n        \"status\": {\n          \"type\": \"string\",\n          \"enum\": [\"occupied\", \"vacant\", \"unknown\"],\n          \"default\": \"unknown\"\n        },\n        \"description_of_grave\": {\n          \"type\": \"string\",\n          \"description\": \"e.g. Headstone\"\n        },\n        \"structure_type\": {\n          \"type\": \"string\"\n        },\n        \"dimensions\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"raw_text\": {\n              \"type\": \"string\"\n            },\n            \"length_ft\": {\n              \"type\": \"number\"\n            },\n            \"width_ft\": {\n              \"type\": \"number\"\n            },\n            \"height_ft\": {\n              \"type\": \"number\"\n            },\n            \"unit\": {\n              \"type\": \"string\"\n            }\n          }\n        },\n        \"plot_owned_by\": {\n          \"type\": \"string\"\n        },\n        \"comments\": {\n          \"type\": \"string\"\n        }\n      }\n    },\n    \"interments\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"required\": [\"name\"],\n        \"properties\": {\n          \"sequence_number\": {\n            \"type\": \"number\"\n          },\n          \"name\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"surname\": {\n                \"type\": \"string\"\n              },\n              \"given_names\": {\n                \"type\": \"string\"\n              },\n              \"full_name\": {\n                \"type\": \"string\"\n              }\n            }\n          },\n          \"date_of_death\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"iso\": {\n                \"type\": \"string\",\n                \"format\": \"date\"\n              },\n              \"raw_text\": {\n                \"type\": \"string\"\n              },\n              \"certainty\": {\n                \"type\": \"string\",\n                \"enum\": [\"certain\", \"estimated\", \"uncertain\"]\n              }\n            }\n          },\n          \"date_of_burial\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"iso\": {\n                \"type\": \"string\",\n                \"format\": \"date\"\n              },\n              \"raw_text\": {\n                \"type\": \"string\"\n              }\n            }\n          },\n          \"age_at_death\": {\n            \"type\": [\"number\", \"string\"]\n          },\n          \"notes\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    },\n    \"inscription\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"text\": {\n          \"type\": \"string\"\n        },\n        \"scripture_or_quote_refs\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"notes\": {\n          \"type\": \"string\"\n        }\n      }\n    },\n    \"sketch\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"present\": {\n          \"type\": \"boolean\"\n        },\n        \"description\": {\n          \"type\": \"string\"\n        }\n      }\n    }\n  }\n}",
+  "usage_info": {
+    "pages_processed": 2,
+    "doc_size_bytes": 353094
+  }
+}
