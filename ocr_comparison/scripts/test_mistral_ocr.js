@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Check for API key
-const apiKey = process.env.MISTRAL_API_KEY || '050hgcqokDTRHcZG2XWwoHHIVXWfho5T';
+const apiKey = process.env.MISTRAL_API_KEY;
 
 if (!apiKey) {
     console.error('Error: MISTRAL_API_KEY environment variable not set');
