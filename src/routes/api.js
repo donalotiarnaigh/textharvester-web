@@ -5,11 +5,40 @@ const SchemaGenerator = require('../services/SchemaGenerator');
 const { createProvider } = require('../utils/modelProviders');
 const logger = require('../utils/logger');
 const config = require('../../config.json');
+const fs = require('fs');
+const multer = require('multer');
+const path = require('path');
+
+// Configure temp storage for schema analysis
+const tempStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const tempDir = path.join(process.cwd(), 'uploads', 'temp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+    cb(null, tempDir);
+  },
+  filename: (req, file, cb) => {
+    // Sanitize filename to prevent issues
+    const safeName = path.basename(file.originalname).replace(/[^a-zA-Z0-9.-]/g, '_');
+    cb(null, `schema_analysis_${Date.now()}_${safeName}`);
+  }
+});
+
+const upload = multer({
+  storage: tempStorage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit per sample file
+});
 
 // POST /propose - Analyze files and propose a schema
-router.post('/propose', async (req, res) => {
+router.post('/propose', upload.array('files'), async (req, res) => {
   try {
-    const { files } = req.body;
+    let { files } = req.body;
+
+    // If files were uploaded via multipart/form-data, use those paths
+    if (req.files && req.files.length > 0) {
+      files = req.files.map(f => f.path);
+    }
 
     if (!files || !Array.isArray(files) || files.length === 0) {
       return res.status(400).json({ error: 'No files provided for analysis' });

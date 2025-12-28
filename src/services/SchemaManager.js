@@ -11,7 +11,23 @@ class SchemaManager {
      */
   static async createSchema(schemaDefinition) {
     const id = crypto.randomUUID();
-    const { name, tableName } = schemaDefinition;
+    let { name, tableName, fields, jsonSchema } = schemaDefinition;
+
+    // 1a. Derive table name if missing
+    if (!tableName && name) {
+      tableName = 'custom_' + SchemaDDLGenerator.sanitizeIdentifier(name);
+    }
+    schemaDefinition.tableName = tableName; // Update original object for consistency
+
+    // 1b. Derive fields from jsonSchema if missing (for DDL generation)
+    if ((!fields || fields.length === 0) && jsonSchema && jsonSchema.properties) {
+      fields = Object.entries(jsonSchema.properties).map(([fieldName, prop]) => ({
+        name: fieldName,
+        type: prop.type,
+        description: prop.description
+      }));
+      schemaDefinition.fields = fields;
+    }
 
     // 1. Generate SQL for the dynamic table
     const ddl = SchemaDDLGenerator.generateCreateTableSQL(schemaDefinition); // Validation happens here
