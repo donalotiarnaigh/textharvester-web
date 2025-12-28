@@ -66,12 +66,12 @@
 
 - [ ] 4. Phase 4: CLI Integration
   - _Goal: Expose new functionality via command line._
-  - [ ] 4.1 Write tests for CLI commands (TDD: Red)
+  - [x] 4.1 Write tests for CLI commands (TDD: Red)
     - Test `th schema propose` args parsing.
     - Test `th ingest --schema` flag handling.
     - _Requirements: 1.1, 2.1_
 
-  - [ ] 4.2 Implement `src/cli/schema.js`
+  - [x] 4.2 Implement `src/cli/schema.js`
     - Implement `propose` command (calls Generator).
     - Implement `list` command (calls Manager).
     - Register new commands in `bin/textharvester`.

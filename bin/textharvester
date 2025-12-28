@@ -39,6 +39,7 @@ program.addCommand(require('../src/cli/commands/ingest'));
 program.addCommand(require('../src/cli/commands/query'));
 program.addCommand(require('../src/cli/commands/export'));
 program.addCommand(require('../src/cli/commands/system'));
+program.addCommand(require('../src/cli/commands/schema'));
 
 // Handle unknown commands
 program.on('command:*', (operands) => {
