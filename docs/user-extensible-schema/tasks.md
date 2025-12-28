@@ -97,21 +97,21 @@
     - [x] Add "Schemas" link to main navigation.
     - _Requirements: 1.1_
     
-  - [ ] 6.2 Implement "New Schema" Wizard
-    - Create `public/schema-wizard.html` and `public/js/modules/schemas/wizard.js`:
+  - [x] 6.2 Implement "New Schema" Wizard
+    - [x] Create `public/schema-wizard.html` and `public/js/modules/schemas/wizard.js`:
       - **Step 1**: Multi-file upload component (Dropzone).
       - **Step 2**: Progress indicator (polling/streaming analysis status).
       - **Step 3**: Schema Editor (Form to rename fields, change types, add/remove fields).
     - _Requirements: 1.1, 1.2_
     
-  - [ ] 6.3 Integrate Frontend with API
-    - Connect Wizard logic to `POST /api/schemas`.
-    - Handle success/error states (using existing UI utilities).
+  - [x] 6.3 Integrate Frontend with API
+    - [x] Connect Wizard logic to `POST /api/schemas`.
+    - [x] Handle success/error states (using existing UI utilities).
     - _Requirements: 1.2_
 
-  - [ ] 6.4 Update "Harvest" Page
-    - Update `index.html` (or relevant harvest UI) to fetch dynamic schemas from `GET /api/schemas`.
-    - When a custom schema is selected, pass `schemaId` to the ingest payload.
+  - [x] 6.4 Update "Harvest" Page
+    - [x] Update `index.html` (or relevant harvest UI) to fetch dynamic schemas from `GET /api/schemas`.
+    - [x] When a custom schema is selected, pass `schemaId` to the ingest payload.
     - _Requirements: 2.1_
 
 - [ ] 7. Phase 7: Verification & Cleanup

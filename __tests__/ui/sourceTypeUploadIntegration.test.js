@@ -40,11 +40,17 @@ const createFormDataMock = () => ({
 });
 
 describe('Source type upload integration', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
     jest.resetModules();
+    // Mock global fetch for schemas
+    global.fetch = jest.fn(() => Promise.resolve({
+      json: () => Promise.resolve([])
+    }));
     buildDom();
     initSourceTypeSelection();
+    // Wait for fetch promise to resolve and populate DOM
+    await new Promise(resolve => setTimeout(resolve, 0));
   });
 
   const triggerSending = (dropzoneInstance, overrides = {}) => {

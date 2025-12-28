@@ -78,7 +78,8 @@ class IngestService {
       sourceType,
       volumeId,
       provider,
-      promptVersion
+      promptVersion,
+      schemaId // Destructure schemaId
     } = options;
 
     const filesToQueue = [];
@@ -97,7 +98,8 @@ class IngestService {
               promptVersion: promptVersion,
               source_type: sourceType,
               sourceType,
-              uploadDir: path.dirname(file.path)
+              uploadDir: path.dirname(file.path),
+              ...(schemaId && { schemaId }) // Propagate schemaId
             });
           } else {
             // For other types (e.g. legacy/standard PDF upload), split into images
@@ -113,7 +115,8 @@ class IngestService {
                 source_type: sourceType,
                 sourceType,
                 ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
-                uploadDir: path.dirname(imagePath)
+                uploadDir: path.dirname(imagePath),
+                ...(schemaId && { schemaId }) // Propagate schemaId
               }))
             );
           }
@@ -125,7 +128,8 @@ class IngestService {
             source_type: sourceType,
             sourceType,
             ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
-            uploadDir: path.dirname(file.path)
+            uploadDir: path.dirname(file.path),
+            ...(schemaId && { schemaId }) // Propagate schemaId
           });
         }
       } catch (conversionError) {

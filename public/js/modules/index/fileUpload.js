@@ -84,9 +84,16 @@ export const handleFileUpload = (dropzoneInstance) => {
     const sourceType = getSelectedSourceType();
     const volumeId = getVolumeId();
 
+    let finalSourceType = sourceType;
+    if (sourceType.startsWith('custom:')) {
+      const schemaId = sourceType.split(':')[1];
+      formData.append('schemaId', schemaId);
+      finalSourceType = 'record_sheet'; // Fallback for validation
+    }
+
     formData.append('replaceExisting', replaceExisting.toString()); // Convert to string
     formData.append('aiProvider', selectedModel);
-    formData.append('source_type', sourceType);
+    formData.append('source_type', finalSourceType);
     if (sourceType === 'burial_register') {
       formData.append('volume_id', volumeId);
     }
