@@ -14,7 +14,8 @@ This feature enables users to extend the tool's capabilities by defining their o
 **Happy Path:**
 1. WHEN the user provides 1-5 example image files of a specific document type THEN the system SHALL analyze the visual structure and text to identify common data fields.
 2. WHEN analysis is complete THEN the system SHALL generate a valid JSON schema defining the fields, data types, and structure.
-3. IF the generated schema is valid THEN the system SHALL automatically create a new database table with columns corresponding to the schema fields.
+3. IF the generated schema is valid THEN the system SHALL expose a candidate schema for user review.
+4. WHEN the user approves the candidate schema THEN the system SHALL provision the database table with the defined columns.
 
 **Unhappy Path:**
 4. WHEN provided files are unreadable, corrupted, or unsupported formats THEN the system SHALL return an "invalid file format" error and halt processing.
@@ -55,3 +56,13 @@ This feature enables users to extend the tool's capabilities by defining their o
 5. IF data type mismatches occur (e.g. trying to insert text into an integer column) THEN the system SHALL catch the database error and flag the record.
 6. WHEN a database connection failure occurs during insertion THEN the system SHALL retry the operation with exponential backoff.
 7. IF the extracted data contains characters incompatible with the database implementation (e.g., null bytes) THEN the system SHALL sanitize the input before insertion.
+
+### Requirement 4: Non-Functional & Observability
+
+**User Story:** As a developer/admin, I need the system to be robust and observable so that I can debug issues and ensure stability.
+
+#### Acceptance Criteria
+
+1. **Schema Limits**: The system SHALL enforce a maximum of 50 columns per custom schema to prevent SQLite performance degradation.
+2. **Concurrency**: Ingestion into dynamic tables SHALL handle database locking gracefully (e.g., utilizing retry logic or WAL mode) to support sequential processing.
+3. **Observability**: Validation failures keying off the dynamic schema SHALL be logged with specific context: `SchemaID`, `FieldCausingError`, and `RawValue`.

@@ -47,6 +47,7 @@ graph TB
 // The definition of a custom schema
 interface CustomSchema {
   id: string;              // UUID
+  version: number;         // Schema version (starts at 1)
   name: string;            // User-friendly name (e.g. "19th Century Deeds")
   description?: string;
   tableName: string;       // Sanitized SQL table name (e.g. "custom_19th_century_deeds")
@@ -64,7 +65,8 @@ interface SchemaAnalysisResult {
 }
 
 interface SchemaField {
-  name: string;
+  name: string;          // Sanitized SQL column name
+  originalName?: string; // Original key from LLM JSON (if different)
   type: 'string' | 'number' | 'boolean' | 'date';
   description: string;
   required: boolean;
@@ -189,6 +191,7 @@ Registry of user-defined types.
 ```sql
 CREATE TABLE custom_schemas (
   id TEXT PRIMARY KEY,
+  version INTEGER DEFAULT 1,
   name TEXT UNIQUE NOT NULL,
   table_name TEXT UNIQUE NOT NULL,
   json_schema TEXT NOT NULL, -- Stored as JSON string
@@ -203,9 +206,13 @@ Created automatically by SchemaManager.
 ```sql
 CREATE TABLE custom_{sanitized_name} (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  file_name TEXT,           -- Standard metadata
-  processed_date DATETIME,  -- Standard metadata
-  ai_provider TEXT,         -- Standard metadata
+  -- Standard Metadata Columns (Must be present in ALL dynamic tables)
+  file_name TEXT,           
+  processed_date DATETIME,  
+  ai_provider TEXT,
+  model_version TEXT,
+  batch_id TEXT,
+  -- Dynamic fields follow
   -- Dynamic fields follow
   field_1 TEXT,
   field_2 INTEGER,
@@ -221,7 +228,7 @@ CREATE TABLE custom_{sanitized_name} (
 3.  **StorageError**: Database conflicts or SQL syntax issues during dynamic execution.
 
 ### Error Handling Strategy
-- **Validation Failures**: Do not crash. Store a record in a generic `processing_errors` log or a `_errors` column if possible, or simple return `{ success: false, error: 'Validation Failed' }` to the batch processor.
+- **Validation Failures**: Do not crash. Store a record in a generic `processing_errors` log or a `_errors` column if possible. **Requirement**: Logs must include `SchemaID`, `FieldCausingError`, and `RawValue` to enable debugging.
 - **Dynamic SQL Safety**: All dynamic field names must be whitelisted/sanitized against the schema definition before being put into SQL strings. Values must use parameterized queries (`?`) to prevent injection.
 
 ## Testing Strategy

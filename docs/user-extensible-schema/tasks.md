@@ -2,10 +2,15 @@
 
 - [ ] 1. Phase 1: Foundation (Schema Management & Storage)
   - _Goal: Enable storage and retrieval of custom schema definitions and manage dynamic tables._
-  - [ ] 1.1 Write tests for `SchemaManager` (TDD: Red)
-    - **Happy path**: Create valid schema, retrieve schema by ID, verify DDL generation string.
-    - **Unhappy path**: Duplicate name handling, reserved keyword detection in table names, invalid JSON schema handling.
-    - _Requirements: 1.1, 1.3, 3.4_
+  - [ ] 1.1a Write tests for `SchemaDDLGenerator` (Utility) (TDD: Red)
+    - **Happy path**: Input valid JSON schema -> Output correct SQL CREATE TABLE string. Includes standard columns.
+    - **Unhappy path**: Invalid types, reserved SQL keywords in names (test sanitization logic).
+    - _Requirements: 1.3, 3.4, 4.1_
+
+  - [ ] 1.1b Write tests for `SchemaManager` (Service) (TDD: Red)
+    - **Happy path**: Create valid schema (calls DDL generator), retrieve by ID, support for versioning.
+    - **Unhappy path**: Duplicate name handling, database transaction rollback on DDL failure.
+    - _Requirements: 1.1, 1.3_
   
   - [ ] 1.2 Implement `SchemaManager` & Database Updates
     - Create `custom_schemas` table in `src/utils/database.js`.
@@ -22,8 +27,8 @@
   - _Goal: Analyze example files and generate valid JSON schemas._
   - [ ] 2.1 Write tests for `SchemaGenerator` (TDD: Red)
     - **Happy path**: Mock LLM response -> returns structured `SchemaDefinition`.
+    - **Security**: Test "malicious" field names (e.g., `drop_table`, `User--`) are sanitized safely to prevent injection.
     - **Unhappy path**: Malformed LLM response -> retry logic/error; Ambiguous structure -> error.
-    - Test prompt injection sanitization (mocking a "malicious" document text).
     - _Requirements: 1.1, 1.2, 4.2_
   
   - [ ] 2.2 Implement `SchemaGenerator`
@@ -40,10 +45,11 @@
 
 - [ ] 3. Phase 3: Dynamic Ingestion Pipeline
   - _Goal: Update ingestion to support "Dynamic Mode" routing._
-  - [ ] 3.1 Write tests for `DynamicProcessor` (TDD: Red)
+  - [ ] 3.1 Write tests for `DynamicProcessor` + Observability (TDD: Red)
     - **Happy path**: Valid `schemaId` + file -> correct Prompt construction -> Valid SQL Insert.
+    - **Observability**: Verify logs contain `SchemaID`, `FieldCausingError`, `RawValue` when validation fails.
     - **Unhappy path**: Invalid `schemaId` -> Error; LLM output mismatch -> Validation Error flag; SQL insertion failure (type mismatch).
-    - _Requirements: 2.1, 2.2, 3.1, 3.5_
+    - _Requirements: 2.1, 2.2, 3.1, 3.5, 4.3_
 
   - [ ] 3.2 Implement `DynamicProcessor`
     - Create `src/utils/dynamicProcessing.js`.
