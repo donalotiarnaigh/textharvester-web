@@ -241,6 +241,23 @@ class IngestService {
       throw new CLIError('FILE_NOT_READABLE', `File not readable: ${file}`);
     }
 
+    // Dynamic Routing for User-Extensible Schema
+    if (options.schemaId) {
+      const DynamicProcessor = require('../utils/dynamicProcessing');
+      // DynamicProcessor might be an instance (singleton) or class depending on export.
+      // Task 3.2 exported class (module.exports = DynamicProcessor).
+      // So we instantiate it.
+      const processor = new DynamicProcessor(this.logger);
+      const result = await processor.processFileWithSchema({ path: file, provider: options.provider }, options.schemaId);
+
+      return {
+        success: true,
+        file,
+        recordId: result.recordId,
+        data: result.data
+      };
+    }
+
     // processFile returns the extracted data
     const result = await processFile(file, options);
     // We wrap it in a success structure if needed by the caller,

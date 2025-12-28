@@ -45,22 +45,23 @@
 
 - [ ] 3. Phase 3: Dynamic Ingestion Pipeline
   - _Goal: Update ingestion to support "Dynamic Mode" routing._
-  - [ ] 3.1 Write tests for `DynamicProcessor` + Observability (TDD: Red)
+  - [x] 3.1 Write tests for `DynamicProcessor` + Observability (TDD: Red)
     - **Happy path**: Valid `schemaId` + file -> correct Prompt construction -> Valid SQL Insert.
     - **Observability**: Verify logs contain `SchemaID`, `FieldCausingError`, `RawValue` when validation fails.
     - **Unhappy path**: Invalid `schemaId` -> Error; LLM output mismatch -> Validation Error flag; SQL insertion failure (type mismatch).
     - _Requirements: 2.1, 2.2, 3.1, 3.5, 4.3_
 
-  - [ ] 3.2 Implement `DynamicProcessor`
-    - Create `src/utils/dynamicProcessing.js`.
-    - Implement `processFileWithSchema(file, schemaId)`.
+  - [x] 3.2 Implement `DynamicProcessor` <!-- id: 3.2 -->
+    - [x] Implement `processFileWithSchema`
+    - [x] Integrate with `SchemaManager`
+    - [x] Ensure 3.1 tests pass
     - Implement validation logic using `ajv` or similar against the stored JSON schema.
     - Implement dynamic INSERT query builder.
     - _Requirements: 2.1, 3.1_
     
-  - [ ] 3.3 Integrate with `IngestService`
-    - Modify `src/services/IngestService.js` to check for `options.schemaId`.
-    - If present, route to `DynamicProcessor` instead of hardcoded flows.
+  - [x] 3.3 Integrate with `IngestService` <!-- id: 3.3 -->
+    - [x] Modify `src/services/IngestService.js` to check for `options.schemaId`.
+    - [x] If present, route to `DynamicProcessor` instead of hardcoded flows.
     - _Requirements: 2.1_
 
 - [ ] 4. Phase 4: CLI Integration
