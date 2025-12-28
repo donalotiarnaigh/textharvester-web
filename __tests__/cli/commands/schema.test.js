@@ -23,6 +23,17 @@ jest.mock('../../../src/services/SchemaManager', () => {
     };
 });
 
+jest.mock('../../../src/utils/modelProviders', () => ({
+    createProvider: jest.fn().mockReturnValue({})
+}));
+
+jest.mock('../../../src/cli/config', () => ({
+    loadConfig: jest.fn().mockResolvedValue({
+        AI_PROVIDER: 'openai',
+        OPENAI_API_KEY: 'mock-key'
+    })
+}));
+
 // Mock Readline
 jest.mock('readline', () => ({
     createInterface: jest.fn()
@@ -87,7 +98,8 @@ describe('Schema Command', () => {
     describe('propose subcommand', () => {
         it('should call SchemaGenerator with correct files and create schema on yes', async () => {
             // Mock glob to return files for pattern
-            require('glob').mockImplementation((pattern, cb) => {
+            require('glob').mockImplementation((...args) => {
+                const cb = args[args.length - 1];
                 cb(null, ['test1.jpg']);
             });
 
@@ -123,7 +135,8 @@ describe('Schema Command', () => {
         });
 
         it('should NOT create schema if user says no', async () => {
-            require('glob').mockImplementation((pattern, cb) => {
+            require('glob').mockImplementation((...args) => {
+                const cb = args[args.length - 1];
                 cb(null, ['test1.jpg']);
             });
 
@@ -152,7 +165,9 @@ describe('Schema Command', () => {
 
         it('should fail if no files provided', async () => {
             // Mock glob returning empty
-            require('glob').mockImplementation((pattern, cb) => {
+            // Mock glob returning empty
+            require('glob').mockImplementation((...args) => {
+                const cb = args[args.length - 1];
                 cb(null, []);
             });
 

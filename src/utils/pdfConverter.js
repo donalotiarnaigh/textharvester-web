@@ -5,7 +5,8 @@ const fs = require("fs").promises;
 const config = require("../../config.json");
 const logger = require("../utils/logger");
 
-async function convertPdfToJpegs(pdfPath) {
+async function convertPdfToJpegs(pdfPath, options = {}) {
+  const { keepSource = false } = options;
   logger.info(`Starting PDF conversion for: ${pdfPath}`);
   const outputPath = config.uploadPath;
   const originalBaseName = path.basename(pdfPath, path.extname(pdfPath));
@@ -47,19 +48,23 @@ async function convertPdfToJpegs(pdfPath) {
     const fullPaths = outputFiles.map((file) => path.join(outputPath, file));
     logger.info(`JPEG files created at: ${fullPaths.join(", ")}`);
 
-    await fs.unlink(pdfPath);
-    logger.info(`Cleaned up processed PDF: ${pdfPath}`);
+    if (!keepSource) {
+      await fs.unlink(pdfPath);
+      logger.info(`Cleaned up processed PDF: ${pdfPath}`);
+    }
 
     logger.info(`Completed PDF conversion for: ${pdfPath}`);
     return fullPaths;
   } catch (error) {
     logger.error("Error converting PDF to JPEGs:", error);
-    // Still try to clean up on error
-    try {
-      await fs.unlink(pdfPath);
-      logger.info(`Cleaned up PDF after error: ${pdfPath}`);
-    } catch (cleanupError) {
-      logger.error('Error cleaning up PDF:', cleanupError);
+    // Still try to clean up on error unless keepSource is true
+    if (!keepSource) {
+      try {
+        await fs.unlink(pdfPath);
+        logger.info(`Cleaned up PDF after error: ${pdfPath}`);
+      } catch (cleanupError) {
+        logger.error('Error cleaning up PDF:', cleanupError);
+      }
     }
     throw new Error(`Failed to convert PDF to JPEGs: ${error.message}`);
   }

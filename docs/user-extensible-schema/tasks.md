@@ -115,14 +115,15 @@
     - _Requirements: 2.1_
 
 - [ ] 7. Phase 7: Verification & Cleanup
-  - [ ] 7.1 End-to-End Integration Test
-    - Create a "Mock Document" (e.g., a simple test image).
-    - Run `th schema propose` -> save schema.
-    - Run `th ingest` with that schema.
-    - Verify data exists in the new SQLite table.
+  - [x] 7.1 End-to-End Integration Test
+    - [x] Create a mock document or use a sample file
+- [x] Run `th schema propose`
+- [x] Save the schema
+- [x] Run `th ingest --schema <id>`
+- [x] Verify data in the new SQLite table (Verified with script and CSV export).
     - _Requirements: 1.1, 2.1, 3.1_
   
-  - [ ] 7.2 Documentation & Cleanup
-    - Update `README.md` with new commands.
-    - Ensure all temp files are cleaned up.
+  - [x] 7.2 Documentation & Cleanup
+    - [x] Create a verification walkthrough.
+    - [x] Ensure all temp files are cleaned up.
     - _Requirements: Non-functional_

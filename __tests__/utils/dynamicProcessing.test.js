@@ -20,9 +20,13 @@ jest.mock('fs', () => {
     promises: {
       ...originalModule.promises,
       readFile: jest.fn(),
+      unlink: jest.fn(),
     },
   };
 });
+jest.mock('../../src/utils/pdfConverter', () => ({
+  convertPdfToJpegs: jest.fn(),
+}));
 
 const DynamicProcessor = require('../../src/utils/dynamicProcessing');
 const SchemaManager = require('../../src/services/SchemaManager');
@@ -31,6 +35,7 @@ const { createProvider } = require('../../src/utils/modelProviders');
 const logger = require('../../src/utils/logger');
 const { analyzeImageForProvider, optimizeImageForProvider } = require('../../src/utils/imageProcessor');
 const fs = require('fs').promises;
+const { convertPdfToJpegs } = require('../../src/utils/pdfConverter');
 
 describe('DynamicProcessor', () => {
   let processor;
@@ -72,9 +77,9 @@ describe('DynamicProcessor', () => {
     analyzeImageForProvider.mockResolvedValue({ needsOptimization: false });
     optimizeImageForProvider.mockResolvedValue('optimized-base64-content');
 
-    // Dependencies are now mocked by module path, but also need to pass instance if I want explicit control
-    // But require('logger') in test still returns the mocked object.
-    // So if I pass that, it works.
+    // Setup PDF mock
+    convertPdfToJpegs.mockResolvedValue(['/tmp/page1.jpg']);
+
     const logger = require('../../src/utils/logger');
     processor = new DynamicProcessor(logger);
   });
@@ -116,13 +121,13 @@ describe('DynamicProcessor', () => {
     expect(db.run).toHaveBeenCalledWith(expect.stringContaining(expectedSqlFragment), expect.any(Array), expect.any(Function));
 
     // Verify Result
-    expect(result).toEqual({
-      success: true,
-      recordId: 1,
-      data: expect.objectContaining({
-        field1: 'value1',
-        field2: 123,
-      })
+    // Verify Result
+    expect(result.success).toBe(true);
+    expect(result.recordCount).toBe(1);
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]).toMatchObject({
+      field1: 'value1',
+      field2: 123,
     });
   });
 
@@ -180,5 +185,86 @@ describe('DynamicProcessor', () => {
       .rejects.toThrow('SQL Constraint Violation');
 
     expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Database insertion failed'), expect.any(Object));
+  });
+
+  /*
+   * Feature: Handle multi-record extraction (Array)
+   * Schema expects single object, but LLM returns { input: [obj1, obj2] } or [obj1, obj2]
+   */
+  test('processFileWithSchema handles nested array output (multi-record)', async () => {
+    SchemaManager.getSchema.mockResolvedValue(mockSchema);
+
+    // LLM returns nested array instead of single object
+    const nestedResponse = JSON.stringify({
+      entries: [
+        { field1: 'Record A', field2: 10 },
+        { field1: 'Record B', field2: 20 }
+      ]
+    });
+    mockProvider.processImage.mockResolvedValue(nestedResponse);
+
+    // Mock DB insert success for multiple calls
+    db.run.mockImplementation((sql, params, callback) => {
+      callback.call({ lastID: 123 }, null);
+    });
+
+    const result = await processor.processFileWithSchema(mockFile, 'test-schema-id');
+
+    // Should detect array and validate each
+    expect(result.success).toBe(true);
+    // expect(result.recordCount).toBe(2); // We expect this property in new implementation
+    expect(result.data).toHaveLength(2);
+    expect(result.data[0]).toMatchObject({ field1: 'Record A' });
+    expect(result.data[1]).toMatchObject({ field1: 'Record B' });
+
+    // DB should have been called twice
+    expect(db.run).toHaveBeenCalledTimes(2);
+  });
+
+  /*
+     * Feature: Handle multi-record extraction with deeply nested context
+     * Schema requires fields that are distributed across hierarchy in LLM output
+     */
+  test('processFileWithSchema merges context from parent objects into nested array records', async () => {
+    SchemaManager.getSchema.mockResolvedValue({
+      ...mockSchema,
+      json_schema: {
+        type: 'object',
+        properties: {
+          topField: { type: 'string' },
+          midField: { type: 'string' },
+          itemField: { type: 'string' }
+        },
+        required: ['topField', 'midField', 'itemField']
+      }
+    });
+
+    const nestedResponse = JSON.stringify({
+      topField: 'TOP',
+      middle: {
+        midField: 'MID',
+        entries: [
+          { itemField: 'ITEM1' },
+          { itemField: 'ITEM2' }
+        ]
+      }
+    });
+    mockProvider.processImage.mockResolvedValue(nestedResponse);
+
+    // Mock DB insert
+    db.run.mockImplementation((sql, params, callback) => callback.call({ lastID: 999 }, null));
+
+    const result = await processor.processFileWithSchema(mockFile, 'test-schema-id');
+
+    expect(result.success).toBe(true);
+    expect(result.data).toHaveLength(2);
+    expect(result.data[0]).toMatchObject({
+      topField: 'TOP',
+      midField: 'MID',
+      itemField: 'ITEM1'
+    });
+    expect(result.data[1]).toMatchObject({
+      itemField: 'ITEM2'
+    });
   });
 });

@@ -1,4 +1,20 @@
 const SchemaGenerator = require('../../src/services/SchemaGenerator');
+const fs = require('fs');
+const path = require('path');
+
+// Mock fs to avoid actual file system calls
+jest.mock('fs', () => ({
+  readFileSync: jest.fn().mockReturnValue(Buffer.from('fake-image-content')),
+  promises: {
+    unlink: jest.fn().mockResolvedValue(),
+  },
+  existsSync: jest.fn().mockReturnValue(true),
+}));
+
+// Mock pdfConverter
+jest.mock('../../src/utils/pdfConverter', () => ({
+  convertPdfToJpegs: jest.fn().mockResolvedValue(['/path/to/page1.jpg'])
+}));
 
 describe('SchemaGenerator', () => {
   let schemaGenerator;
@@ -6,21 +22,26 @@ describe('SchemaGenerator', () => {
 
   beforeEach(() => {
     mockLlmProvider = {
-      analyzeImages: jest.fn()
+      processImage: jest.fn()
     };
     schemaGenerator = new SchemaGenerator(mockLlmProvider);
+    jest.clearAllMocks();
   });
 
   describe('generateSchema', () => {
     it('should include the system prompt in the analysis request', async () => {
-      mockLlmProvider.analyzeImages.mockResolvedValue(JSON.stringify({ tableName: 'test', fields: [] }));
+      mockLlmProvider.processImage.mockResolvedValue(JSON.stringify({ tableName: 'test', fields: [] }));
 
       await schemaGenerator.generateSchema(['/path/to/img.jpg']);
 
-      const calls = mockLlmProvider.analyzeImages.mock.calls;
-      expect(calls[0][0]).toContain('You are an expert data architect'); // Expecting part of system prompt
-      expect(calls[0][0]).toContain('JSON Schema');
-      expect(calls[0][1]).toEqual(['/path/to/img.jpg']);
+      const calls = mockLlmProvider.processImage.mock.calls;
+      // Arg 0: Base64 image
+      expect(calls[0][0]).toBe(Buffer.from('fake-image-content').toString('base64'));
+      // Arg 1: Prompt
+      expect(calls[0][1]).toContain('You are an expert data architect');
+      expect(calls[0][1]).toContain('JSON Schema');
+      // Arg 2: Options
+      expect(calls[0][2]).toEqual({ raw: true });
     });
 
     it('should return a valid schema definition when LLM returns valid JSON', async () => {
@@ -31,7 +52,7 @@ describe('SchemaGenerator', () => {
           { name: 'amount', type: 'number', description: 'Total amount' }
         ]
       });
-      mockLlmProvider.analyzeImages.mockResolvedValue(mockLlmResponse);
+      mockLlmProvider.processImage.mockResolvedValue(mockLlmResponse);
 
       const result = await schemaGenerator.generateSchema(['/path/to/image1.jpg']);
 
@@ -49,7 +70,7 @@ describe('SchemaGenerator', () => {
           { name: 'valid-field', type: 'number', description: 'Hyphenated' }
         ]
       });
-      mockLlmProvider.analyzeImages.mockResolvedValue(mockLlmResponse);
+      mockLlmProvider.processImage.mockResolvedValue(mockLlmResponse);
 
       const result = await schemaGenerator.generateSchema(['/path/to/image1.jpg']);
 
@@ -61,17 +82,15 @@ describe('SchemaGenerator', () => {
       expect(fieldNames).toContain('valid_field'); // Sanitized hyphen
     });
 
-    it('should throw SchemaGenerationError when LLM returns invalid JSON', async () => {
-      mockLlmProvider.analyzeImages.mockResolvedValue('Not JSON');
+    it('should throw error when LLM returns invalid JSON', async () => {
+      mockLlmProvider.processImage.mockResolvedValue('Not JSON');
 
       await expect(schemaGenerator.generateSchema(['/path/to/image1.jpg']))
         .rejects.toThrow('Failed to parse LLM response');
     });
 
     it('should throw error when LLM cannot find consistent structure', async () => {
-      // Assuming specific response structure or error code from LLM service for "no structure"
-      // For now, we simulate this via a specific JSON response or error
-      mockLlmProvider.analyzeImages.mockResolvedValue(JSON.stringify({ error: 'No structure found' }));
+      mockLlmProvider.processImage.mockResolvedValue(JSON.stringify({ error: 'No structure found' }));
 
       await expect(schemaGenerator.generateSchema(['/path/to/image1.jpg']))
         .rejects.toThrow('No consistent structure found');
