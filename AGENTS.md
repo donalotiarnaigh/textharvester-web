@@ -1,14 +1,14 @@
 # AGENTS.md
 
-**Guidance for AI coding agents working on textharvester-web (CLI Feature)**
+**Guidance for AI coding agents working on textharvester-web (User-Extensible Schema Feature)**
 
 * * *
 
 ## Active Feature
 
-| Feature | Documentation | Branch | Status |
-|---------|---------------|--------|--------|
-| CLI (Command Line Interface) | `docs/cli/` | `feature/cli` | Planning Complete |
+| Feature | Documentation | Branch |
+|---------|---------------|--------|
+| User-Extensible Schema (UXS) | `docs/user-extensible-schema/` | `feature/user-extensible-schema` |
 
 * * *
 
@@ -16,7 +16,7 @@
 
 You are an **autonomous coding agent**, acting as a _junior developer_ under human supervision.  
 
-Your job: Implement the CLI feature in `textharvester-web` **strictly according to the specification and implementation plan.**
+Your job: Implement the **User-Extensible Schema** feature in `textharvester-web` **strictly according to the specification and implementation plan.**
 
 -   You must follow the existing architecture, style, and coding conventions.
 -   You must **not** refactor, generalise, or re-architect unrelated parts of the system.
@@ -31,14 +31,14 @@ Your job: Implement the CLI feature in `textharvester-web` **strictly according 
 -   Modify or extend code under allowed modules (see below).
 -   Add new tests (unit, integration) under `__tests__/` or appropriate test directories.
 -   Run file-scoped commands for validation & local checks (lint, test, build) — see "Preferred Commands".
--   Update documentation under `docs/cli/` when completing tasks.
+-   Update documentation under `docs/user-extensible-schema/` when completing tasks.
 
 * * *
 
 ## What Agents Must Ask for Permission (Human Oversight Required)
 
--   Modifying or removing `server.js`, core Express setup, or route structure.
--   Changing database schema except via specific storage utilities.
+-   Modifying or removing `server.js`, core Express setup, or route structure (unless implementing approved API routes).
+-   Changing database schema except via specific storage utilities or approved migrations.
 -   Altering dependencies (adding/removing packages in `package.json`).
 -   Rearranging project structure (renaming/moving files outside allowed paths).
 -   Changing configuration that affects deployment, secrets, environment variables, `.gitignore`, or production settings.
@@ -47,10 +47,10 @@ Your job: Implement the CLI feature in `textharvester-web` **strictly according 
 
 ## What Agents Must Never Do (Hard Prohibitions)
 
--   Delete or rewrite existing functionality unrelated to CLI feature.
--   Remove or alter existing migrations, schemata, or DB tables.
+-   Delete or rewrite existing functionality unrelated to UXS feature.
+-   Remove or alter existing migrations, schemata, or DB tables (unless explicitly required by the plan).
 -   Skip tests, linting, or documentation when adding/modifying code.
--   Commit changes that break existing workflows.
+-   Commit changes that break existing workflows (e.g., standard CLI ingestion).
 
 * * *
 
@@ -58,40 +58,41 @@ Your job: Implement the CLI feature in `textharvester-web` **strictly according 
 
 ```
 textharvester-web/
-├── bin/
-│   └── textharvester           # CLI entry point (NEW)
 ├── src/
-│   ├── cli/                    # CLI-specific code (NEW)
-│   │   ├── commands/           # Subcommand modules
-│   │   ├── config.js           # Config loading
-│   │   ├── output.js           # Output formatting
-│   │   └── errors.js           # CLI error classes
-│   ├── services/               # Shared service layer (NEW)
-│   │   ├── IngestService.js
-│   │   ├── QueryService.js
-│   │   ├── ExportService.js
-│   │   └── SystemService.js
-│   ├── controllers/            # Existing (refactor to use services)
-│   ├── routes/                 # Existing
-│   └── utils/                  # Existing core utilities
+│   ├── services/               # Shared service layer
+│   │   ├── SchemaManager.js    # (NEW) Manages custom schemas & tables
+│   │   ├── SchemaGenerator.js  # (NEW) LLM analysis for schema creation
+│   │   ├── IngestService.js    # (MODIFY) Integrate dynamic routing
+│   │   └── ...
+│   ├── utils/
+│   │   ├── dynamicProcessing.js # (NEW) Runtime extraction logic
+│   │   ├── database.js         # (MODIFY) DB init for custom_schemas
+│   │   └── ...
+│   ├── cli/                    # CLI commands
+│   │   └── schema.js           # (NEW) CLI tools for schema management
+│   ├── routes/                 # API routes
+│   │   └── api.js              # (MODIFY) New API endpoints
+│   └── ...
 ├── docs/
-│   └── cli/                    # CLI feature docs
-│       ├── requirements.md     # 8 requirements, 56 acceptance criteria
+│   └── user-extensible-schema/ # Feature docs
+│       ├── requirements.md     # 3 Core Requirements
 │       ├── design.md           # Architecture, components, test specs
-│       └── tasks.md            # Implementation plan (37 tasks)
+│       └── tasks.md            # Implementation plan
 ├── data/                       # Uploaded files & generated outputs
 └── config.json
 ```
 
 ### Files & Modules Agents May Create / Modify
 
--   `bin/textharvester` — CLI entry point
--   `src/cli/*` — all CLI-specific modules
--   `src/services/*` — shared service layer
--   `src/controllers/*.js` — refactor to use services (with care)
--   `docs/cli/*` — CLI documentation
+-   `src/services/SchemaManager.js` & `src/services/SchemaGenerator.js`
+-   `src/utils/dynamicProcessing.js`
+-   `src/cli/schema.js` and related CLI entry points
+-   `src/routes/api.js` (for Phase 5)
+-   `src/pages/*` and `src/components/*` (for Phase 7 Frontend)
+-   `docs/user-extensible-schema/*`
+-   Modifications to existing services (`IngestService`, `database`, etc.) **only as specified in the plan**.
 
-Do **not** create modules outside these, or alter existing files outside their CLI-specific parts.
+Do **not** create modules outside these, or alter existing files outside their UXS-specific parts.
 
 * * *
 
@@ -104,9 +105,8 @@ To avoid expensive full builds or unnecessary CI runs, use **file-scoped command
 npm run lint
 npm test
 
-# CLI-specific testing (once implemented)
-./bin/textharvester --help
-./bin/textharvester --version
+# Run specific tests
+npm test __tests__/services/SchemaManager.test.js
 ```
 
 Only run full tests or implementations when explicitly required.
@@ -128,10 +128,10 @@ Only run full tests or implementations when explicitly required.
 
 ## Workflow for Task Execution
 
-Tasks in `docs/cli/tasks.md` are your primary guide.
+Tasks in `docs/user-extensible-schema/tasks.md` are your primary guide.
 
-1.  **Read the task description** in `docs/cli/tasks.md`.
-2.  **Read relevant part of Design** in `docs/cli/design.md`.
+1.  **Read the task description** in `docs/user-extensible-schema/tasks.md`.
+2.  **Read relevant part of Design** in `docs/user-extensible-schema/design.md`.
 3.  **Test-Driven Development (TDD)**:
     -   Write tests first (RED).
     -   Implement strict minimum to pass (GREEN).
@@ -141,55 +141,24 @@ Tasks in `docs/cli/tasks.md` are your primary guide.
     npm run lint
     npm test
     ```
-5.  **Run a quick manual verification** if possible.
+5.  **Run a quick manual verification** if possible (e.g., via CLI).
 6.  **Update `tasks.md`** to mark task as completed.
 
 **Branch Naming:**
-- Feature Branch: `feature/cli`
+- Feature Branch: `feature/user-extensible-schema`
 - Commit: `feat: {brief description} (task X.Y)`
-
-* * *
-
-## Example Output & Good Patterns
-
-```javascript
-// Example: Service layer pattern
-class IngestService {
-  async ingest(pattern, options) {
-    const files = await this.expandPattern(pattern);
-    if (files.length === 0) {
-      throw new CLIError('NO_FILES_MATCHED', `No files matched: ${pattern}`);
-    }
-    // ... process files
-  }
-}
-```
-
-```javascript
-// Example: CLI error handling
-class CLIError extends Error {
-  constructor(code, message, details = {}) {
-    super(message);
-    this.code = code;
-    this.details = details;
-  }
-  toJSON() {
-    return { success: false, error_code: this.code, message: this.message };
-  }
-}
-```
 
 * * *
 
 ## Safety & Security Considerations
 
--   **All schema changes must go through the storage utility**
--   **Full test suite must pass before merging**
--   **Human review required before deployment or production usage**
--   **Do not store sensitive data** — environment variables, secrets, credentials are off-limits
+-   **Prompt Injection**: Ensure user examples/prompts are sanitized.
+-   **Dynamic SQL**: ALL dynamic table names and queries must use sanitization and parameterization.
+-   **Schema Validation**: Strict validation of LLM outputs against JSON Schema is mandatory.
+-   **Do not store sensitive data** — environment variables, secrets, credentials are off-limits.
 
 * * *
 
-**Last Updated:** 2025-12-15  
+**Last Updated:** 2025-12-28
 
-**Purpose:** Provide a robust, clear, and minimal-risk instruction set for AI coding agents working on the TextHarvester CLI feature.
+**Purpose:** Provide a robust, clear, and minimal-risk instruction set for AI coding agents working on the User-Extensible Schema feature.
