@@ -35,6 +35,12 @@ Create a **Plan Artifact** for the chosen task that includes:
   - `src/services/IngestService.js` — **only for integrating dynamic routing**
   - `src/utils/database.js` — **only for initializing custom schema tables**
   - `docs/user-extensible-schema/*`
+  - `src/pages/*`
+  - `src/components/*`
+  - `src/App.js` (or currently active navigation file)
+  - `src/utils/apiClient.js`
+  - `public/*`
+  - `__tests__/*`
 
 - Assumptions and open questions
 - Acceptance criteria (functional + tests)

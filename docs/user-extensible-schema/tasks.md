@@ -89,39 +89,40 @@
     - Wire up to `SchemaManager` and `SchemaGenerator`.
     - _Requirements: 1.1_
 
-- [ ] 7. Phase 7: Frontend Implementation (React GUI)
+- [ ] 6. Phase 6: Frontend Implementation (Vanilla JS)
   - _Goal: Implement the "Schema Builder" wizard and management UI._
-  - [ ] 7.1 Implement Schema Management Pages
-    - Create `src/pages/SchemaList.jsx`: Table listing custom schemas (ID, Name, Date).
-    - Add "Schemas" link to main navigation.
+  - [x] 6.1 Implement Schema Management Pages
+    - [x] Create `public/schemas.html`: Table listing custom schemas (ID, Name, Date).
+    - [x] Create `public/js/modules/schemas/list.js`: Logic to fetch and render schemas.
+    - [x] Add "Schemas" link to main navigation.
     - _Requirements: 1.1_
     
-  - [ ] 7.2 Implement "New Schema" Wizard
-    - Create `src/components/SchemaWizard/`:
+  - [ ] 6.2 Implement "New Schema" Wizard
+    - Create `public/schema-wizard.html` and `public/js/modules/schemas/wizard.js`:
       - **Step 1**: Multi-file upload component (Dropzone).
       - **Step 2**: Progress indicator (polling/streaming analysis status).
       - **Step 3**: Schema Editor (Form to rename fields, change types, add/remove fields).
     - _Requirements: 1.1, 1.2_
     
-  - [ ] 7.3 Integrate Frontend with API
-    - Connect Wizard Config (Step 3) to `POST /api/schemas`.
-    - Handle success/error states (toasts).
+  - [ ] 6.3 Integrate Frontend with API
+    - Connect Wizard logic to `POST /api/schemas`.
+    - Handle success/error states (using existing UI utilities).
     - _Requirements: 1.2_
 
-  - [ ] 7.4 Update "Harvest" Page
-    - Update `SourceTypeSelector` to fetch dynamic schemas from `GET /api/schemas`.
+  - [ ] 6.4 Update "Harvest" Page
+    - Update `index.html` (or relevant harvest UI) to fetch dynamic schemas from `GET /api/schemas`.
     - When a custom schema is selected, pass `schemaId` to the ingest payload.
     - _Requirements: 2.1_
 
-- [ ] 8. Phase 8: Verification & Cleanup
-  - [ ] 8.1 End-to-End Integration Test
+- [ ] 7. Phase 7: Verification & Cleanup
+  - [ ] 7.1 End-to-End Integration Test
     - Create a "Mock Document" (e.g., a simple test image).
     - Run `th schema propose` -> save schema.
     - Run `th ingest` with that schema.
     - Verify data exists in the new SQLite table.
     - _Requirements: 1.1, 2.1, 3.1_
   
-  - [ ] 8.2 Documentation & Cleanup
+  - [ ] 7.2 Documentation & Cleanup
     - Update `README.md` with new commands.
     - Ensure all temp files are cleaned up.
     - _Requirements: Non-functional_
