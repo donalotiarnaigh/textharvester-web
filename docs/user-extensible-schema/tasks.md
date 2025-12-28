@@ -1,24 +1,24 @@
 # Implementation Plan: User-Extensible Schema
 
-- [ ] 1. Phase 1: Foundation (Schema Management & Storage)
+- [x] 1. Phase 1: Foundation (Schema Management & Storage)
   - _Goal: Enable storage and retrieval of custom schema definitions and manage dynamic tables._
-  - [ ] 1.1a Write tests for `SchemaDDLGenerator` (Utility) (TDD: Red)
+  - [x] 1.1a Write tests for `SchemaDDLGenerator` (Utility) (TDD: Red)
     - **Happy path**: Input valid JSON schema -> Output correct SQL CREATE TABLE string. Includes standard columns.
     - **Unhappy path**: Invalid types, reserved SQL keywords in names (test sanitization logic).
     - _Requirements: 1.3, 3.4, 4.1_
 
-  - [ ] 1.1b Write tests for `SchemaManager` (Service) (TDD: Red)
+  - [x] 1.1b Write tests for `SchemaManager` (Service) (TDD: Red)
     - **Happy path**: Create valid schema (calls DDL generator), retrieve by ID, support for versioning.
     - **Unhappy path**: Duplicate name handling, database transaction rollback on DDL failure.
     - _Requirements: 1.1, 1.3_
   
-  - [ ] 1.2 Implement `SchemaManager` & Database Updates
+  - [x] 1.2 Implement `SchemaManager` & Database Updates
     - Create `custom_schemas` table in `src/utils/database.js`.
     - Implement `createSchema(def)`, `getSchema(id)`, and `listSchemas()` in `src/services/SchemaManager.js`.
     - Implement DDL execution logic to create dynamic tables (e.g., `CREATE TABLE custom_xyz...`).
     - _Requirements: 1.3, 3.4_
   
-  - [ ] 1.3 Refactor & Verify
+  - [x] 1.3 Refactor & Verify
     - Ensure tests pass (Green).
     - Ensure database connection safety (transactions where possible).
     - _Requirements: 3.6_

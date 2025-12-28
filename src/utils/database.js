@@ -114,7 +114,29 @@ function initializeBurialRegisterTable() {
   });
 }
 
-// Store a single memorial record
+// Initialize custom_schemas table
+function initializeCustomSchemasTable() {
+  const createTableSQL = `
+    CREATE TABLE IF NOT EXISTS custom_schemas (
+      id TEXT PRIMARY KEY,
+      version INTEGER DEFAULT 1,
+      name TEXT UNIQUE NOT NULL,
+      table_name TEXT UNIQUE NOT NULL,
+      json_schema TEXT NOT NULL,
+      system_prompt TEXT,
+      user_prompt_template TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  db.run(createTableSQL, (err) => {
+    if (err) {
+      logger.error('Error creating custom_schemas table:', err);
+      return;
+    }
+    logger.info('Custom schemas table initialized');
+  });
+}
 function storeMemorial(data) {
   logger.info('Attempting to store memorial:', JSON.stringify(data));
   const sql = `
@@ -226,6 +248,7 @@ const backupDatabase = async () => {
 // Initialize database on module load
 initializeDatabase();
 initializeBurialRegisterTable();
+initializeCustomSchemasTable();
 
 // Initialize grave cards table
 
@@ -243,5 +266,6 @@ module.exports = {
   backupDatabase,
   initializeDatabase,
   initializeBurialRegisterTable,
+  initializeCustomSchemasTable,
   db // Exported for closing connection when needed
 }; 
