@@ -1,0 +1,101 @@
+class SchemaGenerator {
+  constructor(llmProvider) {
+    this.llmProvider = llmProvider;
+    this.reservedKeywords = new Set([
+      'select', 'delete', 'update', 'insert', 'drop', 'alter', 'create', 'table', 'from', 'where', 'limit', 'order', 'group', 'by', 'having', 'join', 'on', 'as', 'distinct', 'into', 'values', 'set', 'null', 'not', 'primary', 'key', 'foreign', 'references', 'default', 'check', 'constraint', 'index', 'unique', 'and', 'or', 'in', 'is', 'like', 'between', 'exists', 'case', 'when', 'then', 'else', 'end', 'cast', 'convert', 'full', 'outer', 'inner', 'left', 'right', 'cross', 'natural', 'union', 'except', 'intersect', 'offset', 'fetch', 'row', 'rows', 'only', 'top'
+    ]);
+  }
+
+  /**
+   * Defines the system instructions for the LLM to ensure consistent schema generation.
+   * Optimized for token usage while retaining clarity.
+   */
+  static get SYSTEM_PROMPT() {
+    return `You are an expert data architect. Analyze the provided document images to create a JSON Schema definition.
+    Requirements:
+    1. Identify the document type and suggest a snake_case 'tableName'.
+    2. Extract consistent data fields. For each, provide 'name' (snake_case), 'type' (string, number, date, boolean), and 'description'.
+    3. Output valid JSON only, matching this structure: { "tableName": "string", "fields": [{ "name": "string", "type": "string", "description": "string" }] }`;
+  }
+
+  /**
+   * Analyzes example files and generates a schema definition.
+   * @param {string[]} filePaths - Paths to the example files.
+   * @returns {Promise<Object>} - The generated schema definition.
+   */
+  async generateSchema(filePaths) {
+    // Construct prompt with system instructions
+    const prompt = `${SchemaGenerator.SYSTEM_PROMPT}\n\nAnalyze these images and extract a schema definition.`;
+
+    let response;
+    try {
+      response = await this.llmProvider.analyzeImages(prompt, filePaths);
+    } catch (error) {
+      throw new Error(`LLM interaction failed: ${error.message}`);
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(response);
+    } catch (error) {
+      throw new Error(`Failed to parse LLM response: ${error.message}`);
+    }
+
+    if (!parsed || parsed.error) {
+      throw new Error('No consistent structure found');
+    }
+
+    if (!parsed.tableName || !parsed.fields || !Array.isArray(parsed.fields)) {
+      throw new Error('No consistent structure found'); // Generic fallback for malformed schema
+    }
+
+    const sanitizedTableName = `custom_${this._sanitizeName(parsed.tableName)}`;
+    const sanitizedFields = parsed.fields.map(field => ({
+      ...field,
+      name: this._sanitizeName(field.name)
+    }));
+
+    return {
+      tableName: sanitizedTableName,
+      fields: sanitizedFields
+    };
+  }
+
+  /**
+   * internal helper to sanitize names for SQL
+   * @param {string} name
+   * @returns {string}
+   */
+  _sanitizeName(name) {
+    if (!name) return 'unnamed_field';
+
+    // 1. Lowercase
+    let sanitized = name.toLowerCase();
+
+    // 2. Replace non-alphanumeric with underscores
+    sanitized = sanitized.replace(/[^a-z0-9]/g, '_');
+
+    // 3. Remove leading numbers (SQL identifiers can't start with numbers)
+    if (/^[0-9]/.test(sanitized)) {
+      sanitized = `_${sanitized}`;
+    }
+
+    // 4. Check reserved keywords
+    if (this.reservedKeywords.has(sanitized)) {
+      sanitized = `extracted_${sanitized}`;
+    }
+
+    // 5. Dedupe underscores
+    sanitized = sanitized.replace(/_+/g, '_');
+
+    // 6. Trim underscores
+    sanitized = sanitized.replace(/^_+|_+$/g, '');
+
+    // 7. Ensure not empty after all cleaning
+    if (!sanitized) return 'unnamed_field';
+
+    return sanitized;
+  }
+}
+
+module.exports = SchemaGenerator;

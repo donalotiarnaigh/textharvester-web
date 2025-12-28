@@ -25,20 +25,20 @@
 
 - [ ] 2. Phase 2: Schema Generator (LLM Integration)
   - _Goal: Analyze example files and generate valid JSON schemas._
-  - [ ] 2.1 Write tests for `SchemaGenerator` (TDD: Red)
+  - [x] 2.1 Write tests for `SchemaGenerator` (TDD: Red)
     - **Happy path**: Mock LLM response -> returns structured `SchemaDefinition`.
     - **Security**: Test "malicious" field names (e.g., `drop_table`, `User--`) are sanitized safely to prevent injection.
     - **Unhappy path**: Malformed LLM response -> retry logic/error; Ambiguous structure -> error.
     - _Requirements: 1.1, 1.2, 4.2_
   
-  - [ ] 2.2 Implement `SchemaGenerator`
+  - [x] 2.2 Implement `SchemaGenerator`
     - Implement `src/services/SchemaGenerator.js`.
     - Add methods to construct the "Analysis Prompt" (sending image to LLM).
     - Implement parsing logic to convert LLM JSON to standard JSON Schema.
     - Implement field name sanitization (SQL safe names).
     - _Requirements: 1.2, 1.3_
 
-  - [ ] 2.3 Refactor & Verify
+  - [x] 2.3 Refactor & Verify
     - Ensure tests pass (Green).
     - Optimize system prompt for token usage (Cost Management consideration).
     - _Requirements: 4.1_
