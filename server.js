@@ -60,6 +60,10 @@ app.post('/cancel-processing', (req, res) => {
 // Grave Card routes
 app.use('/api/grave-cards', graveCardRoutes);
 
+// Schema Management routes
+const apiRoutes = require('./src/routes/api');
+app.use('/api/schemas', apiRoutes);
+
 // Performance monitoring routes
 app.use('/api/performance', performanceRoutes);
 

@@ -79,12 +79,12 @@
 
 - [ ] 5. Phase 5: API Layer (for future GUI)
   - _Goal: Expose endpoints for the frontend wizard._
-  - [ ] 5.1 Write tests for API Endpoints (TDD: Red)
+  - [x] 5.1 Write tests for API Endpoints (TDD: Red)
     - **Happy path**: `POST /api/schemas/propose` returns analysis; `POST /api/schemas` persists it.
     - **Unhappy path**: Invalid payloads, missing files.
     - _Requirements: 1.1, 1.2_
   
-  - [ ] 5.2 Implement Routes in `src/routes/api.js`
+  - [x] 5.2 Implement Routes in `src/routes/api.js`
     - Add schema management endpoints.
     - Wire up to `SchemaManager` and `SchemaGenerator`.
     - _Requirements: 1.1_
