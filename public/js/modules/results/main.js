@@ -601,17 +601,17 @@ function displayErrorSummary(errors) {
 
     // Format message based on error type (using sanitized data)
     switch (error.errorType) {
-    case 'empty_sheet':
-      message += 'Empty or unreadable sheet detected.';
-      break;
-    case 'processing_failed':
-      message += 'Processing failed after multiple attempts.';
-      break;
-    case 'page_number_conflict':
-      message += safeErrorMessage;
-      break;
-    default:
-      message += safeErrorMessage;
+      case 'empty_sheet':
+        message += 'Empty or unreadable sheet detected.';
+        break;
+      case 'processing_failed':
+        message += 'Processing failed after multiple attempts.';
+        break;
+      case 'page_number_conflict':
+        message += safeErrorMessage;
+        break;
+      default:
+        message += safeErrorMessage;
     }
 
     // Add model info if available (sanitized)
@@ -772,9 +772,10 @@ function updateExportButton() {
 
 /**
  * Update table headers based on source type
- * @param {string} sourceType - 'burial_register' or 'memorial'
+ * @param {string} sourceType - 'burial_register', 'memorial', 'grave_record_card', or 'custom'
+ * @param {Array} fields - Optional field definitions for custom schemas
  */
-function updateTableHeaders(sourceType) {
+function updateTableHeaders(sourceType, fields = null) {
   const thead = document.querySelector('#resultsTable thead tr');
   if (!thead) return;
 
@@ -801,6 +802,45 @@ function updateTableHeaders(sourceType) {
       <th class="sortable" data-sort="ai_provider">AI Model <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="processed_date">Processed <i class="fas fa-sort"></i></th>
 `;
+  } else if (sourceType === 'custom' && fields && fields.length > 0) {
+    // Dynamic headers for custom schemas
+    let headerHtml = '<th style="width: 50px;"></th>';
+
+    // Use same priority patterns as createCustomSchemaMainRowHTML
+    const priorityPatterns = [
+      /^(full_?)?name$/i,
+      /^(surname|last_?name|family_?name)$/i,
+      /^(christian_?name|first_?name|given_?name)$/i,
+      /^age/i,
+      /^(year|date)/i,
+      /^(relation|relationship)/i,
+      /^(occupation|profession)/i,
+      /^(sex|gender)$/i,
+      /^(location|address|place)/i
+    ];
+
+    // Sort fields by priority
+    const sortedFields = [...fields].sort((a, b) => {
+      const aPriority = priorityPatterns.findIndex(p => p.test(a.name));
+      const bPriority = priorityPatterns.findIndex(p => p.test(b.name));
+      if (aPriority !== -1 && bPriority !== -1) return aPriority - bPriority;
+      if (aPriority !== -1) return -1;
+      if (bPriority !== -1) return 1;
+      return 0;
+    });
+
+    // Display first 5 priority fields as columns
+    const displayFields = sortedFields.slice(0, 5);
+    displayFields.forEach(field => {
+      const fieldName = SanitizeUtils.sanitizeText(field.name);
+      const displayName = fieldName.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      headerHtml += `<th class="sortable" data-sort="${fieldName}">${displayName} <i class="fas fa-sort"></i></th>`;
+    });
+
+    // Always add processed date as last column
+    headerHtml += '<th class="sortable" data-sort="processed_date">Processed <i class="fas fa-sort"></i></th>';
+
+    thead.innerHTML = headerHtml;
   } else {
     // Default memorial headers
     thead.innerHTML = `
@@ -1065,6 +1105,246 @@ function displayBurialRegisterEntries(entries) {
   });
 }
 
+/**
+ * Display custom schema records with dynamic columns
+ * @param {Array} records - Records from custom schema table
+ * @param {Array} fields - Field definitions from schema
+ * @param {string} schemaName - Name of the custom schema
+ */
+function displayCustomSchemaResults(records, fields, schemaName) {
+  const tableBody = document.getElementById('resultsTableBody');
+  const emptyState = document.getElementById('emptyState');
+
+  // Clear existing content and reset expanded rows
+  tableBody.innerHTML = '';
+  expandedRows.clear();
+
+  // Check if there are any records
+  if (!records || records.length === 0) {
+    if (emptyState) {
+      emptyState.classList.remove('d-none');
+    }
+    return;
+  }
+
+  // Hide empty state
+  if (emptyState) {
+    emptyState.classList.add('d-none');
+  }
+
+  // Create rows for each record
+  records.forEach(record => {
+    // Create main row
+    const row = document.createElement('tr');
+    row.className = 'memorial-row';
+    row.style.cursor = 'pointer';
+
+    // Generate unique ID
+    const uniqueId = record.id || `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    row.setAttribute('data-memorial-id', uniqueId);
+
+    // Build dynamic row HTML based on fields
+    row.innerHTML = createCustomSchemaMainRowHTML(record, fields, uniqueId);
+
+    tableBody.appendChild(row);
+
+    // Create detail row (initially hidden)
+    const detailRow = createCustomSchemaDetailRow(record, fields, fields.length + 3); // +3 for expand btn, processed date, file
+    tableBody.appendChild(detailRow);
+  });
+}
+
+/**
+ * Create main row HTML for custom schema record
+ * @param {Object} record - Record data
+ * @param {Array} fields - Field definitions
+ * @param {string} uniqueId - Unique identifier
+ * @returns {string} HTML string
+ */
+function createCustomSchemaMainRowHTML(record, fields, uniqueId) {
+  let html = `
+    <td class="text-center">
+      <button class="btn btn-sm btn-outline-secondary expand-toggle"
+        data-toggle-memorial="${uniqueId}"
+        title="Click to expand/collapse details">
+        <i class="fas fa-chevron-down"></i>
+      </button>
+    </td>
+  `;
+
+  // Smart column selection: prioritize important/interesting fields
+  const priorityPatterns = [
+    /^(full_?)?name$/i,                    // Full name
+    /^(surname|last_?name|family_?name)$/i, // Surname
+    /^(christian_?name|first_?name|given_?name)$/i, // First name
+    /^age/i,                               // Age fields
+    /^(year|date)/i,                       // Date/year fields
+    /^(relation|relationship)/i,           // Relationship fields
+    /^(occupation|profession)/i,           // Occupation
+    /^(sex|gender)$/i,                     // Sex/gender
+    /^(location|address|place)/i           // Location
+  ];
+
+  // Sort fields by priority
+  const sortedFields = [...fields].sort((a, b) => {
+    const aPriority = priorityPatterns.findIndex(p => p.test(a.name));
+    const bPriority = priorityPatterns.findIndex(p => p.test(b.name));
+
+    // Higher priority (lower index) comes first
+    if (aPriority !== -1 && bPriority !== -1) return aPriority - bPriority;
+    if (aPriority !== -1) return -1;
+    if (bPriority !== -1) return 1;
+    return 0; // Keep original order for non-priority fields
+  });
+
+  // Take first 5 priority fields
+  const displayFields = sortedFields.slice(0, 5);
+
+  displayFields.forEach(field => {
+    const value = record[field.name];
+    let displayValue = 'N/A';
+
+    if (value != null && value !== '') {
+      // Format boolean values
+      if (typeof value === 'boolean' || value === 0 || value === 1) {
+        displayValue = (value === true || value === 1) ? 'Yes' : 'No';
+      } else {
+        displayValue = SanitizeUtils.sanitizeText(String(value));
+      }
+    }
+
+    html += `<td>${displayValue}</td>`;
+  });
+
+  // Add processed date
+  html += `<td>${formatDate(record.processed_date)}</td>`;
+
+  return html;
+}
+
+/**
+ * Format a field name for display (convert snake_case to Title Case)
+ * @param {string} name - Field name
+ * @returns {string} Formatted display name
+ */
+function formatFieldName(name) {
+  if (!name) return '';
+  return name
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/**
+ * Create detail row for custom schema record
+ * @param {Object} record - Record data
+ * @param {Array} fields - Field definitions
+ * @param {number} colSpan - Column span
+ * @returns {HTMLElement} Detail row element
+ */
+function createCustomSchemaDetailRow(record, fields, colSpan) {
+  const detailRow = document.createElement('tr');
+  detailRow.className = 'detail-row';
+  detailRow.style.display = 'none';
+
+  const uniqueId = record.id || `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  detailRow.id = `detail-${uniqueId}`;
+  detailRow.setAttribute('data-memorial-id', uniqueId);
+
+  detailRow.innerHTML = createCustomSchemaDetailHTML(record, fields, colSpan, uniqueId);
+
+  return detailRow;
+}
+
+/**
+ * Create detail HTML for custom schema record
+ * @param {Object} record - Record data
+ * @param {Array} fields - Field definitions
+ * @param {number} colSpan - Column span
+ * @param {string} uniqueId - Unique identifier
+ * @returns {string} HTML string
+ */
+function createCustomSchemaDetailHTML(record, fields, colSpan, uniqueId) {
+  // Group fields into columns for compact display
+  const fieldItems = fields.map(field => {
+    const value = record[field.name];
+    let displayValue = 'N/A';
+
+    if (value != null && value !== '') {
+      if (typeof value === 'boolean') {
+        displayValue = value ? 'Yes' : 'No';
+      } else if (value === 0 || value === 1) {
+        const booleanPatterns = /^(deaf|blind|idiotic|lunatic|is_|has_)/i;
+        displayValue = booleanPatterns.test(field.name)
+          ? (value === 1 ? 'Yes' : 'No')
+          : SanitizeUtils.sanitizeText(String(value));
+      } else {
+        displayValue = SanitizeUtils.sanitizeText(String(value));
+      }
+    }
+
+    return {
+      name: formatFieldName(field.name),
+      value: displayValue,
+      description: field.description || ''
+    };
+  });
+
+  // Split into columns (roughly 3 columns)
+  const colSize = Math.ceil(fieldItems.length / 3);
+  const col1 = fieldItems.slice(0, colSize);
+  const col2 = fieldItems.slice(colSize, colSize * 2);
+  const col3 = fieldItems.slice(colSize * 2);
+
+  // Build column HTML
+  const buildColumn = (items) => items.map(item => `
+    <div class="mb-2">
+      <strong class="text-muted small">${item.name}</strong><br>
+      <span>${item.value}</span>
+    </div>
+  `).join('');
+
+  return `
+    <td colspan="${colSpan}">
+      <div class="detail-content p-3" style="background-color: #fafafa;">
+        <div class="card">
+          <div class="card-header bg-primary text-white py-2">
+            <strong>Record Details</strong>
+          </div>
+          <div class="card-body py-3">
+            <div class="row">
+              <div class="col-md-4">
+                ${buildColumn(col1)}
+              </div>
+              <div class="col-md-4">
+                ${buildColumn(col2)}
+              </div>
+              <div class="col-md-4">
+                ${buildColumn(col3)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mt-3">
+          <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center small text-muted">
+              <span>
+                <i class="fas fa-file mr-1"></i> ${SanitizeUtils.sanitizeAttribute(record.file_name || record.fileName || 'N/A')}
+              </span>
+              <span>
+                <i class="fas fa-clock mr-1"></i> Processed: ${formatDate(record.processed_date)}
+              </span>
+              <button class="btn btn-sm btn-outline-secondary close-detail" data-memorial="${uniqueId}">
+                <i class="fas fa-chevron-up"></i> Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </td>
+  `;
+}
+
 // Function to setup event delegation for memorial rows (prevents memory leaks)
 function setupEventDelegation() {
   const tableBody = document.getElementById('resultsTableBody');
@@ -1161,6 +1441,31 @@ export async function loadResults() {
       // Initialize table enhancements
       if (data.burialRegisterEntries.length > 0) {
         tableEnhancements.init(data.burialRegisterEntries);
+        enableDownloadButtons();
+      }
+    } else if (data.sourceType === 'custom' && data.records) {
+      // Handle custom schema data
+      updateTableHeaders('custom', data.fields);
+      displayCustomSchemaResults(data.records, data.fields, data.schemaName);
+
+      // Update source banner if present
+      const sourceBanner = document.getElementById('sourceBanner');
+      if (sourceBanner) {
+        sourceBanner.textContent = `Viewing: ${data.schemaName || 'Custom Schema'}`;
+        sourceBanner.classList.remove('d-none');
+      }
+
+      // Update model info panel with data from the most recent record
+      if (data.records.length > 0) {
+        const latestRecord = data.records.reduce((latest, current) =>
+          new Date(current.processed_date) > new Date(latest.processed_date) ? current : latest
+        );
+        updateModelInfoPanel(latestRecord);
+      }
+
+      // Initialize table enhancements
+      if (data.records.length > 0) {
+        tableEnhancements.init(data.records);
         enableDownloadButtons();
       }
     } else {

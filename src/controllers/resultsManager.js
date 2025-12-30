@@ -8,6 +8,7 @@ const { getAllBurialRegisterEntries, getBurialRegisterEntryById } = require('../
 const { getAllGraveCards, getGraveCardById } = require('../utils/graveCardStorage');
 const { validateAndConvertRecords } = require('../utils/dataValidation');
 const QueryService = require('../services/QueryService');
+const SchemaManager = require('../services/SchemaManager');
 
 // Instantiate QueryService
 const storageAdapters = {
@@ -199,19 +200,43 @@ function sanitizeFilename(filename) {
 
 /**
  * Detect which source type has the most recent data by comparing processed_date
- * @returns {Promise<string>} Returns 'burial_register', 'memorial' or 'grave_record_card'
+ * @returns {Promise<string>} Returns 'burial_register', 'memorial', 'grave_record_card', or 'custom:<schemaId>'
  */
 async function detectSourceType() {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     try {
-      // Query all tables for most recent processed_date
-      const queries = [
+      // Query standard tables for most recent processed_date
+      const standardQueries = [
         new Promise(r => db.get('SELECT MAX(processed_date) as max_date FROM memorials', [], (err, row) => r({ type: 'memorial', date: row?.max_date }))),
         new Promise(r => db.get('SELECT MAX(processed_date) as max_date FROM burial_register_entries', [], (err, row) => r({ type: 'burial_register', date: row?.max_date }))),
         new Promise(r => db.get('SELECT MAX(processed_date) as max_date FROM grave_cards', [], (err, row) => r({ type: 'grave_record_card', date: row?.max_date })))
       ];
 
-      Promise.all(queries).then(results => {
+      // Get all custom schemas and query their tables
+      let customSchemaQueries = [];
+      try {
+        const schemas = await SchemaManager.listSchemas();
+        customSchemaQueries = schemas.map(schema => {
+          return new Promise(r => {
+            // Query the dynamic table for max processed_date
+            db.get(`SELECT MAX(processed_date) as max_date FROM "${schema.table_name}"`, [], (err, row) => {
+              if (err) {
+                // Table might not exist or be empty
+                logger.debug(`Custom schema table ${schema.table_name} query failed:`, err.message);
+                r({ type: `custom:${schema.id}`, date: null, schemaId: schema.id, schemaName: schema.name });
+              } else {
+                r({ type: `custom:${schema.id}`, date: row?.max_date, schemaId: schema.id, schemaName: schema.name });
+              }
+            });
+          });
+        });
+      } catch (schemaErr) {
+        logger.debug('Error fetching custom schemas for detection:', schemaErr.message);
+      }
+
+      // Run all queries in parallel
+      const allQueries = [...standardQueries, ...customSchemaQueries];
+      Promise.all(allQueries).then(results => {
         // Filter out null dates and sort by date descending
         const validResults = results
           .filter(r => r.date)
@@ -223,9 +248,9 @@ async function detectSourceType() {
           return;
         }
 
-        const winner = validResults[0].type;
-        logger.debug(`Source type detection: most recent is ${winner} (${validResults[0].date})`);
-        resolve(winner);
+        const winner = validResults[0];
+        logger.debug(`Source type detection: most recent is ${winner.type} (${winner.date})`);
+        resolve(winner.type);
       }).catch(error => {
         logger.error('Error querying tables for source type detection:', error);
         resolve('memorial');
@@ -344,6 +369,46 @@ async function downloadResultsCSV(req, res) {
       csvData = jsonToCsv(flattenedRecords, sortedKeys);
       defaultFilename = `grave_cards_${moment().format('YYYYMMDD_HHmmss')}.csv`;
       logger.info(`Exporting grave cards CSV: ${entryCount} entries with ${sortedKeys.length} columns`);
+    } else if (sourceType.startsWith('custom:')) {
+      // Handle custom schema export
+      const schemaId = sourceType.split(':')[1];
+      const schema = await SchemaManager.getSchema(schemaId);
+
+      if (!schema) {
+        logger.error(`Custom schema ${schemaId} not found for CSV export`);
+        return res.status(404).send('Schema not found');
+      }
+
+      // Query the dynamic table
+      const customRecords = await new Promise((resolve, reject) => {
+        db.all(`SELECT * FROM "${schema.table_name}" ORDER BY processed_date DESC`, [], (err, rows) => {
+          if (err) {
+            logger.error(`Error querying custom table ${schema.table_name}:`, err);
+            return reject(err);
+          }
+          resolve(rows || []);
+        });
+      });
+
+      entryCount = customRecords.length;
+
+      // Build column order from schema fields
+      const fieldColumns = [];
+      if (schema.json_schema && schema.json_schema.properties) {
+        for (const fieldName of Object.keys(schema.json_schema.properties)) {
+          fieldColumns.push(fieldName);
+        }
+      }
+
+      // Add system columns
+      const csvColumns = ['id', 'file_name', ...fieldColumns, 'ai_provider', 'processed_date'];
+
+      csvData = jsonToCsv(customRecords, csvColumns);
+
+      // Sanitize schema name for filename
+      const safeName = schema.name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+      defaultFilename = `${safeName}_${moment().format('YYYYMMDD_HHmmss')}.csv`;
+      logger.info(`Exporting custom schema CSV (${schema.name}): ${entryCount} entries with ${csvColumns.length} columns`);
     } else {
       // Get memorials (default)
       const { records } = await queryService.list({ sourceType: 'memorial', limit: 1000000 });
@@ -451,6 +516,53 @@ async function getResults(req, res) {
       res.json({
         memorials: transformedResults, // Send as memorials
         sourceType: 'grave_record_card',
+        errors: allErrors.length > 0 ? allErrors : undefined
+      });
+    } else if (sourceType.startsWith('custom:')) {
+      // Handle custom schema data
+      const schemaId = sourceType.split(':')[1];
+      const schema = await SchemaManager.getSchema(schemaId);
+
+      if (!schema) {
+        logger.error(`Custom schema ${schemaId} not found`);
+        return res.status(404).json({ error: `Schema ${schemaId} not found` });
+      }
+
+      // Extract field definitions from json_schema
+      const fields = [];
+      if (schema.json_schema && schema.json_schema.properties) {
+        for (const [fieldName, fieldDef] of Object.entries(schema.json_schema.properties)) {
+          fields.push({
+            name: fieldName,
+            type: fieldDef.type || 'string',
+            description: fieldDef.description || ''
+          });
+        }
+      }
+
+      // Query the dynamic table
+      const customRecords = await new Promise((resolve, reject) => {
+        db.all(`SELECT * FROM "${schema.table_name}" ORDER BY processed_date DESC`, [], (err, rows) => {
+          if (err) {
+            logger.error(`Error querying custom table ${schema.table_name}:`, err);
+            return reject(err);
+          }
+          resolve(rows || []);
+        });
+      });
+
+      // Transform records for frontend
+      const transformedResults = customRecords.map(record => ({
+        ...record,
+        fileName: record.file_name
+      }));
+
+      res.json({
+        records: transformedResults,
+        sourceType: 'custom',
+        schemaId: schema.id,
+        schemaName: schema.name,
+        fields: fields,
         errors: allErrors.length > 0 ? allErrors : undefined
       });
     } else {

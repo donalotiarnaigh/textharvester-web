@@ -99,6 +99,30 @@ class SchemaManager {
   }
 
   /**
+   * Retrieves a schema by its table name
+   * @param {string} tableName - The table name to look up
+   * @returns {Promise<Object|null>} Schema object or null
+   */
+  static async getSchemaByTableName(tableName) {
+    return new Promise((resolve, reject) => {
+      db.get('SELECT * FROM custom_schemas WHERE table_name = ?', [tableName], (err, row) => {
+        if (err) return reject(err);
+        if (!row) return resolve(null);
+
+        try {
+          if (row.json_schema) {
+            row.json_schema = JSON.parse(row.json_schema);
+          }
+          resolve(row);
+        } catch (parseErr) {
+          logger.error(`SchemaManager: Failed to parse json_schema for table ${tableName}`, parseErr);
+          reject(parseErr);
+        }
+      });
+    });
+  }
+
+  /**
      * Lists all custom schemas
      * @returns {Promise<Array>} List of schemas
      */
