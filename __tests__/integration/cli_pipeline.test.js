@@ -45,11 +45,8 @@ describe('CLI Integration Pipeline', () => {
   };
 
   beforeAll(async () => {
-    // Clean up main database to prevent accumulated test data
-    const mainDbPath = path.resolve(__dirname, '../../data/memorials.db');
-    if (fs.existsSync(mainDbPath)) {
-      fs.unlinkSync(mainDbPath);
-    }
+    // NOTE: We DO NOT touch the main production database!
+    // Tests use their own isolated TEST_DIR and DB_PATH
 
     // Setup temp dir
     try {
