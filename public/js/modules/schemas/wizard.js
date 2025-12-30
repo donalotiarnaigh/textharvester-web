@@ -111,7 +111,17 @@ export async function saveSchema() {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to save: ${response.statusText}`);
+      // Try to get error message from response body
+      let errorMessage = response.statusText;
+      try {
+        const errorData = await response.json();
+        if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+      } catch (e) {
+        // Ignore JSON parse error, use statusText
+      }
+      throw new Error(errorMessage);
     }
 
     return await response.json();

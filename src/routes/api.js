@@ -115,7 +115,14 @@ router.post('/', async (req, res) => {
 
   } catch (error) {
     logger.error('Error creating schema:', error);
-    // Handle unique constraint violations if possible, but 500 is fine for now
+
+    // Handle unique constraint violations (duplicate name)
+    if (error.code === 'SQLITE_CONSTRAINT' || error.errno === 19) {
+      return res.status(409).json({
+        error: `A schema with this name already exists. Please choose a different name.`
+      });
+    }
+
     res.status(500).json({ error: error.message || 'Failed to create schema' });
   }
 });
