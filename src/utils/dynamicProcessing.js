@@ -10,7 +10,8 @@ const { convertPdfToJpegs } = require('./pdfConverter');
 
 class DynamicProcessor {
   constructor(logger = defaultLogger) {
-    this.ajv = new Ajv({ allErrors: true, coerceTypes: true });
+    // Allow coerceTypes to cast strings to numbers/booleans, nullable allows null for any type
+    this.ajv = new Ajv({ allErrors: true, coerceTypes: true, nullable: true });
     this.logger = logger;
   }
 
@@ -127,11 +128,21 @@ class DynamicProcessor {
           const type = props[key]?.type;
           let value = clean[key];
 
-          // Handle Booleans (Yes/No)
-          if (type === 'boolean' && typeof value === 'string') {
-            const lower = value.toLowerCase().trim();
-            if (['yes', 'y', 'true'].includes(lower)) clean[key] = true;
-            if (['no', 'n', 'false'].includes(lower)) clean[key] = false;
+          // Handle Booleans (Yes/No, empty strings become null)
+          if (type === 'boolean') {
+            if (typeof value === 'string') {
+              const lower = value.toLowerCase().trim();
+              if (['yes', 'y', 'true', '1'].includes(lower)) {
+                clean[key] = true;
+              } else if (['no', 'n', 'false', '0'].includes(lower)) {
+                clean[key] = false;
+              } else if (lower === '' || lower === 'null' || lower === 'n/a' || lower === 'na' || lower === '-') {
+                // Empty or null-like strings for booleans become null
+                clean[key] = null;
+              }
+            } else if (value === null || value === undefined) {
+              clean[key] = null;
+            }
           }
 
           // Handle Numbers (remove commas, handle numeric strings)

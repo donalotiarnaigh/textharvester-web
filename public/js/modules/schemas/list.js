@@ -33,7 +33,41 @@ export function renderSchemas(schemas) {
     return;
   }
 
-  schemas.forEach(schema => {
+  // Attach modal handler globally or per button. 
+  // Easier to attach data attributes and a global handler or just onclick here for simplicity in this module.
+  window.viewSchemaDetails = (index) => {
+    const schema = schemas[index];
+    if (!schema) return;
+
+    document.getElementById('modalSchemaName').textContent = schema.name || 'Untitled Schema';
+    document.getElementById('modalTableName').textContent = schema.table_name || 'N/A';
+    document.getElementById('modalSchemaId').textContent = schema.id || 'N/A';
+
+    const tbody = document.getElementById('modalFieldsBody');
+    tbody.innerHTML = '';
+
+    const fields = schema.fields || (schema.json_schema && schema.json_schema.properties
+      ? Object.entries(schema.json_schema.properties).map(([k, v]) => ({ name: k, ...v }))
+      : []);
+
+    if (fields.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="text-center">No fields defined</td></tr>';
+    } else {
+      fields.forEach(field => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+                <td>${escapeHtml(field.name)}</td>
+                <td><span class="badge badge-light">${escapeHtml(field.type)}</span></td>
+                <td>${escapeHtml(field.description || '')}</td>
+            `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    $('#schemaModal').modal('show');
+  };
+
+  schemas.forEach((schema, index) => {
     const row = document.createElement('tr');
     // Format date nicely if possible, or just raw string
     const dateStr = schema.created_at ? new Date(schema.created_at).toLocaleDateString() : 'N/A';
@@ -43,8 +77,7 @@ export function renderSchemas(schemas) {
             <td><code>${escapeHtml(schema.table_name)}</code></td>
             <td>${dateStr}</td>
             <td>
-                <!-- Actions could go here -->
-                <button class="btn btn-sm btn-outline-info disabled" title="View details (Coming Soon)">View</button>
+                <button class="btn btn-sm btn-info" onclick="viewSchemaDetails(${index})" title="View details">View</button>
             </td>
         `;
     tableBody.appendChild(row);
