@@ -53,62 +53,62 @@
     - Integration with `IngestService`
     - _Requirements: 1.1, 1.3, 2.1_
 
-- [ ] 3. iOS Client Logic (Upload Service)
+- [ ] 3. Web UI Updates
+  - [Enhance web interface to support mobile data]
+  - _Requirements: 3.2, 3.3_
+
+  - [ ] 3.1 [Update Results Page]
+    - Add "Mobile" source badge to data table
+    - Add Site Code column/filter
+    - _Requirements: 3.2, 3.3_
+
+- [ ] 4. Integration & Verification (Server Only)
+  - [Verify the system works with manual API calls]
+  - _Requirements: All_
+
+  - [ ]* 4.1 [End-to-End Manual Test (Server)]
+    - Test upload endpoint via CLI/curl
+    - Verify processing and database persistence
+    - Verify results appearance in Web UI
+
+- [ ] 5. iOS Client Logic (Upload Service) [DEFERRED]
   - [Implement the robust upload client with retry logic]
   - _Requirements: 4.1, 4.2, 4.3_
 
-  - [ ] 3.1 [Write tests for UploadService retry logic]
+  - [ ] 5.1 [Write tests for UploadService retry logic]
     - **Happy path**: Successful upload, successful retry after 1 failure
     - **Unhappy path**: Max retries reached, 4xx error (no retry), network offline handling
     - Verify exponential backoff timing (mock timers)
     - _Requirements: 4.1, 4.2_
 
-  - [ ] 3.2 [Implement UploadService]
+  - [ ] 5.2 [Implement UploadService]
     - Create `utils/uploadService.ts`
     - Implement `uploadPhoto` with backoff loop
     - Implement queue management
     - _Requirements: 4.1_
 
-  - [ ] 3.3 [Write tests for UploadStore (Zustand)]
+  - [ ] 5.3 [Write tests for UploadStore (Zustand)]
     - **Happy path**: State transitions (Pending -> Uploading -> Complete)
     - **Unhappy path**: Error state handling, reset functionality
     - Verify progress calculation logic
     - _Requirements: 5.1, 5.2_
 
-  - [ ] 3.4 [Implement UploadStore]
+  - [ ] 5.4 [Implement UploadStore]
     - Create `store/uploadStore.ts`
     - Define interfaces and state actions
     - _Requirements: 5.1, 5.2_
 
-- [ ] 4. iOS Client UI
+- [ ] 6. iOS Client UI [DEFERRED]
   - [Build the user interface for monitoring uploads]
   - _Requirements: 5.1, 5.2, 5.3_
 
-  - [ ] 4.1 [Implement Upload List Components]
+  - [ ] 6.1 [Implement Upload List Components]
     - Create `UploadStatusRow` component
     - Create `UploadProgressRing` component
     - Integrate with `UploadStore`
     - _Requirements: 5.1, 5.2_
 
-  - [ ] 4.2 [Integrate into Export Screen]
+  - [ ] 6.2 [Integrate into Export Screen]
     - Add "Upload to Server" button to `export.tsx`
     - Connect UI events to `UploadService` trigger
     - _Requirements: 5.1_
-
-- [ ] 5. Web UI Updates
-  - [Enhance web interface to support mobile data]
-  - _Requirements: 3.2, 3.3_
-
-  - [ ] 5.1 [Update Results Page]
-    - Add "Mobile" source badge to data table
-    - Add Site Code column/filter
-    - _Requirements: 3.2, 3.3_
-
-- [ ] 6. Integration & Verification
-  - [Verify the complete system flow]
-  - _Requirements: All_
-
-  - [ ]* 6.1 [End-to-End Manual Test]
-    - Upload photo from iOS Simulator
-    - Verify processing in TextHarvester logs
-    - Verify result appearance in Web UI with correct site code
