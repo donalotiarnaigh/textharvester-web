@@ -4,12 +4,12 @@
   - [Establish database schema capabilities for site isolation]
   - _Requirements: 3.1, 3.2, 3.3_
 
-  - [ ] 1.1 [Create site_code verification tests]
+  - [x] 1.1 [Create site_code verification tests]
     - **Happy path**: Verify `storeMemorial` persists `site_code` correctly
     - **Unhappy path**: Verify database handles null/missing `site_code` gracefully (backward compat)
     - _Requirements: 3.1_
 
-  - [ ] 1.2 [Implement database migration and updates]
+  - [x] 1.2 [Implement database migration and updates]
     - Add `site_code` column to `memorials` table
     - Update `database.js` `storeMemorial` function
     - Update schema initialization

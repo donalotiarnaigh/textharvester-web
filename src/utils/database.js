@@ -44,7 +44,8 @@ function initializeDatabase() {
       prompt_template TEXT,
       prompt_version TEXT,
       processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-      source_type TEXT
+      source_type TEXT,
+      site_code TEXT
     )
   `;
 
@@ -54,6 +55,22 @@ function initializeDatabase() {
       return;
     }
     logger.info('Memorials table initialized');
+
+    // Migration: Add site_code column if it doesn't exist
+    db.all('PRAGMA table_info(memorials)', (err, rows) => {
+      if (err) {
+        logger.error('Error checking table info:', err);
+        return;
+      }
+      const hasSiteCode = rows && rows.some(row => row.name === 'site_code');
+      if (!hasSiteCode) {
+        logger.info('Migrating database: Adding site_code column');
+        db.run('ALTER TABLE memorials ADD COLUMN site_code TEXT', (err) => {
+          if (err) logger.error('Error adding site_code column:', err);
+          else logger.info('Successfully added site_code column');
+        });
+      }
+    });
   });
 }
 
@@ -151,8 +168,9 @@ function storeMemorial(data) {
       model_version,
       prompt_template,
       prompt_version,
-      source_type
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      source_type,
+      site_code
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   return new Promise((resolve, reject) => {
@@ -167,7 +185,8 @@ function storeMemorial(data) {
       data.model_version || null,
       data.prompt_template || null,
       data.prompt_version || null,
-      data.source_type || null
+      data.source_type || null,
+      data.site_code || null
     ], function (err) {
       if (err) {
         logger.error('Error storing memorial:', err);
