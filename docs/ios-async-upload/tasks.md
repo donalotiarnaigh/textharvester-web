@@ -46,7 +46,7 @@
     - Mock `IngestService` and `multer`
     - _Requirements: 1.1, 1.3, 2.1_
 
-  - [ ] 2.4 [Implement MobileUploadHandler & Routes]
+  - [x] 2.4 [Implement MobileUploadHandler & Routes]
     - Create `src/controllers/mobileUploadHandler.js`
     - Create `src/routes/mobileUploadRoutes.js`
     - Mount routes in `server.js`

@@ -64,6 +64,10 @@ app.use('/api/grave-cards', graveCardRoutes);
 const apiRoutes = require('./src/routes/api');
 app.use('/api/schemas', apiRoutes);
 
+// Mobile Upload routes (iOS app integration)
+const mobileUploadRoutes = require('./src/routes/mobileUploadRoutes');
+app.use('/api/mobile', mobileUploadRoutes);
+
 // Performance monitoring routes
 app.use('/api/performance', performanceRoutes);
 
