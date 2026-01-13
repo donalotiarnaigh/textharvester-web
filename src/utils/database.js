@@ -230,6 +230,31 @@ function getMemorialById(id) {
   });
 }
 
+// Retrieve memorials filtered by site_code (Requirement 3.2)
+function getMemorialsBySiteCode(siteCode) {
+  return new Promise((resolve, reject) => {
+    // Edge case: null/undefined siteCode returns empty array (defensive)
+    if (!siteCode) {
+      return resolve([]);
+    }
+
+    logger.info(`Querying memorials for site_code: ${siteCode}`);
+    db.all(
+      'SELECT * FROM memorials WHERE site_code = ? ORDER BY processed_date DESC',
+      [siteCode],
+      (err, rows) => {
+        if (err) {
+          logger.error(`Error retrieving memorials for site_code ${siteCode}:`, err);
+          reject(err);
+          return;
+        }
+        logger.info(`Retrieved ${rows ? rows.length : 0} records for site_code: ${siteCode}`);
+        resolve(rows || []);
+      }
+    );
+  });
+}
+
 // Add this function to database.js
 function clearAllMemorials() {
   return new Promise((resolve, reject) => {
@@ -281,6 +306,7 @@ module.exports = {
   storeMemorial,
   getAllMemorials,
   getMemorialById,
+  getMemorialsBySiteCode,
   clearAllMemorials,
   backupDatabase,
   initializeDatabase,
