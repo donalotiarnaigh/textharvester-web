@@ -39,7 +39,7 @@
     - Implement regex logic
     - _Requirements: 1.2_
 
-  - [ ] 2.3 [Write tests for MobileUploadHandler]
+  - [x] 2.3 [Write tests for MobileUploadHandler]
     - **Happy path**: Valid multipart upload -> Validation -> Queue Service -> 200 OK
     - **Unhappy path**: Invalid files, missing files, size limit exceeded -> 4xx Errors
     - **Unhappy path**: Queue service down -> 503 Error
