@@ -20,7 +20,7 @@
     - **Unhappy path**: Query with non-existent `site_code` returns empty list
     - _Requirements: 3.2_
 
-  - [ ] 1.4 [Implement Results filtering logic]
+  - [x] 1.4 [Implement Results filtering logic]
     - Update retrieval functions in `database.js` to accept filter params
     - _Requirements: 3.2, 3.3_
 
