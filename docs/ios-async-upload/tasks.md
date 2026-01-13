@@ -15,7 +15,7 @@
     - Update schema initialization
     - _Requirements: 3.1_
 
-  - [ ] 1.3 [Write tests for Results filtering]
+  - [x] 1.3 [Write tests for Results filtering]
     - **Happy path**: Query by `site_code` returns matching records
     - **Unhappy path**: Query with non-existent `site_code` returns empty list
     - _Requirements: 3.2_
