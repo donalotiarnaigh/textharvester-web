@@ -28,13 +28,13 @@
   - [Implement the API endpoints and logic to handle mobile uploads]
   - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2_
 
-  - [ ] 2.1 [Write tests for FilenameValidator]
+  - [x] 2.1 [Write tests for FilenameValidator]
     - **Happy path**: `cork-0001.jpg` parses to site `cork`
     - **Unhappy path**: `image.jpg`, `bad-format`, empty strings return validation errors
     - Verify strict mode behavior
     - _Requirements: 1.2, 3.4_
 
-  - [ ] 2.2 [Implement FilenameValidator]
+  - [x] 2.2 [Implement FilenameValidator]
     - Create `src/utils/filenameValidator.js`
     - Implement regex logic
     - _Requirements: 1.2_
