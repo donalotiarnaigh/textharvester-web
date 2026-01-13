@@ -10,11 +10,11 @@ global.Dropzone = jest.fn();
 global.fetch = jest.fn();
 
 describe('Schema Wizard Module', () => {
-    let container;
+  let container;
 
-    beforeEach(() => {
-        // Reset DOM with wizard steps
-        document.body.innerHTML = `
+  beforeEach(() => {
+    // Reset DOM with wizard steps
+    document.body.innerHTML = `
             <div id="step-upload" class="wizard-step"></div>
             <div id="step-loading" class="wizard-step d-none"></div>
             <div id="step-editor" class="wizard-step d-none">
@@ -26,56 +26,56 @@ describe('Schema Wizard Module', () => {
             </div>
             <div id="dropzone-area"></div>
         `;
-        fetch.mockClear();
-        Dropzone.mockClear();
+    fetch.mockClear();
+    Dropzone.mockClear();
+  });
+
+  test('handleUpload sends files to analyze endpoint', async () => {
+    const mockFiles = [new File(['foo'], 'foo.jpg')];
+    const mockAnalysis = {
+      recommendedName: 'Deeds',
+      fields: [{ name: 'date', type: 'date' }]
+    };
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockAnalysis
     });
 
-    test('handleUpload sends files to analyze endpoint', async () => {
-        const mockFiles = [new File(['foo'], 'foo.jpg')];
-        const mockAnalysis = {
-            recommendedName: 'Deeds',
-            fields: [{ name: 'date', type: 'date' }]
-        };
+    const result = await handleUpload(mockFiles);
 
-        fetch.mockResolvedValueOnce({
-            ok: true,
-            json: async () => mockAnalysis
-        });
+    expect(fetch).toHaveBeenCalledWith('/api/schemas/propose', expect.objectContaining({
+      method: 'POST',
+      body: expect.any(FormData)
+    }));
+    expect(result).toEqual(mockAnalysis);
+  });
 
-        const result = await handleUpload(mockFiles);
+  test('renderEditor populates the form', () => {
+    const proposal = {
+      recommendedName: 'Census 1901',
+      fields: [
+        { name: 'age', type: 'number', description: 'Age of person' },
+        { name: 'name', type: 'string', description: 'Full Name' }
+      ]
+    };
 
-        expect(fetch).toHaveBeenCalledWith('/api/schemas/propose', expect.objectContaining({
-            method: 'POST',
-            body: expect.any(FormData)
-        }));
-        expect(result).toEqual(mockAnalysis);
-    });
+    renderEditor(proposal);
 
-    test('renderEditor populates the form', () => {
-        const proposal = {
-            recommendedName: 'Census 1901',
-            fields: [
-                { name: 'age', type: 'number', description: 'Age of person' },
-                { name: 'name', type: 'string', description: 'Full Name' }
-            ]
-        };
+    const nameInput = document.getElementById('schemaName');
+    expect(nameInput.value).toBe('Census 1901');
 
-        renderEditor(proposal);
+    const rows = document.querySelectorAll('#fieldsTableBody tr');
+    expect(rows.length).toBe(2);
+    expect(rows[0].innerHTML).toContain('age');
+    expect(rows[1].innerHTML).toContain('Full Name');
+  });
 
-        const nameInput = document.getElementById('schemaName');
-        expect(nameInput.value).toBe('Census 1901');
-
-        const rows = document.querySelectorAll('#fieldsTableBody tr');
-        expect(rows.length).toBe(2);
-        expect(rows[0].innerHTML).toContain('age');
-        expect(rows[1].innerHTML).toContain('Full Name');
-    });
-
-    test('saveSchema constructs valid payload', async () => {
-        // Setup form state
-        document.getElementById('schemaName').value = 'Final Schema';
-        const tbody = document.getElementById('fieldsTableBody');
-        tbody.innerHTML = `
+  test('saveSchema constructs valid payload', async () => {
+    // Setup form state
+    document.getElementById('schemaName').value = 'Final Schema';
+    const tbody = document.getElementById('fieldsTableBody');
+    tbody.innerHTML = `
             <tr class="field-row">
                 <td><input class="field-name" value="age" /></td>
                 <td>
@@ -87,17 +87,17 @@ describe('Schema Wizard Module', () => {
             </tr>
         `;
 
-        fetch.mockResolvedValueOnce({
-            ok: true,
-            json: async () => ({ id: 'new-id' })
-        });
-
-        await saveSchema();
-
-        expect(fetch).toHaveBeenCalledWith('/api/schemas', expect.objectContaining({
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: expect.stringMatching(/"name":"Final Schema"/)
-        }));
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 'new-id' })
     });
+
+    await saveSchema();
+
+    expect(fetch).toHaveBeenCalledWith('/api/schemas', expect.objectContaining({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: expect.stringMatching(/"name":"Final Schema"/)
+    }));
+  });
 });

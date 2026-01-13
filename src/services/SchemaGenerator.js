@@ -101,11 +101,11 @@ class SchemaGenerator {
         fields: sanitizedFields,
         // Include system/user prompts for future use by DynamicProcessor
         jsonSchema: {
-          type: "object",
+          type: 'object',
           properties: sanitizedFields.reduce((acc, f) => ({ ...acc, [f.name]: { type: f.type, description: f.description } }), {}),
           required: sanitizedFields.map(f => f.name)
         },
-        systemPrompt: "You are a data entry clerk. Extract the following fields from the document image.",
+        systemPrompt: 'You are a data entry clerk. Extract the following fields from the document image.',
         userPromptTemplate: `Extract these fields: ${sanitizedFields.map(f => f.name).join(', ')}`
       };
 

@@ -72,7 +72,7 @@ schemaCommand
         };
 
         const schema = await SchemaManager.createSchema(schemaDefinition);
-        console.log(`\nSchema saved successfully!`);
+        console.log('\nSchema saved successfully!');
         console.log(`ID: ${schema.id}`);
         console.log(`Table: ${schema.tableName}`);
       } else {

@@ -119,7 +119,7 @@ router.post('/', async (req, res) => {
     // Handle unique constraint violations (duplicate name)
     if (error.code === 'SQLITE_CONSTRAINT' || error.errno === 19) {
       return res.status(409).json({
-        error: `A schema with this name already exists. Please choose a different name.`
+        error: 'A schema with this name already exists. Please choose a different name.'
       });
     }
 
