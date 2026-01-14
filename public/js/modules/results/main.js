@@ -91,6 +91,20 @@ function getSourceTypeBadgeClass(sourceType) {
   return classMap[sourceType] || 'badge-secondary';
 }
 
+/**
+ * Format site code for display
+ * Capitalizes the first letter and handles null/undefined/empty values
+ * @param {string} siteCode - Site code to format
+ * @returns {string} Formatted site code or "N/A" for empty values
+ */
+function formatSiteCode(siteCode) {
+  if (!siteCode || siteCode === '') return 'N/A';
+
+  // Convert to string, lowercase, then capitalize first letter
+  const code = String(siteCode).toLowerCase();
+  return code.charAt(0).toUpperCase() + code.slice(1);
+}
+
 // HTML Sanitization utilities
 const SanitizeUtils = {
   /**
@@ -171,7 +185,8 @@ const SanitizeUtils = {
       prompt_version: this.sanitizeText(memorial.prompt_version),
       fileName: this.sanitizeAttribute(memorial.fileName),
       processed_date: memorial.processed_date, // Date objects are safe as they're processed by formatDate
-      source_type: memorial.source_type // Keep original value for logic, will be sanitized in display functions
+      source_type: memorial.source_type, // Keep original value for logic, will be sanitized in display functions
+      site_code: memorial.site_code // Keep original for formatting in display
     };
   },
 
@@ -329,6 +344,7 @@ const SanitizeUtils = {
           ${formatSourceType(safe.source_type)}
         </span>
       </td>
+      <td>${formatSiteCode(safe.site_code)}</td>
       <td>${safe.ai_provider || 'N/A'}</td>
       <td>${safe.prompt_template || 'N/A'}</td>
       <td>${safe.prompt_version || 'N/A'}</td>
@@ -601,17 +617,17 @@ function displayErrorSummary(errors) {
 
     // Format message based on error type (using sanitized data)
     switch (error.errorType) {
-    case 'empty_sheet':
-      message += 'Empty or unreadable sheet detected.';
-      break;
-    case 'processing_failed':
-      message += 'Processing failed after multiple attempts.';
-      break;
-    case 'page_number_conflict':
-      message += safeErrorMessage;
-      break;
-    default:
-      message += safeErrorMessage;
+      case 'empty_sheet':
+        message += 'Empty or unreadable sheet detected.';
+        break;
+      case 'processing_failed':
+        message += 'Processing failed after multiple attempts.';
+        break;
+      case 'page_number_conflict':
+        message += safeErrorMessage;
+        break;
+      default:
+        message += safeErrorMessage;
     }
 
     // Add model info if available (sanitized)
@@ -1598,7 +1614,7 @@ document.addEventListener('click', function (event) {
 });
 
 // Export functions and state for use by other modules
-export { expandedRows, toggleRow, formatSourceType, getSourceTypeBadgeClass };
+export { expandedRows, toggleRow, formatSourceType, getSourceTypeBadgeClass, formatSiteCode };
 
 // Custom Filter Logic Integration
 function populateSectionFilter(memorials) {

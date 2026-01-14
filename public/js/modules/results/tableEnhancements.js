@@ -13,7 +13,8 @@ export class TableEnhancements {
     this.filters = {
       search: '',
       model: '',
-      year: ''
+      year: '',
+      siteCode: ''
     };
   }
 
@@ -69,6 +70,15 @@ export class TableEnhancements {
       });
     }
 
+    // Site Code filter (for mobile uploads)
+    const siteCodeFilter = document.getElementById('siteCodeFilter');
+    if (siteCodeFilter) {
+      siteCodeFilter.addEventListener('change', (e) => {
+        this.filters.siteCode = e.target.value;
+        this.applyFilters();
+      });
+    }
+
     // Clear filters
     const clearButton = document.getElementById('clearFilters');
     if (clearButton) {
@@ -118,6 +128,19 @@ export class TableEnhancements {
         option.value = year;
         option.textContent = year;
         yearFilter.appendChild(option);
+      });
+    }
+
+    // Get unique site codes (for mobile uploads)
+    const siteCodes = [...new Set(this.memorials.map(m => m.site_code).filter(Boolean))];
+    const siteCodeFilter = document.getElementById('siteCodeFilter');
+    if (siteCodeFilter) {
+      siteCodes.sort().forEach(code => {
+        const option = document.createElement('option');
+        option.value = code;
+        // Capitalize for display
+        option.textContent = code.charAt(0).toUpperCase() + code.slice(1);
+        siteCodeFilter.appendChild(option);
       });
     }
   }
@@ -207,6 +230,11 @@ export class TableEnhancements {
         }
       }
 
+      // Site Code filter (for mobile uploads)
+      if (this.filters.siteCode && memorial.site_code !== this.filters.siteCode) {
+        return false;
+      }
+
       return true;
     });
 
@@ -227,7 +255,8 @@ export class TableEnhancements {
     this.filters = {
       search: '',
       model: '',
-      year: ''
+      year: '',
+      siteCode: ''
     };
 
     // Reset form controls
@@ -239,6 +268,9 @@ export class TableEnhancements {
 
     const yearFilter = document.getElementById('yearFilter');
     if (yearFilter) yearFilter.value = '';
+
+    const siteCodeFilter = document.getElementById('siteCodeFilter');
+    if (siteCodeFilter) siteCodeFilter.value = '';
 
     this.applyFilters();
   }

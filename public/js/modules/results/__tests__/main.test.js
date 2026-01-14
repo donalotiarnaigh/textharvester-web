@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { formatSourceType, getSourceTypeBadgeClass } from '../main.js';
+import { formatSourceType, getSourceTypeBadgeClass, formatSiteCode } from '../main.js';
 
 describe('Source Type Display Utilities', () => {
   describe('formatSourceType', () => {
@@ -52,6 +52,39 @@ describe('Source Type Display Utilities', () => {
     it('should return "badge-secondary" for null or undefined', () => {
       expect(getSourceTypeBadgeClass(null)).toBe('badge-secondary');
       expect(getSourceTypeBadgeClass(undefined)).toBe('badge-secondary');
+    });
+  });
+});
+
+describe('Site Code Display Utilities', () => {
+  describe('formatSiteCode', () => {
+    it('should format lowercase site codes with capitalization', () => {
+      expect(formatSiteCode('cork')).toBe('Cork');
+    });
+
+    it('should format multi-word site codes correctly', () => {
+      expect(formatSiteCode('kilmainham')).toBe('Kilmainham');
+    });
+
+    it('should handle already capitalized site codes', () => {
+      expect(formatSiteCode('CORK')).toBe('Cork');
+    });
+
+    it('should return "N/A" for null or undefined', () => {
+      expect(formatSiteCode(null)).toBe('N/A');
+      expect(formatSiteCode(undefined)).toBe('N/A');
+    });
+
+    it('should return "N/A" for empty string', () => {
+      expect(formatSiteCode('')).toBe('N/A');
+    });
+
+    it('should handle "unknown" site code', () => {
+      expect(formatSiteCode('unknown')).toBe('Unknown');
+    });
+
+    it('should handle alphanumeric site codes', () => {
+      expect(formatSiteCode('site001')).toBe('Site001');
     });
   });
 });

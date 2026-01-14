@@ -177,6 +177,14 @@
             </div>
             <div class="col-md-3">
               <div class="form-group mb-0">
+                <label for="siteCodeFilter" class="small text-muted">Filter by Site Code:</label>
+                <select class="form-control form-control-sm" id="siteCodeFilter">
+                  <option value="">All Sites</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group mb-0">
                 <label for="graveNumberInput" class="small text-muted">Grave Number:</label>
                 <input type="text" class="form-control form-control-sm" id="graveNumberInput" placeholder="Exact #">
               </div>
@@ -219,6 +227,9 @@
               </th>
               <th class="sortable" data-sort="source_type">
                 Source Type <i class="fas fa-sort"></i>
+              </th>
+              <th class="sortable" data-sort="site_code">
+                Site Code <i class="fas fa-sort"></i>
               </th>
               <th class="sortable" data-sort="ai_provider">
                 AI Model <i class="fas fa-sort"></i>
