@@ -62,11 +62,11 @@
     - Add Site Code column/filter
     - _Requirements: 3.2, 3.3_
 
-- [ ] 4. Integration & Verification (Server Only)
+- [x] 4. Integration & Verification (Server Only)
   - [Verify the system works with manual API calls]
   - _Requirements: All_
 
-  - [ ]* 4.1 [End-to-End Manual Test (Server)]
+  - [x] 4.1 [End-to-End Manual Test (Server)]
     - Test upload endpoint via CLI/curl
     - Verify processing and database persistence
     - Verify results appearance in Web UI

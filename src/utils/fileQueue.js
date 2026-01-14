@@ -63,7 +63,8 @@ function enqueueFiles(files) {
       sourceType: file.sourceType || file.source_type || 'record_sheet',
       source_type: file.sourceType || file.source_type || 'record_sheet',
       ...(file.volume_id && { volume_id: file.volume_id, volumeId: file.volumeId || file.volume_id }),
-      ...(file.schemaId && { schemaId: file.schemaId }) // Store schemaId
+      ...(file.schemaId && { schemaId: file.schemaId }), // Store schemaId
+      ...(file.site_code && { site_code: file.site_code }) // Store site_code for mobile uploads
     });
     retryLimits[filePath] = retryLimits[filePath] || 0;
     const logContext = sourceType === 'burial_register' && file.volume_id
@@ -170,7 +171,8 @@ function checkAndProcessNextFile() {
       sourceType: file.sourceType || file.source_type,
       source_type: file.sourceType || file.source_type,
       ...(file.volume_id && { volume_id: file.volume_id, volumeId: file.volumeId || file.volume_id }),
-      ...(file.schemaId && { schemaId: file.schemaId }) // Pass schemaId to processor
+      ...(file.schemaId && { schemaId: file.schemaId }), // Pass schemaId to processor
+      ...(file.site_code && { site_code: file.site_code }) // Pass site_code for mobile uploads
     };
 
     processFile(file.path, processingOptions)

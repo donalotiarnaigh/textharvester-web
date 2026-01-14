@@ -313,6 +313,10 @@ async function processFile(filePath, options = {}) {
       extractedData.prompt_template = promptTemplate;
       extractedData.prompt_version = promptInstance.version;
       extractedData.source_type = sourceType;
+      // Include site_code for mobile uploads (site isolation)
+      if (options.site_code) {
+        extractedData.site_code = options.site_code;
+      }
 
       // Store in database
       await storeMemorial(extractedData);
