@@ -1,6 +1,6 @@
 # Implementation Plan: iOS-TextHarvester Async Upload
 
-- [ ] 1. Server-Side Foundation & Database
+- [x] 1. Server-Side Foundation & Database
   - [Establish database schema capabilities for site isolation]
   - _Requirements: 3.1, 3.2, 3.3_
 
@@ -24,7 +24,7 @@
     - Update retrieval functions in `database.js` to accept filter params
     - _Requirements: 3.2, 3.3_
 
-- [ ] 2. Server-Side API & Components
+- [x] 2. Server-Side API & Components
   - [Implement the API endpoints and logic to handle mobile uploads]
   - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2_
 
@@ -53,7 +53,7 @@
     - Integration with `IngestService`
     - _Requirements: 1.1, 1.3, 2.1_
 
-- [ ] 3. Web UI Updates
+- [x] 3. Web UI Updates
   - [Enhance web interface to support mobile data]
   - _Requirements: 3.2, 3.3_
 
