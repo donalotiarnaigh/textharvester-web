@@ -865,6 +865,7 @@ function updateTableHeaders(sourceType, fields = null) {
       <th class="sortable" data-sort="name">Name <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="year_of_death">Year of Death <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="source_type">Source Type <i class="fas fa-sort"></i></th>
+      <th class="sortable" data-sort="site_code">Site Code <i class="fas fa-sort"></i></th>
       <th class="sortable" data-sort="ai_provider">AI Model <i class="fas fa-sort"></i></th>
       <th>Prompt Template</th>
       <th>Template Version</th>
