@@ -57,7 +57,7 @@
   - [Enhance web interface to support mobile data]
   - _Requirements: 3.2, 3.3_
 
-  - [ ] 3.1 [Update Results Page]
+  - [x] 3.1 [Update Results Page]
     - Add "Mobile" source badge to data table
     - Add Site Code column/filter
     - _Requirements: 3.2, 3.3_
