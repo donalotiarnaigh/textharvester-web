@@ -48,6 +48,7 @@
     "openai": "^4.24.0",
     "pdf-poppler": "^0.2.1",
     "sharp": "^0.32.6",
+    "sqlite3": "^5.1.7",
     "winston": "^3.12.0"
   },
   "devDependencies": {
@@ -67,11 +68,10 @@
     "lint-staged": "^15.2.2",
     "node-mocks-http": "^1.17.2",
     "nodemon": "^3.1.0",
-    "sqlite3": "^5.1.7",
     "supertest": "^7.1.1"
   },
   "engines": {
-    "node": "20.13.1"
+    "node": ">=20.13.1"
   },
   "husky": {
     "hooks": {

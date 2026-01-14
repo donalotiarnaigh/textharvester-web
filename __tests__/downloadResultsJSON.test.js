@@ -8,7 +8,11 @@ jest.mock('../src/utils/database', () => ({
       first_name: 'John',
       last_name: 'Doe'
     }
-  ])
+  ]),
+  db: {
+    get: jest.fn((sql, params, callback) => callback(null, {})),
+    all: jest.fn((sql, params, callback) => callback(null, []))
+  }
 }));
 
 describe('downloadResultsJSON', () => {
