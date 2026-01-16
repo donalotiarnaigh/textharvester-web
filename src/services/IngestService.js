@@ -78,7 +78,8 @@ class IngestService {
       sourceType,
       volumeId,
       provider,
-      promptVersion
+      promptVersion,
+      schemaId // Destructure schemaId
     } = options;
 
     const filesToQueue = [];
@@ -97,7 +98,8 @@ class IngestService {
               promptVersion: promptVersion,
               source_type: sourceType,
               sourceType,
-              uploadDir: path.dirname(file.path)
+              uploadDir: path.dirname(file.path),
+              ...(schemaId && { schemaId }) // Propagate schemaId
             });
           } else {
             // For other types (e.g. legacy/standard PDF upload), split into images
@@ -113,7 +115,8 @@ class IngestService {
                 source_type: sourceType,
                 sourceType,
                 ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
-                uploadDir: path.dirname(imagePath)
+                uploadDir: path.dirname(imagePath),
+                ...(schemaId && { schemaId }) // Propagate schemaId
               }))
             );
           }
@@ -125,7 +128,8 @@ class IngestService {
             source_type: sourceType,
             sourceType,
             ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
-            uploadDir: path.dirname(file.path)
+            uploadDir: path.dirname(file.path),
+            ...(schemaId && { schemaId }) // Propagate schemaId
           });
         }
       } catch (conversionError) {
@@ -239,6 +243,23 @@ class IngestService {
       await fs.promises.access(file, fs.constants.R_OK);
     } catch (err) { // eslint-disable-line no-unused-vars
       throw new CLIError('FILE_NOT_READABLE', `File not readable: ${file}`);
+    }
+
+    // Dynamic Routing for User-Extensible Schema
+    if (options.schemaId) {
+      const DynamicProcessor = require('../utils/dynamicProcessing');
+      // DynamicProcessor might be an instance (singleton) or class depending on export.
+      // Task 3.2 exported class (module.exports = DynamicProcessor).
+      // So we instantiate it.
+      const processor = new DynamicProcessor(this.logger);
+      const result = await processor.processFileWithSchema({ path: file, provider: options.provider }, options.schemaId);
+
+      return {
+        success: true,
+        file,
+        recordId: result.recordId,
+        data: result.data
+      };
     }
 
     // processFile returns the extracted data

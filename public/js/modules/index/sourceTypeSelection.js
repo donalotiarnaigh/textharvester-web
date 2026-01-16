@@ -58,6 +58,13 @@ function updateInstructions(sourceType) {
   const textEl = document.getElementById("instructionsText");
   const listEl = document.getElementById("instructionsList");
 
+  // Handle custom schemas
+  if (sourceType.startsWith('custom:')) {
+    if (textEl) textEl.textContent = "Upload files for your custom document type. The system will extract data based on your schema definition.";
+    if (listEl) listEl.innerHTML = "<div>• Supported files: JPEG, PDF</div><div>• dynamic extraction</div>";
+    return;
+  }
+
   if (textEl) {
     textEl.textContent = config.text;
   }
@@ -81,14 +88,36 @@ export const initSourceTypeSelection = () => {
     return;
   }
 
-  // Populate select options
-  sourceTypeSelect.innerHTML = SOURCE_TYPES.map((type) => {
-    return `<option value="${type.value}">${type.label}</option>`;
-  }).join("");
+  // Fetch custom schemas and populate
+  fetch('/api/schemas')
+    .then(res => res.json())
+    .then(schemas => {
+      const customOptions = schemas.map(s =>
+        `<option value="custom:${s.id}">Custom: ${s.name}</option>`
+      ).join("");
+
+      const standardOptions = SOURCE_TYPES.map((type) => {
+        return `<option value="${type.value}">${type.label}</option>`;
+      }).join("");
+
+      sourceTypeSelect.innerHTML = standardOptions + (customOptions ? `<optgroup label="Custom Schemas">${customOptions}</optgroup>` : '');
+
+      // Restore selection after repopulating
+      if (isValidSaved || savedType.startsWith('custom:')) {
+        sourceTypeSelect.value = savedType;
+      } else {
+        sourceTypeSelect.value = defaultValue;
+      }
+
+      // Initial UI update
+      toggleVolumeIdVisibility(sourceTypeSelect.value, volumeIdGroup);
+      updateInstructions(sourceTypeSelect.value);
+    })
+    .catch(err => console.error('Failed to load custom schemas:', err));
 
   // Load saved preference or default to record_sheet
   const STORAGE_KEY = 'historic_graves_source_type';
-  const savedType = localStorage.getItem(STORAGE_KEY);
+  const savedType = localStorage.getItem(STORAGE_KEY) || "record_sheet";
   const isValidSaved = SOURCE_TYPES.some(t => t.value === savedType);
   const defaultValue = isValidSaved ? savedType : "record_sheet";
 

@@ -60,6 +60,14 @@ app.post('/cancel-processing', (req, res) => {
 // Grave Card routes
 app.use('/api/grave-cards', graveCardRoutes);
 
+// Schema Management routes
+const apiRoutes = require('./src/routes/api');
+app.use('/api/schemas', apiRoutes);
+
+// Mobile Upload routes (iOS app integration)
+const mobileUploadRoutes = require('./src/routes/mobileUploadRoutes');
+app.use('/api/mobile', mobileUploadRoutes);
+
 // Performance monitoring routes
 app.use('/api/performance', performanceRoutes);
 

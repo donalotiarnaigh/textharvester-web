@@ -9,6 +9,45 @@ class Database {
     fn();
   }
 
+  all(sql, params, callback) {
+    if (typeof params === 'function') {
+      callback = params;
+      params = [];
+    }
+
+    try {
+      // Handle PRAGMA table_info - return mock column info
+      if (sql.includes('PRAGMA table_info')) {
+        // Return mock columns including site_code to indicate migration is done
+        callback(null, [
+          { name: 'id' },
+          { name: 'file_name' },
+          { name: 'site_code' },
+          { name: 'inscription' },
+          { name: 'processed_date' }
+        ]);
+        return;
+      }
+
+      // Handle SELECT queries - return all matching records
+      if (sql.includes('SELECT')) {
+        if (sql.includes('WHERE site_code = ?')) {
+          const filtered = this.data.filter(r => r.site_code === params[0]);
+          callback(null, filtered);
+          return;
+        }
+        // Default to returning all data
+        callback(null, this.data);
+        return;
+      }
+
+      // Default empty result
+      callback(null, []);
+    } catch (error) {
+      callback(error);
+    }
+  }
+
   get(sql, params, callback) {
     if (typeof params === 'function') {
       callback = params;
@@ -64,7 +103,7 @@ class Database {
           throw new Error('Invalid INSERT statement format');
         }
         const columns = columnMatch[1].split(',').map(c => c.trim());
-        
+
         // Create record object from params
         const record = {};
         columns.forEach((col, index) => {
@@ -86,7 +125,7 @@ class Database {
             if (callback) callback.call(null, error);
             return;
           }
-          
+
           // Check range
           if (record.year_of_death <= 1500 || record.year_of_death > 2100) {
             const error = new Error('CHECK constraint failed: valid_year');

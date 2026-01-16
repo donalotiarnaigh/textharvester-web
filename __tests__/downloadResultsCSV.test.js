@@ -6,7 +6,11 @@ jest.mock('../src/utils/database', () => ({
   getAllMemorials: jest.fn().mockResolvedValue([{
     memorial_number: '001',
     first_name: 'John'
-  }])
+  }]),
+  db: {
+    get: jest.fn((sql, params, callback) => callback(null, {})),
+    all: jest.fn((sql, params, callback) => callback(null, []))
+  }
 }));
 
 describe('downloadResultsJSON', () => {

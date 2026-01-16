@@ -1,4 +1,3 @@
-const { default: openBrowser } = require('open');
 const config = require('../../config.json');
 const logger = require('./logger');
 
@@ -6,8 +5,10 @@ async function launchLocalApp() {
   try {
     const port = process.env.PORT || config.port;
     const url = `http://localhost:${port}`;
-        
+
     if (config.local.autoLaunchBrowser) {
+      // Use dynamic import for ESM-only 'open' package
+      const { default: openBrowser } = await import('open');
       await openBrowser(url, {
         app: {
           name: config.local.defaultBrowser || 'chrome'
@@ -15,7 +16,7 @@ async function launchLocalApp() {
       });
       logger.info(`Opened ${url} in ${config.local.defaultBrowser}`);
     }
-        
+
     // Restore last session if enabled
     if (config.local.saveLastSession) {
       // You can implement session restoration logic here

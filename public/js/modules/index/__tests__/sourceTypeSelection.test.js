@@ -6,18 +6,28 @@ import { initSourceTypeSelection, getSelectedSourceType } from '../sourceTypeSel
 
 describe('Source Type Selection', () => {
   beforeEach(() => {
+    // Mock global fetch
+    global.fetch = jest.fn(() => Promise.resolve({
+      json: () => Promise.resolve([])
+    }));
+
     // Set up DOM elements
     document.body.innerHTML = `
       <select id="sourceTypeSelect"></select>
       <div id="volumeIdGroup" class="d-none">
         <input id="volumeId" type="text" value="vol1" />
       </div>
+      <div id="instructionsText"></div>
+      <div id="instructionsList"></div>
     `;
   });
 
   describe('SOURCE_TYPES array', () => {
-    it('should include grave_record_card as a source type option', () => {
+    it('should include grave_record_card as a source type option', async () => {
       initSourceTypeSelection();
+
+      // Wait for fetch promise to resolve and populate DOM
+      await new Promise(resolve => setTimeout(resolve, 0));
 
       const sourceTypeSelect = document.getElementById('sourceTypeSelect');
       const options = Array.from(sourceTypeSelect.options);
@@ -29,8 +39,11 @@ describe('Source Type Selection', () => {
       expect(graveCardOption.textContent).toBe('Grave Record Card');
     });
 
-    it('should maintain all existing source type options', () => {
+    it('should maintain all existing source type options', async () => {
       initSourceTypeSelection();
+
+      // Wait for fetch promise to resolve and populate DOM
+      await new Promise(resolve => setTimeout(resolve, 0));
 
       const sourceTypeSelect = document.getElementById('sourceTypeSelect');
       const options = Array.from(sourceTypeSelect.options);
@@ -44,8 +57,11 @@ describe('Source Type Selection', () => {
   });
 
   describe('getSelectedSourceType', () => {
-    it('should return grave_record_card when selected', () => {
+    it('should return grave_record_card when selected', async () => {
       initSourceTypeSelection();
+
+      // Wait for fetch promise to resolve and populate DOM
+      await new Promise(resolve => setTimeout(resolve, 0));
 
       const sourceTypeSelect = document.getElementById('sourceTypeSelect');
       sourceTypeSelect.value = 'grave_record_card';

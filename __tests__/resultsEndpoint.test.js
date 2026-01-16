@@ -35,12 +35,21 @@ describe('Results Endpoint', () => {
         } else if (query.includes('FROM burial_register_entries')) {
           // Return null to indicate no burial register entries
           callback(null, null);
+        } else if (query.includes('FROM grave_cards')) {
+          // Return null to indicate no grave cards
+          callback(null, null);
         } else {
           callback(null, null);
         }
       } else {
         callback(null, null);
       }
+    });
+
+    // Mock db.all for SchemaManager.listSchemas() calls
+    db.all = jest.fn((query, params, callback) => {
+      // Return empty array for custom schemas
+      callback(null, []);
     });
   });
 

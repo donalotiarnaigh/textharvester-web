@@ -140,4 +140,16 @@ describe('Ingest Command', () => {
       expect(process.exit).toHaveBeenCalledWith(1);
     });
   });
+
+  describe('Dynamic Schema Options', () => {
+    it('should pass schema ID/Name to IngestService when --schema is used', async () => {
+      mockIngestMethod.mockResolvedValue({ success: true });
+
+      await runCommand(['ingest', 'doc.jpg', '--schema', 'Census Records']);
+
+      expect(mockIngestMethod).toHaveBeenCalledWith('doc.jpg', expect.objectContaining({
+        schemaId: 'Census Records'
+      }));
+    });
+  });
 });

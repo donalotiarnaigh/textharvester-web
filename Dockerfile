@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1
 
 # Adjust NODE_VERSION as desired
-ARG NODE_VERSION=20.9.0
+ARG NODE_VERSION=20.18.1
 FROM node:${NODE_VERSION}-slim as base
 
 LABEL fly_launch_runtime="Node.js"
@@ -25,10 +25,6 @@ RUN npm ci
 
 # Copy application code
 COPY --link . .
-
-# Install poppler-utils for PDF to JPG conversion
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y poppler-utils
 
 # Final stage for app image
 FROM base

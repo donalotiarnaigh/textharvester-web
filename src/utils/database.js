@@ -44,7 +44,8 @@ function initializeDatabase() {
       prompt_template TEXT,
       prompt_version TEXT,
       processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-      source_type TEXT
+      source_type TEXT,
+      site_code TEXT
     )
   `;
 
@@ -54,6 +55,22 @@ function initializeDatabase() {
       return;
     }
     logger.info('Memorials table initialized');
+
+    // Migration: Add site_code column if it doesn't exist
+    db.all('PRAGMA table_info(memorials)', (err, rows) => {
+      if (err) {
+        logger.error('Error checking table info:', err);
+        return;
+      }
+      const hasSiteCode = rows && rows.some(row => row.name === 'site_code');
+      if (!hasSiteCode) {
+        logger.info('Migrating database: Adding site_code column');
+        db.run('ALTER TABLE memorials ADD COLUMN site_code TEXT', (err) => {
+          if (err) logger.error('Error adding site_code column:', err);
+          else logger.info('Successfully added site_code column');
+        });
+      }
+    });
   });
 }
 
@@ -114,7 +131,29 @@ function initializeBurialRegisterTable() {
   });
 }
 
-// Store a single memorial record
+// Initialize custom_schemas table
+function initializeCustomSchemasTable() {
+  const createTableSQL = `
+    CREATE TABLE IF NOT EXISTS custom_schemas (
+      id TEXT PRIMARY KEY,
+      version INTEGER DEFAULT 1,
+      name TEXT UNIQUE NOT NULL,
+      table_name TEXT UNIQUE NOT NULL,
+      json_schema TEXT NOT NULL,
+      system_prompt TEXT,
+      user_prompt_template TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  db.run(createTableSQL, (err) => {
+    if (err) {
+      logger.error('Error creating custom_schemas table:', err);
+      return;
+    }
+    logger.info('Custom schemas table initialized');
+  });
+}
 function storeMemorial(data) {
   logger.info('Attempting to store memorial:', JSON.stringify(data));
   const sql = `
@@ -129,8 +168,9 @@ function storeMemorial(data) {
       model_version,
       prompt_template,
       prompt_version,
-      source_type
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      source_type,
+      site_code
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   return new Promise((resolve, reject) => {
@@ -145,7 +185,8 @@ function storeMemorial(data) {
       data.model_version || null,
       data.prompt_template || null,
       data.prompt_version || null,
-      data.source_type || null
+      data.source_type || null,
+      data.site_code || null
     ], function (err) {
       if (err) {
         logger.error('Error storing memorial:', err);
@@ -189,6 +230,31 @@ function getMemorialById(id) {
   });
 }
 
+// Retrieve memorials filtered by site_code (Requirement 3.2)
+function getMemorialsBySiteCode(siteCode) {
+  return new Promise((resolve, reject) => {
+    // Edge case: null/undefined siteCode returns empty array (defensive)
+    if (!siteCode) {
+      return resolve([]);
+    }
+
+    logger.info(`Querying memorials for site_code: ${siteCode}`);
+    db.all(
+      'SELECT * FROM memorials WHERE site_code = ? ORDER BY processed_date DESC',
+      [siteCode],
+      (err, rows) => {
+        if (err) {
+          logger.error(`Error retrieving memorials for site_code ${siteCode}:`, err);
+          reject(err);
+          return;
+        }
+        logger.info(`Retrieved ${rows ? rows.length : 0} records for site_code: ${siteCode}`);
+        resolve(rows || []);
+      }
+    );
+  });
+}
+
 // Add this function to database.js
 function clearAllMemorials() {
   return new Promise((resolve, reject) => {
@@ -226,6 +292,7 @@ const backupDatabase = async () => {
 // Initialize database on module load
 initializeDatabase();
 initializeBurialRegisterTable();
+initializeCustomSchemasTable();
 
 // Initialize grave cards table
 
@@ -239,9 +306,11 @@ module.exports = {
   storeMemorial,
   getAllMemorials,
   getMemorialById,
+  getMemorialsBySiteCode,
   clearAllMemorials,
   backupDatabase,
   initializeDatabase,
   initializeBurialRegisterTable,
+  initializeCustomSchemasTable,
   db // Exported for closing connection when needed
 }; 

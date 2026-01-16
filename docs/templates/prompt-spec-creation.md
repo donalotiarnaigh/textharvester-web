@@ -1,14 +1,14 @@
 I need help creating a comprehensive feature specification following a structured workflow. Please help me transform my rough feature idea into a detailed requirements document, design document, and implementation plan.
 
 **Template References:**
-- See `template-requirements.md` for requirements document structure
-- See `template-design.md` for design document structure
-- See `template-tasks.md` for implementation plan structure
+- See `docs/templates/template-requirements.md` for requirements document structure
+- See `docs/templates/template-design.md` for design document structure
+- See `docs/templates/template-tasks.md` for implementation plan structure
 
 **My Feature Idea:** a first-class Command Line Interface (CLI) for TextHarvester that offers 100% feature parity with the web application. The CLI will enable "headless" automation, easier batch processing integration, and system administration without requiring a browser or persistent web server.
 
 **Instructions:**
-1. First, create a requirements.md document (follow template-requirements.md structure):
+1. First, create a requirements.md document (follow `docs/templates/template-requirements.md` structure):
    - Clear introduction summarizing the feature
    - Numbered requirements with user stories in format: "As a [role], I want [feature], so that [benefit]"
    - Detailed acceptance criteria in EARS format (WHEN/IF/THEN statements)
@@ -16,7 +16,7 @@ I need help creating a comprehensive feature specification following a structure
    - Include 4 unhappy path criteria (errors, edge cases, failures, boundaries)
    - Consider edge cases, user experience, and technical constraints
 
-2. After I approve the requirements, create a design.md document (follow template-design.md structure):
+2. After I approve the requirements, create a design.md document (follow `docs/templates/template-design.md` structure):
    - Overview and architecture section
    - Component and interface definitions
    - Data models and schemas
@@ -25,7 +25,7 @@ I need help creating a comprehensive feature specification following a structure
    - Testing approach and test data structures
    - Include Mermaid diagrams where helpful
 
-3. Finally, create a tasks.md implementation plan (follow template-tasks.md structure):
+3. Finally, create a tasks.md implementation plan (follow `docs/templates/template-tasks.md` structure):
    - Numbered checkbox list (max 2 levels: tasks and sub-tasks)
    - Follow TEST-DRIVEN DEVELOPMENT: Write tests BEFORE implementation
    - Each task sequence: write tests (happy + unhappy paths) → implement → refactor

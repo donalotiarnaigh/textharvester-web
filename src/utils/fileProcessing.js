@@ -37,6 +37,25 @@ async function processFile(filePath, options = {}) {
 
   const promptVersion = options.promptVersion || 'latest';
 
+  // Dynamic Routing for User-Extensible Schema
+  if (options.schemaId) {
+    logger.info(`Processing ${path.basename(filePath)} using dynamic schema: ${options.schemaId}`);
+    const DynamicProcessor = require('./dynamicProcessing');
+    const processor = new DynamicProcessor(logger);
+
+    try {
+      // DynamicProcessor expects { path, provider } and schemaId
+      const result = await processor.processFileWithSchema(
+        { path: filePath, provider: providerName },
+        options.schemaId
+      );
+      return result.data; // Return the extracted data
+    } catch (error) {
+      logger.error(`Dynamic processing failed for ${filePath}:`, error);
+      throw error;
+    }
+  }
+
   logger.info(`Processing ${path.basename(filePath)} with provider: ${providerName}, source: ${sourceType}, template: ${promptTemplate}`);
 
   try {
@@ -294,6 +313,10 @@ async function processFile(filePath, options = {}) {
       extractedData.prompt_template = promptTemplate;
       extractedData.prompt_version = promptInstance.version;
       extractedData.source_type = sourceType;
+      // Include site_code for mobile uploads (site isolation)
+      if (options.site_code) {
+        extractedData.site_code = options.site_code;
+      }
 
       // Store in database
       await storeMemorial(extractedData);

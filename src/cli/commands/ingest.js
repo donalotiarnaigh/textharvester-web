@@ -17,6 +17,7 @@ const ingest = new Command('ingest')
   .option('-p, --provider <provider>', 'AI provider: openai, anthropic')
   .option('-b, --batch-size <size>', 'Number of files to process concurrently', parseInt)
   .option('-r, --replace', 'Replace existing records instead of skipping')
+  .option('--schema <idOrName>', 'Use a custom schema for ingestion')
   .action(async (pattern, options, command) => {
     try {
       // 1. Load configuration (merging CLI args, env, defaults)
@@ -38,6 +39,7 @@ const ingest = new Command('ingest')
         // Design says: options.batchSize, options.replaceExisting. 
         // CLI options: replace.
         replaceExisting: options.replace,
+        schemaId: options.schema
       };
 
       const finalConfig = await loadConfig(cliConfig);

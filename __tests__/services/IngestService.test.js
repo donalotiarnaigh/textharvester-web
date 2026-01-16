@@ -4,6 +4,7 @@ jest.mock('glob');
 jest.mock('../../src/utils/fileProcessing', () => ({
   processFile: jest.fn()
 }));
+jest.mock('../../src/utils/dynamicProcessing'); // Auto-mock the class
 // Removed explicit jest.mock for logger to use spyOn instead
 
 
@@ -167,6 +168,85 @@ describe('IngestService', () => {
 
       expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Found 1 files'));
       expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Ingestion complete'));
+    });
+  });
+
+  describe('Dynamic Schema Routing', () => {
+    let DynamicProcessor;
+    let mockProcessorInstance;
+
+    beforeEach(() => {
+      DynamicProcessor = require('../../src/utils/dynamicProcessing');
+      // Reset the mock class
+      DynamicProcessor.mockClear();
+
+      // Setup the instance mock
+      mockProcessorInstance = {
+        processFileWithSchema: jest.fn().mockResolvedValue({
+          success: true,
+          recordId: 999,
+          data: { field: 'value' }
+        })
+      };
+
+      // Ensure constructor returns our mock instance
+      DynamicProcessor.mockImplementation(() => mockProcessorInstance);
+    });
+
+    test('should route to DynamicProcessor when schemaId is present', async () => {
+      glob.mockImplementation((pattern, cb) => cb(null, ['schema_file.jpg']));
+
+      const options = { schemaId: 'test-schema-uuid' };
+      const result = await service.ingest('*.jpg', options);
+
+      // Verify DynamicProcessor was instantiated
+      expect(DynamicProcessor).toHaveBeenCalledTimes(1);
+
+      // Verify processFileWithSchema was called with correct args
+      expect(mockProcessorInstance.processFileWithSchema).toHaveBeenCalledWith(
+        { path: 'schema_file.jpg', provider: 'openai' },
+        'test-schema-uuid'
+      );
+
+      // Verify legacy processFile was NOT called
+      expect(processFile).not.toHaveBeenCalled();
+
+      // Verify result structure
+      expect(result.successes[0]).toMatchObject({
+        success: true,
+        recordId: 999,
+        data: { field: 'value' }
+      });
+    });
+
+    test('should fall back to standard processing when schemaId is missing', async () => {
+      glob.mockImplementation((pattern, cb) => cb(null, ['standard.jpg']));
+      processFile.mockResolvedValue({ success: true, id: 1 });
+
+      const options = { sourceType: 'memorial' };
+      await service.ingest('*.jpg', options);
+
+      // Verify DynamicProcessor was NOT instantiated
+      expect(DynamicProcessor).not.toHaveBeenCalled();
+
+      // Verify legacy processFile WAS called
+      expect(processFile).toHaveBeenCalledWith('standard.jpg', expect.anything());
+    });
+
+    test('should handle DynamicProcessor errors correctly', async () => {
+      glob.mockImplementation((pattern, cb) => cb(null, ['error.jpg']));
+
+      mockProcessorInstance.processFileWithSchema.mockRejectedValue(new Error('Validation Failed'));
+
+      const options = { schemaId: 'fail-uuid' };
+      const result = await service.ingest('*.jpg', options);
+
+      expect(result.failures).toHaveLength(1);
+      expect(result.failures[0]).toMatchObject({
+        file: 'error.jpg',
+        success: false,
+        error: 'Validation Failed'
+      });
     });
   });
 });

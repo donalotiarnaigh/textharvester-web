@@ -105,6 +105,7 @@ const handleFileUpload = async (req, res) => {
   const selectedModel = req.body.aiProvider || 'openai';
   let sourceType = req.body.source_type || req.body.sourceType || 'record_sheet';
   const volumeId = req.body.volume_id || 'vol1';
+  const schemaId = req.body.schemaId; // Extract schemaId
 
   // Validate and coerce invalid source_type to record_sheet (for backward compatibility)
   if (!validSourceTypes.includes(sourceType)) {
@@ -125,6 +126,9 @@ const handleFileUpload = async (req, res) => {
   logger.info(`Source type: ${sourceType}`);
   if (sourceType === 'burial_register') {
     logger.info(`Volume ID: ${volumeId}`);
+  }
+  if (schemaId) {
+    logger.info(`Schema ID: ${schemaId}`);
   }
 
   const files = req.files?.file || [];
@@ -157,7 +161,8 @@ const handleFileUpload = async (req, res) => {
       sourceType,
       volumeId,
       provider: selectedModel,
-      promptVersion: promptConfig.version
+      promptVersion: promptConfig.version,
+      schemaId // Pass schemaId
     };
 
     await ingestService.prepareAndQueue(files, queueOptions);
