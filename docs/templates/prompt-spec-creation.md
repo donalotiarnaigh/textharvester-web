@@ -5,7 +5,7 @@ I need help creating a comprehensive feature specification following a structure
 - See `docs/templates/template-design.md` for design document structure
 - See `docs/templates/template-tasks.md` for implementation plan structure
 
-**My Feature Idea:** a first-class Command Line Interface (CLI) for TextHarvester that offers 100% feature parity with the web application. The CLI will enable "headless" automation, easier batch processing integration, and system administration without requiring a browser or persistent web server.
+**My Feature Idea:** Enable async upload of monument photos from the Historic Graves iOS Survey App to TextHarvester for OCR processing. Photos are uploaded with their filenames (containing sitecode-number), queued on the server, and processed.
 
 **Instructions:**
 1. First, create a requirements.md document (follow `docs/templates/template-requirements.md` structure):
