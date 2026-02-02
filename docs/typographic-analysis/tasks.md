@@ -58,7 +58,7 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
     - Implement `getProviderPrompt()` for openai/anthropic
     - _Requirements: 1.1, 1.2, 1.3_
 
-  - [ ] 2.3 Write tests for response validation
+  - [x] 2.3 Write tests for response validation
     - **Happy path**: Valid complete response passes validation with all fields
     - **Happy path**: Valid minimal response (null iconography) passes validation
     - **Happy path**: Historical characters (ſ, þ) preserved in transcription_raw
@@ -70,14 +70,14 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
     - **Unhappy path**: Malformed `iconography` (wrong types) throws specific field error
     - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.4, 2.5, 3.4, 3.6_
 
-  - [ ] 2.4 Implement response validation
+  - [x] 2.4 Implement response validation
     - Implement `validateAndConvert()` method
     - Add schema validation for all fields
     - Add notation normalization (`\n` → `|`)
     - Add error detection for `[?]` style notation
     - _Requirements: 1.1, 1.3, 2.1, 2.2, 2.3_
 
-  - [ ] 2.5 Refactor prompt template
+  - [x] 2.5 Refactor prompt template
     - Clean up code, add JSDoc comments
     - Ensure consistent error messages
     - Add logging for validation warnings
