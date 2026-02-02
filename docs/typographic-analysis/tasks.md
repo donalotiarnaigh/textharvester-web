@@ -89,7 +89,7 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
   - Add specific validation for iconography schema with botanical/mechanical terms
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
 
-  - [ ] 3.1 Write tests for iconography validation
+  - [x] 3.1 Write tests for iconography validation
     - **Happy path**: Complete iconography object with all sub-fields validates
     - **Happy path**: `daisy_wheels: true` accepted when compass-drawn elements described
     - **Happy path**: Botanical terms (cordate, undulating) pass without warning
@@ -98,7 +98,7 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
     - **Unhappy path**: Malformed style_technique (missing period) still accepts with partial data
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-  - [ ] 3.2 Implement iconography validation
+  - [x] 3.2 Implement iconography validation
     - Add `validateIconography()` helper method
     - Add `validateStyleTechnique()` helper method
     - Add quality warning detection for interpretive labels
