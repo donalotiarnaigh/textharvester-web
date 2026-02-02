@@ -155,7 +155,13 @@ function initializeCustomSchemasTable() {
   });
 }
 function storeMemorial(data) {
-  logger.info('Attempting to store memorial:', JSON.stringify(data));
+  // Use a safe logger that handles circular references if needed, or try/catch the logging
+  try {
+    logger.info('Attempting to store memorial:', JSON.stringify(data));
+  } catch (e) {
+    logger.warn('Could not log memorial data (possibly circular structure)');
+  }
+
   const sql = `
     INSERT INTO memorials (
       memorial_number,
@@ -169,25 +175,54 @@ function storeMemorial(data) {
       prompt_template,
       prompt_version,
       source_type,
-      site_code
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      site_code,
+      transcription_raw,
+      stone_condition,
+      typography_analysis,
+      iconography,
+      structural_observations
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   return new Promise((resolve, reject) => {
-    db.run(sql, [
-      data.memorial_number || null,
-      data.first_name || null,
-      data.last_name || null,
-      data.year_of_death || null,
-      data.inscription || null,
-      data.fileName || null,
-      data.ai_provider || null,
-      data.model_version || null,
-      data.prompt_template || null,
-      data.prompt_version || null,
-      data.source_type || null,
-      data.site_code || null
-    ], function (err) {
+    // Helper to safely stringify JSON fields
+    const safeStringify = (obj) => {
+      if (!obj) return null;
+      try {
+        return JSON.stringify(obj);
+      } catch (e) {
+        throw new Error(`Serialization error for field: ${e.message}`);
+      }
+    };
+
+    let params;
+    try {
+      params = [
+        data.memorial_number || null,
+        data.first_name || null,
+        data.last_name || null,
+        data.year_of_death || null,
+        data.inscription || null,
+        data.fileName || null,
+        data.ai_provider || null,
+        data.model_version || null,
+        data.prompt_template || null,
+        data.prompt_version || null,
+        data.source_type || null,
+        data.site_code || null,
+        data.transcription_raw || null,
+        data.stone_condition || null,
+        safeStringify(data.typography_analysis),
+        safeStringify(data.iconography),
+        data.structural_observations || null
+      ];
+    } catch (e) {
+      logger.error('Error preparing memorial params:', e);
+      reject(e);
+      return;
+    }
+
+    db.run(sql, params, function (err) {
       if (err) {
         logger.error('Error storing memorial:', err);
         reject(err);

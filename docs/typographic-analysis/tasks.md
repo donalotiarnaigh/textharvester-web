@@ -31,7 +31,7 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
     - **Unhappy path**: Existing `storeMemorial()` calls work unchanged (backward compat)
     - _Requirements: 4.1, 4.4, 5.1, 5.2_
 
-  - [ ] 1.4 Implement storage layer updates
+  - [x] 1.4 Implement storage layer updates
     - Update `src/utils/database.js` `storeMemorial()` function
     - Add JSON.stringify() for object fields
     - Handle undefined vs null distinction
