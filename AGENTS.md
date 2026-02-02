@@ -1,6 +1,6 @@
 # AGENTS.md
 
-**Guidance for AI coding agents working on textharvester-web (User-Extensible Schema Feature)**
+**Guidance for AI coding agents working on textharvester-web (Typographic Analysis Feature)**
 
 * * *
 
@@ -8,7 +8,7 @@
 
 | Feature | Documentation | Branch |
 |---------|---------------|--------|
-| User-Extensible Schema (UXS) | `docs/user-extensible-schema/` | `feature/user-extensible-schema` |
+| Typographic Analysis | `docs/typographic-analysis/` | `feature/typographic-analysis` |
 
 * * *
 
@@ -16,7 +16,9 @@
 
 You are an **autonomous coding agent**, acting as a _junior developer_ under human supervision.  
 
-Your job: Implement the **User-Extensible Schema** feature in `textharvester-web` **strictly according to the specification and implementation plan.**
+Your job: Implement the **Typographic Analysis** feature in `textharvester-web` **strictly according to the specification and implementation plan.**
+
+This feature adds a new source type that produces comprehensive transcriptions with detailed typography, iconography, and stone condition analysis — following the client's "Gravestone OCR V2.3" approach.
 
 -   You must follow the existing architecture, style, and coding conventions.
 -   You must **not** refactor, generalise, or re-architect unrelated parts of the system.
@@ -31,14 +33,14 @@ Your job: Implement the **User-Extensible Schema** feature in `textharvester-web
 -   Modify or extend code under allowed modules (see below).
 -   Add new tests (unit, integration) under `__tests__/` or appropriate test directories.
 -   Run file-scoped commands for validation & local checks (lint, test, build) — see "Preferred Commands".
--   Update documentation under `docs/user-extensible-schema/` when completing tasks.
+-   Update documentation under `docs/typographic-analysis/` when completing tasks.
 
 * * *
 
 ## What Agents Must Ask for Permission (Human Oversight Required)
 
 -   Modifying or removing `server.js`, core Express setup, or route structure (unless implementing approved API routes).
--   Changing database schema except via specific storage utilities or approved migrations.
+-   Changing database schema except via the approved migration script (`scripts/migrate-add-typographic-analysis.js`).
 -   Altering dependencies (adding/removing packages in `package.json`).
 -   Rearranging project structure (renaming/moving files outside allowed paths).
 -   Changing configuration that affects deployment, secrets, environment variables, `.gitignore`, or production settings.
@@ -47,10 +49,11 @@ Your job: Implement the **User-Extensible Schema** feature in `textharvester-web
 
 ## What Agents Must Never Do (Hard Prohibitions)
 
--   Delete or rewrite existing functionality unrelated to UXS feature.
--   Remove or alter existing migrations, schemata, or DB tables (unless explicitly required by the plan).
+-   Delete or rewrite existing functionality unrelated to Typographic Analysis feature.
+-   Remove or alter existing prompt templates (MemorialOCRPrompt, MonumentPhotoOCRPrompt, etc.).
 -   Skip tests, linting, or documentation when adding/modifying code.
--   Commit changes that break existing workflows (e.g., standard CLI ingestion).
+-   Commit changes that break existing workflows (e.g., standard memorial OCR, burial register processing).
+-   Use interpretive labels instead of mechanical descriptions in prompt instructions (e.g., "flower" vs "ribbed volutes").
 
 * * *
 
@@ -59,40 +62,53 @@ Your job: Implement the **User-Extensible Schema** feature in `textharvester-web
 ```
 textharvester-web/
 ├── src/
-│   ├── services/               # Shared service layer
-│   │   ├── SchemaManager.js    # (NEW) Manages custom schemas & tables
-│   │   ├── SchemaGenerator.js  # (NEW) LLM analysis for schema creation
-│   │   ├── IngestService.js    # (MODIFY) Integrate dynamic routing
-│   │   └── ...
+│   ├── controllers/
+│   │   ├── uploadHandler.js      # (MODIFY) Add typographic_analysis routing
+│   │   └── resultsManager.js     # (MODIFY) Include new fields in API response
 │   ├── utils/
-│   │   ├── dynamicProcessing.js # (NEW) Runtime extraction logic
-│   │   ├── database.js         # (MODIFY) DB init for custom_schemas
-│   │   └── ...
-│   ├── cli/                    # CLI commands
-│   │   └── schema.js           # (NEW) CLI tools for schema management
-│   ├── routes/                 # API routes
-│   │   └── api.js              # (MODIFY) New API endpoints
+│   │   ├── database.js           # (MODIFY) Add JSON serialization for new fields
+│   │   ├── fileProcessing.js     # (MODIFY) Add case for typographic_analysis
+│   │   └── prompts/
+│   │       └── templates/
+│   │           ├── TypographicAnalysisPrompt.js  # (NEW) Main prompt template
+│   │           └── providerTemplates.js          # (MODIFY) Register new template
+│   └── ...
+├── scripts/
+│   └── migrate-add-typographic-analysis.js  # (NEW) Database migration
+├── __tests__/
+│   ├── utils/prompts/templates/
+│   │   └── TypographicAnalysisPrompt.test.js  # (NEW) Prompt tests
+│   ├── scripts/
+│   │   └── migrate-typographic-analysis.test.js  # (NEW) Migration tests
 │   └── ...
 ├── docs/
-│   └── user-extensible-schema/ # Feature docs
-│       ├── requirements.md     # 3 Core Requirements
-│       ├── design.md           # Architecture, components, test specs
-│       └── tasks.md            # Implementation plan
-├── data/                       # Uploaded files & generated outputs
-└── config.json
+│   └── typographic-analysis/     # Feature docs
+│       ├── requirements.md       # 5 Requirements with acceptance criteria
+│       ├── design.md             # Architecture, components, test specs
+│       └── tasks.md              # Implementation plan (TDD)
+├── public/
+│   └── index.html                # (MODIFY) Add source type option
+└── data/                         # Uploaded files & generated outputs
 ```
 
 ### Files & Modules Agents May Create / Modify
 
--   `src/services/SchemaManager.js` & `src/services/SchemaGenerator.js`
--   `src/utils/dynamicProcessing.js`
--   `src/cli/schema.js` and related CLI entry points
--   `src/routes/api.js` (for Phase 5)
--   `src/pages/*` and `src/components/*` (for Phase 7 Frontend)
--   `docs/user-extensible-schema/*`
--   Modifications to existing services (`IngestService`, `database`, etc.) **only as specified in the plan**.
+**New Files:**
+-   `src/utils/prompts/templates/TypographicAnalysisPrompt.js`
+-   `scripts/migrate-add-typographic-analysis.js`
+-   `__tests__/utils/prompts/templates/TypographicAnalysisPrompt.test.js`
+-   `__tests__/scripts/migrate-typographic-analysis.test.js`
 
-Do **not** create modules outside these, or alter existing files outside their UXS-specific parts.
+**Modifications (as specified in tasks.md):**
+-   `src/utils/database.js` — Add new columns handling and JSON serialization
+-   `src/utils/fileProcessing.js` — Add routing for `typographic_analysis` source type
+-   `src/utils/prompts/templates/providerTemplates.js` — Register new template
+-   `src/controllers/resultsManager.js` — Include new fields in API response
+-   `src/controllers/uploadHandler.js` — Route new source type
+-   `public/index.html` — Add "Typographic Analysis" to source type dropdown
+-   `docs/typographic-analysis/*` — Update as tasks are completed
+
+Do **not** create modules outside these, or alter existing files outside their Typographic Analysis-specific parts.
 
 * * *
 
@@ -106,7 +122,13 @@ npm run lint
 npm test
 
 # Run specific tests
-npm test __tests__/services/SchemaManager.test.js
+npm test __tests__/utils/prompts/templates/TypographicAnalysisPrompt.test.js
+npm test __tests__/scripts/migrate-typographic-analysis.test.js
+npm test __tests__/utils/database.test.js
+npm test __tests__/controllers/resultsManager.test.js
+
+# Run migration
+node scripts/migrate-add-typographic-analysis.js
 ```
 
 Only run full tests or implementations when explicitly required.
@@ -128,12 +150,12 @@ Only run full tests or implementations when explicitly required.
 
 ## Workflow for Task Execution
 
-Tasks in `docs/user-extensible-schema/tasks.md` are your primary guide.
+Tasks in `docs/typographic-analysis/tasks.md` are your primary guide.
 
-1.  **Read the task description** in `docs/user-extensible-schema/tasks.md`.
-2.  **Read relevant part of Design** in `docs/user-extensible-schema/design.md`.
+1.  **Read the task description** in `docs/typographic-analysis/tasks.md`.
+2.  **Read relevant part of Design** in `docs/typographic-analysis/design.md`.
 3.  **Test-Driven Development (TDD)**:
-    -   Write tests first (RED).
+    -   Write tests first (RED) — include **both happy and unhappy paths**.
     -   Implement strict minimum to pass (GREEN).
     -   Refactor (REFACTOR).
 4.  **Run local checks:**
@@ -141,24 +163,40 @@ Tasks in `docs/user-extensible-schema/tasks.md` are your primary guide.
     npm run lint
     npm test
     ```
-5.  **Run a quick manual verification** if possible (e.g., via CLI).
-6.  **Update `tasks.md`** to mark task as completed.
+5.  **Run a quick manual verification** if possible (e.g., via local server upload).
+6.  **Update `tasks.md`** to mark task as completed with `[x]`.
 
 **Branch Naming:**
-- Feature Branch: `feature/user-extensible-schema`
+- Feature Branch: `feature/typographic-analysis`
 - Commit: `feat: {brief description} (task X.Y)`
+
+* * *
+
+## Domain-Specific Terminology
+
+When writing prompts and validation logic, use these conventions:
+
+| ❌ Avoid (Interpretive) | ✅ Use (Mechanical/Botanical) |
+|------------------------|------------------------------|
+| flower, rosette | concentric circles, ribbed volutes |
+| heart-shaped | cordate |
+| ivy | undulating vine |
+| decorative border | border foliage |
+| old-fashioned f | long-s (ſ) |
+| ye olde | thorn (þ) |
 
 * * *
 
 ## Safety & Security Considerations
 
--   **Prompt Injection**: Ensure user examples/prompts are sanitized.
--   **Dynamic SQL**: ALL dynamic table names and queries must use sanitization and parameterization.
--   **Schema Validation**: Strict validation of LLM outputs against JSON Schema is mandatory.
+-   **Input Validation**: Validate all AI responses against the defined JSON schema before storage.
+-   **JSON Serialization**: Use try/catch when serializing/deserializing JSON fields.
+-   **Backward Compatibility**: New columns must be nullable; existing workflows must not break.
+-   **Historical Characters**: Preserve Unicode characters (ſ, þ) without HTML encoding or escaping.
 -   **Do not store sensitive data** — environment variables, secrets, credentials are off-limits.
 
 * * *
 
-**Last Updated:** 2025-12-28
+**Last Updated:** 2026-02-02
 
-**Purpose:** Provide a robust, clear, and minimal-risk instruction set for AI coding agents working on the User-Extensible Schema feature.
+**Purpose:** Provide a robust, clear, and minimal-risk instruction set for AI coding agents working on the Typographic Analysis feature.
