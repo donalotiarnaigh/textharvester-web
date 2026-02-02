@@ -1,4 +1,5 @@
 const BasePrompt = require('../BasePrompt');
+const { ProcessingError } = require('../../errorTypes');
 
 class TypographicAnalysisPrompt extends BasePrompt {
     constructor() {
@@ -87,6 +88,95 @@ Output MUST be valid JSON matching the defined schema.
 
         // Default (OpenAI) returns standard structure
         return baseComponents;
+    }
+
+    /**
+     * Validate and convert the response data
+     * @param {Object} data Raw response data
+     * @returns {Object} Validated and converted data
+     * @throws {ProcessingError} If validation fails
+     */
+    validateAndConvert(data) {
+        // Handle null/undefined
+        if (!data) {
+            throw new ProcessingError('No data received for validation', 'validation_error');
+        }
+
+        // Check for empty object
+        if (Object.keys(data).length === 0) {
+            throw new ProcessingError('Empty response received from AI', 'empty_sheet');
+        }
+
+        try {
+            // First pass: validate required fields are present
+            // We duplicate this logic because BasePrompt throws Generic Error
+            for (const [fieldName, field] of Object.entries(this.fields)) {
+                if (field.metadata?.required && !(fieldName in data)) {
+                    throw new Error(`${fieldName} is required`);
+                }
+            }
+
+            const result = {};
+            const errors = [];
+
+            // Validate each field
+            for (const [fieldName] of Object.entries(this.fields)) {
+                try {
+                    const value = fieldName in data ? data[fieldName] : null;
+                    result[fieldName] = this.validateField(fieldName, value);
+                } catch (error) {
+                    errors.push(error.message);
+                }
+            }
+
+            if (errors.length > 0) {
+                const error = new Error(errors[0]);
+                error.details = errors;
+                throw error;
+            }
+
+            return result;
+        } catch (error) {
+            // Re-throw generic validation errors as ProcessingErrors if needed
+            if (!(error instanceof ProcessingError)) {
+                throw new ProcessingError(error.message, 'validation_error');
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Validate a single field with support for object types
+     * @param {string} fieldName Name of the field
+     * @param {*} value Value to validate
+     * @returns {*} Validated value
+     */
+    validateField(fieldName, value) {
+        // Handle object fields which BasePrompt doesn't support
+        if (fieldName === 'typography_analysis' || fieldName === 'iconography') {
+            if (value === null || value === undefined) {
+                return null;
+            }
+            if (typeof value !== 'object') {
+                throw new Error(`Invalid ${fieldName}: must be an object`);
+            }
+            return value;
+        }
+
+        // Handle transcription specific validation
+        if (fieldName === 'transcription_raw') {
+            const validated = super.validateField(fieldName, value);
+
+            // Check for prohibited notation
+            if (/\[\?\]/.test(validated)) {
+                throw new Error('Prohibited notation [?] found in transcription. Use dashes (-) for illegible characters.');
+            }
+
+            return validated;
+        }
+
+        // Delegate to base for other fields
+        return super.validateField(fieldName, value);
     }
 }
 
