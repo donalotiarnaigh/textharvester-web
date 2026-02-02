@@ -43,7 +43,7 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
   - Implement the TypographicAnalysisPrompt class with validation
   - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3_
 
-  - [ ] 2.1 Write tests for prompt generation
+  - [x] 2.1 Write tests for prompt generation
     - **Happy path**: `getProviderPrompt('openai')` returns object with `systemPrompt` and `userPrompt`
     - **Happy path**: `getProviderPrompt('anthropic')` returns properly formatted prompts
     - **Happy path**: Prompts contain key instructions (line-for-line, dash notation, botanical terms)
@@ -51,7 +51,7 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
     - **Unhappy path**: `getProviderPrompt(null)` throws validation error
     - _Requirements: 1.1, 1.4_
 
-  - [ ] 2.2 Implement prompt generation
+  - [x] 2.2 Implement prompt generation
     - Create `src/utils/prompts/templates/TypographicAnalysisPrompt.js`
     - Extend `BasePrompt` class
     - Implement `getPromptText()` with V2.3 instructions
