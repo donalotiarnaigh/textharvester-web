@@ -10,20 +10,20 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
   - Add new columns to support typographic analysis data storage
   - _Requirements: 4.1, 4.2, 4.3, 5.2, 5.4_
 
-  - [ ] 1.1 Write tests for database migration
+  - [x] 1.1 Write tests for database migration
     - **Happy path**: Migration adds 5 new columns (`transcription_raw`, `stone_condition`, `typography_analysis`, `iconography`, `structural_observations`)
     - **Happy path**: Existing data preserved after migration
     - **Unhappy path**: Running migration twice is idempotent (no error)
     - **Unhappy path**: Migration on database missing `memorials` table throws clear error
     - _Requirements: 4.2, 5.4_
 
-  - [ ] 1.2 Implement database migration script
+  - [x] 1.2 Implement database migration script
     - Create `scripts/migrate-add-typographic-analysis.js`
     - Use `ALTER TABLE ADD COLUMN` with existence check
     - Wrap in transaction for atomicity
     - _Requirements: 4.2, 5.4_
 
-  - [ ] 1.3 Write tests for storage layer updates
+  - [x] 1.3 Write tests for storage layer updates
     - **Happy path**: `storeMemorial()` with full typographic data stores all fields
     - **Happy path**: JSON fields serialized correctly in database
     - **Happy path**: Null analysis fields stored as `NULL` (not empty string)
