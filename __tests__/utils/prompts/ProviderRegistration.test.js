@@ -1,5 +1,4 @@
 const { getPrompt } = require('../../../src/utils/prompts/templates/providerTemplates');
-const { TypographicAnalysisPrompt } = require('../../../src/utils/prompts/templates/TypographicAnalysisPrompt');
 
 describe('Provider Registration - Typographic Analysis', () => {
   describe('getPrompt factory', () => {
@@ -30,12 +29,6 @@ describe('Provider Registration - Typographic Analysis', () => {
       const prompt = getPrompt('openai', 'typographicAnalysis');
       expect(prompt.version).toBeDefined();
     });
-
-    //        it('throws error for unknown template name', () => {
-    //            expect(() => {
-    //                getPrompt('openai', 'nonExistentTemplate');
-    //            }).toThrow('Invalid template configuration');
-    //        });
 
     it('throws error for unknown provider', () => {
       // Depending on implementation, it might throw "No template found" or similar

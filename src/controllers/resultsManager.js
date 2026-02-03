@@ -227,63 +227,57 @@ function sanitizeFilename(filename) {
  * @returns {Promise<string>} Returns 'burial_register', 'memorial', 'grave_record_card', or 'custom:<schemaId>'
  */
 async function detectSourceType() {
-  return new Promise(async (resolve) => {
-    try {
-      // Query standard tables for most recent processed_date
-      const standardQueries = [
-        new Promise(r => db.get('SELECT MAX(processed_date) as max_date FROM memorials', [], (err, row) => r({ type: 'memorial', date: row?.max_date }))),
-        new Promise(r => db.get('SELECT MAX(processed_date) as max_date FROM burial_register_entries', [], (err, row) => r({ type: 'burial_register', date: row?.max_date }))),
-        new Promise(r => db.get('SELECT MAX(processed_date) as max_date FROM grave_cards', [], (err, row) => r({ type: 'grave_record_card', date: row?.max_date })))
-      ];
+  try {
+    // Query standard tables for most recent processed_date
+    const standardQueries = [
+      new Promise(r => db.get('SELECT MAX(processed_date) as max_date FROM memorials', [], (err, row) => r({ type: 'memorial', date: row?.max_date }))),
+      new Promise(r => db.get('SELECT MAX(processed_date) as max_date FROM burial_register_entries', [], (err, row) => r({ type: 'burial_register', date: row?.max_date }))),
+      new Promise(r => db.get('SELECT MAX(processed_date) as max_date FROM grave_cards', [], (err, row) => r({ type: 'grave_record_card', date: row?.max_date })))
+    ];
 
-      // Get all custom schemas and query their tables
-      let customSchemaQueries = [];
-      try {
-        const schemas = await SchemaManager.listSchemas();
-        customSchemaQueries = schemas.map(schema => {
-          return new Promise(r => {
-            // Query the dynamic table for max processed_date
-            db.get(`SELECT MAX(processed_date) as max_date FROM "${schema.table_name}"`, [], (err, row) => {
-              if (err) {
-                // Table might not exist or be empty
-                logger.debug(`Custom schema table ${schema.table_name} query failed:`, err.message);
-                r({ type: `custom:${schema.id}`, date: null, schemaId: schema.id, schemaName: schema.name });
-              } else {
-                r({ type: `custom:${schema.id}`, date: row?.max_date, schemaId: schema.id, schemaName: schema.name });
-              }
-            });
+    // Get all custom schemas and query their tables
+    let customSchemaQueries = [];
+    try {
+      const schemas = await SchemaManager.listSchemas();
+      customSchemaQueries = schemas.map(schema => {
+        return new Promise(r => {
+          // Query the dynamic table for max processed_date
+          db.get(`SELECT MAX(processed_date) as max_date FROM "${schema.table_name}"`, [], (err, row) => {
+            if (err) {
+              // Table might not exist or be empty
+              logger.debug(`Custom schema table ${schema.table_name} query failed:`, err.message);
+              r({ type: `custom:${schema.id}`, date: null, schemaId: schema.id, schemaName: schema.name });
+            } else {
+              r({ type: `custom:${schema.id}`, date: row?.max_date, schemaId: schema.id, schemaName: schema.name });
+            }
           });
         });
-      } catch (schemaErr) {
-        logger.debug('Error fetching custom schemas for detection:', schemaErr.message);
-      }
-
-      // Run all queries in parallel
-      const allQueries = [...standardQueries, ...customSchemaQueries];
-      Promise.all(allQueries).then(results => {
-        // Filter out null dates and sort by date descending
-        const validResults = results
-          .filter(r => r.date)
-          .map(r => ({ ...r, date: new Date(r.date) }))
-          .sort((a, b) => b.date - a.date);
-
-        if (validResults.length === 0) {
-          resolve('memorial'); // Default
-          return;
-        }
-
-        const winner = validResults[0];
-        logger.debug(`Source type detection: most recent is ${winner.type} (${winner.date})`);
-        resolve(winner.type);
-      }).catch(error => {
-        logger.error('Error querying tables for source type detection:', error);
-        resolve('memorial');
       });
-    } catch (error) {
-      logger.error('Error in detectSourceType:', error);
-      resolve('memorial');
+    } catch (schemaErr) {
+      logger.debug('Error fetching custom schemas for detection:', schemaErr.message);
     }
-  });
+
+    // Run all queries in parallel
+    const allQueries = [...standardQueries, ...customSchemaQueries];
+    const results = await Promise.all(allQueries);
+
+    // Filter out null dates and sort by date descending
+    const validResults = results
+      .filter(r => r.date)
+      .map(r => ({ ...r, date: new Date(r.date) }))
+      .sort((a, b) => b.date - a.date);
+
+    if (validResults.length === 0) {
+      return 'memorial'; // Default
+    }
+
+    const winner = validResults[0];
+    logger.debug(`Source type detection: most recent is ${winner.type} (${winner.date})`);
+    return winner.type;
+  } catch (error) {
+    logger.error('Error in detectSourceType:', error);
+    return 'memorial';
+  }
 }
 
 /**

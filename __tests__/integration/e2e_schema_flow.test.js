@@ -1,7 +1,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const sqlite3 = require('sqlite3').verbose();
+
 
 // Force real FS because glob needs it, but we mock it to control it if needed (here just pass through)
 jest.mock('fs', () => jest.requireActual('fs'));
@@ -33,7 +33,7 @@ jest.mock('../../src/utils/database', () => {
 });
 
 // Helper to run DDLs synchronously for setup
-const setupDb = (db) => new Promise((resolve, reject) => {
+const setupDb = (db) => new Promise((resolve, _) => {
   db.serialize(() => {
     db.run('CREATE TABLE IF NOT EXISTS custom_schemas (id TEXT PRIMARY KEY, version INTEGER DEFAULT 1, name TEXT UNIQUE NOT NULL, table_name TEXT UNIQUE NOT NULL, json_schema TEXT NOT NULL, system_prompt TEXT, user_prompt_template TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)');
     resolve();
@@ -157,10 +157,15 @@ describe('E2E: User-Extensible Schema Flow', () => {
     });
   });
 
-  afterAll((done) => {
-    if (fs.existsSync(sampleFile)) fs.unlinkSync(sampleFile);
-    db.close(done);
+  afterAll(() => {
     jest.restoreAllMocks();
+    if (fs.existsSync(sampleFile)) fs.unlinkSync(sampleFile);
+    return new Promise((resolve, reject) => {
+      db.close((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
   });
 
   test('Full Flow: Propose Schema -> Save -> Ingest -> Verify', async () => {

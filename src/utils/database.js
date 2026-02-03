@@ -158,7 +158,7 @@ function storeMemorial(data) {
   // Use a safe logger that handles circular references if needed, or try/catch the logging
   try {
     logger.info('Attempting to store memorial:', JSON.stringify(data));
-  } catch (e) {
+  } catch {
     logger.warn('Could not log memorial data (possibly circular structure)');
   }
 

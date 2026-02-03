@@ -27,7 +27,7 @@ describe('Schema Wizard Module', () => {
             <div id="dropzone-area"></div>
         `;
     fetch.mockClear();
-    Dropzone.mockClear();
+    global.Dropzone.mockClear();
   });
 
   test('handleUpload sends files to analyze endpoint', async () => {

@@ -46,7 +46,7 @@ describe('Database Migration: Add Typographic Analysis Columns', () => {
     // Clear module cache to ensure fresh imports
     try {
       delete require.cache[require.resolve('../../scripts/migrate-add-typographic-analysis')];
-    } catch (err) {
+    } catch {
       // Module doesn't exist yet, which is fine
     }
   });
