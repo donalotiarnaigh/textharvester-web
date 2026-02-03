@@ -5,6 +5,16 @@
  * Tests for src/cli/commands/ingest.js
  */
 
+
+// Mock fs to avoid writeSync errors
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  writeSync: jest.fn(),
+  existsSync: jest.fn(),
+  readFileSync: jest.fn()
+}));
+
+const fs = require('fs');
 const { Command } = require('commander');
 const ingestCommand = require('../../../src/cli/commands/ingest');
 const { CLIError } = require('../../../src/cli/errors');
@@ -37,9 +47,24 @@ describe('Ingest Command', () => {
     program.addCommand(ingestCommand);
 
     // Mock console.log to capture output
+    // Mock console.log to capture output
     mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => { });
     jest.spyOn(console, 'error').mockImplementation(() => { });
     jest.spyOn(process, 'exit').mockImplementation(() => { });
+
+    // Mock stdout write to capture output for assertions
+    jest.spyOn(process.stdout, 'write').mockImplementation((str) => {
+      mockConsoleLog(str); // Redirect to console.log spy for existing assertions
+      return true;
+    });
+
+    // Mock fs.writeSync to capture output for assertions
+    fs.writeSync.mockImplementation((fd, buffer, offset, length) => {
+      if (fd === 1) { // stdout
+        const str = buffer.toString(undefined, offset, offset + length);
+        mockConsoleLog(str);
+      }
+    });
 
     // Setup Service Mocks
     // Note: We need to get the mock instance that will be created

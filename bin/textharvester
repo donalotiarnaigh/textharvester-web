@@ -49,15 +49,30 @@ program.on('command:*', (operands) => {
 });
 
 // Parse and execute
+// Helper to ensure stdout is flushed
+// Helper to ensure stdout is flushed
+// Helper to ensure stdout is flushed
+// Helper to ensure stdout is flushed
+const flushAndExit = (code) => {
+  if (!process.stdout.isTTY) {
+    // Force a write to check buffer state
+    process.stdout.end(() => {
+      process.exit(code);
+    });
+  } else {
+    process.exit(code);
+  }
+};
+
 // Parse and execute
 program.parseAsync(process.argv)
   .then(() => {
-    // Explicitly exit to prevent hanging on open handles (e.g. DB connections)
-    process.exit(0);
+    // Explicitly flush and exit
+    flushAndExit(0);
   })
   .catch((err) => {
     console.error(err);
-    process.exit(1);
+    flushAndExit(1);
   });
 
 // If no command provided, show help

@@ -1,17 +1,42 @@
+
+// Mock fs to avoid writeSync errors
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  writeSync: jest.fn()
+}));
+
 const output = require('../../src/cli/output');
+const fs = require('fs');
 
 describe('CLI Output Formatter', () => {
   let consoleLogSpy;
   let consoleErrorSpy;
+  let processStdoutWriteSpy;
 
   beforeEach(() => {
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+
+    // Mock stdout write to capture output for assertions
+    processStdoutWriteSpy = jest.spyOn(process.stdout, 'write').mockImplementation((str) => {
+      consoleLogSpy(str);
+      return true;
+    });
+
+    // Mock fs.writeSync to capture output for assertions
+    fs.writeSync.mockImplementation((fd, buffer, offset, length) => {
+      if (fd === 1) { // stdout
+        const str = buffer.toString(undefined, offset, offset + length);
+        consoleLogSpy(str);
+      }
+    });
   });
 
   afterEach(() => {
     consoleLogSpy.mockRestore();
     consoleErrorSpy.mockRestore();
+    processStdoutWriteSpy.mockRestore();
+    jest.clearAllMocks(); // Clear fs mocks
   });
 
   describe('formatOutput', () => {
