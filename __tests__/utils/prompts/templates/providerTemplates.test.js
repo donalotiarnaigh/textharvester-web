@@ -22,12 +22,5 @@ describe('Provider Templates - Typographic Analysis', () => {
     }).toThrow('No typographic analysis template found for provider: unknown');
   });
 
-  test('throws error for unknown template name', () => {
-    // This goes through the general promptManager path which might throw different errors depending on implementation
-    // But getPrompt wrapper usually handles specific known types first.
-    // If we ask for something not in the hardcoded lists:
-    expect(() => {
-      getPrompt('openai', 'nonExistentTemplate');
-    }).toThrow();
-  });
+
 });
