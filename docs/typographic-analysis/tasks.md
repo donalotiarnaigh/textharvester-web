@@ -199,7 +199,7 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
     - Verify API retrieval
     - _Requirements: 1.1, 4.1, 4.3_
 
-  - [ ]* 8.2 Manual verification with real AI provider
+  - [x] 8.2 Manual verification with real AI provider
     - Process actual monument photo
     - Verify transcription quality
     - Verify iconography extraction
