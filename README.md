@@ -10,6 +10,7 @@ Welcome to the Text Harvester, a community-driven web application designed to pr
   - OpenAI GPT-5 (default)
   - Anthropic Claude 4 Sonnet
 - **Burial Register Pilot**: Dedicated prompt template for burial register pages, dual-provider support, and CSV exports for per-entry records.
+- **Typographic Analysis**: Specialized extraction of lettering styles, historical characters, and botanical iconography.
 - **Results Management**:
   - Choose to replace existing results or add to them
   - Download extracted text data in JSON or CSV formats
@@ -58,6 +59,11 @@ CREATE TABLE memorials (
     model_version TEXT,
     prompt_template TEXT,
     prompt_version TEXT,
+    transcription_raw TEXT,
+    stone_condition TEXT,
+    typography_analysis TEXT,
+    iconography TEXT,
+    structural_observations TEXT,
     processed_date DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -248,6 +254,22 @@ The existing `POST /upload` route accepts burial register uploads without additi
 - `promptVersion` (optional): prompt version, defaults to `latest`
 
 The prompt template automatically switches to `burialRegister` when `source_type` is `burial_register`.
+
+### Typographic Analysis
+
+The Typographic Analysis feature provides deep extraction of physical and stylistic attributes from memorial stones.
+
+**Workflow:**
+1. Select "Typographic Analysis" from the dropdown (or use `source_type=typographic_analysis`).
+2. The system uses a specialized prompt (`TypographicAnalysisPrompt`) to extract detailed data.
+3. Results are stored in the main `memorials` table with extended columns.
+
+**Extended Data Fields:**
+- **transcription_raw**: Strictly preserves visual characters (e.g., `ſ`, `J`, `U/V`) and line breaks.
+- **stone_condition**: Structured assessment of legibility, weathering, and damage.
+- **typography_analysis**: Identification of techniques (incised, relief), casing, and specific execution details.
+- **iconography**: Detailed breakdown of decorative elements, using correct botanical terms (e.g., `cordate`, `trifoliate`) and religious symbols.
+- **structural_observations**: Notes on the monument's shape, material, and borders.
 
 ## Support
 

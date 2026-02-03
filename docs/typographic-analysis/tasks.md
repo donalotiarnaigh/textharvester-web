@@ -212,7 +212,7 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
   - Finalize documentation and code cleanup
   - _Requirements: All_
 
-  - [ ] 9.1 Update README.md
+  - [x] 9.1 Update README.md
     - Add Typographic Analysis source type to features list
     - Document new database columns
     - Add usage example
