@@ -93,6 +93,7 @@ class QueryService {
   getStorageForType(type) {
     const map = {
       memorial: this.storage.memorials,
+      typographic_analysis: this.storage.memorials,
       burial_register: this.storage.burialRegister,
       grave_record_card: this.storage.graveCards
     };

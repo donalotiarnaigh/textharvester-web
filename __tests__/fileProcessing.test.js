@@ -127,6 +127,12 @@ describe('File Processing Module', () => {
         AI_PROVIDER: 'anthropic'
       }));
     });
+
+    test('routes to typographic analysis prompt when source type matches', async () => {
+      await processFile(mockFilePath, { sourceType: 'typographic_analysis' });
+
+      expect(getPrompt).toHaveBeenCalledWith('openai', 'typographicAnalysis', 'latest');
+    });
   });
 
   describe('Error Handling', () => {

@@ -55,6 +55,30 @@ const BURIAL_REGISTER_CSV_COLUMNS = [
   'processed_date'
 ];
 
+// Memorial CSV column order
+const MEMORIAL_CSV_COLUMNS = [
+  'memorial_number',
+  'first_name',
+  'last_name',
+  'year_of_death',
+  'inscription',
+  'transcription_raw',
+  'stone_condition',
+  'typography_analysis',
+  'iconography',
+  'structural_observations',
+  'notes',
+  'site_code',
+  'location_rough',
+  'image_filename',
+  'file_name',
+  'ai_provider',
+  'model_version',
+  'prompt_version',
+  'source_type',
+  'processed_date'
+];
+
 /**
  * Normalize uncertainty flags for CSV export
  * @param {*} value - Uncertainty flags value (array, string, null, etc.)
@@ -424,8 +448,8 @@ async function downloadResultsCSV(req, res) {
       // Validate and convert data types
       const validatedResults = validateAndConvertRecords(transformedResults);
 
-      // Convert to CSV (uses default memorial columns)
-      csvData = jsonToCsv(validatedResults);
+      // Convert to CSV (uses defined memorial columns)
+      csvData = jsonToCsv(validatedResults, MEMORIAL_CSV_COLUMNS);
 
       // Generate filename
       defaultFilename = `memorials_${moment().format('YYYYMMDD_HHmmss')}.csv`;
