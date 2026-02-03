@@ -2,9 +2,9 @@ const BasePrompt = require('../BasePrompt');
 const { ProcessingError } = require('../../errorTypes');
 
 class TypographicAnalysisPrompt extends BasePrompt {
-  constructor() {
+  constructor(config = {}) {
     super({
-      version: '1.0.0',
+      version: config.version || '1.0.0',
       description: 'Generates comprehensive typographic and iconographic analysis of gravestones.',
       providers: ['openai', 'anthropic'],
       fields: {
@@ -28,6 +28,10 @@ class TypographicAnalysisPrompt extends BasePrompt {
         }
       }
     });
+
+    if (config.provider) {
+      this.provider = config.provider;
+    }
   }
 
   getPromptText() {
@@ -195,7 +199,7 @@ Output MUST be valid JSON matching the defined schema.
     if (!validated.daisy_wheels) {
       const hasDaisyWheelDesc = validated.decorative_elements.some(el =>
         (el.description && /interlocking arcs|single radius/i.test(el.description)) ||
-                (el.type && /hexfoil/i.test(el.type))
+        (el.type && /hexfoil/i.test(el.type))
       );
       if (hasDaisyWheelDesc) {
         validated.daisy_wheels = true;
