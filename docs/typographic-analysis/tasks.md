@@ -192,7 +192,7 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
   - End-to-end workflow verification
   - _Requirements: All_
 
-  - [ ]* 8.1 End-to-end processing test
+  - [x] 8.1 End-to-end processing test
     - Upload test image with `source_type=typographic_analysis`
     - Mock AI provider response
     - Verify database storage
