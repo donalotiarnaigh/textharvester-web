@@ -110,7 +110,7 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
   - Register the new prompt template in the factory system
   - _Requirements: 1.1, 1.4, 5.1, 5.3, 5.5, 5.6_
 
-  - [ ] 4.1 Write tests for factory registration
+  - [x] 4.1 Write tests for factory registration
     - **Happy path**: `getPrompt('openai', 'typographicAnalysis')` returns TypographicAnalysisPrompt instance
     - **Happy path**: `getPrompt('anthropic', 'typographicAnalysis')` returns instance
     - **Happy path**: Source type `typographic_analysis` routes correctly in fileProcessing
@@ -118,13 +118,13 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
     - **Unhappy path**: Missing registration causes clear error
     - _Requirements: 1.4, 5.5, 5.6_
 
-  - [ ] 4.2 Implement factory registration
+  - [x] 4.2 Implement factory registration
     - Update `src/utils/prompts/templates/providerTemplates.js`
     - Add TypographicAnalysisPrompt to template registry
     - Update `src/utils/prompts/PromptFactory.js` if needed
     - _Requirements: 1.1, 5.1_
 
-  - [ ] 4.3 Update fileProcessing.js
+  - [x] 4.3 Update fileProcessing.js
     - Add case for `source_type === 'typographic_analysis'`
     - Route to TypographicAnalysisPrompt
     - Handle validated response storage
@@ -136,7 +136,7 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
   - Update results API to include new fields
   - _Requirements: 4.3, 5.1, 5.2, 5.3_
 
-  - [ ] 5.1 Write tests for results manager updates
+  - [x] 5.1 Write tests for results manager updates
     - **Happy path**: `/results-data` includes `transcription_raw` for typographic records
     - **Happy path**: JSON fields deserialized to objects in API response
     - **Happy path**: Records without typographic analysis return null for new fields
@@ -145,7 +145,7 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
     - **Unhappy path**: Missing columns in older database returns null gracefully
     - _Requirements: 4.3, 5.3_
 
-  - [ ] 5.2 Implement results manager updates
+  - [x] 5.2 Implement results manager updates
     - Update `src/controllers/resultsManager.js`
     - Add JSON.parse() with try/catch for object fields
     - Update `MEMORIAL_FIELDS` constant
@@ -158,12 +158,12 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
   - Add typographic_analysis option to upload form
   - _Requirements: 1.1, 5.1_
 
-  - [ ] 6.1 Update source type dropdown
+  - [x] 6.1 Update source type dropdown
     - Add "Typographic Analysis" option to `sourceTypeSelect` in `index.html`
     - Map to `source_type=typographic_analysis` in form submission
     - _Requirements: 1.1_
 
-  - [ ] 6.2 Update uploadHandler for new source type
+  - [x] 6.2 Update uploadHandler for new source type
     - Ensure `uploadHandler.js` passes `typographic_analysis` to processing
     - Log source type selection
     - _Requirements: 1.1_
@@ -174,14 +174,14 @@ This implementation plan follows Test-Driven Development (TDD): tests are writte
   - Verify existing workflows are unaffected
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
 
-  - [ ] 7.1 Write backward compatibility tests
+  - [x] 7.1 Write backward compatibility tests
     - **Happy path**: `source_type=memorial` uses existing prompt, ignores new columns
     - **Happy path**: `source_type=monument_photo` works unchanged
     - **Happy path**: Old records retrievable via API with null for new fields
     - **Unhappy path**: Unknown `source_type` returns 400 with valid types list
     - _Requirements: 5.1, 5.2, 5.3, 5.5, 5.6_
 
-  - [ ] 7.2 Verify existing tests pass
+  - [x] 7.2 Verify existing tests pass
     - Run full test suite `npm test`
     - Verify no regressions in existing functionality
     - _Requirements: 5.1, 5.2, 5.3_
