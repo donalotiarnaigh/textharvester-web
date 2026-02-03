@@ -126,4 +126,79 @@ describe('SystemService', () => {
       expect(mockClose).toHaveBeenCalled();
     });
   });
+
+  describe('clearData', () => {
+    beforeEach(() => {
+      database.clearAllMemorials = jest.fn().mockResolvedValue();
+      burialRegisterStorage.clearAllBurialRegisterEntries = jest.fn().mockResolvedValue();
+      graveCardStorage.clearAllGraveCards = jest.fn().mockResolvedValue();
+    });
+
+    it('should throw error when confirmation missing', async () => {
+      await expect(service.clearData('all', false))
+        .rejects
+        .toThrow('Destructive operation requires --confirm flag');
+
+      await expect(service.clearData('all', false))
+        .rejects
+        .toBeInstanceOf(CLIError);
+
+      expect(database.clearAllMemorials).not.toHaveBeenCalled();
+    });
+
+    it('should clear all data types when type is "all"', async () => {
+      const result = await service.clearData('all', true);
+
+      expect(database.clearAllMemorials).toHaveBeenCalled();
+      expect(burialRegisterStorage.clearAllBurialRegisterEntries).toHaveBeenCalled();
+      expect(graveCardStorage.clearAllGraveCards).toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.details.memorials).toBe('Cleared');
+      expect(result.details.burial_registers).toBe('Cleared');
+      expect(result.details.grave_cards).toBe('Cleared');
+    });
+
+    it('should clear only memorials when type is "memorial"', async () => {
+      const result = await service.clearData('memorial', true);
+
+      expect(database.clearAllMemorials).toHaveBeenCalled();
+      expect(burialRegisterStorage.clearAllBurialRegisterEntries).not.toHaveBeenCalled();
+      expect(graveCardStorage.clearAllGraveCards).not.toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.details.memorials).toBe('Cleared');
+    });
+
+    it('should clear only burial registers when type is "burial_register"', async () => {
+      const result = await service.clearData('burial_register', true);
+
+      expect(database.clearAllMemorials).not.toHaveBeenCalled();
+      expect(burialRegisterStorage.clearAllBurialRegisterEntries).toHaveBeenCalled();
+      expect(graveCardStorage.clearAllGraveCards).not.toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.details.burial_registers).toBe('Cleared');
+    });
+
+    it('should clear only grave cards when type is "grave_record_card"', async () => {
+      const result = await service.clearData('grave_record_card', true);
+
+      expect(database.clearAllMemorials).not.toHaveBeenCalled();
+      expect(burialRegisterStorage.clearAllBurialRegisterEntries).not.toHaveBeenCalled();
+      expect(graveCardStorage.clearAllGraveCards).toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.details.grave_cards).toBe('Cleared');
+    });
+
+    it('should handle partial failures gracefully', async () => {
+      database.clearAllMemorials = jest.fn().mockRejectedValue(new Error('DB locked'));
+      burialRegisterStorage.clearAllBurialRegisterEntries = jest.fn().mockResolvedValue();
+      graveCardStorage.clearAllGraveCards = jest.fn().mockResolvedValue();
+
+      const result = await service.clearData('all', true);
+
+      expect(result.success).toBe(true);
+      expect(result.details.memorials).toContain('Failed');
+      expect(result.details.burial_registers).toBe('Cleared');
+      expect(result.details.grave_cards).toBe('Cleared');
+    });
+  });
 });
