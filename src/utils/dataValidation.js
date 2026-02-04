@@ -31,12 +31,32 @@ function validateAndConvertTypes(data) {
   }
 
   // Ensure string fields are strings or null
-  ['first_name', 'last_name', 'inscription', 'ai_provider', 'model_version', 'prompt_version'].forEach(field => {
+  ['first_name', 'last_name', 'inscription', 'ai_provider', 'model_version', 'prompt_version', 'transcription_raw'].forEach(field => {
     if (field in data) {
       if (data[field] === null || data[field] === undefined) {
         result[field] = null;
       } else {
         result[field] = String(data[field]);
+      }
+    }
+  });
+
+  // Deserialize JSON fields
+  ['stone_condition', 'typography_analysis', 'iconography', 'structural_observations'].forEach(field => {
+    if (field in data) {
+      if (data[field] === null || data[field] === undefined || data[field] === '') {
+        result[field] = null;
+      } else if (typeof data[field] === 'string') {
+        try {
+          result[field] = JSON.parse(data[field]);
+        } catch (_) {
+          logger.warn(`Failed to parse ${field}: ${data[field]}`);
+          result[field] = null; // Or keep as string? Requirements say "throw storage error" on serialization, but here we just warn.
+          // Let's fallback to null or object indicating error, but requirements 5.3 says "Corrupted JSON in database returns null with logged warning"
+        }
+      } else if (typeof data[field] === 'object') {
+        // Already an object (e.g. mock data or fast path)
+        result[field] = data[field];
       }
     }
   });

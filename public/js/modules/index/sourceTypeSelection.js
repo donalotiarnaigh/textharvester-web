@@ -5,7 +5,8 @@ const SOURCE_TYPES = [
   { value: "record_sheet", label: "Record Sheet" },
   { value: "monument_photo", label: "Monument Photo" },
   { value: "burial_register", label: "Burial Register" },
-  { value: "grave_record_card", label: "Grave Record Card" }
+  { value: "grave_record_card", label: "Grave Record Card" },
+  { value: "typographic_analysis", label: "Typographic Analysis" }
 ];
 
 // Configuration for source type instructions
@@ -45,6 +46,15 @@ const SOURCE_INSTRUCTIONS = {
       "• Files with != 2 pages will be rejected"
     ],
     acceptedFiles: ".pdf"
+  },
+  typographic_analysis: {
+    text: "Upload a high-quality monument photo for detailed typographic and iconographic analysis. The system will preserve historical characters (e.g., long-s) and describe decorative elements.",
+    list: [
+      "• Supported files: JPEG, PDF (max 100MB per file)",
+      "• Best results with high-resolution images",
+      "• Focus on clear lettering and carved details"
+    ],
+    acceptedFiles: ".jpg, .jpeg, .pdf"
   }
 };
 

@@ -69,4 +69,24 @@ system
     }
   });
 
+// clear subcommand
+system
+  .command('clear')
+  .description('Clear data from the database')
+  .option('-t, --type <type>', 'Data type to clear: memorial, burial_register, grave_record_card, all', 'all')
+  .option('--confirm', 'Confirm destructive operation (required)')
+  .action(async (options, command) => {
+    try {
+      const optsWithGlobals = command.optsWithGlobals();
+      const config = await loadConfig(optsWithGlobals);
+      configureLogger(config);
+      const service = new SystemService(config);
+      const result = await service.clearData(options.type, options.confirm);
+      formatOutput(result, 'system clear', options);
+    } catch (error) {
+      formatError(error);
+      process.exit(1);
+    }
+  });
+
 module.exports = system;

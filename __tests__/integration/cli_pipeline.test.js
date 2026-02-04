@@ -7,32 +7,46 @@
 
 const fs = jest.requireActual('fs');
 const path = require('path');
-const { exec } = require('child_process');
-const util = require('util');
-const execPromise = util.promisify(exec);
 
 const TEST_DIR = path.resolve(__dirname, '../../temp_cli_test');
 const DB_PATH = path.join(TEST_DIR, 'memorials.db');
 const IMAGE_PATH = path.join(TEST_DIR, 'test_memorial.png');
 const EXPORT_PATH = path.join(TEST_DIR, 'export.json');
 
+
 // Helper to run CLI commands
-const runCLI = async (args) => {
-  const cliPath = path.resolve(__dirname, '../../bin/textharvester');
-  const cmd = `${cliPath} ${args}`;
-  try {
-    const { stdout, stderr } = await execPromise(cmd, {
-      env: { ...process.env, AI_PROVIDER: 'mock', LOG_TO_STDERR: 'true' }, // Force mock provider & clean stdout
-      maxBuffer: 1024 * 1024 // 1MB buffer to prevent truncation
+const { spawn } = require('child_process');
+
+const runCLI = (args) => {
+  return new Promise((resolve, reject) => {
+    const cliPath = path.resolve(__dirname, '../../bin/textharvester');
+    // Split args string into array, handling quotes basic support
+    const child = spawn(cliPath, args.match(/(?:[^\s"]+|"[^"]*")+/g).map(s => s.replace(/"/g, '')), {
+      env: { ...process.env, AI_PROVIDER: 'mock', LOG_TO_STDERR: 'true' },
+      stdio: ['ignore', 'pipe', 'pipe']
     });
-    return { stdout, stderr, exitCode: 0 };
-  } catch (error) {
-    return {
-      stdout: error.stdout,
-      stderr: error.stderr,
-      exitCode: error.code
-    };
-  }
+
+    const stdoutChunks = [];
+    const stderrChunks = [];
+
+    child.stdout.on('data', (data) => {
+      stdoutChunks.push(data);
+    });
+
+    child.stderr.on('data', (data) => {
+      stderrChunks.push(data);
+    });
+
+    child.on('close', (code) => {
+      const stdout = Buffer.concat(stdoutChunks).toString();
+      const stderr = Buffer.concat(stderrChunks).toString();
+      resolve({ stdout, stderr, exitCode: code });
+    });
+
+    child.on('error', (err) => {
+      reject({ stdout: '', stderr: err.message, exitCode: 1, error: err });
+    });
+  });
 };
 
 describe('CLI Integration Pipeline', () => {
@@ -96,7 +110,7 @@ describe('CLI Integration Pipeline', () => {
   }, 30000);
 
   test('2. Query: Should list the ingested record', async () => {
-    const result = await runCLI(`query list --config ${configPath} --source-type memorial`);
+    const result = await runCLI(`query list --config ${configPath} --source-type memorial --limit 1`);
 
     console.log('Query List Output:', result.stdout);
 
@@ -112,7 +126,7 @@ describe('CLI Integration Pipeline', () => {
   });
 
   test('3. Query: Should search for the record', async () => {
-    const result = await runCLI(`query search "JOHN" --config ${configPath} --source-type memorial`);
+    const result = await runCLI(`query search "JOHN" --config ${configPath} --source-type memorial --limit 1`);
 
     console.log('Query Search Output:', result.stdout);
     console.log('Query Search Error:', result.stderr);
@@ -154,7 +168,8 @@ describe('CLI Integration Pipeline', () => {
 
   test('6. Query: Should get a single record', async () => {
     // First get an ID from the list
-    const listResult = await runCLI(`query list --config ${configPath} --source-type memorial`);
+    // Use limit 1 to avoid large output truncation issues in test environment
+    const listResult = await runCLI(`query list --config ${configPath} --source-type memorial --limit 1`);
     const listOutput = JSON.parse(listResult.stdout);
     const id = listOutput.data.records[0].id; // Use dynamic ID
 

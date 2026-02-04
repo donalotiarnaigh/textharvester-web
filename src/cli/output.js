@@ -3,6 +3,8 @@
  * Handles JSON, Table, and CSV output formats.
  */
 
+const fs = require('fs');
+
 /**
  * Format and print output to stdout.
  * @param {any} data - The data to output
@@ -22,8 +24,23 @@ function formatOutput(data, command, options = {}) {
         timestamp: new Date().toISOString()
       }
     };
+
     try {
-      console.log(JSON.stringify(response, null, 2));
+      const jsonString = JSON.stringify(response, null, 2);
+
+      // Use fs.writeSync to file descriptor 1 (stdout)
+      // This bypasses Node.js stream buffering and writes directly to the OS pipe
+      // Essential for large JSON payloads in CLI pipelines
+      if (process.stdout.isTTY) {
+        process.stdout.write(jsonString + '\n');
+      } else {
+        const buffer = Buffer.from(jsonString + '\n');
+        let offset = 0;
+        while (offset < buffer.length) {
+          const written = fs.writeSync(1, buffer, offset, buffer.length - offset);
+          offset += written;
+        }
+      }
     } catch (err) {
       // Fallback for circular refs or other stringify errors
       console.log(JSON.stringify({

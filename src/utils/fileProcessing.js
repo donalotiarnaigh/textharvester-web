@@ -33,7 +33,9 @@ async function processFile(filePath, options = {}) {
         ? 'monumentPhotoOCR'
         : sourceType === 'grave_record_card'
           ? 'graveCard'
-          : 'memorialOCR');
+          : sourceType === 'typographic_analysis'
+            ? 'typographicAnalysis'
+            : 'memorialOCR');
 
   const promptVersion = options.promptVersion || 'latest';
 

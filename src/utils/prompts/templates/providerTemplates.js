@@ -3,6 +3,7 @@
  */
 
 const MemorialOCRPrompt = require('./MemorialOCRPrompt');
+const TypographicAnalysisPrompt = require('./TypographicAnalysisPrompt');
 const BurialRegisterPrompt = require('./BurialRegisterPrompt');
 const MonumentPhotoOCRPrompt = require('./MonumentPhotoOCRPrompt');
 const GraveCardPrompt = require('./GraveCardPrompt');
@@ -144,6 +145,26 @@ const graveCardTemplates = {
   })
 };
 
+const typographicAnalysisTemplates = {
+  openai: new TypographicAnalysisPrompt({
+    version: '2.3.0',
+    provider: 'openai',
+    fields: MEMORIAL_FIELDS
+  }),
+  anthropic: new TypographicAnalysisPrompt({
+    version: '2.3.0',
+    provider: 'anthropic',
+    fields: MEMORIAL_FIELDS
+  }),
+  mock: new TypographicAnalysisPrompt({
+    version: '1.0.0',
+    provider: 'mock',
+    fields: MEMORIAL_FIELDS
+  })
+};
+
+
+
 /**
  * Get a prompt template for a provider
  * @param {string} provider The AI provider name
@@ -184,6 +205,15 @@ const getPrompt = (provider, templateName, version = 'latest') => {
     const promptInstance = memorialOCRTemplates[provider];
     if (!promptInstance) {
       throw new Error(`No memorial OCR template found for provider: ${provider}`);
+    }
+    return promptInstance;
+  }
+
+  // Handle typographic analysis template
+  if (templateName === 'typographicAnalysis') {
+    const promptInstance = typographicAnalysisTemplates[provider];
+    if (!promptInstance) {
+      throw new Error(`No typographic analysis template found for provider: ${provider}`);
     }
     return promptInstance;
   }

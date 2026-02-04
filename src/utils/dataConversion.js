@@ -36,24 +36,28 @@ function jsonToCsv(jsonData, columns) {
   const dataRows = jsonData.map(record => {
     return columnOrder.map(column => {
       let value = record[column];
-      
+
       // Handle null/undefined values
       if (value === null || value === undefined) {
         return '';
       }
-      
+
       // Convert value to string and handle special characters
-      value = String(value);
-      
+      if (typeof value === 'object') {
+        value = JSON.stringify(value);
+      } else {
+        value = String(value);
+      }
+
       // Handle newlines
       value = value.replace(/\n/g, '\\n');
-      
+
       // Escape quotes and wrap in quotes if necessary
       if (value.includes(',') || value.includes('"') || value.includes('\\n')) {
         value = value.replace(/"/g, '""');
         return `"${value}"`;
       }
-      
+
       return value;
     }).join(',');
   });

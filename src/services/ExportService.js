@@ -212,6 +212,15 @@ class ExportService {
         'ai_provider', 'processed_date'
       ];
       return jsonToCsv(records, columns);
+    } else if (sourceType === 'typographic_analysis') {
+      const columns = [
+        'memorial_number', 'first_name', 'last_name', 'year_of_death',
+        'transcription_raw', 'stone_condition', 'typography_analysis',
+        'iconography', 'structural_observations',
+        'inscription', 'file_name', 'ai_provider', 'model_version',
+        'prompt_version', 'processed_date'
+      ];
+      return jsonToCsv(records, columns);
     } else {
       // Default (memorials) relies on jsonToCsv defaults
       return jsonToCsv(records);
