@@ -45,7 +45,12 @@ function initializeDatabase() {
       prompt_version TEXT,
       processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
       source_type TEXT,
-      site_code TEXT
+      site_code TEXT,
+      transcription_raw TEXT,
+      stone_condition TEXT,
+      typography_analysis TEXT,
+      iconography TEXT,
+      structural_observations TEXT
     )
   `;
 
