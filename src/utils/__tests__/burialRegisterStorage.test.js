@@ -64,6 +64,9 @@ describe('burialRegisterStorage', () => {
         prompt_template TEXT,
         prompt_version TEXT,
         processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+        confidence_scores TEXT,
+        needs_review INTEGER DEFAULT 0,
+        reviewed_at DATETIME,
         UNIQUE(volume_id, file_name, row_index_on_page, ai_provider)
       )
     `, (err) => {

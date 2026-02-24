@@ -50,7 +50,10 @@ function initializeDatabase() {
       stone_condition TEXT,
       typography_analysis TEXT,
       iconography TEXT,
-      structural_observations TEXT
+      structural_observations TEXT,
+      confidence_scores TEXT,
+      needs_review INTEGER DEFAULT 0,
+      reviewed_at DATETIME
     )
   `;
 
@@ -61,19 +64,27 @@ function initializeDatabase() {
     }
     logger.info('Memorials table initialized');
 
-    // Migration: Add site_code column if it doesn't exist
+    // Migration: Add missing columns if they don't exist
     db.all('PRAGMA table_info(memorials)', (err, rows) => {
       if (err) {
         logger.error('Error checking table info:', err);
         return;
       }
-      const hasSiteCode = rows && rows.some(row => row.name === 'site_code');
-      if (!hasSiteCode) {
-        logger.info('Migrating database: Adding site_code column');
-        db.run('ALTER TABLE memorials ADD COLUMN site_code TEXT', (err) => {
-          if (err) logger.error('Error adding site_code column:', err);
-          else logger.info('Successfully added site_code column');
-        });
+      const existingCols = rows ? rows.map(row => row.name) : [];
+      const migrations = [
+        { name: 'site_code', def: 'TEXT' },
+        { name: 'confidence_scores', def: 'TEXT' },
+        { name: 'needs_review', def: 'INTEGER DEFAULT 0' },
+        { name: 'reviewed_at', def: 'DATETIME' }
+      ];
+      for (const col of migrations) {
+        if (!existingCols.includes(col.name)) {
+          logger.info(`Migrating database: Adding ${col.name} column to memorials`);
+          db.run(`ALTER TABLE memorials ADD COLUMN ${col.name} ${col.def}`, (alterErr) => {
+            if (alterErr) logger.error(`Error adding ${col.name} column:`, alterErr);
+            else logger.info(`Successfully added ${col.name} column`);
+          });
+        }
       }
     });
   });
@@ -108,6 +119,9 @@ function initializeBurialRegisterTable() {
       prompt_template TEXT,
       prompt_version TEXT,
       processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+      confidence_scores TEXT,
+      needs_review INTEGER DEFAULT 0,
+      reviewed_at DATETIME,
       UNIQUE(volume_id, file_name, row_index_on_page, ai_provider)
     )
   `;
@@ -118,6 +132,29 @@ function initializeBurialRegisterTable() {
       return;
     }
     logger.info('Burial register entries table initialized');
+
+    // Migration: Add missing columns if they don't exist
+    db.all('PRAGMA table_info(burial_register_entries)', (pragmaErr, pragmaRows) => {
+      if (pragmaErr) {
+        logger.error('Error checking burial_register_entries table info:', pragmaErr);
+        return;
+      }
+      const existingCols = pragmaRows ? pragmaRows.map(row => row.name) : [];
+      const burialMigrations = [
+        { name: 'confidence_scores', def: 'TEXT' },
+        { name: 'needs_review', def: 'INTEGER DEFAULT 0' },
+        { name: 'reviewed_at', def: 'DATETIME' }
+      ];
+      for (const col of burialMigrations) {
+        if (!existingCols.includes(col.name)) {
+          logger.info(`Migrating database: Adding ${col.name} column to burial_register_entries`);
+          db.run(`ALTER TABLE burial_register_entries ADD COLUMN ${col.name} ${col.def}`, (alterErr) => {
+            if (alterErr) logger.error(`Error adding ${col.name} to burial_register_entries:`, alterErr);
+            else logger.info(`Successfully added ${col.name} to burial_register_entries`);
+          });
+        }
+      }
+    });
 
     // Create indexes
     const indexes = [
@@ -185,8 +222,10 @@ function storeMemorial(data) {
       stone_condition,
       typography_analysis,
       iconography,
-      structural_observations
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      structural_observations,
+      confidence_scores,
+      needs_review
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   return new Promise((resolve, reject) => {
@@ -219,7 +258,9 @@ function storeMemorial(data) {
         data.stone_condition || null,
         safeStringify(data.typography_analysis),
         safeStringify(data.iconography),
-        data.structural_observations || null
+        data.structural_observations || null,
+        safeStringify(data.confidence_scores),
+        data.needs_review ?? 0
       ];
     } catch (e) {
       logger.error('Error preparing memorial params:', e);

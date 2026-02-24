@@ -80,5 +80,11 @@
     "stitchPadding": 20,
     "minResolution": 1000,
     "maxExportInterments": 8
+  },
+  "confidence": {
+    "enabled": true,
+    "autoAcceptThreshold": 0.90,
+    "reviewThreshold": 0.70,
+    "rejectThreshold": 0.50
   }
 }

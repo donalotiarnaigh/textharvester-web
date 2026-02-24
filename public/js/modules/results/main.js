@@ -306,6 +306,33 @@ const SanitizeUtils = {
           </div>
         </div>
 
+        ${memorial.confidence_scores ? (() => {
+    let scores;
+    try {
+      scores = typeof memorial.confidence_scores === 'string'
+        ? JSON.parse(memorial.confidence_scores)
+        : memorial.confidence_scores;
+    } catch (e) {
+      scores = null;
+    }
+    if (!scores) return '';
+    const rows = Object.entries(scores).map(([field, score]) => {
+      const pct = Math.round(score * 100);
+      const cls = score >= 0.90 ? 'confidence-high' : score >= 0.70 ? 'confidence-medium' : 'confidence-low';
+      return `<dt class="col-sm-5">${field}:</dt><dd class="col-sm-7 ${cls}">${pct}%</dd>`;
+    }).join('');
+    return `
+        <div class="card mb-3">
+          <div class="card-header bg-light">
+            <strong>Confidence Scores</strong>
+            ${memorial.needs_review ? '<span class="badge badge-warning ml-2">Needs Review</span>' : ''}
+          </div>
+          <div class="card-body">
+            <dl class="row mb-0">${rows}</dl>
+          </div>
+        </div>`;
+  })() : ''}
+
         <div class="mt-3">
           <button class="btn btn-sm btn-secondary close-detail" data-memorial="${uniqueId}">
             <i class="fas fa-chevron-up"></i> Close Details
@@ -343,6 +370,7 @@ const SanitizeUtils = {
         <span class="badge ${getSourceTypeBadgeClass(safe.source_type)}">
           ${formatSourceType(safe.source_type)}
         </span>
+        ${memorial.needs_review ? '<span class="badge badge-warning ml-1">Needs Review</span>' : ''}
       </td>
       <td>${formatSiteCode(safe.site_code)}</td>
       <td>${safe.ai_provider || 'N/A'}</td>

@@ -200,6 +200,8 @@ class BasePrompt {
   formatProviderResponse(provider, data) {
     this.validateProvider(provider);
     const validatedData = this.validateAndConvert(data);
+    // Strip internal metadata before returning provider-facing response
+    delete validatedData._confidence_scores;
 
     switch (provider.toLowerCase()) {
     case 'openai':
@@ -313,14 +315,32 @@ class BasePrompt {
   }
 
   /**
+   * Extract a plain value and confidence score from a raw field value.
+   * Handles both the legacy scalar format and the new {value, confidence} format.
+   * @protected
+   * @param {*} rawValue - Raw value from model response
+   * @returns {{value: *, confidence: number}}
+   */
+  _extractValueAndConfidence(rawValue) {
+    if (rawValue !== null && typeof rawValue === 'object' && 'value' in rawValue) {
+      return {
+        value: rawValue.value,
+        confidence: typeof rawValue.confidence === 'number' ? rawValue.confidence : 1.0
+      };
+    }
+    return { value: rawValue, confidence: 1.0 };
+  }
+
+  /**
    * Validate response data against field definitions
    * @param {Object} data Response data from AI model
-   * @returns {Object} Validated and converted data
+   * @returns {Object} Validated and converted data (includes _confidence_scores)
    * @throws {Error} If validation fails with details about the failures
    */
   validateAndConvert(data) {
     const result = {};
     const errors = [];
+    const confidenceScores = {};
 
     // First pass: validate required fields are present
     for (const [fieldName, field] of Object.entries(this.fields)) {
@@ -332,7 +352,9 @@ class BasePrompt {
     // Second pass: validate and convert each field
     for (const [fieldName] of Object.entries(this.fields)) {
       try {
-        const value = fieldName in data ? data[fieldName] : null;
+        const raw = fieldName in data ? data[fieldName] : null;
+        const { value, confidence } = this._extractValueAndConfidence(raw);
+        confidenceScores[fieldName] = confidence;
         result[fieldName] = this.validateField(fieldName, value);
       } catch (error) {
         errors.push(error.message);
@@ -345,6 +367,7 @@ class BasePrompt {
       throw error;
     }
 
+    result._confidence_scores = confidenceScores;
     return result;
   }
 }

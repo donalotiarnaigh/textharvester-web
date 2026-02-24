@@ -42,11 +42,11 @@ CRITICAL: Return ONLY these 5 fields in JSON format, nothing more:
 Example of EXACT JSON format required:
 
 {
-  "memorial_number": 18,
-  "first_name": "MICHEAL",
-  "last_name": "RUANE",
-  "year_of_death": 1959,
-  "inscription": "IN MEMORY OF MICHEAL RUANE DIED 2. FEB. 1959 AGED 92 YEARS MARY THERESA RUANE DIED 8 FEB. 1945 AGED 3 YEARS THOMAS JOSEPH RUANE DIED 24 MARCH 1948 AGED 9 DAYS JAMES GARETH RUANE (INFANT) AUGUST 1953"
+  "memorial_number": { "value": 18, "confidence": 0.95 },
+  "first_name": { "value": "MICHEAL", "confidence": 0.92 },
+  "last_name": { "value": "RUANE", "confidence": 0.98 },
+  "year_of_death": { "value": 1959, "confidence": 0.99 },
+  "inscription": { "value": "IN MEMORY OF MICHEAL RUANE DIED 2. FEB. 1959 AGED 92 YEARS MARY THERESA RUANE DIED 8 FEB. 1945 AGED 3 YEARS THOMAS JOSEPH RUANE DIED 24 MARCH 1948 AGED 9 DAYS JAMES GARETH RUANE (INFANT) AUGUST 1953", "confidence": 0.88 }
 }
 
 IMPORTANT RULES:
@@ -64,7 +64,15 @@ IMPORTANT RULES:
 
 TRANSCRIPTION NOTATION RULES:
 - Use single dashes (-) for each illegible character/digit (e.g., "J---")
-- Use pipes (|) for line breaks in the inscription, never newlines`;
+- Use pipes (|) for line breaks in the inscription, never newlines
+
+CONFIDENCE SCORING:
+For each field, return { "value": <extracted_value>, "confidence": <0.0-1.0> }
+- 0.9-1.0: Clearly readable, certain
+- 0.7-0.9: Readable but some ambiguity (faded text, unusual spelling)
+- 0.5-0.7: Uncertain, best guess
+- Below 0.5: Very uncertain
+For inscription, also include: "uncertain_segments": ["word1", "word2"] for ambiguous spans.`;
   }
 
   /**
@@ -118,10 +126,19 @@ TRANSCRIPTION NOTATION RULES:
       );
     }
 
+    // Unwrap {value, confidence} format if present (backward-compatible with plain values)
+    const confidenceScores = {};
+    const unwrapped = {};
+    for (const field of this.fields) {
+      const { value, confidence } = this._extractValueAndConfidence(data[field.name]);
+      unwrapped[field.name] = value;
+      confidenceScores[field.name] = confidence;
+    }
+
     // First check for required fields
     const requiredFields = this.fields.filter(field => field.required);
     for (const field of requiredFields) {
-      const fieldValue = data[field.name];
+      const fieldValue = unwrapped[field.name];
       logger.info(`[MemorialOCRPrompt] Checking required field ${field.name}:`, fieldValue, typeof fieldValue);
 
       if (!fieldValue || (typeof fieldValue === 'string' && fieldValue.trim() === '')) {
@@ -134,7 +151,7 @@ TRANSCRIPTION NOTATION RULES:
 
     // Check if all fields are empty
     const allFieldsEmpty = this.fields.every(field => {
-      const value = data[field.name];
+      const value = unwrapped[field.name];
       return !value || (typeof value === 'string' && value.trim() === '');
     });
 
@@ -148,18 +165,18 @@ TRANSCRIPTION NOTATION RULES:
     const result = {};
 
     // Process name fields first
-    if (data.first_name || data.last_name) {
-      const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ');
+    if (unwrapped.first_name || unwrapped.last_name) {
+      const fullName = [unwrapped.first_name, unwrapped.last_name].filter(Boolean).join(' ');
       const processedName = preprocessName(fullName);
 
-      result.first_name = processedName.firstName || data.first_name;
-      result.last_name = processedName.lastName || data.last_name;
+      result.first_name = processedName.firstName || unwrapped.first_name;
+      result.last_name = processedName.lastName || unwrapped.last_name;
     }
 
     // Process remaining fields
     for (const field of this.fields) {
       if (field.name !== 'first_name' && field.name !== 'last_name') {
-        const value = data[field.name];
+        const value = unwrapped[field.name];
         logger.info(`[MemorialOCRPrompt] Processing field ${field.name}:`, value, typeof value);
 
         if (value !== undefined) {
@@ -174,6 +191,7 @@ TRANSCRIPTION NOTATION RULES:
       }
     }
 
+    result._confidence_scores = confidenceScores;
     logger.info('[MemorialOCRPrompt] Final result:', JSON.stringify(result, null, 2));
     return result;
   }

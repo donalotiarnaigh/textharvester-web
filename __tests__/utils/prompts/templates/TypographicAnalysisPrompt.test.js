@@ -79,7 +79,8 @@ describe('TypographicAnalysisPrompt', () => {
 
     test('should validate a complete valid response', () => {
       const result = prompt.validateAndConvert(validFullResponse);
-      expect(result).toEqual(validFullResponse);
+      expect(result).toEqual(expect.objectContaining(validFullResponse));
+      expect(result._confidence_scores).toBeDefined();
     });
 
     test('should validate a minimal valid response', () => {
