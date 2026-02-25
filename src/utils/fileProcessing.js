@@ -312,12 +312,21 @@ async function processFile(filePath, options = {}) {
       // Enhance raw data with filename-based memorial number for monuments
       let enhancedData = { ...rawExtractedData };
       if (sourceType === 'monument_photo' && filenameMemorialNumber) {
-        // Use filename memorial number if OCR didn't provide one or provided null
-        if (!enhancedData.memorial_number || enhancedData.memorial_number === null) {
+        // Unwrap confidence-format wrapper {value, confidence} to check the actual OCR value
+        const rawMemNum = enhancedData.memorial_number;
+        const effectiveMemNum = (rawMemNum !== null && typeof rawMemNum === 'object' && 'value' in rawMemNum)
+          ? rawMemNum.value
+          : rawMemNum;
+        const PLACEHOLDER_VALUES = ['n/a', 'null', 'unknown', 'none'];
+        const memNumIsAbsent = !effectiveMemNum ||
+          (typeof effectiveMemNum === 'string' &&
+            PLACEHOLDER_VALUES.includes(effectiveMemNum.trim().toLowerCase()));
+
+        if (memNumIsAbsent) {
           enhancedData.memorial_number = filenameMemorialNumber;
           logger.info(`[FileProcessing] Injected memorial number from filename: ${filenameMemorialNumber} for ${filename}`);
         } else {
-          logger.info(`[FileProcessing] OCR provided memorial number: ${enhancedData.memorial_number}, keeping it over filename: ${filenameMemorialNumber}`);
+          logger.info(`[FileProcessing] OCR provided memorial number: ${effectiveMemNum}, keeping it over filename: ${filenameMemorialNumber}`);
         }
       }
 

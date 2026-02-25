@@ -179,4 +179,76 @@ describe('File Processing Module', () => {
       expect(mockValidateAndConvert).toHaveBeenCalledWith(mockRawData);
     });
   });
+
+  describe('Monument photo: memorial number injection', () => {
+    // filename 'stja-0006_1757350406869.jpg' → getMemorialNumberForMonument extracts '0006'
+    const monumentFilePath = 'test/stja-0006_1757350406869.jpg';
+    const expectedInjectedNumber = '0006';
+    const baseValidatedResult = { first_name: 'JOHN', last_name: 'DOE' };
+
+    beforeEach(() => {
+      mockFs.promises.readFile.mockResolvedValue(mockBase64Image);
+      mockFs.promises.unlink.mockResolvedValue();
+      mockValidateAndConvert.mockReturnValue(baseValidatedResult);
+      storeMemorial.mockResolvedValue();
+    });
+
+    test('injects filename number when OCR returns null', async () => {
+      mockProcessImage.mockResolvedValue({ memorial_number: null, first_name: 'JOHN' });
+      await processFile(monumentFilePath, { sourceType: 'monument_photo' });
+      const data = mockValidateAndConvert.mock.calls[0][0];
+      expect(data.memorial_number).toBe(expectedInjectedNumber);
+    });
+
+    test('injects filename number when OCR returns "N/A" placeholder', async () => {
+      mockProcessImage.mockResolvedValue({ memorial_number: 'N/A', first_name: 'JOHN' });
+      await processFile(monumentFilePath, { sourceType: 'monument_photo' });
+      const data = mockValidateAndConvert.mock.calls[0][0];
+      expect(data.memorial_number).toBe(expectedInjectedNumber);
+    });
+
+    test('injects filename number when OCR returns lowercase "n/a"', async () => {
+      mockProcessImage.mockResolvedValue({ memorial_number: 'n/a', first_name: 'JOHN' });
+      await processFile(monumentFilePath, { sourceType: 'monument_photo' });
+      const data = mockValidateAndConvert.mock.calls[0][0];
+      expect(data.memorial_number).toBe(expectedInjectedNumber);
+    });
+
+    test('injects filename number when OCR returns confidence wrapper with null value', async () => {
+      mockProcessImage.mockResolvedValue({
+        memorial_number: { value: null, confidence: 0.3 },
+        first_name: 'JOHN'
+      });
+      await processFile(monumentFilePath, { sourceType: 'monument_photo' });
+      const data = mockValidateAndConvert.mock.calls[0][0];
+      expect(data.memorial_number).toBe(expectedInjectedNumber);
+    });
+
+    test('injects filename number when OCR returns confidence wrapper with "N/A" value', async () => {
+      mockProcessImage.mockResolvedValue({
+        memorial_number: { value: 'N/A', confidence: 0.2 },
+        first_name: 'JOHN'
+      });
+      await processFile(monumentFilePath, { sourceType: 'monument_photo' });
+      const data = mockValidateAndConvert.mock.calls[0][0];
+      expect(data.memorial_number).toBe(expectedInjectedNumber);
+    });
+
+    test('preserves valid OCR memorial number (plain string)', async () => {
+      mockProcessImage.mockResolvedValue({ memorial_number: '42', first_name: 'JOHN' });
+      await processFile(monumentFilePath, { sourceType: 'monument_photo' });
+      const data = mockValidateAndConvert.mock.calls[0][0];
+      expect(data.memorial_number).toBe('42');
+    });
+
+    test('preserves valid OCR memorial number from confidence wrapper', async () => {
+      mockProcessImage.mockResolvedValue({
+        memorial_number: { value: '42', confidence: 0.85 },
+        first_name: 'JOHN'
+      });
+      await processFile(monumentFilePath, { sourceType: 'monument_photo' });
+      const data = mockValidateAndConvert.mock.calls[0][0];
+      expect(data.memorial_number).toEqual({ value: '42', confidence: 0.85 });
+    });
+  });
 }); 
