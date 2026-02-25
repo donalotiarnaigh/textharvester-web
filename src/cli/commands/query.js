@@ -21,6 +21,7 @@ query
   .option('-t, --source-type <type>', 'Filter by source type')
   .option('-l, --limit <n>', 'Maximum records to return', '50')
   .option('-o, --offset <n>', 'Offset for pagination', '0')
+  .option('--needs-review', 'Show only records flagged for review')
   .action(async (options, command) => {
     try {
       const optsWithGlobals = command.optsWithGlobals();
@@ -44,11 +45,12 @@ query
 
       const service = new QueryService(config, storageAdapters);
 
-      // Coerce limit/offset to numbers
+      // Coerce limit/offset to numbers; pass needsReview flag
       const queryOptions = {
         ...options,
         limit: options.limit ? parseInt(options.limit, 10) : 50,
-        offset: options.offset ? parseInt(options.offset, 10) : 0
+        offset: options.offset ? parseInt(options.offset, 10) : 0,
+        needsReview: Boolean(options.needsReview)
       };
 
       // Default source type if not provided? Service handles validation if missing.

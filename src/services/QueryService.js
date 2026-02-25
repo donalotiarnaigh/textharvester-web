@@ -10,18 +10,23 @@ class QueryService {
   }
 
   async list(options = {}) {
-    const { sourceType, limit = 50, offset = 0 } = options;
+    const { sourceType, limit = 50, offset = 0, needsReview } = options;
     const allRecords = await this._getCachedOrFetch(sourceType);
 
+    // Apply needs_review filter if requested
+    const filtered = needsReview
+      ? allRecords.filter(r => r.needs_review === 1)
+      : allRecords;
+
     // In-memory pagination since storage modules don't support it yet
-    const records = allRecords.slice(offset, offset + limit);
+    const records = filtered.slice(offset, offset + limit);
 
     return {
       records,
       count: records.length,
       offset,
       limit,
-      total: allRecords.length
+      total: filtered.length
     };
   }
 

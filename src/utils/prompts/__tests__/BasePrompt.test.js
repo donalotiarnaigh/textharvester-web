@@ -168,11 +168,12 @@ describe('BasePrompt', () => {
         email: 'john@example.com'
       };
       const result = prompt.validateAndConvert(data);
-      expect(result).toEqual({
+      expect(result).toEqual(expect.objectContaining({
         name: 'John Doe',
         age: 25,
         email: 'john@example.com'
-      });
+      }));
+      expect(result._confidence_scores).toBeDefined();
     });
 
     it('should handle missing fields', () => {
@@ -379,7 +380,7 @@ describe('BasePrompt', () => {
         score: 92.5
       };
       const result = prompt.validateAndConvert(validData);
-      expect(result).toEqual(validData);
+      expect(result).toEqual(expect.objectContaining(validData));
 
       // Test maxLength constraint
       expect(() => {
@@ -481,12 +482,12 @@ describe('BasePrompt', () => {
         score: '92.555' // Should convert and round
       });
 
-      expect(result).toEqual({
+      expect(result).toEqual(expect.objectContaining({
         name: 'John Doe',
         age: 25,
         email: null,
         score: 92.56
-      });
+      }));
     });
   });
 }); 

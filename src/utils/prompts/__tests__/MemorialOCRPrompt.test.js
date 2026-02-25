@@ -71,13 +71,14 @@ describe('MemorialOCRPrompt', () => {
       };
 
       const result = prompt.validateAndConvert(testData);
-      expect(result).toEqual({
+      expect(result).toEqual(expect.objectContaining({
         memorial_number: '42',       // Now extracts just the number
         first_name: 'JOHN',          // Uppercase
         last_name: 'DOE',            // Uppercase
         year_of_death: 1923,         // Converted to number
         inscription: 'REST IN PEACE' // Trimmed
-      });
+      }));
+      expect(result._confidence_scores).toBeDefined();
     });
 
     it('should handle missing optional fields', () => {

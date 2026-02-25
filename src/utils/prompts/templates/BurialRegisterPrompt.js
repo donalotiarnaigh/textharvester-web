@@ -160,7 +160,14 @@ Important instructions:
 TRANSCRIPTION NOTATION RULES:
 - Use single dashes (-) for each illegible character/digit
 - Use pipes (|) for line breaks in text fields, never newlines
-- Preserve original spelling exactly`;
+- Preserve original spelling exactly
+
+CONFIDENCE SCORING:
+For each entry field (not the top-level page fields), return { "value": <extracted_value>, "confidence": <0.0-1.0> }
+- 0.9-1.0: Clearly readable, certain
+- 0.7-0.9: Readable but some ambiguity (faded text, unusual spelling)
+- 0.5-0.7: Uncertain, best guess
+- Below 0.5: Very uncertain`;
   }
 
   /**
@@ -246,6 +253,16 @@ TRANSCRIPTION NOTATION RULES:
       throw new Error('Entry must be an object with required fields');
     }
 
+    // Unwrap {value, confidence} format if present (backward-compatible with plain values)
+    const confidenceScores = {};
+    const unwrapped = {};
+    for (const fieldName of Object.keys(this.entryFields)) {
+      const raw = fieldName in entryRaw ? entryRaw[fieldName] : null;
+      const { value, confidence } = this._extractValueAndConfidence(raw);
+      unwrapped[fieldName] = value;
+      confidenceScores[fieldName] = confidence;
+    }
+
     const errors = [];
     const result = {};
 
@@ -257,7 +274,7 @@ TRANSCRIPTION NOTATION RULES:
 
     for (const fieldName of Object.keys(this.entryFields)) {
       if (fieldName === 'uncertainty_flags') {
-        const flagsRaw = fieldName in entryRaw ? entryRaw[fieldName] : [];
+        const flagsRaw = unwrapped[fieldName] !== undefined ? unwrapped[fieldName] : [];
 
         if (flagsRaw === null || flagsRaw === undefined) {
           result.uncertainty_flags = [];
@@ -275,7 +292,7 @@ TRANSCRIPTION NOTATION RULES:
       }
 
       try {
-        const value = fieldName in entryRaw ? entryRaw[fieldName] : null;
+        const value = unwrapped[fieldName] !== undefined ? unwrapped[fieldName] : null;
         result[fieldName] = this.validateEntryField(fieldName, value);
       } catch (error) {
         errors.push(error.message);
@@ -288,6 +305,7 @@ TRANSCRIPTION NOTATION RULES:
       throw error;
     }
 
+    result._confidence_scores = confidenceScores;
     return result;
   }
 

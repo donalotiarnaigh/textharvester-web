@@ -125,6 +125,10 @@ function buildBurialEntryParams(entry) {
         ? entry.uncertainty_flags
         : JSON.stringify([]);
 
+  const confidenceScores = entry.confidence_scores
+    ? (typeof entry.confidence_scores === 'string' ? entry.confidence_scores : JSON.stringify(entry.confidence_scores))
+    : null;
+
   return [
     entry.volume_id || null,
     pageNumber,
@@ -148,7 +152,9 @@ function buildBurialEntryParams(entry) {
     fileName,
     entry.ai_provider || null,
     entry.prompt_template || null,
-    entry.prompt_version || null
+    entry.prompt_version || null,
+    confidenceScores,
+    entry.needs_review ?? 0
   ];
 }
 
@@ -207,8 +213,10 @@ async function storeBurialRegisterEntry(entry) {
       file_name,
       ai_provider,
       prompt_template,
-      prompt_version
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      prompt_version,
+      confidence_scores,
+      needs_review
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const params = buildBurialEntryParams(entry);

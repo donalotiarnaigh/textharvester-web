@@ -67,6 +67,14 @@ CRITICAL INSTRUCTIONS:
    - Describe the material and weathering state objectively.
 
 Output MUST be valid JSON matching the defined schema.
+
+CONFIDENCE SCORING:
+For each field, return { "value": <extracted_value>, "confidence": <0.0-1.0> }
+- 0.9-1.0: Clearly readable, certain
+- 0.7-0.9: Readable but some ambiguity (faded text, unusual spelling)
+- 0.5-0.7: Uncertain, best guess
+- Below 0.5: Very uncertain
+For inscription, also include: "uncertain_segments": ["word1", "word2"] for ambiguous spans.
     `;
   }
 
@@ -112,6 +120,16 @@ Output MUST be valid JSON matching the defined schema.
     }
 
     try {
+      // Unwrap {value, confidence} format if present (backward-compatible with plain values)
+      const confidenceScores = {};
+      const unwrapped = {};
+      for (const fieldName of Object.keys(this.fields)) {
+        const raw = fieldName in data ? data[fieldName] : null;
+        const { value, confidence } = this._extractValueAndConfidence(raw);
+        unwrapped[fieldName] = value;
+        confidenceScores[fieldName] = confidence;
+      }
+
       // First pass: validate required fields are present
       for (const [fieldName, field] of Object.entries(this.fields)) {
         if (field.metadata?.required && !(fieldName in data)) {
@@ -125,7 +143,7 @@ Output MUST be valid JSON matching the defined schema.
       // Validate each field
       for (const [fieldName] of Object.entries(this.fields)) {
         try {
-          const value = fieldName in data ? data[fieldName] : null;
+          const value = unwrapped[fieldName] !== undefined ? unwrapped[fieldName] : null;
 
           // Special handling for iconography to ensure structure even if null
           if (fieldName === 'iconography') {
@@ -144,6 +162,7 @@ Output MUST be valid JSON matching the defined schema.
         throw error;
       }
 
+      result._confidence_scores = confidenceScores;
       return result;
     } catch (error) {
       if (!(error instanceof ProcessingError)) {

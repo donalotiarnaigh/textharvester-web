@@ -160,19 +160,15 @@ describe('Database Storage Layer: Typographic Analysis Fields', () => {
       expect(sql).toContain('structural_observations');
 
       // Check params contain mapped values
-      // Currently, the database.js has 12 params. 
-      // We expect it to have 17 params after update.
-      expect(params).toHaveLength(17);
-
-      // Check specific values in params array (order matters in SQL)
-      // We expect the new fields to be appended or inserted. 
-      // Based on planned implementation:
       // 0-11: Original fields
       // 12: transcription_raw
       // 13: stone_condition
       // 14: typography_analysis (JSON)
       // 15: iconography (JSON)
       // 16: structural_observations
+      // 17: confidence_scores (JSON)
+      // 18: needs_review
+      expect(params).toHaveLength(19);
 
       expect(params[12]).toBe(data.transcription_raw);
       expect(params[13]).toBe(data.stone_condition);

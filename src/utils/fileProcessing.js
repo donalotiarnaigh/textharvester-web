@@ -121,6 +121,15 @@ async function processFile(filePath, options = {}) {
       // Step 4: Validate and convert
       const validatedData = promptInstance.validateAndConvert(rawExtractedData);
 
+      // Extract confidence metadata
+      const graveCardConfidenceScores = validatedData._confidence_scores;
+      delete validatedData._confidence_scores;
+      if (graveCardConfidenceScores && config.confidence?.enabled !== false) {
+        validatedData.confidence_scores = graveCardConfidenceScores;
+        const threshold = config.confidence?.reviewThreshold ?? 0.70;
+        validatedData.needs_review = Object.values(graveCardConfidenceScores).some(s => s < threshold) ? 1 : 0;
+      }
+
       logger.info(`${providerName} grave card response validated successfully for ${filePath}`);
 
       // Step 5: Add metadata
@@ -210,6 +219,10 @@ async function processFile(filePath, options = {}) {
         try {
           const validatedEntry = promptInstance.validateAndConvertEntry(entry);
 
+          // Extract confidence metadata
+          const entryConfidenceScores = validatedEntry._confidence_scores;
+          delete validatedEntry._confidence_scores;
+
           const entryWithMetadata = {
             ...validatedEntry,
             volume_id: entry.volume_id,
@@ -225,6 +238,12 @@ async function processFile(filePath, options = {}) {
             prompt_version: promptInstance.version,
             source_type: 'burial_register'
           };
+
+          if (entryConfidenceScores && config.confidence?.enabled !== false) {
+            entryWithMetadata.confidence_scores = entryConfidenceScores;
+            const threshold = config.confidence?.reviewThreshold ?? 0.70;
+            entryWithMetadata.needs_review = Object.values(entryConfidenceScores).some(s => s < threshold) ? 1 : 0;
+          }
 
           await burialRegisterStorage.storeBurialRegisterEntry(entryWithMetadata);
 
@@ -304,6 +323,15 @@ async function processFile(filePath, options = {}) {
 
       // Validate and convert the data according to our type definitions
       const extractedData = promptInstance.validateAndConvert(enhancedData);
+
+      // Extract confidence metadata
+      const memConfidenceScores = extractedData._confidence_scores;
+      delete extractedData._confidence_scores;
+      if (memConfidenceScores && config.confidence?.enabled !== false) {
+        extractedData.confidence_scores = memConfidenceScores;
+        const threshold = config.confidence?.reviewThreshold ?? 0.70;
+        extractedData.needs_review = Object.values(memConfidenceScores).some(s => s < threshold) ? 1 : 0;
+      }
 
       logger.info(`${providerName} API response processed successfully for ${filePath}`);
       logger.debugPayload(`Processed ${providerName} data for ${filePath}:`, extractedData);
