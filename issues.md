@@ -13,10 +13,10 @@ _Last updated: 2026-03-02_
 
 ---
 
-### [#120](https://github.com/donalotiarnaigh/textharvester-web/issues/120) BurialRegisterPrompt does not emit per-field confidence envelopes consistently
-**Labels:** bug, data, high-priority, prompt-engineering
+### ~~[#120](https://github.com/donalotiarnaigh/textharvester-web/issues/120) BurialRegisterPrompt does not emit per-field confidence envelopes consistently~~ ✅ Fixed
+**Branch:** `fix/issue-120-burial-register-confidence-envelopes`
 
-`BurialRegisterPrompt` only instructs the model to return confidence for entry-level fields, not page-level headers (`parish_header`, `county_header`, `year_header`). Those headers always receive confidence `1.0` via the scalar fallback, regardless of legibility.
+`getPromptText()` previously said "For each entry field (not the top-level page fields)", explicitly excluding `parish_header_raw`, `county_header_raw`, and `year_header_raw` from `{value, confidence}` envelope instructions. The JSON schema in the prompt also showed those fields as plain `string | null`. The fix updates the schema and CONFIDENCE SCORING section to cover all fields (page-level and entry-level), removes the exclusionary clause, and bumps the version to `1.1.0`. Four new parsing tests assert that `_confidence_scores` contains the correct numeric confidence for each header field when the model returns envelopes, and `null` when plain scalars are returned. No changes were required to the validation layer — `super.validateAndConvert()` already called `_extractValueAndConfidence` for every page field.
 
 **Acceptance Criteria:**
 - System prompt covers all fields (page-level and entry-level) in `{ value, confidence }` envelopes.
