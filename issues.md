@@ -6,15 +6,10 @@ _Last updated: 2026-03-02_
 
 ## P1 — High Priority
 
-### [#119](https://github.com/donalotiarnaigh/textharvester-web/issues/119) Confidence score silently defaults to 1.0 when model returns scalar or omits confidence
-**Labels:** bug, data, high-priority
+### ~~[#119](https://github.com/donalotiarnaigh/textharvester-web/issues/119) Confidence score silently defaults to 1.0 when model returns scalar or omits confidence~~ ✅ Fixed
+**Branch:** `fix/issue-119-confidence-null-default`
 
-`BasePrompt._extractValueAndConfidence()` returns `confidence: 1.0` as a silent default in three cases: the model returns a plain scalar, the field is absent, or the envelope is present but omits the `confidence` key. Records can be stored and displayed as high-confidence when the model provided no quality signal.
-
-**Acceptance Criteria:**
-- `_extractValueAndConfidence()` returns `{ value, confidence: null }` when no numeric confidence is present.
-- `needs_review` logic treats `null` confidence as "unknown" (flag for review by default, or expose separately).
-- Unit tests cover: scalar input, missing `confidence` key, out-of-range values (−0.1, 1.5, NaN).
+`_extractValueAndConfidence()` now returns `confidence: null` for scalars, missing key, NaN, and out-of-range values. `needs_review` logic flags `null` confidence records for review. 16 unit tests added in `__tests__/utils/prompts/BasePrompt.test.js`.
 
 ---
 
