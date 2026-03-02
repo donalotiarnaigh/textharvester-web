@@ -106,7 +106,7 @@ class BurialRegisterPrompt extends BasePrompt {
    */
   constructor(config = {}) {
     super({
-      version: '1.0.0',
+      version: '1.1.0',
       description: 'Prompt template for extracting burial register data',
       fields: PAGE_FIELDS,
       providers: ['openai', 'anthropic', 'mock'],
@@ -128,31 +128,31 @@ Extract the data from the provided page image and return a single JSON object wi
 {
   "volume_id": string,
   "page_number": integer,
-  "parish_header_raw": string | null,
-  "county_header_raw": string | null,
-  "year_header_raw": string | null,
-  "page_marginalia_raw": string | null,
+  "parish_header_raw": { "value": string | null, "confidence": 0.0-1.0 },
+  "county_header_raw": { "value": string | null, "confidence": 0.0-1.0 },
+  "year_header_raw": { "value": string | null, "confidence": 0.0-1.0 },
+  "page_marginalia_raw": { "value": string | null, "confidence": 0.0-1.0 },
   "entries": [
     {
-      "row_index_on_page": integer,           // 1-based position of the row on the page
-      "entry_id": string,                     // leave blank/null, will be generated downstream
-      "entry_no_raw": string | null,          // entry number as written
-      "name_raw": string | null,              // full name as written
-      "abode_raw": string | null,             // abode/residence as written
-      "burial_date_raw": string | null,       // burial date as written (allow partial/uncertain)
-      "age_raw": string | null,               // age as written
-      "officiant_raw": string | null,         // officiant/ministers initials or name
-      "marginalia_raw": string | null,        // entry-level marginalia
-      "extra_notes_raw": string | null,       // any extra notes for the entry
-      "row_ocr_raw": string | null,           // raw OCR text for the entire row
-      "uncertainty_flags": [string]           // array of uncertainty notes; use [] if none
+      "row_index_on_page": integer,                                          // 1-based position of the row on the page
+      "entry_id": string,                                                    // leave blank/null, will be generated downstream
+      "entry_no_raw": { "value": string | null, "confidence": 0.0-1.0 },   // entry number as written
+      "name_raw": { "value": string | null, "confidence": 0.0-1.0 },       // full name as written
+      "abode_raw": { "value": string | null, "confidence": 0.0-1.0 },      // abode/residence as written
+      "burial_date_raw": { "value": string | null, "confidence": 0.0-1.0 },// burial date as written (allow partial/uncertain)
+      "age_raw": { "value": string | null, "confidence": 0.0-1.0 },        // age as written
+      "officiant_raw": { "value": string | null, "confidence": 0.0-1.0 },  // officiant/ministers initials or name
+      "marginalia_raw": { "value": string | null, "confidence": 0.0-1.0 }, // entry-level marginalia
+      "extra_notes_raw": { "value": string | null, "confidence": 0.0-1.0 },// any extra notes for the entry
+      "row_ocr_raw": { "value": string | null, "confidence": 0.0-1.0 },    // raw OCR text for the entire row
+      "uncertainty_flags": [string]                                          // array of uncertainty notes; use [] if none
     }
   ]
 }
 
 Important instructions:
 - Preserve the original spelling/punctuation from the page. Do not standardise or infer.
-- If a field is missing or unreadable, use null (or [] for uncertainty_flags).
+- If a field is missing or unreadable, use null as the value (or [] for uncertainty_flags).
 - Do not add extra fields or nesting beyond what is shown.
 - Maintain the original row order; set row_index_on_page starting at 1 and incrementing.
 - Return only the JSON object, nothing else.
@@ -163,7 +163,7 @@ TRANSCRIPTION NOTATION RULES:
 - Preserve original spelling exactly
 
 CONFIDENCE SCORING:
-For each entry field (not the top-level page fields), return { "value": <extracted_value>, "confidence": <0.0-1.0> }
+For every field shown as { "value": ..., "confidence": ... }, return that envelope with a score in [0.0, 1.0]:
 - 0.9-1.0: Clearly readable, certain
 - 0.7-0.9: Readable but some ambiguity (faded text, unusual spelling)
 - 0.5-0.7: Uncertain, best guess

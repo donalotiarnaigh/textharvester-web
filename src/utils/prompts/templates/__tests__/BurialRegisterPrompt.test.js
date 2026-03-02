@@ -38,6 +38,44 @@ const samplePageData = {
   ]
 };
 
+describe('BurialRegisterPrompt metadata', () => {
+  it('has version 1.1.0', () => {
+    const prompt = new BurialRegisterPrompt();
+    expect(prompt.version).toBe('1.1.0');
+  });
+});
+
+describe('BurialRegisterPrompt prompt text', () => {
+  let prompt;
+
+  beforeEach(() => {
+    prompt = new BurialRegisterPrompt();
+  });
+
+  it('instructs confidence scoring for parish_header_raw', () => {
+    const text = prompt.getPromptText();
+    expect(text).toMatch(/parish_header_raw/);
+    // Must not exclude page-level fields from confidence scoring
+    expect(text).not.toMatch(/not the top-level page fields/);
+  });
+
+  it('instructs confidence scoring for county_header_raw', () => {
+    const text = prompt.getPromptText();
+    expect(text).toMatch(/county_header_raw/);
+  });
+
+  it('instructs confidence scoring for year_header_raw', () => {
+    const text = prompt.getPromptText();
+    expect(text).toMatch(/year_header_raw/);
+  });
+
+  it('shows {value, confidence} envelope format for header fields in schema', () => {
+    const text = prompt.getPromptText();
+    // The schema should describe confidence envelopes for all text fields
+    expect(text).toMatch(/\{.*value.*confidence.*\}/s);
+  });
+});
+
 describe('BurialRegisterPrompt validation', () => {
   let prompt;
 
@@ -74,6 +112,56 @@ describe('BurialRegisterPrompt validation', () => {
 
       expect(() => prompt.validateAndConvertPage(invalidPage))
         .toThrow('Entries array is required');
+    });
+
+    it('captures confidence scores for parish_header_raw when returned as envelope', () => {
+      const pageWithEnvelopes = {
+        ...samplePageData,
+        parish_header_raw: { value: 'St Luke Parish', confidence: 0.9 },
+        county_header_raw: { value: 'Middlesex', confidence: 0.85 },
+        year_header_raw: { value: '1832', confidence: 0.95 }
+      };
+
+      const result = prompt.validateAndConvertPage(pageWithEnvelopes);
+
+      expect(result._confidence_scores).toBeDefined();
+      expect(result._confidence_scores.parish_header_raw).toBe(0.9);
+    });
+
+    it('captures confidence scores for county_header_raw when returned as envelope', () => {
+      const pageWithEnvelopes = {
+        ...samplePageData,
+        parish_header_raw: { value: 'St Luke Parish', confidence: 0.9 },
+        county_header_raw: { value: 'Middlesex', confidence: 0.85 },
+        year_header_raw: { value: '1832', confidence: 0.95 }
+      };
+
+      const result = prompt.validateAndConvertPage(pageWithEnvelopes);
+
+      expect(result._confidence_scores.county_header_raw).toBe(0.85);
+    });
+
+    it('captures confidence scores for year_header_raw when returned as envelope', () => {
+      const pageWithEnvelopes = {
+        ...samplePageData,
+        parish_header_raw: { value: 'St Luke Parish', confidence: 0.9 },
+        county_header_raw: { value: 'Middlesex', confidence: 0.85 },
+        year_header_raw: { value: '1832', confidence: 0.95 }
+      };
+
+      const result = prompt.validateAndConvertPage(pageWithEnvelopes);
+
+      expect(result._confidence_scores.year_header_raw).toBe(0.95);
+    });
+
+    it('sets confidence to null for header fields returned as plain scalars', () => {
+      // Plain scalars (no envelope) must yield null confidence, not a fake 1.0
+      const result = prompt.validateAndConvertPage(samplePageData);
+
+      expect(result._confidence_scores).toBeDefined();
+      expect(result._confidence_scores.parish_header_raw).toBeNull();
+      expect(result._confidence_scores.county_header_raw).toBeNull();
+      expect(result._confidence_scores.year_header_raw).toBeNull();
     });
   });
 
