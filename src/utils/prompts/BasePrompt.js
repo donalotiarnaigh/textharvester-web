@@ -317,18 +317,29 @@ class BasePrompt {
   /**
    * Extract a plain value and confidence score from a raw field value.
    * Handles both the legacy scalar format and the new {value, confidence} format.
+   *
+   * Returns `confidence: null` whenever the model provides no valid confidence signal:
+   *   - plain scalar (no envelope)
+   *   - envelope without a `confidence` key
+   *   - envelope with a non-numeric, NaN, or out-of-range [0, 1] confidence
+   *
+   * Callers must treat `null` confidence as "unknown quality" and flag those records
+   * for review rather than silently assuming high confidence.
+   *
    * @protected
    * @param {*} rawValue - Raw value from model response
-   * @returns {{value: *, confidence: number}}
+   * @returns {{value: *, confidence: number|null}}
    */
   _extractValueAndConfidence(rawValue) {
     if (rawValue !== null && typeof rawValue === 'object' && 'value' in rawValue) {
+      const conf = rawValue.confidence;
+      const isValid = typeof conf === 'number' && !isNaN(conf) && conf >= 0 && conf <= 1;
       return {
         value: rawValue.value,
-        confidence: typeof rawValue.confidence === 'number' ? rawValue.confidence : 1.0
+        confidence: isValid ? conf : null
       };
     }
-    return { value: rawValue, confidence: 1.0 };
+    return { value: rawValue, confidence: null };
   }
 
   /**
