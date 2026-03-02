@@ -28,6 +28,9 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: npm test
 
+      - name: Eval accuracy gate
+        run: npm run eval:check
+
   deploy-staging:
     needs: build
     runs-on: ubuntu-latest
