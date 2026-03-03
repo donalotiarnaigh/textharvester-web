@@ -7,21 +7,24 @@
  *
  * Covers issue #124: JSON parse failures must set needs_review = 1 and emit a
  * structured error visible regardless of logger sampling/quietMode.
+ *
+ * Logger mock note: dataValidation.js requires logger via the relative path
+ * './logger', which resolves to the real Logger singleton. logger.error()
+ * always calls console.error() regardless of quietMode/sampling, so we spy on
+ * console.error to verify structured-error emission.
  */
-
-const logger = require('../../src/utils/logger');
-
-jest.mock('../../src/utils/logger', () => ({
-  error: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  debug: jest.fn()
-}));
 
 const { validateAndConvertTypes, validateAndConvertRecords } = require('../../src/utils/dataValidation');
 
+let consoleErrorSpy;
+
 beforeEach(() => {
-  jest.clearAllMocks();
+  // Suppress output while still capturing calls
+  consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+});
+
+afterEach(() => {
+  consoleErrorSpy.mockRestore();
 });
 
 // ---------------------------------------------------------------------------
@@ -38,7 +41,7 @@ describe('validateAndConvertTypes — JSON field parsing', () => {
       const result = validateAndConvertTypes(record);
       expect(result.confidence_scores).toEqual({ first_name: 0.9, last_name: 0.8 });
       expect(result.needs_review).toBe(0);
-      expect(logger.error).not.toHaveBeenCalled();
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
     });
 
     it('parses validation_warnings from a valid JSON string', () => {
@@ -49,7 +52,7 @@ describe('validateAndConvertTypes — JSON field parsing', () => {
       const result = validateAndConvertTypes(record);
       expect(result.validation_warnings).toEqual(['IMPLAUSIBLE_AGE']);
       expect(result.needs_review).toBe(1);
-      expect(logger.error).not.toHaveBeenCalled();
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
     });
 
     it('passes already-parsed object through unchanged', () => {
@@ -65,7 +68,7 @@ describe('validateAndConvertTypes — JSON field parsing', () => {
       const result = validateAndConvertTypes(record);
       expect(result.confidence_scores).toBeNull();
       expect(result.needs_review).toBe(0);
-      expect(logger.error).not.toHaveBeenCalled();
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
     });
 
     it('treats empty-string confidence_scores as null without flagging', () => {
@@ -73,7 +76,7 @@ describe('validateAndConvertTypes — JSON field parsing', () => {
       const result = validateAndConvertTypes(record);
       expect(result.confidence_scores).toBeNull();
       expect(result.needs_review).toBe(0);
-      expect(logger.error).not.toHaveBeenCalled();
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -81,8 +84,8 @@ describe('validateAndConvertTypes — JSON field parsing', () => {
   // Unhappy path — corrupted JSON must set needs_review = 1
   // -------------------------------------------------------------------------
 
-  describe('Unhappy path: corrupted JSON sets needs_review = 1 and calls logger.error', () => {
-    it('sets needs_review = 1 and calls logger.error for corrupted confidence_scores', () => {
+  describe('Unhappy path: corrupted JSON sets needs_review = 1 and emits structured error', () => {
+    it('sets needs_review = 1 and emits [ERROR] for corrupted confidence_scores', () => {
       const record = {
         confidence_scores: '{invalid-json',
         needs_review: 0
@@ -90,11 +93,12 @@ describe('validateAndConvertTypes — JSON field parsing', () => {
       const result = validateAndConvertTypes(record);
       expect(result.confidence_scores).toBeNull();
       expect(result.needs_review).toBe(1);
-      expect(logger.error).toHaveBeenCalledTimes(1);
-      expect(logger.error.mock.calls[0][0]).toMatch(/confidence_scores/);
+      // Real logger.error always calls console.error with [ERROR] prefix
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+      expect(consoleErrorSpy.mock.calls[0][0]).toMatch(/\[ERROR\].*confidence_scores/);
     });
 
-    it('sets needs_review = 1 and calls logger.error for corrupted validation_warnings', () => {
+    it('sets needs_review = 1 and emits [ERROR] for corrupted validation_warnings', () => {
       const record = {
         validation_warnings: '[broken',
         needs_review: 0
@@ -102,8 +106,8 @@ describe('validateAndConvertTypes — JSON field parsing', () => {
       const result = validateAndConvertTypes(record);
       expect(result.validation_warnings).toBeNull();
       expect(result.needs_review).toBe(1);
-      expect(logger.error).toHaveBeenCalledTimes(1);
-      expect(logger.error.mock.calls[0][0]).toMatch(/validation_warnings/);
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+      expect(consoleErrorSpy.mock.calls[0][0]).toMatch(/\[ERROR\].*validation_warnings/);
     });
 
     it('sets needs_review = 1 for corrupted stone_condition (existing JSON field)', () => {
@@ -114,7 +118,7 @@ describe('validateAndConvertTypes — JSON field parsing', () => {
       const result = validateAndConvertTypes(record);
       expect(result.stone_condition).toBeNull();
       expect(result.needs_review).toBe(1);
-      expect(logger.error).toHaveBeenCalledTimes(1);
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
     });
 
     it('preserves a pre-existing needs_review = 1 when JSON also fails', () => {
@@ -132,7 +136,7 @@ describe('validateAndConvertTypes — JSON field parsing', () => {
       expect(result.needs_review).toBe(1);
     });
 
-    it('calls logger.error once per failing field when multiple fields are corrupted', () => {
+    it('emits one [ERROR] per failing field and sets needs_review = 1 for multiple corrupted fields', () => {
       const record = {
         confidence_scores: '{bad',
         validation_warnings: '{worse',
@@ -142,14 +146,14 @@ describe('validateAndConvertTypes — JSON field parsing', () => {
       expect(result.confidence_scores).toBeNull();
       expect(result.validation_warnings).toBeNull();
       expect(result.needs_review).toBe(1);
-      expect(logger.error).toHaveBeenCalledTimes(2);
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(2);
     });
 
-    it('passes the parse error object as second argument to logger.error', () => {
+    it('passes the parse Error as the second argument to console.error', () => {
       const record = { confidence_scores: '{bad', needs_review: 0 };
       validateAndConvertTypes(record);
-      const [, errorArg] = logger.error.mock.calls[0];
-      expect(errorArg).toBeInstanceOf(Error);
+      const [, errorArg] = consoleErrorSpy.mock.calls[0];
+      expect(errorArg).toBeInstanceOf(SyntaxError);
     });
   });
 });
