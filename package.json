@@ -23,7 +23,8 @@
     "th:query": "node bin/textharvester query",
     "th:help": "node bin/textharvester --help",
     "eval": "node scripts/eval.js",
-    "eval:check": "node scripts/eval.js --floor 0.85"
+    "eval:check": "node scripts/eval.js --floor 0.85",
+    "verify:migrations": "node scripts/verify-migration-transactions.js"
   },
   "keywords": [],
   "author": "Daniel Tierney",
