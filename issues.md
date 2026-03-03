@@ -100,15 +100,10 @@ Cross-field plausibility checks added to `MemorialOCRPrompt.validateAndConvert()
 
 ---
 
-### [#124](https://github.com/donalotiarnaigh/textharvester-web/issues/124) Silent null return on JSON parse failure hides data corruption in stored records
-**Labels:** bug, data
+### ~~[#124](https://github.com/donalotiarnaigh/textharvester-web/issues/124) Silent null return on JSON parse failure hides data corruption in stored records~~ ✅ Fixed
+**Branch:** `fix/issue-124-json-parse-failure-needs-review`
 
-`src/utils/dataValidation.js` silently returns `null` on JSON parse failure for stored JSON fields. Records that should be flagged for review are silently skipped because `confidence_scores` becomes `null` and the `needs_review` logic has no scores to evaluate.
-
-**Acceptance Criteria:**
-- Parse failures in `validateAndConvertTypes()` set `needs_review = 1` on the affected record.
-- A structured error (not just `logger.warn`) is emitted, visible regardless of sampling rate.
-- Unit test: simulate corrupted `confidence_scores` TEXT; assert `needs_review` is set to `1` on retrieval.
+`validateAndConvertTypes()` in `src/utils/dataValidation.js` previously only called `logger.warn()` on JSON parse failure and silently returned `null`, leaving `needs_review` unchanged. The fix extends the JSON-field list to include `confidence_scores` and `validation_warnings`, switches to `logger.error()` (which always calls `console.error()` regardless of `quietMode` or sampling rate), and forces `needs_review = 1` on the returned record when any field fails to parse. 14 unit tests added in `__tests__/utils/dataValidation.test.js` covering valid JSON (happy path), corrupted `confidence_scores`, corrupted `validation_warnings`, corrupted legacy fields, multiple concurrent failures, and per-record isolation in `validateAndConvertRecords()`.
 
 ---
 
