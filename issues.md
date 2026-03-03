@@ -107,15 +107,17 @@ Cross-field plausibility checks added to `MemorialOCRPrompt.validateAndConvert()
 
 ---
 
-### [#125](https://github.com/donalotiarnaigh/textharvester-web/issues/125) Database migrations run without transactions — partial migration leaves schema in broken state
+### ~~[#125](https://github.com/donalotiarnaigh/textharvester-web/issues/125) Database migrations run without transactions — partial migration leaves schema in broken state~~ ✅ Fixed
 **Labels:** bug, data
 
-All schema migrations in `database.js` and `src/utils/migrations/` execute DDL statements with no wrapping transaction. A crash mid-migration leaves the schema in an inconsistent state with no rollback path and no migration state table to record what was applied.
+~~All schema migrations in `database.js` and `src/utils/migrations/` execute DDL statements with no wrapping transaction. A crash mid-migration leaves the schema in an inconsistent state with no rollback path and no migration state table to record what was applied.~~
+
+**Fix (PR branch: `fix/issue-125-migration-transactions`):** Added `initializeMigrationsTable()` which creates a `schema_migrations` table (id, migration_name UNIQUE, applied_at) on startup. A new `runColumnMigration(tableName, missing, migrationName)` helper wraps all `ALTER TABLE` calls for a given batch inside a single `BEGIN IMMEDIATE` / `COMMIT` / `ROLLBACK` transaction, recording a row in `schema_migrations` via `INSERT OR IGNORE` on success. Both migration blocks in `initializeDatabase()` and `initializeBurialRegisterTable()` are refactored to use this helper. `scripts/migrate-add-typographic-analysis.js` is likewise wrapped in `BEGIN IMMEDIATE` / `COMMIT` / `ROLLBACK` with a `schema_migrations` insert on success. Seven integration tests (using a real in-memory SQLite database) verify: schema_migrations table structure, column addition, idempotency, DDL rollback behaviour, and mid-migration crash simulation for both the inline and script migration paths.
 
 **Acceptance Criteria:**
-- All multi-statement migrations wrapped in explicit SQLite transactions (`BEGIN IMMEDIATE` / `COMMIT` / `ROLLBACK`).
-- A `schema_migrations` table exists and is populated on each successful migration.
-- Integration test: simulate a mid-migration crash; assert the schema is fully rolled back.
+- ✅ All multi-statement migrations wrapped in explicit SQLite transactions (`BEGIN IMMEDIATE` / `COMMIT` / `ROLLBACK`).
+- ✅ A `schema_migrations` table exists and is populated on each successful migration.
+- ✅ Integration test: simulate a mid-migration crash; assert the schema is fully rolled back.
 
 ---
 

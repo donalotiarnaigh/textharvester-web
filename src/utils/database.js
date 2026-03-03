@@ -23,6 +23,74 @@ const db = new sqlite3.Database(dbPath, (err) => {
   logger.info('Connected to SQLite database');
 });
 
+// Initialize schema_migrations tracking table
+function initializeMigrationsTable() {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      migration_name TEXT NOT NULL UNIQUE,
+      applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `, (err) => {
+    if (err) logger.error('Error creating schema_migrations table:', err);
+    else logger.info('Schema migrations table initialized');
+  });
+}
+
+// Run a batch of column migrations inside a single BEGIN IMMEDIATE transaction.
+// On success, records the migration in schema_migrations (idempotent via INSERT OR IGNORE).
+// On any ALTER TABLE failure, rolls back the entire batch.
+function runColumnMigration(tableName, missing, migrationName) {
+  if (missing.length === 0) {
+    db.run(
+      'INSERT OR IGNORE INTO schema_migrations (migration_name) VALUES (?)',
+      [migrationName]
+    );
+    return;
+  }
+  db.run('BEGIN IMMEDIATE', (beginErr) => {
+    if (beginErr) {
+      logger.error(`Migration ${migrationName}: BEGIN IMMEDIATE failed:`, beginErr);
+      return;
+    }
+    const addNext = (index) => {
+      if (index >= missing.length) {
+        db.run('COMMIT', (commitErr) => {
+          if (commitErr) {
+            db.run('ROLLBACK', () =>
+              logger.error(`Migration ${migrationName}: COMMIT failed, rolled back:`, commitErr)
+            );
+            return;
+          }
+          db.run(
+            'INSERT OR IGNORE INTO schema_migrations (migration_name) VALUES (?)',
+            [migrationName],
+            (insertErr) => {
+              if (insertErr)
+                logger.error(`Migration ${migrationName}: schema_migrations insert failed:`, insertErr);
+              else
+                logger.info(`Migration ${migrationName}: completed`);
+            }
+          );
+        });
+        return;
+      }
+      const col = missing[index];
+      db.run(`ALTER TABLE ${tableName} ADD COLUMN ${col.name} ${col.def}`, (alterErr) => {
+        if (alterErr) {
+          db.run('ROLLBACK', () =>
+            logger.error(`Migration ${migrationName}: failed on ${col.name}, rolled back:`, alterErr)
+          );
+        } else {
+          logger.info(`Migration ${migrationName}: added ${col.name}`);
+          addNext(index + 1);
+        }
+      });
+    };
+    addNext(0);
+  });
+}
+
 // Initialize database with required table
 function initializeDatabase() {
   const createTableSQL = `
@@ -79,15 +147,8 @@ function initializeDatabase() {
         { name: 'reviewed_at', def: 'DATETIME' },
         { name: 'validation_warnings', def: 'TEXT' }
       ];
-      for (const col of migrations) {
-        if (!existingCols.includes(col.name)) {
-          logger.info(`Migrating database: Adding ${col.name} column to memorials`);
-          db.run(`ALTER TABLE memorials ADD COLUMN ${col.name} ${col.def}`, (alterErr) => {
-            if (alterErr) logger.error(`Error adding ${col.name} column:`, alterErr);
-            else logger.info(`Successfully added ${col.name} column`);
-          });
-        }
-      }
+      const missing = migrations.filter(col => !existingCols.includes(col.name));
+      runColumnMigration('memorials', missing, 'memorials_add_columns_v1');
     });
   });
 }
@@ -149,15 +210,8 @@ function initializeBurialRegisterTable() {
         { name: 'reviewed_at', def: 'DATETIME' },
         { name: 'validation_warnings', def: 'TEXT' }
       ];
-      for (const col of burialMigrations) {
-        if (!existingCols.includes(col.name)) {
-          logger.info(`Migrating database: Adding ${col.name} column to burial_register_entries`);
-          db.run(`ALTER TABLE burial_register_entries ADD COLUMN ${col.name} ${col.def}`, (alterErr) => {
-            if (alterErr) logger.error(`Error adding ${col.name} to burial_register_entries:`, alterErr);
-            else logger.info(`Successfully added ${col.name} to burial_register_entries`);
-          });
-        }
-      }
+      const missingBurial = burialMigrations.filter(col => !existingCols.includes(col.name));
+      runColumnMigration('burial_register_entries', missingBurial, 'burial_register_add_columns_v1');
     });
 
     // Create indexes
@@ -377,6 +431,7 @@ const backupDatabase = async () => {
 };
 
 // Initialize database on module load
+initializeMigrationsTable();
 initializeDatabase();
 initializeBurialRegisterTable();
 initializeCustomSchemasTable();
@@ -396,8 +451,10 @@ module.exports = {
   getMemorialsBySiteCode,
   clearAllMemorials,
   backupDatabase,
+  initializeMigrationsTable,
+  runColumnMigration,
   initializeDatabase,
   initializeBurialRegisterTable,
   initializeCustomSchemasTable,
   db // Exported for closing connection when needed
-}; 
+};

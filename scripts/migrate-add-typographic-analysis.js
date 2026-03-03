@@ -59,83 +59,129 @@ async function addTypographicAnalysisColumns(dbPath) {
         return;
       }
 
+      // Ensure schema_migrations tracking table exists
+      db.run(`
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          migration_name TEXT NOT NULL UNIQUE,
+          applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `, (migrErr) => {
+        if (migrErr) {
+          logger.error('Error creating schema_migrations table:', migrErr);
+          db.close();
+          reject(migrErr);
+          return;
+        }
+        runMigration();
+      });
+
+      function runMigration() {
       // First, verify memorials table exists
-      db.get(
-        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'memorials\'',
-        (err, row) => {
-          if (err) {
-            logger.error('Error checking for memorials table:', err);
-            db.close();
-            reject(err);
-            return;
-          }
-
-          if (!row) {
-            const error = new Error('memorials table does not exist. Cannot run migration.');
-            logger.error(error.message);
-            db.close();
-            reject(error);
-            return;
-          }
-
-          // Get existing columns
-          db.all('PRAGMA table_info(memorials)', (err, columns) => {
+        db.get(
+          'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'memorials\'',
+          (err, row) => {
             if (err) {
-              logger.error('Error checking table structure:', err);
+              logger.error('Error checking for memorials table:', err);
               db.close();
               reject(err);
               return;
             }
 
-            const existingColumnNames = columns.map(col => col.name);
-            const columnsToAdd = NEW_COLUMNS.filter(
-              col => !existingColumnNames.includes(col.name)
-            );
-
-            if (columnsToAdd.length === 0) {
-              logger.info('✓ All typographic analysis columns already exist');
+            if (!row) {
+              const error = new Error('memorials table does not exist. Cannot run migration.');
+              logger.error(error.message);
               db.close();
-              resolve(true);
+              reject(error);
               return;
             }
 
-            logger.info(`Adding ${columnsToAdd.length} typographic analysis columns...`);
+            // Get existing columns
+            db.all('PRAGMA table_info(memorials)', (err, columns) => {
+              if (err) {
+                logger.error('Error checking table structure:', err);
+                db.close();
+                reject(err);
+                return;
+              }
 
-            // Add columns sequentially using recursive approach
-            const addColumnAtIndex = (index) => {
-              if (index >= columnsToAdd.length) {
-                logger.info('✓ Successfully added all typographic analysis columns');
+              const existingColumnNames = columns.map(col => col.name);
+              const columnsToAdd = NEW_COLUMNS.filter(
+                col => !existingColumnNames.includes(col.name)
+              );
+
+              if (columnsToAdd.length === 0) {
+                logger.info('✓ All typographic analysis columns already exist');
                 db.close();
                 resolve(true);
                 return;
               }
 
-              const col = columnsToAdd[index];
-              const sql = `ALTER TABLE memorials ADD COLUMN ${col.name} ${col.type}`;
+              logger.info(`Adding ${columnsToAdd.length} typographic analysis columns...`);
 
-              db.run(sql, (err) => {
-                if (err) {
-                  // Check if it's a "duplicate column" error (shouldn't happen but be safe)
-                  if (err.message && err.message.includes('duplicate column')) {
-                    logger.warn(`Column ${col.name} already exists (concurrent migration?)`);
-                    addColumnAtIndex(index + 1);
-                  } else {
-                    logger.error(`Error adding column ${col.name}:`, err);
-                    db.close();
-                    reject(err);
-                  }
-                } else {
-                  logger.info(`  ✓ Added column: ${col.name}`);
-                  addColumnAtIndex(index + 1);
+              // Wrap all ALTER TABLE statements in a single transaction so that a
+              // mid-migration crash leaves the schema fully rolled back.
+              db.run('BEGIN IMMEDIATE', (beginErr) => {
+                if (beginErr) {
+                  logger.error('Error starting migration transaction:', beginErr);
+                  db.close();
+                  reject(beginErr);
+                  return;
                 }
-              });
-            };
 
-            // Start adding columns from index 0
-            addColumnAtIndex(0);
-          });
-        }
-      );
+                const addColumnAtIndex = (index) => {
+                  if (index >= columnsToAdd.length) {
+                    db.run('COMMIT', (commitErr) => {
+                      if (commitErr) {
+                        db.run('ROLLBACK', () => {
+                          logger.error('Error committing migration, rolled back:', commitErr);
+                          db.close();
+                          reject(commitErr);
+                        });
+                        return;
+                      }
+                      db.run(
+                        'INSERT OR IGNORE INTO schema_migrations (migration_name) VALUES (?)',
+                        ['memorials_add_typographic_columns_v1'],
+                        (insertErr) => {
+                          if (insertErr) {
+                            logger.error('Error recording migration in schema_migrations:', insertErr);
+                            db.close();
+                            reject(insertErr);
+                            return;
+                          }
+                          logger.info('✓ Successfully added all typographic analysis columns');
+                          db.close();
+                          resolve(true);
+                        }
+                      );
+                    });
+                    return;
+                  }
+
+                  const col = columnsToAdd[index];
+                  const sql = `ALTER TABLE memorials ADD COLUMN ${col.name} ${col.type}`;
+
+                  db.run(sql, (alterErr) => {
+                    if (alterErr) {
+                      db.run('ROLLBACK', () => {
+                        logger.error(`Error adding column ${col.name}, rolled back:`, alterErr);
+                        db.close();
+                        reject(alterErr);
+                      });
+                    } else {
+                      logger.info(`  ✓ Added column: ${col.name}`);
+                      addColumnAtIndex(index + 1);
+                    }
+                  });
+                };
+
+                addColumnAtIndex(0);
+              });
+            });
+          }
+        );
+      } // end runMigration
     });
   });
 }
