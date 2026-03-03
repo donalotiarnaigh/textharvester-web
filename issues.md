@@ -1,6 +1,6 @@
 # Open Issues — P1 / P2
 
-_Last updated: 2026-03-02_
+_Last updated: 2026-03-03_
 
 ---
 
@@ -56,18 +56,18 @@ _Last updated: 2026-03-02_
 
 ## P2 — Data Integrity
 
-### [#123](https://github.com/donalotiarnaigh/textharvester-web/issues/123) Cross-field validation absent — impossible dates and ages accepted silently
-**Labels:** bug, data
+### ~~[#123](https://github.com/donalotiarnaigh/textharvester-web/issues/123) Cross-field validation absent — impossible dates and ages accepted silently~~ ✅ Fixed
+**Branch:** `fix/issue-123-cross-field-validation` (PR #138)
 
-No cross-field consistency checks exist. Combinations like `age = 200`, burial date predating death year, or identical first/last name pass validation and are stored without a `needs_review` flag.
+Cross-field plausibility checks added to `MemorialOCRPrompt.validateAndConvert()` and `BurialRegisterPrompt.validateAndConvertEntry()`. Implausible field combinations downgrade affected confidence scores to `0.4` (below the `0.70` review threshold), triggering `needs_review = 1` automatically. Specific reasons are stored in a new `validation_warnings TEXT` column on both tables.
 
-**Suggested approach:** Downgrade affected field confidence scores (not hard-fail) and populate a `validation_warnings` array.
+**Checks implemented:**
+- `IDENTICAL_NAMES` — first_name equals last_name → caps both name confidence scores
+- `IMPLAUSIBLE_AGE` — inscription age > 150 → caps inscription confidence
+- `IMPLAUSIBLE_AGE` — implied birth year < 1400 (death − age) → caps inscription + year_of_death confidence
+- `IMPLAUSIBLE_AGE` — burial register age_raw > 150 → caps age_raw confidence
 
-**Acceptance Criteria:**
-- `validateAndConvert()` checks age, `year_of_death`, and name plausibility cross-field.
-- Implausible combinations lower confidence scores and set `needs_review = 1`.
-- New `validation_warnings` JSON column surfaces the specific reason.
-- Unit tests cover each impossible combination.
+10 new unit tests (TDD red→green) across both prompt test files.
 
 ---
 
