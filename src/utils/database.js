@@ -53,7 +53,8 @@ function initializeDatabase() {
       structural_observations TEXT,
       confidence_scores TEXT,
       needs_review INTEGER DEFAULT 0,
-      reviewed_at DATETIME
+      reviewed_at DATETIME,
+      validation_warnings TEXT
     )
   `;
 
@@ -75,7 +76,8 @@ function initializeDatabase() {
         { name: 'site_code', def: 'TEXT' },
         { name: 'confidence_scores', def: 'TEXT' },
         { name: 'needs_review', def: 'INTEGER DEFAULT 0' },
-        { name: 'reviewed_at', def: 'DATETIME' }
+        { name: 'reviewed_at', def: 'DATETIME' },
+        { name: 'validation_warnings', def: 'TEXT' }
       ];
       for (const col of migrations) {
         if (!existingCols.includes(col.name)) {
@@ -122,6 +124,7 @@ function initializeBurialRegisterTable() {
       confidence_scores TEXT,
       needs_review INTEGER DEFAULT 0,
       reviewed_at DATETIME,
+      validation_warnings TEXT,
       UNIQUE(volume_id, file_name, row_index_on_page, ai_provider)
     )
   `;
@@ -143,7 +146,8 @@ function initializeBurialRegisterTable() {
       const burialMigrations = [
         { name: 'confidence_scores', def: 'TEXT' },
         { name: 'needs_review', def: 'INTEGER DEFAULT 0' },
-        { name: 'reviewed_at', def: 'DATETIME' }
+        { name: 'reviewed_at', def: 'DATETIME' },
+        { name: 'validation_warnings', def: 'TEXT' }
       ];
       for (const col of burialMigrations) {
         if (!existingCols.includes(col.name)) {
@@ -224,8 +228,9 @@ function storeMemorial(data) {
       iconography,
       structural_observations,
       confidence_scores,
-      needs_review
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      needs_review,
+      validation_warnings
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   return new Promise((resolve, reject) => {
@@ -260,7 +265,8 @@ function storeMemorial(data) {
         safeStringify(data.iconography),
         data.structural_observations || null,
         safeStringify(data.confidence_scores),
-        data.needs_review ?? 0
+        data.needs_review ?? 0,
+        safeStringify(data.validation_warnings)
       ];
     } catch (e) {
       logger.error('Error preparing memorial params:', e);

@@ -199,4 +199,63 @@ describe('BurialRegisterPrompt validation', () => {
         .toThrow('uncertainty_flags must be an array of strings');
     });
   });
+
+  describe('cross-field validation', () => {
+    it('flags IMPLAUSIBLE_AGE when age_raw is "200"', () => {
+      const entry = {
+        ...samplePageData.entries[0],
+        age_raw: '200'
+      };
+
+      const result = prompt.validateAndConvertEntry(entry);
+
+      expect(result._validation_warnings).toBeDefined();
+      expect(result._validation_warnings.some(w => w.includes('IMPLAUSIBLE_AGE'))).toBe(true);
+    });
+
+    it('caps age_raw confidence to 0.4 when age exceeds 150', () => {
+      const entry = {
+        ...samplePageData.entries[0],
+        age_raw: { value: '200', confidence: 0.95 }
+      };
+
+      const result = prompt.validateAndConvertEntry(entry);
+
+      expect(result._confidence_scores.age_raw).toBeLessThanOrEqual(0.4);
+    });
+
+    it('flags IMPLAUSIBLE_AGE when age_raw is "200 years"', () => {
+      const entry = {
+        ...samplePageData.entries[0],
+        age_raw: '200 years'
+      };
+
+      const result = prompt.validateAndConvertEntry(entry);
+
+      expect(result._validation_warnings).toBeDefined();
+      expect(result._validation_warnings.some(w => w.includes('IMPLAUSIBLE_AGE'))).toBe(true);
+    });
+
+    it('does not flag IMPLAUSIBLE_AGE when age_raw is "42"', () => {
+      const entry = {
+        ...samplePageData.entries[0],
+        age_raw: '42'
+      };
+
+      const result = prompt.validateAndConvertEntry(entry);
+
+      expect(result._validation_warnings).toBeUndefined();
+    });
+
+    it('does not flag IMPLAUSIBLE_AGE when age_raw is null', () => {
+      const entry = {
+        ...samplePageData.entries[0],
+        age_raw: null
+      };
+
+      const result = prompt.validateAndConvertEntry(entry);
+
+      expect(result._validation_warnings).toBeUndefined();
+    });
+  });
 });

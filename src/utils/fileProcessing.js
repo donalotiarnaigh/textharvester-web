@@ -130,6 +130,14 @@ async function processFile(filePath, options = {}) {
         validatedData.needs_review = Object.values(graveCardConfidenceScores).some(s => s === null || s < threshold) ? 1 : 0;
       }
 
+      // Extract validation warnings
+      const graveCardValidationWarnings = validatedData._validation_warnings ?? null;
+      delete validatedData._validation_warnings;
+      if (graveCardValidationWarnings && graveCardValidationWarnings.length > 0) {
+        validatedData.validation_warnings = graveCardValidationWarnings;
+        validatedData.needs_review = 1; // force flag even if confidence disabled
+      }
+
       logger.info(`${providerName} grave card response validated successfully for ${filePath}`);
 
       // Step 5: Add metadata
@@ -223,6 +231,10 @@ async function processFile(filePath, options = {}) {
           const entryConfidenceScores = validatedEntry._confidence_scores;
           delete validatedEntry._confidence_scores;
 
+          // Extract validation warnings
+          const entryValidationWarnings = validatedEntry._validation_warnings ?? null;
+          delete validatedEntry._validation_warnings;
+
           const entryWithMetadata = {
             ...validatedEntry,
             volume_id: entry.volume_id,
@@ -243,6 +255,11 @@ async function processFile(filePath, options = {}) {
             entryWithMetadata.confidence_scores = entryConfidenceScores;
             const threshold = config.confidence?.reviewThreshold ?? 0.70;
             entryWithMetadata.needs_review = Object.values(entryConfidenceScores).some(s => s === null || s < threshold) ? 1 : 0;
+          }
+
+          if (entryValidationWarnings && entryValidationWarnings.length > 0) {
+            entryWithMetadata.validation_warnings = entryValidationWarnings;
+            entryWithMetadata.needs_review = 1; // force flag even if confidence disabled
           }
 
           await burialRegisterStorage.storeBurialRegisterEntry(entryWithMetadata);
@@ -340,6 +357,14 @@ async function processFile(filePath, options = {}) {
         extractedData.confidence_scores = memConfidenceScores;
         const threshold = config.confidence?.reviewThreshold ?? 0.70;
         extractedData.needs_review = Object.values(memConfidenceScores).some(s => s === null || s < threshold) ? 1 : 0;
+      }
+
+      // Extract validation warnings
+      const memValidationWarnings = extractedData._validation_warnings ?? null;
+      delete extractedData._validation_warnings;
+      if (memValidationWarnings && memValidationWarnings.length > 0) {
+        extractedData.validation_warnings = memValidationWarnings;
+        extractedData.needs_review = 1; // force flag even if confidence disabled
       }
 
       logger.info(`${providerName} API response processed successfully for ${filePath}`);
