@@ -305,6 +305,26 @@ For every field shown as { "value": ..., "confidence": ... }, return that envelo
       throw error;
     }
 
+    // Cross-field plausibility checks
+    const crossFieldWarnings = [];
+
+    // IMPLAUSIBLE_AGE: parse first number from age_raw
+    if (result.age_raw) {
+      const ageMatch = result.age_raw.match(/(\d+)/);
+      if (ageMatch) {
+        const parsedAge = parseInt(ageMatch[1], 10);
+        if (parsedAge > 150) {
+          crossFieldWarnings.push(`IMPLAUSIBLE_AGE: age_raw "${result.age_raw}" exceeds 150 years`);
+          // Cap confidence below reviewThreshold (0.70)
+          confidenceScores.age_raw = Math.min(confidenceScores.age_raw ?? 1, 0.4);
+        }
+      }
+    }
+
+    if (crossFieldWarnings.length > 0) {
+      result._validation_warnings = crossFieldWarnings;
+    }
+
     result._confidence_scores = confidenceScores;
     return result;
   }

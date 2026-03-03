@@ -168,7 +168,8 @@ describe('Database Storage Layer: Typographic Analysis Fields', () => {
       // 16: structural_observations
       // 17: confidence_scores (JSON)
       // 18: needs_review
-      expect(params).toHaveLength(19);
+      // 19: validation_warnings (JSON)
+      expect(params).toHaveLength(20);
 
       expect(params[12]).toBe(data.transcription_raw);
       expect(params[13]).toBe(data.stone_condition);

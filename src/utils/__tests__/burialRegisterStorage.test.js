@@ -67,6 +67,7 @@ describe('burialRegisterStorage', () => {
         confidence_scores TEXT,
         needs_review INTEGER DEFAULT 0,
         reviewed_at DATETIME,
+        validation_warnings TEXT,
         UNIQUE(volume_id, file_name, row_index_on_page, ai_provider)
       )
     `, (err) => {

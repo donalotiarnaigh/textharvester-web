@@ -154,7 +154,8 @@ function buildBurialEntryParams(entry) {
     entry.prompt_template || null,
     entry.prompt_version || null,
     confidenceScores,
-    entry.needs_review ?? 0
+    entry.needs_review ?? 0,
+    entry.validation_warnings ? JSON.stringify(entry.validation_warnings) : null
   ];
 }
 
@@ -215,8 +216,9 @@ async function storeBurialRegisterEntry(entry) {
       prompt_template,
       prompt_version,
       confidence_scores,
-      needs_review
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      needs_review,
+      validation_warnings
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const params = buildBurialEntryParams(entry);

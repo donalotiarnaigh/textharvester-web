@@ -191,6 +191,41 @@ For inscription, also include: "uncertain_segments": ["word1", "word2"] for ambi
       }
     }
 
+    // Cross-field plausibility checks
+    const crossFieldWarnings = [];
+
+    // IDENTICAL_NAMES: first_name and last_name are the same value (already uppercased)
+    if (result.first_name && result.last_name && result.first_name === result.last_name) {
+      crossFieldWarnings.push('IDENTICAL_NAMES: first_name and last_name are the same value');
+      // Cap both confidences below reviewThreshold (0.70)
+      confidenceScores.first_name = Math.min(confidenceScores.first_name ?? 1, 0.4);
+      confidenceScores.last_name = Math.min(confidenceScores.last_name ?? 1, 0.4);
+    }
+
+    // IMPLAUSIBLE_AGE: parse age from inscription text
+    if (result.inscription) {
+      const ageMatch = result.inscription.match(/\bAGED?\s+(\d+)\s+YEAR/i);
+      if (ageMatch) {
+        const parsedAge = parseInt(ageMatch[1], 10);
+        if (parsedAge > 150) {
+          crossFieldWarnings.push(`IMPLAUSIBLE_AGE: inscription age ${parsedAge} exceeds 150 years`);
+          confidenceScores.inscription = Math.min(confidenceScores.inscription ?? 1, 0.4);
+        }
+        if (result.year_of_death != null && result.year_of_death - parsedAge < 1400) {
+          const impliedBirth = result.year_of_death - parsedAge;
+          crossFieldWarnings.push(
+            `IMPLAUSIBLE_AGE: implied birth year ${impliedBirth} (death ${result.year_of_death} - age ${parsedAge}) is before 1400`
+          );
+          confidenceScores.inscription = Math.min(confidenceScores.inscription ?? 1, 0.4);
+          confidenceScores.year_of_death = Math.min(confidenceScores.year_of_death ?? 1, 0.4);
+        }
+      }
+    }
+
+    if (crossFieldWarnings.length > 0) {
+      result._validation_warnings = crossFieldWarnings;
+    }
+
     result._confidence_scores = confidenceScores;
     logger.info('[MemorialOCRPrompt] Final result:', JSON.stringify(result, null, 2));
     return result;

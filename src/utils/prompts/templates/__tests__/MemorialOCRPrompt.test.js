@@ -133,4 +133,122 @@ describe('MemorialOCRPrompt', () => {
       expect(result.first_name).toBe('JOHN');
     });
   });
+
+  describe('cross-field validation', () => {
+    it('flags IDENTICAL_NAMES when first_name equals last_name', () => {
+      const data = {
+        memorial_number: '1',
+        first_name: 'SMITH',
+        last_name: 'SMITH',
+        year_of_death: 1900,
+        inscription: 'In memory of SMITH SMITH'
+      };
+
+      const result = prompt.validateAndConvert(data);
+
+      expect(result._validation_warnings).toBeDefined();
+      expect(result._validation_warnings.some(w => w.includes('IDENTICAL_NAMES'))).toBe(true);
+    });
+
+    it('caps first_name and last_name confidence to 0.4 on IDENTICAL_NAMES', () => {
+      const data = {
+        memorial_number: { value: '1', confidence: 0.99 },
+        first_name: { value: 'SMITH', confidence: 0.95 },
+        last_name: { value: 'SMITH', confidence: 0.95 },
+        year_of_death: { value: 1900, confidence: 0.99 },
+        inscription: { value: 'In memory of SMITH SMITH', confidence: 0.90 }
+      };
+
+      const result = prompt.validateAndConvert(data);
+
+      expect(result._confidence_scores.first_name).toBeLessThanOrEqual(0.4);
+      expect(result._confidence_scores.last_name).toBeLessThanOrEqual(0.4);
+    });
+
+    it('does not flag IDENTICAL_NAMES when names differ', () => {
+      const data = {
+        memorial_number: '1',
+        first_name: 'JOHN',
+        last_name: 'SMITH',
+        year_of_death: 1900,
+        inscription: 'In memory of JOHN SMITH'
+      };
+
+      const result = prompt.validateAndConvert(data);
+
+      expect(result._validation_warnings).toBeUndefined();
+    });
+
+    it('flags IMPLAUSIBLE_AGE when inscription age exceeds 150', () => {
+      const data = {
+        memorial_number: '1',
+        first_name: 'JOHN',
+        last_name: 'SMITH',
+        year_of_death: 1900,
+        inscription: 'IN MEMORY OF JOHN SMITH AGED 200 YEARS'
+      };
+
+      const result = prompt.validateAndConvert(data);
+
+      expect(result._validation_warnings).toBeDefined();
+      expect(result._validation_warnings.some(w => w.includes('IMPLAUSIBLE_AGE'))).toBe(true);
+    });
+
+    it('caps inscription confidence to 0.4 when age exceeds 150', () => {
+      const data = {
+        memorial_number: { value: '1', confidence: 0.99 },
+        first_name: { value: 'JOHN', confidence: 0.95 },
+        last_name: { value: 'SMITH', confidence: 0.95 },
+        year_of_death: { value: 1900, confidence: 0.99 },
+        inscription: { value: 'IN MEMORY OF JOHN SMITH AGED 200 YEARS', confidence: 0.92 }
+      };
+
+      const result = prompt.validateAndConvert(data);
+
+      expect(result._confidence_scores.inscription).toBeLessThanOrEqual(0.4);
+    });
+
+    it('flags implied birth year before 1400', () => {
+      const data = {
+        memorial_number: '1',
+        first_name: 'JOHN',
+        last_name: 'SMITH',
+        year_of_death: 1960,
+        inscription: 'IN MEMORY OF JOHN SMITH AGED 600 YEARS'
+      };
+
+      const result = prompt.validateAndConvert(data);
+
+      expect(result._validation_warnings).toBeDefined();
+      expect(result._validation_warnings.some(w => w.includes('IMPLAUSIBLE_AGE') && w.includes('birth year'))).toBe(true);
+    });
+
+    it('caps year_of_death confidence when implied birth year is before 1400', () => {
+      const data = {
+        memorial_number: { value: '1', confidence: 0.99 },
+        first_name: { value: 'JOHN', confidence: 0.95 },
+        last_name: { value: 'SMITH', confidence: 0.95 },
+        year_of_death: { value: 1960, confidence: 0.99 },
+        inscription: { value: 'IN MEMORY OF JOHN SMITH AGED 600 YEARS', confidence: 0.92 }
+      };
+
+      const result = prompt.validateAndConvert(data);
+
+      expect(result._confidence_scores.year_of_death).toBeLessThanOrEqual(0.4);
+    });
+
+    it('does not flag plausible age (AGED 72 YEARS, year_of_death 1950)', () => {
+      const data = {
+        memorial_number: '1',
+        first_name: 'JOHN',
+        last_name: 'SMITH',
+        year_of_death: 1950,
+        inscription: 'IN MEMORY OF JOHN SMITH AGED 72 YEARS'
+      };
+
+      const result = prompt.validateAndConvert(data);
+
+      expect(result._validation_warnings).toBeUndefined();
+    });
+  });
 }); 
