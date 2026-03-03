@@ -27,16 +27,29 @@ _Last updated: 2026-03-02_
 
 ### [#121](https://github.com/donalotiarnaigh/textharvester-web/issues/121) No extraction accuracy measurement — impossible to detect quality regression
 **Labels:** enhancement, data, high-priority
-**Branch:** `fix/issue-121-extraction-accuracy-eval` (merged infrastructure; data pending)
+**Branch:** `fix/issue-121-extraction-accuracy-eval` (PR #137 — infrastructure merged; data pending)
 
-**Status:** Infrastructure complete — blocked on real dataset.
+**Status:** Infrastructure complete — blocked on real dataset from community group.
 
-`scripts/eval.js` provides `computeCER`, `computeFieldAccuracy`, `evaluateNeedsReview`, and `runEvaluation` — all pure functions exported for testing and documented in `docs/evaluation.md`. Schema placeholder files exist at `eval/gold-standard/memorials.json` and `eval/gold-standard/burial-register.json` with `records: []`; the CI baseline fixture at `eval/fixtures/ci-baseline.json` is similarly empty. Data-dependent tests in `__tests__/scripts/eval.test.js` skip automatically when datasets are empty and activate once records are added. The `reviewThreshold` of 0.70 is documented. 40 unit tests pass. Awaiting hand-labelled dataset from local community group to complete the remaining acceptance criteria.
+**Completed:**
+- `scripts/eval.js` — evaluation CLI and library (`computeCER`, `computeFieldAccuracy`, `evaluateNeedsReview`, `runEvaluation`); `--floor N` flag exits 1 when accuracy is below threshold; gracefully exits 0 with a warning when no data is present.
+- `eval/gold-standard/memorials.json` and `burial-register.json` — schema placeholder files with `records: []`; format documented in `eval/README.md`.
+- `eval/fixtures/ci-baseline.json` — placeholder for pre-computed model outputs (empty until real data is available).
+- `__tests__/scripts/eval.test.js` — 36 passing unit tests covering all metric functions and file integrity; 5 data-dependent tests skip automatically when records are empty and activate once data is committed.
+- `docs/evaluation.md` — full documentation including `reviewThreshold = 0.70` rationale and instructions for re-enabling the CI gate.
+- `npm run eval` / `npm run eval:check` scripts added to `package.json`.
+
+**Remaining steps:**
+1. **Obtain dataset** — receive hand-labelled records (≥ 20 memorials) from local community group.
+2. **Commit gold standard** — populate `eval/gold-standard/memorials.json` (and `burial-register.json` if available) with the real records.
+3. **Generate CI baseline fixture** — run the system against the gold-standard images; save extracted outputs to `eval/fixtures/ci-baseline.json` using the schema in `eval/README.md`.
+4. **Re-enable CI gate** — add the `eval:check` step back to `.github/workflows/ci.yml` (instructions in `docs/evaluation.md`).
+5. **Verify** — run `npm run eval:check`; confirm overall accuracy ≥ 0.85 and adjust the floor if needed.
 
 **Acceptance Criteria:**
-- ✅ Reproducible evaluation script exists and is documented (`docs/evaluation.md`).
+- ✅ Reproducible evaluation script exists and is documented.
 - ⏳ At least 20 hand-labelled records committed as gold standard — pending community dataset.
-- ⏳ CI fails if field-level accuracy drops below a defined floor — infrastructure ready; CI step commented out until data is available.
+- ⏳ CI fails if field-level accuracy drops below a defined floor — infrastructure ready; step disabled until data is available.
 - ✅ `reviewThreshold` value is backed by a documented measurement.
 
 ---
