@@ -1,0 +1,8 @@
+{
+  "version": "1.0.0",
+  "description": "Hand-labelled memorial OCR ground-truth records for extraction accuracy evaluation (issue #121).",
+  "placeholder_note": "No records committed yet. Awaiting hand-labelled dataset from local community group. See eval/README.md for the expected record schema and docs/evaluation.md for instructions.",
+  "fields_evaluated": ["first_name", "last_name", "year_of_death", "inscription"],
+  "notes": "expected_needs_review indicates whether a human reviewer would flag the record for manual inspection (e.g., damaged stone, faded text, ambiguous lettering). Add at least 20 records before enabling the CI accuracy gate.",
+  "records": []
+}

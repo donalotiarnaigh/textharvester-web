@@ -1,0 +1,6 @@
+{
+  "version": "1.0.0",
+  "description": "CI baseline fixture — pre-computed model outputs against the memorial gold standard (issue #121).",
+  "placeholder_note": "No baseline fixture committed yet. Populate this file with extracted records once real gold-standard data is available in eval/gold-standard/memorials.json. See docs/evaluation.md for the expected record schema.",
+  "extracted_records": []
+}
