@@ -41,18 +41,31 @@ function validateAndConvertTypes(data) {
     }
   });
 
-  // Deserialize JSON fields
-  ['stone_condition', 'typography_analysis', 'iconography', 'structural_observations'].forEach(field => {
+  // Deserialize JSON fields.
+  // On parse failure the field is set to null, needs_review is forced to 1,
+  // and logger.error is called so the event is visible regardless of quietMode.
+  const JSON_FIELDS = [
+    'stone_condition',
+    'typography_analysis',
+    'iconography',
+    'structural_observations',
+    'confidence_scores',
+    'validation_warnings'
+  ];
+
+  let parseFailure = false;
+
+  JSON_FIELDS.forEach(field => {
     if (field in data) {
       if (data[field] === null || data[field] === undefined || data[field] === '') {
         result[field] = null;
       } else if (typeof data[field] === 'string') {
         try {
           result[field] = JSON.parse(data[field]);
-        } catch (_) {
-          logger.warn(`Failed to parse ${field}: ${data[field]}`);
-          result[field] = null; // Or keep as string? Requirements say "throw storage error" on serialization, but here we just warn.
-          // Let's fallback to null or object indicating error, but requirements 5.3 says "Corrupted JSON in database returns null with logged warning"
+        } catch (err) {
+          logger.error(`JSON parse failure for field "${field}" — record flagged for review`, err);
+          result[field] = null;
+          parseFailure = true;
         }
       } else if (typeof data[field] === 'object') {
         // Already an object (e.g. mock data or fast path)
@@ -60,6 +73,10 @@ function validateAndConvertTypes(data) {
       }
     }
   });
+
+  if (parseFailure) {
+    result.needs_review = 1;
+  }
 
   return result;
 }
