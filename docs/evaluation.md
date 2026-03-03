@@ -18,14 +18,15 @@ AI-extracted records against a hand-labelled **gold standard** dataset using:
 
 Location: `eval/gold-standard/`
 
-| File | Records | Source type |
-|------|---------|-------------|
-| `memorials.json` | 20 | `memorial_ocr` |
-| `burial-register.json` | 5 | `burial_register` |
+| File | Records | Source type | Status |
+|------|---------|-------------|--------|
+| `memorials.json` | 0 | `memorial_ocr` | Pending — awaiting dataset from local community group |
+| `burial-register.json` | 0 | `burial_register` | Pending |
 
-The memorial records were manually transcribed from graveyard survey photographs
-(County Kerry and County Cork, Ireland). See `eval/README.md` for provenance
-and how to extend the dataset.
+The schema and evaluation infrastructure are in place. Once hand-labelled records are
+received from the community group, add them to the relevant file following the schema
+in `eval/README.md`. All data-dependent tests and the CI accuracy gate activate
+automatically once `records` is non-empty.
 
 ---
 
@@ -76,15 +77,21 @@ node scripts/eval.js --output reports/eval-$(date +%Y%m%d).json
 
 ## CI Integration
 
-`.github/workflows/ci.yml` runs `npm run eval:check` after the test suite.
-`eval:check` is equivalent to `node scripts/eval.js --floor 0.85`.
+The `eval` tests in `__tests__/scripts/eval.test.js` run as part of `npm test`.
+Tests that require populated gold-standard data are gated on `records.length > 0`
+and skip gracefully until real data is committed.
 
-If the CI baseline fixture drops below **0.85 overall accuracy**, the build fails.
-This catches regressions in the evaluation logic itself (e.g., a broken
-`computeFieldAccuracy` function or corrupted gold-standard data).
+Once the gold standard is populated, re-enable the accuracy gate in CI by adding
+this step back to `.github/workflows/ci.yml` (after `Run tests`):
 
-The `eval` tests in `__tests__/scripts/eval.test.js` also run as part of `npm test`
-and serve as the primary regression gate.
+```yaml
+- name: Eval accuracy gate
+  run: npm run eval:check
+```
+
+`eval:check` exits with code 1 if overall accuracy drops below **0.85**, blocking
+the PR. Also populate `eval/fixtures/ci-baseline.json` with pre-computed model
+outputs so the gate has a baseline to compare against.
 
 ---
 

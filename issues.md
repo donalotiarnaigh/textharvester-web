@@ -25,15 +25,18 @@ _Last updated: 2026-03-02_
 
 ---
 
-### ~~[#121](https://github.com/donalotiarnaigh/textharvester-web/issues/121) No extraction accuracy measurement — impossible to detect quality regression~~ ✅ Fixed
-**Branch:** `fix/issue-121-extraction-accuracy-eval`
+### [#121](https://github.com/donalotiarnaigh/textharvester-web/issues/121) No extraction accuracy measurement — impossible to detect quality regression
+**Labels:** enhancement, data, high-priority
+**Branch:** `fix/issue-121-extraction-accuracy-eval` (merged infrastructure; data pending)
 
-Phase 1 evaluation infrastructure is now in place. `scripts/eval.js` provides `computeCER`, `computeFieldAccuracy`, `evaluateNeedsReview`, and `runEvaluation` — all pure functions exported for testing. A hand-labelled gold standard of 20 memorial records (`data/eval/gold-standard/memorials.json`) and 5 burial register entries (`data/eval/gold-standard/burial-register.json`) is committed to the repository. A CI baseline fixture (`data/eval/fixtures/ci-baseline.json`) drives the regression gate: `npm run eval:check` exits with code 1 if overall accuracy falls below **0.85**; this step is wired into `.github/workflows/ci.yml` after the test suite. The `reviewThreshold` of 0.70 is documented in `docs/evaluation.md` with reference to the confidence scale embedded in all prompt templates (the 0.70 boundary separates the "readable, may have minor errors" and "uncertain" bands). 40 unit tests covering all metric functions and data integrity checks were added in `__tests__/scripts/eval.test.js`. The CI baseline currently achieves **97.5% overall accuracy** (first_name=100%, last_name=95%, year_of_death=95%, inscription=100%) with perfect needs_review precision/recall (F1=1.0). Phase 2 (threshold calibration via F1/ROC) and Phase 3 (per-run model_run_id dashboard) remain as future work.
+**Status:** Infrastructure complete — blocked on real dataset.
+
+`scripts/eval.js` provides `computeCER`, `computeFieldAccuracy`, `evaluateNeedsReview`, and `runEvaluation` — all pure functions exported for testing and documented in `docs/evaluation.md`. Schema placeholder files exist at `eval/gold-standard/memorials.json` and `eval/gold-standard/burial-register.json` with `records: []`; the CI baseline fixture at `eval/fixtures/ci-baseline.json` is similarly empty. Data-dependent tests in `__tests__/scripts/eval.test.js` skip automatically when datasets are empty and activate once records are added. The `reviewThreshold` of 0.70 is documented. 40 unit tests pass. Awaiting hand-labelled dataset from local community group to complete the remaining acceptance criteria.
 
 **Acceptance Criteria:**
 - ✅ Reproducible evaluation script exists and is documented (`docs/evaluation.md`).
-- ✅ At least 20 hand-labelled records committed as gold standard.
-- ✅ CI fails if field-level accuracy drops below a defined floor (0.85 gate in CI + test).
+- ⏳ At least 20 hand-labelled records committed as gold standard — pending community dataset.
+- ⏳ CI fails if field-level accuracy drops below a defined floor — infrastructure ready; CI step commented out until data is available.
 - ✅ `reviewThreshold` value is backed by a documented measurement.
 
 ---

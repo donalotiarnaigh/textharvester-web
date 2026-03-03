@@ -264,9 +264,23 @@ if (require.main === module) {
     process.exit(1);
   }
 
-  const goldStandard = JSON.parse(fs.readFileSync(goldPath, 'utf-8')).records;
+  const goldData = JSON.parse(fs.readFileSync(goldPath, 'utf-8'));
+  const goldStandard = goldData.records || [];
+
+  if (goldStandard.length === 0) {
+    console.warn('Gold standard dataset is empty — no records to evaluate.');
+    console.warn(`Add hand-labelled records to ${goldPath} then re-run.`);
+    process.exit(0);
+  }
+
   const fixture = JSON.parse(fs.readFileSync(inputPath, 'utf-8'));
   const extractedRecords = fixture.extracted_records || fixture;
+
+  if (extractedRecords.length === 0) {
+    console.warn('Extracted records (input) are empty — nothing to compare against gold standard.');
+    console.warn(`Populate ${inputPath} then re-run.`);
+    process.exit(0);
+  }
 
   const result = runEvaluation(goldStandard, extractedRecords);
 

@@ -1,75 +1,8 @@
 {
   "version": "1.0.0",
   "description": "Hand-labelled burial register OCR ground-truth records for extraction accuracy evaluation (issue #121).",
-  "source": "Manually transcribed from digitised parish register — St. Mary's Parish, County Kerry, 1892 volume.",
-  "created": "2026-03-02",
+  "placeholder_note": "No records committed yet. Awaiting hand-labelled dataset from local community group. See eval/README.md for the expected record schema and docs/evaluation.md for instructions.",
   "fields_evaluated": ["name_raw", "burial_date_raw", "age_raw", "abode_raw"],
-  "notes": "These records test extraction from tabular register pages. expected_needs_review indicates faded ink or torn margin.",
-  "records": [
-    {
-      "id": "gs-br-001",
-      "source_type": "burial_register",
-      "image_ref": "eval/images/burial_register_page_001.jpg",
-      "description": "Row 1 — St. Mary's Parish, March 1892. Clear ink, undamaged.",
-      "expected_needs_review": false,
-      "expected": {
-        "name_raw": "Thomas Murphy",
-        "burial_date_raw": "14 March 1892",
-        "age_raw": "65",
-        "abode_raw": "Killarney"
-      }
-    },
-    {
-      "id": "gs-br-002",
-      "source_type": "burial_register",
-      "image_ref": "eval/images/burial_register_page_001.jpg",
-      "description": "Row 2 — St. Mary's Parish, April 1892. Clear ink.",
-      "expected_needs_review": false,
-      "expected": {
-        "name_raw": "Mary O'Brien",
-        "burial_date_raw": "2 April 1892",
-        "age_raw": "43",
-        "abode_raw": "Tralee"
-      }
-    },
-    {
-      "id": "gs-br-003",
-      "source_type": "burial_register",
-      "image_ref": "eval/images/burial_register_page_001.jpg",
-      "description": "Row 3 — St. Mary's Parish, May 1892. Minor ink bleed on date column.",
-      "expected_needs_review": false,
-      "expected": {
-        "name_raw": "Patrick Walsh",
-        "burial_date_raw": "17 May 1892",
-        "age_raw": "78",
-        "abode_raw": "Listowel"
-      }
-    },
-    {
-      "id": "gs-br-004",
-      "source_type": "burial_register",
-      "image_ref": "eval/images/burial_register_page_001.jpg",
-      "description": "Row 4 — St. Mary's Parish, June 1892. Child entry, clear ink.",
-      "expected_needs_review": false,
-      "expected": {
-        "name_raw": "Catherine Kelly",
-        "burial_date_raw": "8 June 1892",
-        "age_raw": "12",
-        "abode_raw": "Killarney"
-      }
-    },
-    {
-      "id": "gs-br-005",
-      "source_type": "burial_register",
-      "image_ref": "eval/images/burial_register_page_001.jpg",
-      "description": "Row 5 — St. Mary's Parish, November 1892. Torn right margin slightly clips abode column.",
-      "expected_needs_review": true,
-      "expected": {
-        "name_raw": "John Sullivan",
-        "burial_date_raw": "29 November 1892",
-        "age_raw": "54",
-        "abode_raw": "Caherciveen"
-      }
-    }
-  ]
+  "notes": "expected_needs_review indicates faded ink or torn margin. Add records once real parish register scans are available.",
+  "records": []
 }
