@@ -1,5 +1,5 @@
 const logger = require('./logger');
-const { db, runColumnMigration } = require('./database');
+const { db } = require('./database');
 
 /**
  * Initialize the grave_cards table
@@ -29,7 +29,7 @@ function initialize() {
       }
       logger.info('grave_cards table initialized');
 
-      // Migration: Add cost columns if they don't exist
+      // Migration: Add cost columns if they don't exist (plain ALTER TABLE, no transaction)
       db.all('PRAGMA table_info(grave_cards)', (pragmaErr, pragmaRows) => {
         if (pragmaErr) {
           logger.error('Error checking grave_cards table info:', pragmaErr);
@@ -43,8 +43,22 @@ function initialize() {
           { name: 'estimated_cost_usd', def: 'REAL DEFAULT 0' }
         ];
         const missing = costMigrations.filter(col => !existingCols.includes(col.name));
-        runColumnMigration('grave_cards', missing, 'grave_cards_add_cost_columns_v1');
-        resolve();
+        if (missing.length === 0) {
+          resolve();
+          return;
+        }
+        let remaining = missing.length;
+        missing.forEach(col => {
+          db.run('ALTER TABLE grave_cards ADD COLUMN ' + col.name + ' ' + col.def, (alterErr) => {
+            if (alterErr) {
+              logger.error('Error adding column ' + col.name + ' to grave_cards:', alterErr);
+            } else {
+              logger.info('grave_cards: added column ' + col.name);
+            }
+            remaining--;
+            if (remaining === 0) resolve();
+          });
+        });
       });
     });
   });

@@ -214,7 +214,10 @@ function initializeBurialRegisterTable() {
         { name: 'confidence_scores', def: 'TEXT' },
         { name: 'needs_review', def: 'INTEGER DEFAULT 0' },
         { name: 'reviewed_at', def: 'DATETIME' },
-        { name: 'validation_warnings', def: 'TEXT' }
+        { name: 'validation_warnings', def: 'TEXT' },
+        { name: 'input_tokens', def: 'INTEGER DEFAULT 0' },
+        { name: 'output_tokens', def: 'INTEGER DEFAULT 0' },
+        { name: 'estimated_cost_usd', def: 'REAL DEFAULT 0' }
       ];
       const missingBurial = burialMigrations.filter(col => !existingCols.includes(col.name));
       runColumnMigration('burial_register_entries', missingBurial, 'burial_register_add_columns_v1');
