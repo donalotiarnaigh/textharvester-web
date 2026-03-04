@@ -117,7 +117,14 @@ class AnthropicProvider extends BaseVisionProvider {
 
       // Extract the text content from the response
       const content = result.content.find(item => item.type === 'text')?.text;
-      
+      // Anthropic SDK: result.usage = { input_tokens, output_tokens,
+      //   cache_creation_input_tokens, cache_read_input_tokens }
+      // Cache fields excluded from cost calculation in this iteration.
+      const usage = {
+        input_tokens:  result.usage?.input_tokens  ?? 0,
+        output_tokens: result.usage?.output_tokens ?? 0
+      };
+
       if (!content) {
         throw new Error('No text content in response');
       }
@@ -132,7 +139,7 @@ class AnthropicProvider extends BaseVisionProvider {
 
       // Return raw content if requested
       if (options.raw) {
-        return content;
+        return { content, usage };
       }
 
       // Parse the JSON response, handling the case where it's wrapped in a code block
@@ -181,7 +188,7 @@ class AnthropicProvider extends BaseVisionProvider {
         logger.info(`[AnthropicProvider] JSON response was successfully repaired (${validationResult.originalLength} -> ${validationResult.repairedLength} chars)`);
       }
       
-      return validationResult.json;
+      return { content: validationResult.json, usage };
     } catch (error) {
       logger.error(`Anthropic API error for model ${this.model}`, error, {
         phase: 'api_call',

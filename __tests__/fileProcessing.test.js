@@ -82,7 +82,7 @@ describe('File Processing Module', () => {
     // Setup default mock implementations
     mockFs.promises.readFile.mockResolvedValue(mockBase64Image);
     mockFs.promises.unlink.mockResolvedValue();
-    mockProcessImage.mockResolvedValue(mockExtractedData);
+    mockProcessImage.mockResolvedValue({ content: mockExtractedData, usage: { input_tokens: 0, output_tokens: 0 } });
     mockValidateAndConvert.mockReturnValue(mockExtractedData);
     storeMemorial.mockResolvedValue();
   });
@@ -96,13 +96,17 @@ describe('File Processing Module', () => {
     test('processes a file with default options', async () => {
       const result = await processFile(mockFilePath);
 
-      expect(result).toEqual({
-        ...mockExtractedData,
+      expect(result).toEqual(expect.objectContaining({
+        memorial_number: '123',
+        first_name: 'John',
+        last_name: 'Doe',
+        year_of_death: '1900',
+        inscription: 'Test inscription',
         fileName: 'image.jpg',
         ai_provider: 'openai',
         model_version: 'test-model-v1',
         prompt_version: '1.0'
-      });
+      }));
 
       expect(mockFs.promises.readFile).toHaveBeenCalledWith(mockFilePath, { encoding: 'base64' });
       expect(createProvider).toHaveBeenCalled();
@@ -171,7 +175,7 @@ describe('File Processing Module', () => {
         inscription: 'RAW INSCRIPTION'
       };
 
-      mockProcessImage.mockResolvedValue(mockRawData);
+      mockProcessImage.mockResolvedValue({ content: mockRawData, usage: { input_tokens: 0, output_tokens: 0 } });
 
       await processFile(mockFilePath);
 
@@ -194,21 +198,21 @@ describe('File Processing Module', () => {
     });
 
     test('injects filename number when OCR returns null', async () => {
-      mockProcessImage.mockResolvedValue({ memorial_number: null, first_name: 'JOHN' });
+      mockProcessImage.mockResolvedValue({ content: { memorial_number: null, first_name: 'JOHN' }, usage: { input_tokens: 0, output_tokens: 0 } });
       await processFile(monumentFilePath, { sourceType: 'monument_photo' });
       const data = mockValidateAndConvert.mock.calls[0][0];
       expect(data.memorial_number).toBe(expectedInjectedNumber);
     });
 
     test('injects filename number when OCR returns "N/A" placeholder', async () => {
-      mockProcessImage.mockResolvedValue({ memorial_number: 'N/A', first_name: 'JOHN' });
+      mockProcessImage.mockResolvedValue({ content: { memorial_number: 'N/A', first_name: 'JOHN' }, usage: { input_tokens: 0, output_tokens: 0 } });
       await processFile(monumentFilePath, { sourceType: 'monument_photo' });
       const data = mockValidateAndConvert.mock.calls[0][0];
       expect(data.memorial_number).toBe(expectedInjectedNumber);
     });
 
     test('injects filename number when OCR returns lowercase "n/a"', async () => {
-      mockProcessImage.mockResolvedValue({ memorial_number: 'n/a', first_name: 'JOHN' });
+      mockProcessImage.mockResolvedValue({ content: { memorial_number: 'n/a', first_name: 'JOHN' }, usage: { input_tokens: 0, output_tokens: 0 } });
       await processFile(monumentFilePath, { sourceType: 'monument_photo' });
       const data = mockValidateAndConvert.mock.calls[0][0];
       expect(data.memorial_number).toBe(expectedInjectedNumber);
@@ -216,8 +220,8 @@ describe('File Processing Module', () => {
 
     test('injects filename number when OCR returns confidence wrapper with null value', async () => {
       mockProcessImage.mockResolvedValue({
-        memorial_number: { value: null, confidence: 0.3 },
-        first_name: 'JOHN'
+        content: { memorial_number: { value: null, confidence: 0.3 }, first_name: 'JOHN' },
+        usage: { input_tokens: 0, output_tokens: 0 }
       });
       await processFile(monumentFilePath, { sourceType: 'monument_photo' });
       const data = mockValidateAndConvert.mock.calls[0][0];
@@ -226,8 +230,8 @@ describe('File Processing Module', () => {
 
     test('injects filename number when OCR returns confidence wrapper with "N/A" value', async () => {
       mockProcessImage.mockResolvedValue({
-        memorial_number: { value: 'N/A', confidence: 0.2 },
-        first_name: 'JOHN'
+        content: { memorial_number: { value: 'N/A', confidence: 0.2 }, first_name: 'JOHN' },
+        usage: { input_tokens: 0, output_tokens: 0 }
       });
       await processFile(monumentFilePath, { sourceType: 'monument_photo' });
       const data = mockValidateAndConvert.mock.calls[0][0];
@@ -235,7 +239,7 @@ describe('File Processing Module', () => {
     });
 
     test('preserves valid OCR memorial number (plain string)', async () => {
-      mockProcessImage.mockResolvedValue({ memorial_number: '42', first_name: 'JOHN' });
+      mockProcessImage.mockResolvedValue({ content: { memorial_number: '42', first_name: 'JOHN' }, usage: { input_tokens: 0, output_tokens: 0 } });
       await processFile(monumentFilePath, { sourceType: 'monument_photo' });
       const data = mockValidateAndConvert.mock.calls[0][0];
       expect(data.memorial_number).toBe('42');
@@ -243,8 +247,8 @@ describe('File Processing Module', () => {
 
     test('preserves valid OCR memorial number from confidence wrapper', async () => {
       mockProcessImage.mockResolvedValue({
-        memorial_number: { value: '42', confidence: 0.85 },
-        first_name: 'JOHN'
+        content: { memorial_number: { value: '42', confidence: 0.85 }, first_name: 'JOHN' },
+        usage: { input_tokens: 0, output_tokens: 0 }
       });
       await processFile(monumentFilePath, { sourceType: 'monument_photo' });
       const data = mockValidateAndConvert.mock.calls[0][0];

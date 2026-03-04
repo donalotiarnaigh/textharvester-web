@@ -169,13 +169,20 @@ describe('Database Storage Layer: Typographic Analysis Fields', () => {
       // 17: confidence_scores (JSON)
       // 18: needs_review
       // 19: validation_warnings (JSON)
-      expect(params).toHaveLength(20);
+      // 20: input_tokens
+      // 21: output_tokens
+      // 22: estimated_cost_usd
+      expect(params).toHaveLength(23);
 
       expect(params[12]).toBe(data.transcription_raw);
       expect(params[13]).toBe(data.stone_condition);
       expect(JSON.parse(params[14])).toEqual(data.typography_analysis);
       expect(JSON.parse(params[15])).toEqual(data.iconography);
       expect(params[16]).toBe(data.structural_observations);
+      // Cost columns (positions 20–22)
+      expect(typeof params[20]).toBe('number'); // input_tokens
+      expect(typeof params[21]).toBe('number'); // output_tokens
+      expect(typeof params[22]).toBe('number'); // estimated_cost_usd
     });
 
     /**

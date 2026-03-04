@@ -184,20 +184,42 @@ describe('OpenAIProvider', () => {
       expect(callArgs.reasoning_effort).toBeUndefined();
     });
 
-    it('should return parsed JSON response', async () => {
+    it('should return { content, usage } with parsed JSON content', async () => {
       const result = await provider.processImage(testImage, testPrompt);
       expect(result).toEqual({
-        memorial_number: '123',
-        first_name: 'John',
-        last_name: 'Doe',
-        year_of_death: 1923,
-        inscription: 'Test inscription'
+        content: {
+          memorial_number: '123',
+          first_name: 'John',
+          last_name: 'Doe',
+          year_of_death: 1923,
+          inscription: 'Test inscription'
+        },
+        usage: { input_tokens: 0, output_tokens: 0 }
       });
+    });
+
+    it('should extract usage tokens from API response', async () => {
+      provider.client.chat.completions.create.mockResolvedValue({
+        ...mockOpenAIResponse,
+        usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 }
+      });
+      const result = await provider.processImage(testImage, testPrompt);
+      expect(result.usage).toEqual({ input_tokens: 100, output_tokens: 50 });
+    });
+
+    it('should default usage tokens to 0 when usage is absent', async () => {
+      provider.client.chat.completions.create.mockResolvedValue({
+        ...mockOpenAIResponse,
+        usage: undefined
+      });
+      const result = await provider.processImage(testImage, testPrompt);
+      expect(result.usage).toEqual({ input_tokens: 0, output_tokens: 0 });
     });
 
     it('should return raw response when raw option is true', async () => {
       const result = await provider.processImage(testImage, testPrompt, { raw: true });
-      expect(result).toBe(mockOpenAIResponse.choices[0].message.content);
+      expect(result.content).toBe(mockOpenAIResponse.choices[0].message.content);
+      expect(result.usage).toBeDefined();
     });
 
     it('should handle API errors', async () => {

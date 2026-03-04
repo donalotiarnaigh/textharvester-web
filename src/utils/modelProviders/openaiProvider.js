@@ -134,14 +134,19 @@ class OpenAIProvider extends BaseVisionProvider {
         );
       
         const content = result.choices[0].message.content;
-        
+        // OpenAI SDK: result.usage = { prompt_tokens, completion_tokens, total_tokens, ... }
+        const usage = {
+          input_tokens:  result.usage?.prompt_tokens     ?? 0,
+          output_tokens: result.usage?.completion_tokens ?? 0
+        };
+
         // Return raw content if requested
         if (options.raw) {
-          return content;
+          return { content, usage };
         }
 
         try {
-          return JSON.parse(content);
+          return { content: JSON.parse(content), usage };
         } catch (parseError) {
           logger.error(`OpenAI JSON parsing failed for model ${this.model}`, parseError, {
             phase: 'response_parsing',

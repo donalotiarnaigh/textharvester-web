@@ -108,7 +108,7 @@ jest.mock('../../src/utils/modelProviders', () => {
 
   return {
     createProvider: jest.fn(() => ({
-      processImage: jest.fn().mockResolvedValue(mockResult),
+      processImage: jest.fn().mockResolvedValue({ content: mockResult, usage: { input_tokens: 0, output_tokens: 0 } }),
       getModelVersion: () => 'mock-v1'
     }))
   };

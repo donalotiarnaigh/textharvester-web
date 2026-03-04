@@ -15,6 +15,19 @@ const graveCardStorage = require('./graveCardStorage');
 const config = require('../../config.json');
 
 /**
+ * Calculate estimated cost in USD for a single API call.
+ * @param {{ input_tokens: number, output_tokens: number }} usage
+ * @param {{ inputPerMToken?: number, outputPerMToken?: number }} costConfig
+ * @returns {number}
+ */
+function calculateCost(usage, costConfig) {
+  return (
+    ((usage.input_tokens  / 1_000_000) * (costConfig.inputPerMToken  || 0)) +
+    ((usage.output_tokens / 1_000_000) * (costConfig.outputPerMToken || 0))
+  );
+}
+
+/**
  * Enhances the processFile function with detailed logging for better tracking and debugging.
  * Processes a given file by reading and sending its contents to the configured AI provider for OCR processing.
  * @param {string} filePath The path to the file to be processed.
@@ -109,7 +122,7 @@ async function processFile(filePath, options = {}) {
       const systemPrompt = typeof promptConfig === 'object' ? promptConfig.systemPrompt : undefined;
 
       // Step 3: Process through AI provider
-      const rawExtractedData = await provider.processImage(base64Image, userPrompt, {
+      const { content: rawExtractedData, usage: graveCardUsage } = await provider.processImage(base64Image, userPrompt, {
         systemPrompt: systemPrompt,
         promptTemplate: promptInstance
       });
@@ -149,6 +162,15 @@ async function processFile(filePath, options = {}) {
       validatedData.prompt_version = promptInstance.version;
       validatedData.source_type = sourceType;
 
+      // Inject cost data
+      {
+        const modelVersion = provider.getModelVersion();
+        const costConfig = config.costs?.[providerName]?.[modelVersion] || {};
+        validatedData.input_tokens       = graveCardUsage.input_tokens;
+        validatedData.output_tokens      = graveCardUsage.output_tokens;
+        validatedData.estimated_cost_usd = calculateCost(graveCardUsage, costConfig);
+      }
+
       // Step 6: Store in database
       await graveCardStorage.storeGraveCard(validatedData);
 
@@ -172,7 +194,7 @@ async function processFile(filePath, options = {}) {
       // Use longer timeout for burial register processing (configurable, default 90 seconds)
       const burialRegisterTimeout = config.burialRegister?.apiTimeout || 90000;
       logger.debug(`Using API timeout of ${burialRegisterTimeout}ms for burial register processing`);
-      const pageDataRaw = await provider.processImage(base64Image, userPrompt, {
+      const { content: pageDataRaw, usage: burialUsage } = await provider.processImage(base64Image, userPrompt, {
         systemPrompt: systemPrompt,
         promptTemplate: promptInstance,
         timeout: burialRegisterTimeout
@@ -235,6 +257,7 @@ async function processFile(filePath, options = {}) {
           const entryValidationWarnings = validatedEntry._validation_warnings ?? null;
           delete validatedEntry._validation_warnings;
 
+          const burialCostConfig = config.costs?.[providerName]?.[provider.getModelVersion()] || {};
           const entryWithMetadata = {
             ...validatedEntry,
             volume_id: entry.volume_id,
@@ -248,7 +271,10 @@ async function processFile(filePath, options = {}) {
             model_run_id: entry.model_run_id ?? null,
             prompt_template: 'burialRegister',
             prompt_version: promptInstance.version,
-            source_type: 'burial_register'
+            source_type: 'burial_register',
+            input_tokens:       burialUsage.input_tokens,
+            output_tokens:      burialUsage.output_tokens,
+            estimated_cost_usd: calculateCost(burialUsage, burialCostConfig)
           };
 
           if (entryConfidenceScores && config.confidence?.enabled !== false) {
@@ -313,7 +339,7 @@ async function processFile(filePath, options = {}) {
     const systemPrompt = typeof promptConfig === 'object' ? promptConfig.systemPrompt : undefined;
 
     // Process the image using the selected provider
-    const rawExtractedData = await provider.processImage(base64Image, userPrompt, {
+    const { content: rawExtractedData, usage: memUsage } = await provider.processImage(base64Image, userPrompt, {
       systemPrompt: systemPrompt,
       promptTemplate: promptInstance
     });
@@ -380,6 +406,15 @@ async function processFile(filePath, options = {}) {
       // Include site_code for mobile uploads (site isolation)
       if (options.site_code) {
         extractedData.site_code = options.site_code;
+      }
+
+      // Inject cost data
+      {
+        const modelVersion = provider.getModelVersion();
+        const costConfig = config.costs?.[providerName]?.[modelVersion] || {};
+        extractedData.input_tokens       = memUsage.input_tokens;
+        extractedData.output_tokens      = memUsage.output_tokens;
+        extractedData.estimated_cost_usd = calculateCost(memUsage, costConfig);
       }
 
       // Store in database

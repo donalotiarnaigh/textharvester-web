@@ -1,5 +1,5 @@
 const logger = require('./logger');
-const { db } = require('./database');
+const { db, runColumnMigration } = require('./database');
 
 /**
  * Initialize the grave_cards table
@@ -13,7 +13,10 @@ function initialize() {
       grave_number TEXT,
       data_json TEXT,
       processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-      ai_provider TEXT
+      ai_provider TEXT,
+      input_tokens INTEGER DEFAULT 0,
+      output_tokens INTEGER DEFAULT 0,
+      estimated_cost_usd REAL DEFAULT 0
     )
   `;
 
@@ -25,7 +28,24 @@ function initialize() {
         return;
       }
       logger.info('grave_cards table initialized');
-      resolve();
+
+      // Migration: Add cost columns if they don't exist
+      db.all('PRAGMA table_info(grave_cards)', (pragmaErr, pragmaRows) => {
+        if (pragmaErr) {
+          logger.error('Error checking grave_cards table info:', pragmaErr);
+          resolve(); // Non-fatal: table was created OK
+          return;
+        }
+        const existingCols = pragmaRows ? pragmaRows.map(row => row.name) : [];
+        const costMigrations = [
+          { name: 'input_tokens', def: 'INTEGER DEFAULT 0' },
+          { name: 'output_tokens', def: 'INTEGER DEFAULT 0' },
+          { name: 'estimated_cost_usd', def: 'REAL DEFAULT 0' }
+        ];
+        const missing = costMigrations.filter(col => !existingCols.includes(col.name));
+        runColumnMigration('grave_cards', missing, 'grave_cards_add_cost_columns_v1');
+        resolve();
+      });
     });
   });
 }
@@ -67,6 +87,9 @@ function storeGraveCard(data) {
     const section = data.location?.section || null;
     const graveNumber = data.location?.grave_number || null;
     const dataJson = JSON.stringify(data);
+    const inputTokens = data.input_tokens ?? 0;
+    const outputTokens = data.output_tokens ?? 0;
+    const estimatedCostUsd = data.estimated_cost_usd ?? 0;
 
     const sql = `
       INSERT INTO grave_cards (
@@ -74,11 +97,14 @@ function storeGraveCard(data) {
         section,
         grave_number,
         data_json,
-        ai_provider
-      ) VALUES (?, ?, ?, ?, ?)
+        ai_provider,
+        input_tokens,
+        output_tokens,
+        estimated_cost_usd
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    db.run(sql, [fileName, section, graveNumber, dataJson, aiProvider], function (err) {
+    db.run(sql, [fileName, section, graveNumber, dataJson, aiProvider, inputTokens, outputTokens, estimatedCostUsd], function (err) {
       if (err) {
         logger.error('Error storing grave card:', err);
         reject(err);
