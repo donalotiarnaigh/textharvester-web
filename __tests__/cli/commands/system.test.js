@@ -23,7 +23,8 @@ jest.mock('../../../src/services/SystemService', () => {
   return jest.fn().mockImplementation(() => ({
     initDb: jest.fn(),
     getStatus: jest.fn(),
-    clearQueue: jest.fn()
+    clearQueue: jest.fn(),
+    getCostSummary: jest.fn()
   }));
 });
 
@@ -34,6 +35,7 @@ describe('System Command', () => {
   let mockInitDb;
   let mockGetStatus;
   let mockClearQueue;
+  let mockGetCostSummary;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -72,10 +74,13 @@ describe('System Command', () => {
     mockGetStatus = jest.fn();
     mockClearQueue = jest.fn();
 
+    mockGetCostSummary = jest.fn();
+
     SystemServiceClass.mockImplementation(() => ({
       initDb: mockInitDb,
       getStatus: mockGetStatus,
-      clearQueue: mockClearQueue
+      clearQueue: mockClearQueue,
+      getCostSummary: mockGetCostSummary
     }));
   });
 
@@ -137,6 +142,38 @@ describe('System Command', () => {
       expect(mockClearQueue).toHaveBeenCalledWith(undefined); // or expect.anything() if we don't care about exact value, but we do care it wasn't true
       expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining('CONFIRMATION_REQUIRED'));
       expect(process.exit).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('cost subcommand', () => {
+    it('should call SystemService.getCostSummary and output results', async () => {
+      mockGetCostSummary.mockResolvedValue({
+        rows: [
+          { provider: 'openai',    records: 5, input_tokens: 1000, output_tokens: 500, estimated_cost_usd: 0.005 },
+          { provider: 'anthropic', records: 3, input_tokens: 600,  output_tokens: 300, estimated_cost_usd: 0.003 }
+        ],
+        total: { provider: 'total', records: 8, input_tokens: 1600, output_tokens: 800, estimated_cost_usd: 0.008 }
+      });
+
+      await runCommand(['system', 'cost']);
+
+      expect(mockGetCostSummary).toHaveBeenCalled();
+      // Expect JSON output includes provider names and total
+      const output = mockConsoleLog.mock.calls.flat().join('');
+      expect(output).toContain('openai');
+      expect(output).toContain('anthropic');
+    });
+
+    it('should pass --from, --to, and --provider options to getCostSummary', async () => {
+      mockGetCostSummary.mockResolvedValue({ rows: [], total: { records: 0, input_tokens: 0, output_tokens: 0, estimated_cost_usd: 0 } });
+
+      await runCommand(['system', 'cost', '--from', '2026-01-01', '--to', '2026-03-01', '--provider', 'openai']);
+
+      expect(mockGetCostSummary).toHaveBeenCalledWith(expect.objectContaining({
+        from: '2026-01-01',
+        to:   '2026-03-01',
+        provider: 'openai'
+      }));
     });
   });
 

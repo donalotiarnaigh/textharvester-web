@@ -180,9 +180,17 @@ class IngestService {
 
     const successes = [];
     const failures = [];
+    let sessionCostUsd = 0;
 
     // Process batches sequentially
     for (let i = 0; i < batches.length; i++) {
+      // Check session cost cap before each batch
+      const cap = effectiveOptions.costs?.maxCostPerSession ?? this.config.costs?.maxCostPerSession;
+      if (cap != null && sessionCostUsd >= cap) {
+        this.logger.warn(`Session cost cap ($${cap.toFixed(2)}) reached at $${sessionCostUsd.toFixed(2)}. Halting.`);
+        break;
+      }
+
       const batch = batches[i];
       this.logger.info(`Processing batch ${i + 1}/${batches.length} (${batch.length} files)`);
 
@@ -193,6 +201,11 @@ class IngestService {
         const file = batch[index];
         if (result.status === 'fulfilled') {
           successes.push(result.value);
+          // Accumulate session cost from successful results
+          const costUsd = result.value?.data?.estimated_cost_usd;
+          if (typeof costUsd === 'number') {
+            sessionCostUsd += costUsd;
+          }
         } else {
           const error = result.reason;
           this.logger.error(`Failed to process ${file}`, error);

@@ -135,10 +135,10 @@ describe('processFile', () => {
     };
 
     // Mock OpenAI response format
-    mockOpenAICreateMethod.mockResolvedValue(mockResponse);
+    mockOpenAICreateMethod.mockResolvedValue({ content: mockResponse, usage: { input_tokens: 0, output_tokens: 0 } });
 
     // Mock Anthropic response format
-    mockAnthropicCreateMethod.mockResolvedValue(mockResponse);
+    mockAnthropicCreateMethod.mockResolvedValue({ content: mockResponse, usage: { input_tokens: 0, output_tokens: 0 } });
 
     providerTemplates.getPrompt.mockImplementation(actualProviderTemplates.getPrompt);
   });
@@ -229,7 +229,7 @@ describe('processFile', () => {
       providerTemplates.getPrompt.mockImplementationOnce(() => burialPromptMock);
       burialRegisterFlattener.flattenPageToEntries.mockReturnValue(flattenedEntries);
 
-      mockOpenAICreateMethod.mockResolvedValue(pageData);
+      mockOpenAICreateMethod.mockResolvedValue({ content: pageData, usage: { input_tokens: 0, output_tokens: 0 } });
 
       const result = await processFile('burial.jpg', {
         provider: 'openai',
@@ -307,7 +307,7 @@ describe('processFile', () => {
       providerTemplates.getPrompt.mockImplementationOnce(() => burialPromptMock);
       burialRegisterFlattener.flattenPageToEntries.mockReturnValue(flattenedEntries);
 
-      mockAnthropicCreateMethod.mockResolvedValue(pageData);
+      mockAnthropicCreateMethod.mockResolvedValue({ content: pageData, usage: { input_tokens: 0, output_tokens: 0 } });
 
       const result = await processFile('claude-burial.jpg', {
         provider: 'anthropic',

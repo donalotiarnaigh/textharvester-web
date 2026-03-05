@@ -89,4 +89,29 @@ system
     }
   });
 
+// cost subcommand
+system
+  .command('cost')
+  .description('Summarise token usage and estimated spend')
+  .option('--from <date>', 'Start date (ISO, inclusive)')
+  .option('--to <date>', 'End date (ISO, inclusive)')
+  .option('--provider <name>', 'Filter by AI provider name')
+  .action(async (options, command) => {
+    try {
+      const optsWithGlobals = command.optsWithGlobals();
+      const config = await loadConfig(optsWithGlobals);
+      configureLogger(config);
+      const service = new SystemService(config);
+      const summary = await service.getCostSummary({
+        from:     options.from,
+        to:       options.to,
+        provider: options.provider
+      });
+      formatOutput(summary, 'system cost', options);
+    } catch (error) {
+      formatError(error);
+      process.exit(1);
+    }
+  });
+
 module.exports = system;

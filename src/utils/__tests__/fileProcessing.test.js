@@ -66,7 +66,7 @@ describe('Enhanced File Processing with Error Handling', () => {
     };
 
     mockProvider = {
-      processImage: jest.fn().mockResolvedValue(mockProviderResponse),
+      processImage: jest.fn().mockResolvedValue({ content: mockProviderResponse, usage: { input_tokens: 100, output_tokens: 50 } }),
       getModelVersion: jest.fn().mockReturnValue('mock-model-1.0')
     };
 
@@ -223,7 +223,7 @@ describe('Enhanced File Processing with Error Handling', () => {
         })
       );
 
-      // Verify GraveCardPrompt was used
+      // Verify GraveCardPrompt was used (processImage returns { content, usage }, content is what validateAndConvert receives)
       expect(mockGraveCardPrompt.validateAndConvert).toHaveBeenCalledWith(mockProviderResponse);
 
       // Verify storage was called with validated data

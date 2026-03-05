@@ -68,6 +68,9 @@ describe('burialRegisterStorage', () => {
         needs_review INTEGER DEFAULT 0,
         reviewed_at DATETIME,
         validation_warnings TEXT,
+        input_tokens INTEGER DEFAULT 0,
+        output_tokens INTEGER DEFAULT 0,
+        estimated_cost_usd REAL DEFAULT 0,
         UNIQUE(volume_id, file_name, row_index_on_page, ai_provider)
       )
     `, (err) => {

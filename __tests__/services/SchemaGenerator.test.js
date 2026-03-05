@@ -30,7 +30,7 @@ describe('SchemaGenerator', () => {
 
   describe('generateSchema', () => {
     it('should include the system prompt in the analysis request', async () => {
-      mockLlmProvider.processImage.mockResolvedValue(JSON.stringify({ tableName: 'test', fields: [] }));
+      mockLlmProvider.processImage.mockResolvedValue({ content: JSON.stringify({ tableName: 'test', fields: [] }), usage: { input_tokens: 0, output_tokens: 0 } });
 
       await schemaGenerator.generateSchema(['/path/to/img.jpg']);
 
@@ -52,7 +52,7 @@ describe('SchemaGenerator', () => {
           { name: 'amount', type: 'number', description: 'Total amount' }
         ]
       });
-      mockLlmProvider.processImage.mockResolvedValue(mockLlmResponse);
+      mockLlmProvider.processImage.mockResolvedValue({ content: mockLlmResponse, usage: { input_tokens: 0, output_tokens: 0 } });
 
       const result = await schemaGenerator.generateSchema(['/path/to/image1.jpg']);
 
@@ -70,7 +70,7 @@ describe('SchemaGenerator', () => {
           { name: 'valid-field', type: 'number', description: 'Hyphenated' }
         ]
       });
-      mockLlmProvider.processImage.mockResolvedValue(mockLlmResponse);
+      mockLlmProvider.processImage.mockResolvedValue({ content: mockLlmResponse, usage: { input_tokens: 0, output_tokens: 0 } });
 
       const result = await schemaGenerator.generateSchema(['/path/to/image1.jpg']);
 
@@ -83,14 +83,14 @@ describe('SchemaGenerator', () => {
     });
 
     it('should throw error when LLM returns invalid JSON', async () => {
-      mockLlmProvider.processImage.mockResolvedValue('Not JSON');
+      mockLlmProvider.processImage.mockResolvedValue({ content: 'Not JSON', usage: { input_tokens: 0, output_tokens: 0 } });
 
       await expect(schemaGenerator.generateSchema(['/path/to/image1.jpg']))
         .rejects.toThrow('Failed to parse LLM response');
     });
 
     it('should throw error when LLM cannot find consistent structure', async () => {
-      mockLlmProvider.processImage.mockResolvedValue(JSON.stringify({ error: 'No structure found' }));
+      mockLlmProvider.processImage.mockResolvedValue({ content: JSON.stringify({ error: 'No structure found' }), usage: { input_tokens: 0, output_tokens: 0 } });
 
       await expect(schemaGenerator.generateSchema(['/path/to/image1.jpg']))
         .rejects.toThrow('No consistent structure found');

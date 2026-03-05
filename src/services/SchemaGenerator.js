@@ -64,7 +64,8 @@ class SchemaGenerator {
       let response;
       try {
         // Use processImage with raw=true because we handle parsing below
-        response = await this.llmProvider.processImage(base64Image, prompt, { raw: true });
+        const rawResult = await this.llmProvider.processImage(base64Image, prompt, { raw: true });
+        response = rawResult.content;
       } catch (error) {
         throw new Error(`LLM interaction failed: ${error.message}`);
       }

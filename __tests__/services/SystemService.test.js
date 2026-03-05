@@ -127,6 +127,51 @@ describe('SystemService', () => {
     });
   });
 
+  describe('getCostSummary', () => {
+    beforeEach(() => {
+      database.getAllMemorials.mockResolvedValue([
+        { ai_provider: 'openai',    input_tokens: 100, output_tokens: 50,  estimated_cost_usd: 0.0005, processed_date: '2026-01-15T10:00:00Z' },
+        { ai_provider: 'anthropic', input_tokens: 200, output_tokens: 100, estimated_cost_usd: 0.0015, processed_date: '2026-01-16T10:00:00Z' }
+      ]);
+      burialRegisterStorage.getAllBurialRegisterEntries.mockResolvedValue([
+        { ai_provider: 'openai', input_tokens: 300, output_tokens: 150, estimated_cost_usd: 0.0008, processed_date: '2026-01-15T12:00:00Z' }
+      ]);
+      graveCardStorage.getAllGraveCards.mockResolvedValue([]);
+    });
+
+    it('should return aggregated cost summary grouped by provider', async () => {
+      const summary = await service.getCostSummary();
+
+      expect(summary).toHaveProperty('rows');
+      expect(summary).toHaveProperty('total');
+
+      const openaiRow = summary.rows.find(r => r.provider === 'openai');
+      expect(openaiRow).toBeDefined();
+      expect(openaiRow.records).toBe(2); // 1 memorial + 1 burial
+      expect(openaiRow.input_tokens).toBe(400);
+
+      const anthropicRow = summary.rows.find(r => r.provider === 'anthropic');
+      expect(anthropicRow).toBeDefined();
+      expect(anthropicRow.records).toBe(1);
+
+      expect(summary.total.records).toBe(3);
+      expect(summary.total.estimated_cost_usd).toBeCloseTo(0.0028, 6);
+    });
+
+    it('should filter by provider when option is set', async () => {
+      const summary = await service.getCostSummary({ provider: 'openai' });
+      expect(summary.rows).toHaveLength(1);
+      expect(summary.rows[0].provider).toBe('openai');
+      expect(summary.total.records).toBe(2);
+    });
+
+    it('should filter by date range', async () => {
+      const summary = await service.getCostSummary({ from: '2026-01-16T00:00:00Z' });
+      // Only anthropic memorial (2026-01-16) qualifies; openai memorial (2026-01-15) and openai burial (2026-01-15) are excluded
+      expect(summary.total.records).toBe(1);
+    });
+  });
+
   describe('clearData', () => {
     beforeEach(() => {
       database.clearAllMemorials = jest.fn().mockResolvedValue();

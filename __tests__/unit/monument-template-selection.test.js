@@ -67,11 +67,14 @@ describe('Monument Template Selection', () => {
     // Mock provider
     const mockProvider = {
       processImage: jest.fn().mockResolvedValue({
-        memorial_number: '123',
-        first_name: 'TEST',
-        last_name: 'USER',
-        year_of_death: 2000,
-        inscription: 'Test inscription'
+        content: {
+          memorial_number: '123',
+          first_name: 'TEST',
+          last_name: 'USER',
+          year_of_death: 2000,
+          inscription: 'Test inscription'
+        },
+        usage: { input_tokens: 0, output_tokens: 0 }
       }),
       getModelVersion: jest.fn().mockReturnValue('mock-model-1.0')
     };
@@ -213,7 +216,7 @@ describe('Monument Template Selection', () => {
         source_type: 'monument_photo'
       };
 
-      const mockProcessImage = jest.fn().mockResolvedValue({});
+      const mockProcessImage = jest.fn().mockResolvedValue({ content: {}, usage: { input_tokens: 0, output_tokens: 0 } });
       const mockProvider = {
         processImage: mockProcessImage,
         getModelVersion: jest.fn().mockReturnValue('test-model')

@@ -20,7 +20,7 @@ describe('GraveCardStorage', () => {
     db = new sqlite3.Database(':memory:');
 
     // Mock the database module to return our in-memory db
-    jest.doMock('../database', () => ({ db }));
+    jest.doMock('../database', () => ({ db, runColumnMigration: jest.fn() }));
 
     GraveCardStorage = require('../graveCardStorage');
 

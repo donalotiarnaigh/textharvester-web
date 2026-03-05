@@ -122,7 +122,10 @@ function initializeDatabase() {
       confidence_scores TEXT,
       needs_review INTEGER DEFAULT 0,
       reviewed_at DATETIME,
-      validation_warnings TEXT
+      validation_warnings TEXT,
+      input_tokens INTEGER DEFAULT 0,
+      output_tokens INTEGER DEFAULT 0,
+      estimated_cost_usd REAL DEFAULT 0
     )
   `;
 
@@ -145,10 +148,13 @@ function initializeDatabase() {
         { name: 'confidence_scores', def: 'TEXT' },
         { name: 'needs_review', def: 'INTEGER DEFAULT 0' },
         { name: 'reviewed_at', def: 'DATETIME' },
-        { name: 'validation_warnings', def: 'TEXT' }
+        { name: 'validation_warnings', def: 'TEXT' },
+        { name: 'input_tokens', def: 'INTEGER DEFAULT 0' },
+        { name: 'output_tokens', def: 'INTEGER DEFAULT 0' },
+        { name: 'estimated_cost_usd', def: 'REAL DEFAULT 0' }
       ];
       const missing = migrations.filter(col => !existingCols.includes(col.name));
-      runColumnMigration('memorials', missing, 'memorials_add_columns_v1');
+      runColumnMigration('memorials', missing, 'add_cost_columns_v1');
     });
   });
 }
@@ -208,7 +214,10 @@ function initializeBurialRegisterTable() {
         { name: 'confidence_scores', def: 'TEXT' },
         { name: 'needs_review', def: 'INTEGER DEFAULT 0' },
         { name: 'reviewed_at', def: 'DATETIME' },
-        { name: 'validation_warnings', def: 'TEXT' }
+        { name: 'validation_warnings', def: 'TEXT' },
+        { name: 'input_tokens', def: 'INTEGER DEFAULT 0' },
+        { name: 'output_tokens', def: 'INTEGER DEFAULT 0' },
+        { name: 'estimated_cost_usd', def: 'REAL DEFAULT 0' }
       ];
       const missingBurial = burialMigrations.filter(col => !existingCols.includes(col.name));
       runColumnMigration('burial_register_entries', missingBurial, 'burial_register_add_columns_v1');
@@ -283,8 +292,11 @@ function storeMemorial(data) {
       structural_observations,
       confidence_scores,
       needs_review,
-      validation_warnings
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      validation_warnings,
+      input_tokens,
+      output_tokens,
+      estimated_cost_usd
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   return new Promise((resolve, reject) => {
@@ -320,7 +332,10 @@ function storeMemorial(data) {
         data.structural_observations || null,
         safeStringify(data.confidence_scores),
         data.needs_review ?? 0,
-        safeStringify(data.validation_warnings)
+        safeStringify(data.validation_warnings),
+        data.input_tokens        ?? 0,
+        data.output_tokens       ?? 0,
+        data.estimated_cost_usd  ?? 0
       ];
     } catch (e) {
       logger.error('Error preparing memorial params:', e);

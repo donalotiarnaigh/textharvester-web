@@ -171,6 +171,43 @@ describe('IngestService', () => {
     });
   });
 
+  describe('Session cost cap', () => {
+    test('should halt processing when maxCostPerSession is exceeded', async () => {
+      const files = ['a.jpg', 'b.jpg', 'c.jpg'];
+      glob.mockImplementation((pattern, cb) => cb(null, files));
+
+      processFile.mockResolvedValue({
+        success: true,
+        estimated_cost_usd: 3.00
+      });
+
+      const capService = new IngestService(
+        { batchSize: 1, provider: 'openai', sourceType: 'memorial', costs: { maxCostPerSession: 5.00 } },
+        logger
+      );
+
+      const result = await capService.ingest('*.jpg', {});
+
+      // After first batch: $3.00 (under cap). After second batch: $6.00 > $5.00 → halt before third.
+      expect(result.successes).toHaveLength(2);
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringMatching(/session cost cap/i));
+    });
+
+    test('should process all files when no cap is set', async () => {
+      const files = ['a.jpg', 'b.jpg', 'c.jpg'];
+      glob.mockImplementation((pattern, cb) => cb(null, files));
+      processFile.mockResolvedValue({ success: true, estimated_cost_usd: 100.00 });
+
+      const noCapService = new IngestService(
+        { batchSize: 1, provider: 'openai', sourceType: 'memorial' },
+        logger
+      );
+      const result = await noCapService.ingest('*.jpg', {});
+      expect(result.successes).toHaveLength(3);
+      expect(logger.warn).not.toHaveBeenCalledWith(expect.stringMatching(/session cost cap/i));
+    });
+  });
+
   describe('Dynamic Schema Routing', () => {
     let DynamicProcessor;
     let mockProcessorInstance;

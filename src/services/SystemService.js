@@ -122,6 +122,69 @@ class SystemService {
   }
 
   /**
+   * Summarise token usage and estimated spend across all record types.
+   * @param {Object} options - Filtering options
+   * @param {string} [options.from]     - ISO date lower bound (inclusive)
+   * @param {string} [options.to]       - ISO date upper bound (inclusive)
+   * @param {string} [options.provider] - Filter to a single AI provider
+   * @returns {Promise<Object>} Aggregated cost summary grouped by provider
+   */
+  async getCostSummary(options = {}) {
+    try {
+      const [memorials, burialEntries, graveCards] = await Promise.all([
+        database.getAllMemorials(),
+        burialRegisterStorage.getAllBurialRegisterEntries(),
+        graveCardStorage.getAllGraveCards()
+      ]);
+
+      const allRecords = [
+        ...memorials.map(r => ({ ...r, _record_type: 'memorial' })),
+        ...burialEntries.map(r => ({ ...r, _record_type: 'burial_register' })),
+        ...graveCards.map(r => ({ ...r, _record_type: 'grave_record_card' }))
+      ];
+
+      // Apply optional date range filter
+      const filtered = allRecords.filter(r => {
+        const date = r.processed_date;
+        if (options.from && date && date < options.from) return false;
+        if (options.to   && date && date > options.to)   return false;
+        if (options.provider && r.ai_provider !== options.provider) return false;
+        return true;
+      });
+
+      // Aggregate by provider
+      const byProvider = {};
+      for (const r of filtered) {
+        const provider = r.ai_provider || 'unknown';
+        if (!byProvider[provider]) {
+          byProvider[provider] = { provider, records: 0, input_tokens: 0, output_tokens: 0, estimated_cost_usd: 0 };
+        }
+        byProvider[provider].records        += 1;
+        byProvider[provider].input_tokens   += r.input_tokens        || 0;
+        byProvider[provider].output_tokens  += r.output_tokens       || 0;
+        byProvider[provider].estimated_cost_usd += r.estimated_cost_usd || 0;
+      }
+
+      const rows = Object.values(byProvider);
+      const total = rows.reduce(
+        (acc, row) => ({
+          provider: 'total',
+          records:             acc.records             + row.records,
+          input_tokens:        acc.input_tokens        + row.input_tokens,
+          output_tokens:       acc.output_tokens       + row.output_tokens,
+          estimated_cost_usd:  acc.estimated_cost_usd  + row.estimated_cost_usd
+        }),
+        { provider: 'total', records: 0, input_tokens: 0, output_tokens: 0, estimated_cost_usd: 0 }
+      );
+
+      return { rows, total };
+    } catch (error) {
+      logger.error('Failed to get cost summary:', error);
+      throw new CLIError('INTERNAL_ERROR', `Failed to get cost summary: ${error.message}`);
+    }
+  }
+
+  /**
      * Perform cleanup operations (e.g., close DB connection)
      * @returns {Promise<void>}
      */
