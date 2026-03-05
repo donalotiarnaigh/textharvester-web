@@ -34,13 +34,16 @@ class MockProvider extends BaseVisionProvider {
 
     const templateName = options.promptTemplate?.templateName || 'memorialOCR';
 
+    let content;
     if (templateName === 'burialRegister') {
-      return this.getMockBurialRegisterResponse();
+      content = this.getMockBurialRegisterResponse();
     } else if (templateName === 'graveCard') {
-      return this.getMockGraveCardResponse();
+      content = this.getMockGraveCardResponse();
     } else {
-      return this.getMockMemorialResponse();
+      content = this.getMockMemorialResponse();
     }
+
+    return { content, usage: { input_tokens: 0, output_tokens: 0 } };
   }
 
   getMockMemorialResponse() {
