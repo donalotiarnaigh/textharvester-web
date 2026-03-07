@@ -16,7 +16,7 @@ class AnthropicProvider extends BaseVisionProvider {
     this.client = new Anthropic({
       apiKey: this.config.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
     });
-    this.model = this.config.ANTHROPIC_MODEL || this.config.anthropic?.model || 'claude-sonnet-4-5';
+    this.model = this.config.ANTHROPIC_MODEL || this.config.anthropic?.model || 'claude-opus-4-6';
     this.maxTokens = this.config.MAX_TOKENS || this.config.anthropic?.maxTokens || 8000;  // Increased for monument photos
     this.temperature = this.config.TEMPERATURE || 0;
     this.responseValidator = new ResponseLengthValidator();
@@ -265,7 +265,7 @@ class AnthropicProvider extends BaseVisionProvider {
     if (!this.client) {
       throw new Error('Anthropic client not initialized. Check API key configuration.');
     }
-    if (!this.model.includes('sonnet') && !this.model.includes('haiku') && !this.model.includes('claude-4') && !this.model.includes('claude-sonnet-4-5')) {
+    if (!this.model.includes('opus') && !this.model.includes('sonnet') && !this.model.includes('haiku') && !this.model.includes('claude-4')) {
       throw new Error('Invalid model specified. Must be a vision-capable model.');
     }
     return true;

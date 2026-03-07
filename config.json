@@ -31,14 +31,14 @@
     }
   },
   "openAI": {
-    "model": "gpt-5.1",
+    "model": "gpt-5.4",
     "maxTokens": 4000,
     "localCache": true,
     "cacheExpiry": 604800000,
     "reasoningEffort": null
   },
   "anthropic": {
-    "model": "claude-sonnet-4-5",
+    "model": "claude-opus-4-6",
     "maxTokens": 4000,
     "localCache": true,
     "cacheExpiry": 604800000
@@ -95,16 +95,16 @@
   },
   "costs": {
     "openai": {
-      "gpt-5.1":     { "inputPerMToken": 1.25, "outputPerMToken": 10.00 },
-      "gpt-5.4":     { "inputPerMToken": 1.25, "outputPerMToken": 10.00 }
+      "gpt-5.4":     { "inputPerMToken": 2.50, "outputPerMToken": 20.00 }
     },
     "anthropic": {
+      "claude-opus-4-6": { "inputPerMToken": 5.00, "outputPerMToken": 25.00 },
       "claude-sonnet-4-5": { "inputPerMToken": 3.00, "outputPerMToken": 15.00 },
       "claude-haiku-4-5":  { "inputPerMToken": 1.00, "outputPerMToken":  5.00 }
     },
     "gemini": {
-      "gemini-2.0-flash": { "inputPerMToken": 0.10, "outputPerMToken": 0.40 },
-      "gemini-3.1-pro": { "inputPerMToken": 1.25, "outputPerMToken": 5.00 }
+      "gemini-3.1-pro": { "inputPerMToken": 1.25, "outputPerMToken": 5.00 },
+      "gemini-2.0-flash": { "inputPerMToken": 0.10, "outputPerMToken": 0.40 }
     },
     "maxCostPerSession": 5.00
   }

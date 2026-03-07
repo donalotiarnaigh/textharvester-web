@@ -20,7 +20,7 @@ describe('OpenAIProvider', () => {
   beforeEach(() => {
     mockConfig = {
       OPENAI_API_KEY: 'test-key',
-      OPENAI_MODEL: 'gpt-5.1',
+      OPENAI_MODEL: 'gpt-5.4',
       MAX_TOKENS: 4000,
       TEMPERATURE: 0.2
     };
@@ -61,12 +61,12 @@ describe('OpenAIProvider', () => {
     });
 
     it('should use provided model from config', () => {
-      expect(provider.model).toBe('gpt-5.1');
+      expect(provider.model).toBe('gpt-5.4');
     });
 
     it('should use default model if not specified', () => {
       const defaultProvider = new OpenAIProvider({});
-      expect(defaultProvider.model).toBe('gpt-5.1');
+      expect(defaultProvider.model).toBe('gpt-5.4');
     });
 
     it('should use provided max tokens from config', () => {
@@ -99,7 +99,7 @@ describe('OpenAIProvider', () => {
     it('should auto-detect GPT-5 models and set reasoningEffort to none', () => {
       const gpt5Config = {
         ...mockConfig,
-        OPENAI_MODEL: 'gpt-5.1'
+        OPENAI_MODEL: 'gpt-5.4'
       };
       const gpt5Provider = new OpenAIProvider(gpt5Config);
       expect(gpt5Provider.reasoningEffort).toBe('none');
@@ -108,7 +108,7 @@ describe('OpenAIProvider', () => {
     it('should not override explicit reasoningEffort for GPT-5 models', () => {
       const gpt5Config = {
         ...mockConfig,
-        OPENAI_MODEL: 'gpt-5.1',
+        OPENAI_MODEL: 'gpt-5.4',
         openAI: { reasoningEffort: 'low' }
       };
       const gpt5Provider = new OpenAIProvider(gpt5Config);
@@ -123,7 +123,7 @@ describe('OpenAIProvider', () => {
 
   describe('getModelVersion', () => {
     it('should return current model version', () => {
-      expect(provider.getModelVersion()).toBe('gpt-5.1');
+      expect(provider.getModelVersion()).toBe('gpt-5.4');
     });
   });
 
@@ -136,7 +136,7 @@ describe('OpenAIProvider', () => {
       
       expect(provider.client.chat.completions.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: 'gpt-5.1',
+          model: 'gpt-5.4',
           response_format: { type: 'json_object' },
           max_completion_tokens: 4000,
           temperature: 0.2,
@@ -148,7 +148,7 @@ describe('OpenAIProvider', () => {
     it('should include reasoning_effort parameter for GPT-5.1 model', async () => {
       const gpt5Config = {
         ...mockConfig,
-        OPENAI_MODEL: 'gpt-5.1'
+        OPENAI_MODEL: 'gpt-5.4'
       };
       const gpt5Provider = new OpenAIProvider(gpt5Config);
       gpt5Provider.client.chat.completions.create.mockResolvedValue(mockOpenAIResponse);
@@ -157,7 +157,7 @@ describe('OpenAIProvider', () => {
       
       expect(gpt5Provider.client.chat.completions.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: 'gpt-5.1',
+          model: 'gpt-5.4',
           reasoning_effort: 'none'
         })
       );
@@ -251,7 +251,7 @@ describe('OpenAIProvider', () => {
     });
 
     it('should accept GPT-5 models', () => {
-      provider.model = 'gpt-5.1';
+      provider.model = 'gpt-5.4';
       expect(provider.validateConfig()).toBe(true);
     });
 

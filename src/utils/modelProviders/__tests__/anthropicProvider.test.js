@@ -65,7 +65,7 @@ describe('AnthropicProvider', () => {
 
     it('should use default model if not specified', () => {
       const defaultProvider = new AnthropicProvider({});
-      expect(defaultProvider.model).toBe('claude-sonnet-4-5');
+      expect(defaultProvider.model).toBe('claude-opus-4-6');
     });
 
     it('should use provided max tokens from config', () => {
@@ -214,7 +214,7 @@ describe('AnthropicProvider', () => {
     });
 
     it('should throw error if model is not vision-capable', () => {
-      provider.model = 'claude-3-opus';
+      provider.model = 'gpt-4';
       expect(() => provider.validateConfig())
         .toThrow('Invalid model specified. Must be a vision-capable model.');
     });
