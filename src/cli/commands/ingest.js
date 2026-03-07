@@ -14,7 +14,7 @@ const ingest = new Command('ingest')
   .description('Ingest files for OCR processing')
   .argument('[pattern]', 'Glob pattern or file path to ingest')
   .option('-t, --source-type <type>', 'Source type: memorial, burial_register, grave_record_card') // Removed default to allow config to control, or set default in loadConfig
-  .option('-p, --provider <provider>', 'AI provider: openai, anthropic')
+  .option('-p, --provider <provider>', 'AI provider: openai, anthropic, gemini')
   .option('-b, --batch-size <size>', 'Number of files to process concurrently', parseInt)
   .option('-r, --replace', 'Replace existing records instead of skipping')
   .option('--schema <idOrName>', 'Use a custom schema for ingestion')
