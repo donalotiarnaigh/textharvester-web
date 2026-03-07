@@ -14,8 +14,8 @@ class GeminiProvider extends BaseVisionProvider {
     super(config);
     this.apiKey = this.config.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
     this.client = this.apiKey ? new GoogleGenerativeAI(this.apiKey) : null;
-    this.model = this.config.gemini?.model || 'gemini-2.0-flash';
-    this.maxTokens = this.config.gemini?.maxTokens || 4000;
+    this.model = this.config.gemini?.model || 'gemini-3.1-pro';
+    this.maxTokens = this.config.gemini?.maxTokens || 8000;
     this.temperature = 0; // Gemini default for consistent extraction
     this.responseValidator = new ResponseLengthValidator();
   }

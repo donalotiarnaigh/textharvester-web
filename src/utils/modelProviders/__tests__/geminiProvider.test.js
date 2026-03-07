@@ -20,8 +20,8 @@ describe('GeminiProvider', () => {
     mockConfig = {
       GEMINI_API_KEY: 'test-key',
       gemini: {
-        model: 'gemini-2.0-flash',
-        maxTokens: 4000
+        model: 'gemini-3.1-pro',
+        maxTokens: 8000
       }
     };
 
@@ -72,27 +72,27 @@ describe('GeminiProvider', () => {
     });
 
     it('should use provided model from config', () => {
-      expect(provider.model).toBe('gemini-2.0-flash');
+      expect(provider.model).toBe('gemini-3.1-pro');
     });
 
     it('should use default model if not specified', () => {
       const defaultProvider = new GeminiProvider({});
-      expect(defaultProvider.model).toBe('gemini-2.0-flash');
+      expect(defaultProvider.model).toBe('gemini-3.1-pro');
     });
 
     it('should use provided max tokens from config', () => {
-      expect(provider.maxTokens).toBe(4000);
+      expect(provider.maxTokens).toBe(8000);
     });
 
     it('should use default max tokens if not specified', () => {
       const defaultProvider = new GeminiProvider({});
-      expect(defaultProvider.maxTokens).toBe(4000);
+      expect(defaultProvider.maxTokens).toBe(8000);
     });
   });
 
   describe('getModelVersion', () => {
     it('should return current model version', () => {
-      expect(provider.getModelVersion()).toBe('gemini-2.0-flash');
+      expect(provider.getModelVersion()).toBe('gemini-3.1-pro');
     });
   });
 
@@ -112,6 +112,21 @@ describe('GeminiProvider', () => {
           mimeType: 'image/jpeg'
         }
       });
+    });
+
+    it('should call getGenerativeModel with correct config', async () => {
+      const gmock = provider.client.getGenerativeModel;
+      await provider.processImage(testImage, testPrompt);
+
+      expect(gmock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: 'gemini-3.1-pro',
+          generationConfig: expect.objectContaining({
+            responseMimeType: 'application/json',
+            maxOutputTokens: 8000
+          })
+        })
+      );
     });
 
     it('should return { content, usage } with parsed JSON content', async () => {
