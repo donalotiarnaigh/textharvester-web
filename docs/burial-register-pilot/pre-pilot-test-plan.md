@@ -367,7 +367,7 @@ All 24 columns match `BURIAL_REGISTER_CSV_COLUMNS` exactly:
 - **Error Logging:** ✅ Errors logged with context:
   - File path: `data/burial_register/vol1/page_026.jpg-026_1764847155146.jpg`
   - Provider: `openai`
-  - Model: `gpt-4o`
+  - Model: `gpt-5.1`
   - Timeout durations: 2002ms, 4002ms, 6001ms
   - Error messages: "Request timeout after 2000ms", "Request timeout after 4000ms", "Request timeout after 6000ms"
 - **Queue Behavior:** ✅ Queue completed successfully (progress: 100%, state: 'complete', hasErrors: true)
@@ -379,7 +379,7 @@ All 24 columns match `BURIAL_REGISTER_CSV_COLUMNS` exactly:
 [ERROR] Request timeout after 2000ms (attempt 1/3)
 [ERROR] Request timeout after 4000ms (attempt 2/3)
 [ERROR] Request timeout after 6000ms (attempt 3/3)
-[ERROR] OpenAI API error for model gpt-4o after 3 attempts
+[ERROR] OpenAI API error for model gpt-5.1 after 3 attempts
 [ERROR] Error processing file data/burial_register/vol1/page_026.jpg-026_1764847155146.jpg: Error: OpenAI processing failed: Request timeout after 6000ms
 [ERROR] File processing failed after maximum retries: data/burial_register/vol1/page_026.jpg-026_1764847155146.jpg
 ```

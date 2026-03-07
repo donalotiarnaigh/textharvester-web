@@ -6,7 +6,7 @@ const {
 describe('burialRegisterFlattener', () => {
   const metadata = {
     provider: 'openai',
-    model: 'gpt-4o-mini',
+    model: 'gpt-5.1-mini',
     filePath: '/tmp/page_002.png'
   };
 

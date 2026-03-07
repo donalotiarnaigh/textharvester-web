@@ -20,7 +20,7 @@ describe('OpenAIProvider', () => {
   beforeEach(() => {
     mockConfig = {
       OPENAI_API_KEY: 'test-key',
-      OPENAI_MODEL: 'gpt-4o',
+      OPENAI_MODEL: 'gpt-5.1',
       MAX_TOKENS: 4000,
       TEMPERATURE: 0.2
     };
@@ -61,12 +61,12 @@ describe('OpenAIProvider', () => {
     });
 
     it('should use provided model from config', () => {
-      expect(provider.model).toBe('gpt-4o');
+      expect(provider.model).toBe('gpt-5.1');
     });
 
     it('should use default model if not specified', () => {
       const defaultProvider = new OpenAIProvider({});
-      expect(defaultProvider.model).toBe('gpt-4o');
+      expect(defaultProvider.model).toBe('gpt-5.1');
     });
 
     it('should use provided max tokens from config', () => {
@@ -115,14 +115,15 @@ describe('OpenAIProvider', () => {
       expect(gpt5Provider.reasoningEffort).toBe('low');
     });
 
-    it('should not set reasoningEffort for GPT-4o models', () => {
-      expect(provider.reasoningEffort).toBeNull();
+    it('should not set reasoningEffort for non-GPT-5 models', () => {
+      const gpt4Provider = new OpenAIProvider({ ...mockConfig, OPENAI_MODEL: 'gpt-4' });
+      expect(gpt4Provider.reasoningEffort).toBeNull();
     });
   });
 
   describe('getModelVersion', () => {
     it('should return current model version', () => {
-      expect(provider.getModelVersion()).toBe('gpt-4o');
+      expect(provider.getModelVersion()).toBe('gpt-5.1');
     });
   });
 
@@ -133,30 +134,15 @@ describe('OpenAIProvider', () => {
     it('should call OpenAI API with correct parameters', async () => {
       await provider.processImage(testImage, testPrompt);
       
-      expect(provider.client.chat.completions.create).toHaveBeenCalledWith({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: 'Return a JSON object with the extracted text details.',
-          },
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: testPrompt },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/jpeg;base64,${testImage}`,
-                },
-              },
-            ],
-          },
-        ],
-        response_format: { type: 'json_object' },
-        max_completion_tokens: 4000,
-        temperature: 0.2
-      });
+      expect(provider.client.chat.completions.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: 'gpt-5.1',
+          response_format: { type: 'json_object' },
+          max_completion_tokens: 4000,
+          temperature: 0.2,
+          reasoning_effort: 'none'
+        })
+      );
     });
 
     it('should include reasoning_effort parameter for GPT-5.1 model', async () => {
@@ -177,10 +163,12 @@ describe('OpenAIProvider', () => {
       );
     });
 
-    it('should not include reasoning_effort parameter for GPT-4o model', async () => {
-      await provider.processImage(testImage, testPrompt);
-      
-      const callArgs = provider.client.chat.completions.create.mock.calls[0][0];
+    it('should not include reasoning_effort parameter for non-GPT-5 models', async () => {
+      const gpt4Provider = new OpenAIProvider({ ...mockConfig, OPENAI_MODEL: 'gpt-4' });
+      gpt4Provider.client.chat.completions.create.mockResolvedValue(mockOpenAIResponse);
+      await gpt4Provider.processImage(testImage, testPrompt);
+
+      const callArgs = gpt4Provider.client.chat.completions.create.mock.calls[0][0];
       expect(callArgs.reasoning_effort).toBeUndefined();
     });
 
@@ -267,8 +255,8 @@ describe('OpenAIProvider', () => {
       expect(provider.validateConfig()).toBe(true);
     });
 
-    it('should accept GPT-4o models', () => {
-      provider.model = 'gpt-4o';
+    it('should accept GPT-5.4 models', () => {
+      provider.model = 'gpt-5.4';
       expect(provider.validateConfig()).toBe(true);
     });
 

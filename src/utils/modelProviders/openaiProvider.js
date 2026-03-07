@@ -15,7 +15,7 @@ class OpenAIProvider extends BaseVisionProvider {
     this.client = new OpenAI({
       apiKey: this.config.OPENAI_API_KEY || process.env.OPENAI_API_KEY
     });
-    this.model = this.config.OPENAI_MODEL || this.config.openAI?.model || 'gpt-4o';
+    this.model = this.config.OPENAI_MODEL || this.config.openAI?.model || 'gpt-5.1';
     this.maxTokens = this.config.MAX_TOKENS || this.config.openAI?.maxTokens || 4000;
     this.temperature = this.config.TEMPERATURE || 0;
     
@@ -190,13 +190,12 @@ class OpenAIProvider extends BaseVisionProvider {
     if (!this.client) {
       throw new Error('OpenAI client not initialized. Check API key configuration.');
     }
-    // Allow GPT-4o, GPT-4, GPT-5, and vision models
-    const isValidModel = this.model.includes('vision') || 
-                        this.model.includes('gpt-4o') || 
-                        this.model.includes('gpt-4') || 
+    // Allow GPT-4, GPT-5, and vision models
+    const isValidModel = this.model.includes('vision') ||
+                        this.model.includes('gpt-4') ||
                         this.model.includes('gpt-5');
     if (!isValidModel) {
-      throw new Error('Invalid model specified. Must be a vision-capable model (gpt-4o, gpt-4, gpt-5, or vision models).');
+      throw new Error('Invalid model specified. Must be a vision-capable model (gpt-4, gpt-5, or vision models).');
     }
     return true;
   }

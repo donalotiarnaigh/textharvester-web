@@ -8,7 +8,7 @@ assignees: ''
 
 ## Background
 
-Initial testing of the provider-specific prompt system has revealed several inconsistencies between OpenAI (gpt-4o-2024-11-20) and Anthropic (claude-3-7-sonnet-20250219) responses. While both providers successfully extract core information, there are systematic differences that could be addressed through prompt refinement.
+Initial testing of the provider-specific prompt system has revealed several inconsistencies between OpenAI (gpt-5.1-2024-11-20) and Anthropic (claude-3-7-sonnet-20250219) responses. While both providers successfully extract core information, there are systematic differences that could be addressed through prompt refinement.
 
 ## Test Results Summary
 

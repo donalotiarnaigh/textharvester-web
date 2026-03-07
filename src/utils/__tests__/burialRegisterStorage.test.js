@@ -155,7 +155,7 @@ describe('burialRegisterStorage', () => {
       parish_header_raw: 'Parish',
       county_header_raw: 'County',
       year_header_raw: '1899',
-      model_name: 'gpt-4o',
+      model_name: 'gpt-5.1',
       model_run_id: 'run-123',
       uncertainty_flags: ['flag1'],
       fileName: 'page2.png',
@@ -186,7 +186,7 @@ describe('burialRegisterStorage', () => {
     expect(stored.entry_id).toBe('vol1_p002_r003');
     expect(stored.file_name).toBe('page2.png');
     expect(stored.ai_provider).toBe('openai');
-    expect(stored.model_name).toBe('gpt-4o');
+    expect(stored.model_name).toBe('gpt-5.1');
     expect(stored.prompt_template).toBe('burialRegister');
     expect(stored.uncertainty_flags).toBe('["flag1"]');
   });

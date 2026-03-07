@@ -21,8 +21,8 @@ Use the sample CSV rows below as the reference structure and formatting for vali
 
 ```
 volume_id,page_number,row_index_on_page,entry_id,entry_no_raw,name_raw,abode_raw,burial_date_raw,age_raw,officiant_raw,marginalia_raw,extra_notes_raw,row_ocr_raw,parish_header_raw,county_header_raw,year_header_raw,model_name,model_run_id,uncertainty_flags,file_name,ai_provider,prompt_template,prompt_version,processed_date
-vol1,1,1,vol1_p001_r001,1,Alice Carter,Bermondsey,1850-01-02,34,J Smith,,clear entry,"Alice Carter 1850-01-02",St Luke's,London,1850,gpt-4o,run-sample,"[\"clean_entry\"]",page_001.png,openai,burialRegister,latest,2025-01-01T00:00:00Z
-vol1,1,2,vol1_p001_r002,2,Benjamin Turner,Southwark,1850-01-03,41,H Lewis,"ink smudge",age uncertain,"Benjamin Turner 1850-01-03",St Luke's,London,1850,gpt-4o,run-sample,"[\"age_uncertain\"]",page_001.png,openai,burialRegister,latest,2025-01-01T00:00:00Z
+vol1,1,1,vol1_p001_r001,1,Alice Carter,Bermondsey,1850-01-02,34,J Smith,,clear entry,"Alice Carter 1850-01-02",St Luke's,London,1850,gpt-5.1,run-sample,"[\"clean_entry\"]",page_001.png,openai,burialRegister,latest,2025-01-01T00:00:00Z
+vol1,1,2,vol1_p001_r002,2,Benjamin Turner,Southwark,1850-01-03,41,H Lewis,"ink smudge",age uncertain,"Benjamin Turner 1850-01-03",St Luke's,London,1850,gpt-5.1,run-sample,"[\"age_uncertain\"]",page_001.png,openai,burialRegister,latest,2025-01-01T00:00:00Z
 ```
 
 For the additional sample pages (`page_017.png`, `page_042.png`, `page_089.png`, `page_133.png`, `page_198.png`), record expected outcomes as short notes attached to each upload (e.g., “two margin notes expected; one age unreadable; header year should remain 1851”).

@@ -5,9 +5,9 @@ The Text Harvester supports multiple AI providers for OCR processing, allowing u
 
 ## Supported Models
 
-### **OpenAI GPT-4o** (Recommended)
-- **Best for**: Monument photos, weathered text, challenging images
-- **Strengths**: Excellent OCR accuracy on weathered stone monuments
+### **OpenAI GPT-5** (Recommended)
+- **Best for**: Monument photos, weathered text, challenging images, monument classification
+- **Strengths**: Excellent OCR accuracy on weathered stone monuments; best results for DEBS classification
 - **File Size Limit**: 20MB
 - **Max Dimensions**: 3072px
 
@@ -40,7 +40,7 @@ The Text Harvester supports multiple AI providers for OCR processing, allowing u
 
 ## Best Practices
 
-- **Monument Photos**: Use GPT-4o for best results with weathered text
+- **Monument Photos**: Use GPT-5 for best results with weathered text
 - **Clear Documents**: Either model works well for high-quality images
 - **Large Files**: System automatically optimizes for provider limits
 - **Batch Processing**: Same model used for all files in a batch

@@ -66,7 +66,7 @@ describe('Database Storage Layer: Typographic Analysis Fields', () => {
     inscription: 'IN LOVING MEMORY OF JOHN SMITH',
     fileName: 'test_memorial.jpg',
     ai_provider: 'openai',
-    model_version: 'gpt-4o',
+    model_version: 'gpt-5.1',
     prompt_template: 'TypographicAnalysisPrompt',
     prompt_version: '1.0.0',
     source_type: 'typographic_analysis',

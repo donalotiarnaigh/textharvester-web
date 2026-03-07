@@ -317,7 +317,7 @@ CREATE TABLE IF NOT EXISTS burial_register_entries (
     county_header_raw TEXT,
     year_header_raw TEXT,
     -- Model metadata
-    model_name TEXT NOT NULL,  -- e.g., "gpt-4o" or "claude-4-sonnet" (from provider.getModelVersion())
+    model_name TEXT NOT NULL,  -- e.g., "gpt-5.1" or "claude-4-sonnet" (from provider.getModelVersion())
     model_run_id TEXT,  -- Optional: run identifier for tracking
     uncertainty_flags TEXT,  -- JSON-encoded array of strings (e.g., ["illegible_date","partial_name"])
     -- Processing metadata
@@ -422,7 +422,7 @@ async function processFile(filePath, options = {}) {
     // Add metadata (same as existing flow)
     validatedEntry.fileName = path.basename(filePath);
     validatedEntry.ai_provider = providerName;
-    validatedEntry.model_name = provider.getModelVersion();  // e.g., "gpt-4o" or "claude-4-sonnet"
+    validatedEntry.model_name = provider.getModelVersion();  // e.g., "gpt-5.1" or "claude-4-sonnet"
     validatedEntry.prompt_template = 'burialRegister';
     validatedEntry.prompt_version = promptInstance.version;
     validatedEntry.source_type = 'burial_register';
