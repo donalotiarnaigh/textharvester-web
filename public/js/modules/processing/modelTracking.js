@@ -1,19 +1,27 @@
 // Model information
 const modelInfo = {
   'openai': {
-    name: 'OpenAI GPT-5.1',
+    name: 'OpenAI GPT-5.4',
     messages: {
-      processing: 'Processing with OpenAI GPT-5.1',
-      error: 'Error processing with OpenAI GPT-5.1 - retrying',
-      complete: 'Processing complete with OpenAI GPT-5.1'
+      processing: 'Processing with OpenAI GPT-5.4',
+      error: 'Error processing with OpenAI GPT-5.4 - retrying',
+      complete: 'Processing complete with OpenAI GPT-5.4'
     }
   },
   'anthropic': {
-    name: 'Anthropic Claude Sonnet 4.5',
+    name: 'Anthropic Claude Opus 4.6',
     messages: {
-      processing: 'Processing with Anthropic Claude Sonnet 4.5',
-      error: 'Error processing with Anthropic Claude Sonnet 4.5 - retrying',
-      complete: 'Processing complete with Anthropic Claude Sonnet 4.5'
+      processing: 'Processing with Anthropic Claude Opus 4.6',
+      error: 'Error processing with Anthropic Claude Opus 4.6 - retrying',
+      complete: 'Processing complete with Anthropic Claude Opus 4.6'
+    }
+  },
+  'gemini': {
+    name: 'Google Gemini 3.1 Pro',
+    messages: {
+      processing: 'Processing with Google Gemini 3.1 Pro',
+      error: 'Error processing with Google Gemini 3.1 Pro - retrying',
+      complete: 'Processing complete with Google Gemini 3.1 Pro'
     }
   }
 };
