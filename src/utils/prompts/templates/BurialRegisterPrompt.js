@@ -109,7 +109,7 @@ class BurialRegisterPrompt extends BasePrompt {
       version: '1.1.0',
       description: 'Prompt template for extracting burial register data',
       fields: PAGE_FIELDS,
-      providers: ['openai', 'anthropic', 'mock'],
+      providers: ['openai', 'anthropic', 'gemini', 'mock'],
       ...config
     });
 
@@ -190,6 +190,12 @@ For every field shown as { "value": ..., "confidence": ... }, return that envelo
       return {
         systemPrompt: 'You are Claude, an expert OCR system trained by Anthropic, specialising in structured extraction from historical burial registers.',
         userPrompt: `${basePrompt}\n\nResponse Format:\n- Return valid JSON only (no markdown)\n- Return a single JSON object matching the schema above\n- Ensure numeric fields (page_number, row_index_on_page) are integers\n- Use null for missing text fields and [] for uncertainty_flags`
+      };
+
+    case 'gemini':
+      return {
+        systemPrompt: 'You are Gemini, an expert OCR system created by Google, specialising in structured extraction from historical burial registers.',
+        userPrompt: `${basePrompt}\n\nResponse Format:\n- Return valid JSON only\n- Return a single JSON object matching the schema above\n- Ensure numeric fields (page_number, row_index_on_page) are integers\n- Use null for missing text fields and [] for uncertainty_flags`
       };
 
     default:

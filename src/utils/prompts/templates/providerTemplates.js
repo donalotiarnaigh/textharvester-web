@@ -66,6 +66,34 @@ const anthropicTemplateV2 = {
   }
 };
 
+const geminiTemplate = {
+  provider: 'gemini',
+  systemPrompt: 'You are an expert OCR system specializing in extracting structured data from memorial inscriptions. Focus on accurate extraction and proper type conversion, ensuring numeric values are actual numbers.',
+  formatInstructions: 'Return data as a JSON object with these requirements:\n- memorial_number: string or null\n- first_name: string or null\n- last_name: string or null\n- year_of_death: integer between 1500-current year or null (must be a number, not text)\n- inscription: string or null\nHandle missing or uncertain values with null.',
+  typeFormatting: {
+    integer: 'numeric',
+    float: 'decimal',
+    string: 'text',
+    boolean: 'true/false',
+    date: 'YYYY-MM-DD',
+    array: 'list'
+  }
+};
+
+const geminiTemplateV2 = {
+  provider: 'gemini',
+  systemPrompt: 'You are an expert OCR system specializing in extracting structured data from memorial inscriptions. Focus on accurate extraction, proper type conversion, and strict validation of numeric values.',
+  formatInstructions: 'Return data as a JSON object with these requirements:\n- memorial_number: string or null\n- first_name: string or null\n- last_name: string or null\n- year_of_death: integer between 1500-current year or null (must be a number, not text)\n- inscription: string or null\nHandle missing or uncertain values with null. Years must be actual integers, not strings.',
+  typeFormatting: {
+    integer: 'numeric',
+    float: 'decimal',
+    string: 'text',
+    boolean: 'true/false',
+    date: 'YYYY-MM-DD',
+    array: 'list'
+  }
+};
+
 // Initialize the prompt manager with default templates
 const promptManager = new ProviderPromptManager();
 
@@ -78,6 +106,10 @@ promptManager.registerPromptTemplate('anthropic', anthropicTemplate, '1.0');
 promptManager.registerPromptTemplate('anthropic', anthropicTemplateV2, '2.0');
 promptManager.registerPromptTemplate('anthropic', anthropicTemplateV2); // Register latest
 
+promptManager.registerPromptTemplate('gemini', geminiTemplate, '1.0');
+promptManager.registerPromptTemplate('gemini', geminiTemplateV2, '2.0');
+promptManager.registerPromptTemplate('gemini', geminiTemplateV2); // Register latest
+
 // Create instances of MemorialOCRPrompt for each provider
 const memorialOCRTemplates = {
   openai: new MemorialOCRPrompt({
@@ -88,6 +120,11 @@ const memorialOCRTemplates = {
   anthropic: new MemorialOCRPrompt({
     version: '2.0.0',
     provider: 'anthropic',
+    fields: MEMORIAL_FIELDS
+  }),
+  gemini: new MemorialOCRPrompt({
+    version: '2.0.0',
+    provider: 'gemini',
     fields: MEMORIAL_FIELDS
   }),
   mock: new MemorialOCRPrompt({
@@ -106,6 +143,10 @@ const burialRegisterTemplates = {
     version: '1.0.0',
     provider: 'anthropic'
   }),
+  gemini: new BurialRegisterPrompt({
+    version: '1.0.0',
+    provider: 'gemini'
+  }),
   mock: new BurialRegisterPrompt({
     version: '1.0.0',
     provider: 'mock'
@@ -121,6 +162,11 @@ const monumentPhotoOCRTemplates = {
   anthropic: new MonumentPhotoOCRPrompt({
     version: '1.0.0',
     provider: 'anthropic',
+    fields: MEMORIAL_FIELDS
+  }),
+  gemini: new MonumentPhotoOCRPrompt({
+    version: '1.0.0',
+    provider: 'gemini',
     fields: MEMORIAL_FIELDS
   }),
   mock: new MonumentPhotoOCRPrompt({
@@ -139,6 +185,10 @@ const graveCardTemplates = {
     version: '1.0.0',
     provider: 'anthropic'
   }),
+  gemini: new GraveCardPrompt({
+    version: '1.0.0',
+    provider: 'gemini'
+  }),
   mock: new GraveCardPrompt({
     version: '1.0.0',
     provider: 'mock'
@@ -154,6 +204,11 @@ const typographicAnalysisTemplates = {
   anthropic: new TypographicAnalysisPrompt({
     version: '2.3.0',
     provider: 'anthropic',
+    fields: MEMORIAL_FIELDS
+  }),
+  gemini: new TypographicAnalysisPrompt({
+    version: '2.3.0',
+    provider: 'gemini',
     fields: MEMORIAL_FIELDS
   }),
   mock: new TypographicAnalysisPrompt({

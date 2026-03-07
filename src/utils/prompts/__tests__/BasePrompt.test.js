@@ -7,7 +7,7 @@ describe('BasePrompt', () => {
       expect(prompt.version).toBe('1.0.0');
       expect(prompt.description).toBe('');
       expect(prompt.fields).toEqual({});
-      expect(prompt.providers).toEqual(['openai', 'anthropic', 'mock']);
+      expect(prompt.providers).toEqual(['openai', 'anthropic', 'gemini', 'mock']);
     });
 
     it('should initialize with provided config values', () => {

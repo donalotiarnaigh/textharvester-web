@@ -1,5 +1,6 @@
 const OpenAIProvider = require('./openaiProvider');
 const AnthropicProvider = require('./anthropicProvider');
+const GeminiProvider = require('./geminiProvider');
 const MockProvider = require('./mockProvider');
 const path = require('path');
 const fs = require('fs');
@@ -32,6 +33,8 @@ function createProvider(customConfig = {}) {
     return new OpenAIProvider(mergedConfig);
   case 'anthropic':
     return new AnthropicProvider(mergedConfig);
+  case 'gemini':
+    return new GeminiProvider(mergedConfig);
   case 'mock':
     return new MockProvider(mergedConfig);
   default:
@@ -44,5 +47,6 @@ module.exports = {
   createProvider,
   OpenAIProvider,
   AnthropicProvider,
+  GeminiProvider,
   MockProvider
 }; 
