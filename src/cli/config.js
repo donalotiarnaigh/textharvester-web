@@ -14,7 +14,7 @@ const DEFAULTS = {
  * @param {Object} config 
  */
 function validateConfig(config) {
-  const validProviders = ['openai', 'anthropic'];
+  const validProviders = ['openai', 'anthropic', 'gemini'];
   if (config.provider && !validProviders.includes(config.provider)) {
     throw new Error(`Invalid provider: ${config.provider}. Valid providers: ${validProviders.join(', ')}`);
   }
@@ -24,6 +24,9 @@ function validateConfig(config) {
   }
   if (config.provider === 'anthropic' && !config.anthropicApiKey) {
     throw new Error('Missing required configuration: anthropicApiKey');
+  }
+  if (config.provider === 'gemini' && !config.geminiApiKey) {
+    throw new Error('Missing required configuration: geminiApiKey');
   }
 }
 
@@ -76,6 +79,7 @@ async function loadConfig(cliOptions = {}) {
   const envConfig = {};
   if (process.env.OPENAI_API_KEY) envConfig.openaiApiKey = process.env.OPENAI_API_KEY;
   if (process.env.ANTHROPIC_API_KEY) envConfig.anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+  if (process.env.GEMINI_API_KEY) envConfig.geminiApiKey = process.env.GEMINI_API_KEY;
 
   // 4. Merge: Defaults < File < Env < CLI
   // We clean objects to ensure undefineds don't clobber valid values

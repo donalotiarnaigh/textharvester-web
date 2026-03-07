@@ -6,7 +6,7 @@ class TypographicAnalysisPrompt extends BasePrompt {
     super({
       version: config.version || '1.0.0',
       description: 'Generates comprehensive typographic and iconographic analysis of gravestones.',
-      providers: ['openai', 'anthropic'],
+      providers: ['openai', 'anthropic', 'gemini'],
       fields: {
         memorial_number: { type: 'integer', description: 'Unique identifier for the memorial if visible', metadata: { required: false } },
         first_name: { type: 'string', description: 'First name of the deceased', metadata: { required: false } },
@@ -85,8 +85,8 @@ For inscription, also include: "uncertain_segments": ["word1", "word2"] for ambi
     // Get the base prompt components
     const baseComponents = super.getProviderPrompt(provider);
 
-    if (provider === 'anthropic') {
-      // Override for Anthropic to return 'messages' array format
+    if (provider === 'anthropic' || provider === 'gemini') {
+      // Override for Anthropic and Gemini to return 'messages' array format
       return {
         systemPrompt: baseComponents.systemPrompt,
         messages: [

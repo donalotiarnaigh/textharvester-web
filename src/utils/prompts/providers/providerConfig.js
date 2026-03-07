@@ -5,6 +5,7 @@
 const PROVIDER_TYPES = {
   OPENAI: 'openai',
   ANTHROPIC: 'anthropic',
+  GEMINI: 'gemini',
   MOCK: 'mock'
 };
 
@@ -43,6 +44,12 @@ const PROVIDER_CONFIGS = {
       type: 'markdown'
     }
   },
+  [PROVIDER_TYPES.GEMINI]: {
+    systemPromptTemplate: 'You are Gemini, an AI assistant created by Google to help with data extraction.',
+    responseFormat: {
+      type: 'json'
+    }
+  },
   [PROVIDER_TYPES.MOCK]: {
     systemPromptTemplate: 'You are a mock AI assistant.',
     responseFormat: {
@@ -60,6 +67,13 @@ const TYPE_FORMATS = {
     date: 'string'
   },
   [PROVIDER_TYPES.ANTHROPIC]: {
+    string: 'text',
+    integer: 'number',
+    float: 'number',
+    boolean: 'boolean',
+    date: 'string'
+  },
+  [PROVIDER_TYPES.GEMINI]: {
     string: 'text',
     integer: 'number',
     float: 'number',

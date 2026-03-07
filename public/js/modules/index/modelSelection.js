@@ -4,12 +4,16 @@
 // Model information for tooltips
 const modelInfo = {
   "openai": {
-    name: "OpenAI GPT-5.1",
+    name: "OpenAI GPT-5.4",
     description: "Excellent for weathered monuments and challenging images"
   },
   "anthropic": {
-    name: "Anthropic Claude Sonnet 4.5",
+    name: "Anthropic Claude Opus 4.6",
     description: "Good for clear images, more conservative with weathered text"
+  },
+  "gemini": {
+    name: "Google Gemini 3.1 Pro",
+    description: "Strong image analysis at lower cost — well suited for large cemetery surveys"
   }
 };
 
@@ -26,12 +30,13 @@ export const initModelSelection = () => {
         <div class="form-group mb-0">
           <label for="modelSelect" class="card-title d-block mb-2">AI Model</label>
           <select class="form-control" id="modelSelect">
-            <option value="openai">OpenAI GPT-5.1 (recommended)</option>
-            <option value="anthropic">Anthropic Claude Sonnet 4.5</option>
+            <option value="openai">OpenAI GPT-5.4 (recommended)</option>
+            <option value="anthropic">Anthropic Claude Opus 4.6</option>
+            <option value="gemini">Google Gemini 3.1 Pro</option>
           </select>
           <small class="model-info"></small>
           <div id="anthropic-warning" class="alert alert-info mt-2" style="display: none;">
-            <strong>Note:</strong> Anthropic Claude has a 5MB file size limit and may be more conservative with weathered monuments. For best results with challenging images, we recommend GPT-5.1.
+            <strong>Note:</strong> Anthropic Claude has a 5MB file size limit and may be more conservative with weathered monuments. For best results with challenging images, we recommend GPT-5.4.
           </div>
         </div>
       </div>
@@ -103,15 +108,21 @@ function setupModeChangeListener() {
 function updateModelAvailability(uploadMode) {
   const modelSelect = document.getElementById('modelSelect');
   const anthropicOption = modelSelect?.querySelector('option[value="anthropic"]');
+  const geminiOption = modelSelect?.querySelector('option[value="gemini"]');
   const anthropicWarning = document.getElementById('anthropic-warning');
-  
+
   if (!modelSelect || !anthropicOption) return;
-  
+
   if (uploadMode === 'monument_photo') {
     // Enable Anthropic for monument photos with info warning
     anthropicOption.disabled = false;
-    anthropicOption.textContent = 'Anthropic Claude Sonnet 4.5';
-    
+    anthropicOption.textContent = 'Anthropic Claude Opus 4.6';
+
+    // Gemini: always enabled, no warning
+    if (geminiOption) {
+      geminiOption.disabled = false;
+    }
+
     // Show info warning about file size limit and model characteristics
     if (anthropicWarning) {
       anthropicWarning.style.display = 'block';
@@ -119,8 +130,13 @@ function updateModelAvailability(uploadMode) {
   } else {
     // Enable Anthropic for record sheets
     anthropicOption.disabled = false;
-    anthropicOption.textContent = 'Anthropic Claude Sonnet 4.5';
-    
+    anthropicOption.textContent = 'Anthropic Claude Opus 4.6';
+
+    // Gemini: always enabled, no warning
+    if (geminiOption) {
+      geminiOption.disabled = false;
+    }
+
     // Hide warning
     if (anthropicWarning) {
       anthropicWarning.style.display = 'none';

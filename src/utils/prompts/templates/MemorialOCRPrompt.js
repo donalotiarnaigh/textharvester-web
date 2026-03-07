@@ -18,7 +18,7 @@ class MemorialOCRPrompt extends BasePrompt {
       version: '2.0.0',
       description: 'Standard OCR prompt for extracting basic memorial inscription data with type validation',
       fields: MEMORIAL_FIELDS,
-      providers: ['openai', 'anthropic', 'mock'],
+      providers: ['openai', 'anthropic', 'gemini', 'mock'],
       ...config
     });
   }
@@ -94,6 +94,12 @@ For inscription, also include: "uncertain_segments": ["word1", "word2"] for ambi
     case 'anthropic':
       return {
         systemPrompt: 'You are Claude, an expert OCR system trained by Anthropic, specializing in heritage and genealogical data extraction.',
+        userPrompt: `${basePrompt}\n\nResponse Format:\n- Return valid JSON only\n- All numeric values (year_of_death) MUST be actual integers\n- All text fields must be properly formatted strings\n- Ensure strict adherence to field formats`
+      };
+
+    case 'gemini':
+      return {
+        systemPrompt: 'You are Gemini, an expert OCR system created by Google, specializing in heritage and genealogical data extraction.',
         userPrompt: `${basePrompt}\n\nResponse Format:\n- Return valid JSON only\n- All numeric values (year_of_death) MUST be actual integers\n- All text fields must be properly formatted strings\n- Ensure strict adherence to field formats`
       };
 

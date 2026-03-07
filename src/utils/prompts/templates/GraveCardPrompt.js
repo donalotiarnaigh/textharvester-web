@@ -14,7 +14,7 @@ class GraveCardPrompt extends BasePrompt {
       version: '1.0.0',
       description: 'Prompt for extracting structured data from grave record cards',
       fields: {},
-      providers: ['openai', 'anthropic', 'mock'],
+      providers: ['openai', 'anthropic', 'gemini', 'mock'],
       ...config
     });
   }
@@ -116,6 +116,11 @@ CRITICAL VALIDATION RULES:
         userPrompt: userInstruction
       };
     } else if (provider === 'anthropic') {
+      return {
+        systemPrompt: systemInstruction,
+        userPrompt: `JSON SCHEMA REQUIRED:\n${userInstruction}\n\nStrictly output valid JSON only.`
+      };
+    } else if (provider === 'gemini') {
       return {
         systemPrompt: systemInstruction,
         userPrompt: `JSON SCHEMA REQUIRED:\n${userInstruction}\n\nStrictly output valid JSON only.`

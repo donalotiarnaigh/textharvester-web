@@ -15,7 +15,7 @@ class OpenAIProvider extends BaseVisionProvider {
     this.client = new OpenAI({
       apiKey: this.config.OPENAI_API_KEY || process.env.OPENAI_API_KEY
     });
-    this.model = this.config.OPENAI_MODEL || this.config.openAI?.model || 'gpt-5.1';
+    this.model = this.config.OPENAI_MODEL || this.config.openAI?.model || 'gpt-5.4';
     this.maxTokens = this.config.MAX_TOKENS || this.config.openAI?.maxTokens || 4000;
     this.temperature = this.config.TEMPERATURE || 0;
     
