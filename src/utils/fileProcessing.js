@@ -195,7 +195,10 @@ async function processFile(filePath, options = {}) {
       if (graveCardConfidenceScores && config.confidence?.enabled !== false) {
         validatedData.confidence_scores = graveCardConfidenceScores;
         const threshold = config.confidence?.reviewThreshold ?? 0.70;
-        validatedData.needs_review = Object.values(graveCardConfidenceScores).some(s => s === null || s < threshold) ? 1 : 0;
+        const allScores = Object.values(graveCardConfidenceScores);
+        const numericCount = allScores.filter(s => typeof s === 'number').length;
+        validatedData.confidence_coverage = allScores.length > 0 ? numericCount / allScores.length : null;
+        validatedData.needs_review = allScores.some(s => typeof s === 'number' && s < threshold) ? 1 : 0;
       }
 
       // Extract validation warnings
@@ -336,7 +339,10 @@ async function processFile(filePath, options = {}) {
           if (entryConfidenceScores && config.confidence?.enabled !== false) {
             entryWithMetadata.confidence_scores = entryConfidenceScores;
             const threshold = config.confidence?.reviewThreshold ?? 0.70;
-            entryWithMetadata.needs_review = Object.values(entryConfidenceScores).some(s => s === null || s < threshold) ? 1 : 0;
+            const allScores = Object.values(entryConfidenceScores);
+            const numericCount = allScores.filter(s => typeof s === 'number').length;
+            entryWithMetadata.confidence_coverage = allScores.length > 0 ? numericCount / allScores.length : null;
+            entryWithMetadata.needs_review = allScores.some(s => typeof s === 'number' && s < threshold) ? 1 : 0;
           }
 
           if (entryValidationWarnings && entryValidationWarnings.length > 0) {
@@ -439,7 +445,10 @@ async function processFile(filePath, options = {}) {
       if (memConfidenceScores && config.confidence?.enabled !== false) {
         extractedData.confidence_scores = memConfidenceScores;
         const threshold = config.confidence?.reviewThreshold ?? 0.70;
-        extractedData.needs_review = Object.values(memConfidenceScores).some(s => s === null || s < threshold) ? 1 : 0;
+        const allScores = Object.values(memConfidenceScores);
+        const numericCount = allScores.filter(s => typeof s === 'number').length;
+        extractedData.confidence_coverage = allScores.length > 0 ? numericCount / allScores.length : null;
+        extractedData.needs_review = allScores.some(s => typeof s === 'number' && s < threshold) ? 1 : 0;
       }
 
       // Extract validation warnings

@@ -46,6 +46,7 @@ body {
 .confidence-high { color: #28a745; font-weight: 600; }
 .confidence-medium { color: #ffc107; font-weight: 600; }
 .confidence-low { color: #dc3545; font-weight: 600; }
+.confidence-unknown { color: #6c757d; font-style: italic; }
 
 /* Content Wrapper */
 .content-wrap {
