@@ -120,6 +120,7 @@ function initializeDatabase() {
       iconography TEXT,
       structural_observations TEXT,
       confidence_scores TEXT,
+      confidence_coverage REAL DEFAULT NULL,
       needs_review INTEGER DEFAULT 0,
       reviewed_at DATETIME,
       validation_warnings TEXT,
@@ -146,6 +147,7 @@ function initializeDatabase() {
       const migrations = [
         { name: 'site_code', def: 'TEXT' },
         { name: 'confidence_scores', def: 'TEXT' },
+        { name: 'confidence_coverage', def: 'REAL DEFAULT NULL' },
         { name: 'needs_review', def: 'INTEGER DEFAULT 0' },
         { name: 'reviewed_at', def: 'DATETIME' },
         { name: 'validation_warnings', def: 'TEXT' },
@@ -189,6 +191,7 @@ function initializeBurialRegisterTable() {
       prompt_version TEXT,
       processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
       confidence_scores TEXT,
+      confidence_coverage REAL DEFAULT NULL,
       needs_review INTEGER DEFAULT 0,
       reviewed_at DATETIME,
       validation_warnings TEXT,
@@ -212,6 +215,7 @@ function initializeBurialRegisterTable() {
       const existingCols = pragmaRows ? pragmaRows.map(row => row.name) : [];
       const burialMigrations = [
         { name: 'confidence_scores', def: 'TEXT' },
+        { name: 'confidence_coverage', def: 'REAL DEFAULT NULL' },
         { name: 'needs_review', def: 'INTEGER DEFAULT 0' },
         { name: 'reviewed_at', def: 'DATETIME' },
         { name: 'validation_warnings', def: 'TEXT' },
@@ -291,12 +295,13 @@ function storeMemorial(data) {
       iconography,
       structural_observations,
       confidence_scores,
+      confidence_coverage,
       needs_review,
       validation_warnings,
       input_tokens,
       output_tokens,
       estimated_cost_usd
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   return new Promise((resolve, reject) => {
@@ -331,6 +336,7 @@ function storeMemorial(data) {
         safeStringify(data.iconography),
         data.structural_observations || null,
         safeStringify(data.confidence_scores),
+        data.confidence_coverage ?? null,
         data.needs_review ?? 0,
         safeStringify(data.validation_warnings),
         data.input_tokens        ?? 0,

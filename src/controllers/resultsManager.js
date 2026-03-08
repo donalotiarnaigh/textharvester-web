@@ -54,6 +54,7 @@ const BURIAL_REGISTER_CSV_COLUMNS = [
   'prompt_version',
   'processed_date',
   'confidence_scores',
+  'confidence_coverage',
   'needs_review',
   'reviewed_at',
   'validation_warnings'
@@ -82,6 +83,7 @@ const MEMORIAL_CSV_COLUMNS = [
   'source_type',
   'processed_date',
   'confidence_scores',
+  'confidence_coverage',
   'needs_review',
   'reviewed_at',
   'validation_warnings'

@@ -354,4 +354,151 @@ describe('File Processing Module', () => {
       expect(graveCardStorage.storeGraveCard).toHaveBeenCalled();
     });
   });
+
+  describe('Confidence coverage and needs_review logic', () => {
+    const testFilePath = 'test/image.jpg';
+
+    beforeEach(() => {
+      mockFs.promises.readFile.mockResolvedValue(mockBase64Image);
+      mockFs.promises.unlink.mockResolvedValue();
+      storeMemorial.mockResolvedValue();
+    });
+
+    test('does NOT flag needs_review when all confidence scores are null (scalar responses)', async () => {
+      const dataWithNullConfidence = {
+        ...mockExtractedData,
+        _confidence_scores: {
+          memorial_number: null,
+          first_name: null,
+          last_name: null,
+          year_of_death: null,
+          inscription: null
+        }
+      };
+      mockValidateAndConvert.mockReturnValue(dataWithNullConfidence);
+      mockProcessImage.mockResolvedValue({ content: dataWithNullConfidence, usage: { input_tokens: 0, output_tokens: 0 } });
+
+      const result = await processFile(testFilePath);
+
+      expect(result.needs_review).toBe(0);
+      expect(result.confidence_coverage).toBe(0);
+    });
+
+    test('sets confidence_coverage to 0 when all scores are null', async () => {
+      const dataWithNullConfidence = {
+        ...mockExtractedData,
+        _confidence_scores: {
+          memorial_number: null,
+          first_name: null
+        }
+      };
+      mockValidateAndConvert.mockReturnValue(dataWithNullConfidence);
+      mockProcessImage.mockResolvedValue({ content: dataWithNullConfidence, usage: { input_tokens: 0, output_tokens: 0 } });
+
+      const result = await processFile(testFilePath);
+
+      expect(result.confidence_coverage).toBe(0);
+    });
+
+    test('flags needs_review when any score is explicitly below threshold', async () => {
+      const dataWithLowConfidence = {
+        ...mockExtractedData,
+        _confidence_scores: {
+          memorial_number: 0.95,
+          first_name: 0.5,
+          last_name: 0.85,
+          year_of_death: 0.80,
+          inscription: 0.92
+        }
+      };
+      mockValidateAndConvert.mockReturnValue(dataWithLowConfidence);
+      mockProcessImage.mockResolvedValue({ content: dataWithLowConfidence, usage: { input_tokens: 0, output_tokens: 0 } });
+
+      const result = await processFile(testFilePath);
+
+      expect(result.needs_review).toBe(1);
+      expect(result.confidence_coverage).toBe(1.0);
+    });
+
+    test('does NOT flag needs_review when all scores are above threshold', async () => {
+      const dataWithHighConfidence = {
+        ...mockExtractedData,
+        _confidence_scores: {
+          memorial_number: 0.95,
+          first_name: 0.92,
+          last_name: 0.88,
+          year_of_death: 0.90,
+          inscription: 0.89
+        }
+      };
+      mockValidateAndConvert.mockReturnValue(dataWithHighConfidence);
+      mockProcessImage.mockResolvedValue({ content: dataWithHighConfidence, usage: { input_tokens: 0, output_tokens: 0 } });
+
+      const result = await processFile(testFilePath);
+
+      expect(result.needs_review).toBe(0);
+      expect(result.confidence_coverage).toBe(1.0);
+    });
+
+    test('handles mixed null and low confidence — flags review for low, coverage is partial', async () => {
+      const dataMixedNull = {
+        ...mockExtractedData,
+        _confidence_scores: {
+          memorial_number: null,
+          first_name: 0.5,
+          last_name: null,
+          year_of_death: 0.85,
+          inscription: null
+        }
+      };
+      mockValidateAndConvert.mockReturnValue(dataMixedNull);
+      mockProcessImage.mockResolvedValue({ content: dataMixedNull, usage: { input_tokens: 0, output_tokens: 0 } });
+
+      const result = await processFile(testFilePath);
+
+      expect(result.needs_review).toBe(1);
+      expect(result.confidence_coverage).toBe(0.4);
+    });
+
+    test('handles mixed null and high confidence — no review flag, partial coverage', async () => {
+      const dataMixedNull = {
+        ...mockExtractedData,
+        _confidence_scores: {
+          memorial_number: null,
+          first_name: 0.92,
+          last_name: null,
+          year_of_death: 0.95,
+          inscription: null
+        }
+      };
+      mockValidateAndConvert.mockReturnValue(dataMixedNull);
+      mockProcessImage.mockResolvedValue({ content: dataMixedNull, usage: { input_tokens: 0, output_tokens: 0 } });
+
+      const result = await processFile(testFilePath);
+
+      expect(result.needs_review).toBe(0);
+      expect(result.confidence_coverage).toBe(0.4);
+    });
+
+    test('validation_warnings still force needs_review = 1 regardless of confidence', async () => {
+      const dataWithWarnings = {
+        ...mockExtractedData,
+        _confidence_scores: {
+          memorial_number: 0.95,
+          first_name: 0.92,
+          last_name: 0.88,
+          year_of_death: 0.90,
+          inscription: 0.89
+        },
+        _validation_warnings: ['IDENTICAL_NAMES: first_name and last_name are the same value']
+      };
+      mockValidateAndConvert.mockReturnValue(dataWithWarnings);
+      mockProcessImage.mockResolvedValue({ content: dataWithWarnings, usage: { input_tokens: 0, output_tokens: 0 } });
+
+      const result = await processFile(testFilePath);
+
+      expect(result.needs_review).toBe(1);
+      expect(result.validation_warnings).toBeDefined();
+    });
+  });
 }); 

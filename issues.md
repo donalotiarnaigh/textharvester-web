@@ -109,15 +109,10 @@ Instead of implementing an in-app "Mark as Reviewed" workflow, we added `needs_r
 
 ---
 
-### [#134](https://github.com/donalotiarnaigh/textharvester-web/issues/134) `null` confidence and low confidence are indistinguishable in `needs_review` logic
-**Labels:** bug, data
+### ~~[#134](https://github.com/donalotiarnaigh/textharvester-web/issues/134) `null` confidence and low confidence are indistinguishable in `needs_review` logic~~ ✅ Fixed
+**Branch:** `fix/issue-134-confidence-coverage`
 
-`_extractValueAndConfidence()` returns `confidence: null` both when the model omits confidence entirely (scalar response) and when confidence is invalid. `fileProcessing.js:342` checks `s === null || s < threshold` treats both identically, so a prompt change that stops emitting `{value, confidence}` wrappers silently floods the review queue with false positives.
-
-**Acceptance Criteria:**
-- `confidence: null` (not provided) is distinguishable from explicitly low confidence.
-- A `confidence_coverage` metric tracks what fraction of fields returned a numeric confidence.
-- `needs_review` is only set when confidence is explicitly low, not when absent.
+Changed `needs_review` logic from `Object.values(scores).some(s => s === null || s < threshold)` to `Object.values(scores).some(s => typeof s === 'number' && s < threshold)`. Now only explicitly low numeric confidence scores trigger review; null (absent) confidence is ignored. New `confidence_coverage REAL` column added to all three tables (`memorials`, `burial_register_entries`; embedded in `grave_cards` data_json) to track what fraction of fields returned numeric confidence. Frontend display fixed to show "N/A" for null scores instead of "NaN%". 7 new tests verify the fix; all 1244 tests passing.
 
 ---
 

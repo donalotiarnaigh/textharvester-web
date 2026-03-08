@@ -65,6 +65,7 @@ describe('burialRegisterStorage', () => {
         prompt_version TEXT,
         processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
         confidence_scores TEXT,
+        confidence_coverage REAL DEFAULT NULL,
         needs_review INTEGER DEFAULT 0,
         reviewed_at DATETIME,
         validation_warnings TEXT,

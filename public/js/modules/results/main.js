@@ -317,10 +317,16 @@ const SanitizeUtils = {
     }
     if (!scores) return '';
     const rows = Object.entries(scores).map(([field, score]) => {
+      if (score === null || score === undefined) {
+        return `<dt class="col-sm-5">${field}:</dt><dd class="col-sm-7 confidence-unknown">N/A</dd>`;
+      }
       const pct = Math.round(score * 100);
       const cls = score >= 0.90 ? 'confidence-high' : score >= 0.70 ? 'confidence-medium' : 'confidence-low';
       return `<dt class="col-sm-5">${field}:</dt><dd class="col-sm-7 ${cls}">${pct}%</dd>`;
     }).join('');
+    const coverageInfo = memorial.confidence_coverage !== null && memorial.confidence_coverage !== undefined
+      ? `<p class="text-muted small mt-2">Coverage: ${Math.round(memorial.confidence_coverage * 100)}% of fields have confidence scores</p>`
+      : '';
     return `
         <div class="card mb-3">
           <div class="card-header bg-light">
@@ -329,6 +335,7 @@ const SanitizeUtils = {
           </div>
           <div class="card-body">
             <dl class="row mb-0">${rows}</dl>
+            ${coverageInfo}
           </div>
         </div>`;
   })() : ''}
