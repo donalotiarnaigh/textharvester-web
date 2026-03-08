@@ -22,7 +22,8 @@ describe('GeminiProvider', () => {
       gemini: {
         model: 'gemini-3.1-pro',
         maxTokens: 8000
-      }
+      },
+      retry: { maxProviderRetries: 0 }
     };
 
     mockGeminiResponse = {

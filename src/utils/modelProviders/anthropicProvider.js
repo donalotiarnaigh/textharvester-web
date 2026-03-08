@@ -4,6 +4,7 @@ const BaseVisionProvider = require('./baseProvider');
 const { promptManager } = require('../prompts/templates/providerTemplates');
 const PerformanceTracker = require('../performanceTracker');
 const { ResponseLengthValidator } = require('../responseLengthValidator');
+const { withRetry, classifyError } = require('../retryHelper');
 const logger = require('../logger');
 
 /**
@@ -40,157 +41,175 @@ class AnthropicProvider extends BaseVisionProvider {
    * @returns {Promise<Object>} - Parsed JSON response
    */
   async processImage(base64Image, prompt, options = {}) {
-    try {
-      // Format prompt if template is provided
-      let systemPrompt = options.systemPrompt || 'Return a JSON object with the extracted text details.';
-      let userPrompt = '';
+    const retryConfig = this.config.retry || {};
+    const maxRetries = retryConfig.maxProviderRetries ?? 3;
 
-      // Handle different prompt formats
-      if (typeof prompt === 'string') {
-        userPrompt = prompt;
-      } else if (prompt && typeof prompt === 'object') {
-        systemPrompt = prompt.systemPrompt || systemPrompt;
-        userPrompt = prompt.userPrompt || '';
-      }
+    // Format prompt if template is provided
+    let systemPrompt = options.systemPrompt || 'Return a JSON object with the extracted text details.';
+    let userPrompt = '';
 
-      if (options.promptTemplate) {
-        // Use the new prompt template system
-        const formatted = options.promptTemplate.getProviderPrompt('anthropic');
-        systemPrompt = formatted.systemPrompt || systemPrompt;
-        userPrompt = formatted.userPrompt || formatted;
-      }
+    // Handle different prompt formats
+    if (typeof prompt === 'string') {
+      userPrompt = prompt;
+    } else if (prompt && typeof prompt === 'object') {
+      systemPrompt = prompt.systemPrompt || systemPrompt;
+      userPrompt = prompt.userPrompt || '';
+    }
 
-      // Ensure userPrompt is a valid string
-      if (typeof userPrompt !== 'string') {
-        userPrompt = JSON.stringify(userPrompt);
-      }
+    if (options.promptTemplate) {
+      const formatted = options.promptTemplate.getProviderPrompt('anthropic');
+      systemPrompt = formatted.systemPrompt || systemPrompt;
+      userPrompt = formatted.userPrompt || formatted;
+    }
 
-      // Validate and truncate prompt to prevent oversized responses
-      const promptValidation = this.responseValidator.validateResponseLength(userPrompt, 'anthropic');
-      if (promptValidation.needsTruncation) {
-        logger.warn(`[AnthropicProvider] Prompt too long (${userPrompt.length} chars), truncating to prevent oversized response`);
-        userPrompt = this.responseValidator.truncatePromptForProvider(userPrompt, 'anthropic');
-      }
+    // Ensure userPrompt is a valid string
+    if (typeof userPrompt !== 'string') {
+      userPrompt = JSON.stringify(userPrompt);
+    }
 
-      // Log the prompt being sent to Claude for debugging
-      logger.info(`[AnthropicProvider] Sending prompt to Claude: ${userPrompt.substring(0, 200)}...`);
-      logger.info(`[AnthropicProvider] System prompt: ${systemPrompt}`);
-      logger.info(`[AnthropicProvider] Prompt length: ${userPrompt.length} characters`);
+    // Validate and truncate prompt to prevent oversized responses
+    const promptValidation = this.responseValidator.validateResponseLength(userPrompt, 'anthropic');
+    if (promptValidation.needsTruncation) {
+      logger.warn(`[AnthropicProvider] Prompt too long (${userPrompt.length} chars), truncating to prevent oversized response`);
+      userPrompt = this.responseValidator.truncatePromptForProvider(userPrompt, 'anthropic');
+    }
 
-      // Track API performance
-      const result = await PerformanceTracker.trackAPICall(
-        'anthropic',
-        this.model,
-        'processImage',
-        async () => {
-          return await this.client.messages.create({
-            model: this.model,
-            max_tokens: this.maxTokens,
+    // Log the prompt being sent to Claude for debugging
+    logger.info(`[AnthropicProvider] Sending prompt to Claude: ${userPrompt.substring(0, 200)}...`);
+    logger.info(`[AnthropicProvider] System prompt: ${systemPrompt}`);
+    logger.info(`[AnthropicProvider] Prompt length: ${userPrompt.length} characters`);
+
+    return withRetry(
+      async (attempt) => {
+        // Track API performance
+        const result = await PerformanceTracker.trackAPICall(
+          'anthropic',
+          this.model,
+          'processImage',
+          async () => {
+            return await this.client.messages.create({
+              model: this.model,
+              max_tokens: this.maxTokens,
+              temperature: this.temperature,
+              system: systemPrompt,
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    { type: 'text', text: userPrompt },
+                    {
+                      type: 'image',
+                      source: {
+                        type: 'base64',
+                        media_type: 'image/jpeg',
+                        data: base64Image
+                      }
+                    }
+                  ]
+                }
+              ]
+            });
+          },
+          {
+            imageSize: base64Image ? Math.round(base64Image.length * 0.75) : 0,
+            promptLength: userPrompt ? userPrompt.length : 0,
+            systemPromptLength: systemPrompt ? systemPrompt.length : 0,
+            maxTokens: this.maxTokens,
             temperature: this.temperature,
-            system: systemPrompt,
-            messages: [
-              {
-                role: 'user',
-                content: [
-                  { type: 'text', text: userPrompt },
-                  { 
-                    type: 'image', 
-                    source: { 
-                      type: 'base64', 
-                      media_type: 'image/jpeg', 
-                      data: base64Image 
-                    } 
-                  }
-                ]
-              }
-            ]
-          });
-        },
-        {
-          imageSize: base64Image ? Math.round(base64Image.length * 0.75) : 0, // Approximate bytes
-          promptLength: userPrompt ? userPrompt.length : 0,
-          systemPromptLength: systemPrompt ? systemPrompt.length : 0,
-          maxTokens: this.maxTokens,
-          temperature: this.temperature
+            attempt
+          }
+        );
+
+        // Extract the text content from the response
+        const content = result.content.find(item => item.type === 'text')?.text;
+        const usage = {
+          input_tokens:  result.usage?.input_tokens  ?? 0,
+          output_tokens: result.usage?.output_tokens ?? 0
+        };
+
+        if (!content) {
+          throw new Error('No text content in response');
         }
-      );
 
-      // Extract the text content from the response
-      const content = result.content.find(item => item.type === 'text')?.text;
-      // Anthropic SDK: result.usage = { input_tokens, output_tokens,
-      //   cache_creation_input_tokens, cache_read_input_tokens }
-      // Cache fields excluded from cost calculation in this iteration.
-      const usage = {
-        input_tokens:  result.usage?.input_tokens  ?? 0,
-        output_tokens: result.usage?.output_tokens ?? 0
-      };
+        // Validate response length to detect potential truncation issues
+        const responseValidation = this.responseValidator.validateResponseLength(content, 'anthropic');
+        if (responseValidation.exceedsLimit) {
+          logger.warn(`[AnthropicProvider] Response exceeds limit (${content.length}/${responseValidation.maxLength} chars) - may be truncated`);
+        } else if (responseValidation.isApproachingLimit) {
+          logger.info(`[AnthropicProvider] Response approaching limit (${content.length}/${responseValidation.maxLength} chars)`);
+        }
 
-      if (!content) {
-        throw new Error('No text content in response');
-      }
+        // Return raw content if requested
+        if (options.raw) {
+          return { content, usage };
+        }
 
-      // Validate response length to detect potential truncation issues
-      const responseValidation = this.responseValidator.validateResponseLength(content, 'anthropic');
-      if (responseValidation.exceedsLimit) {
-        logger.warn(`[AnthropicProvider] Response exceeds limit (${content.length}/${responseValidation.maxLength} chars) - may be truncated`);
-      } else if (responseValidation.isApproachingLimit) {
-        logger.info(`[AnthropicProvider] Response approaching limit (${content.length}/${responseValidation.maxLength} chars)`);
-      }
+        // Parse the JSON response, handling the case where it's wrapped in a code block
+        let jsonContent = content;
 
-      // Return raw content if requested
-      if (options.raw) {
-        return { content, usage };
-      }
+        // Check if the content is wrapped in a code block (```json ... ```)
+        const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (codeBlockMatch) {
+          jsonContent = codeBlockMatch[1].trim();
+        }
 
-      // Parse the JSON response, handling the case where it's wrapped in a code block
-      let jsonContent = content;
-      
-      // Check if the content is wrapped in a code block (```json ... ```)
-      const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (codeBlockMatch) {
-        jsonContent = codeBlockMatch[1].trim();
+        // Try to extract JSON from the response if it contains extra text
+        const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          jsonContent = jsonMatch[0];
+        }
+
+        // Log response length for debugging
+        logger.info(`[AnthropicProvider] Response length: ${content.length} characters`);
+        logger.info(`[AnthropicProvider] JSON content length: ${jsonContent.length} characters`);
+        logger.info(`[AnthropicProvider] Response ends with: "${content.slice(-50)}"`);
+        logger.info(`[AnthropicProvider] JSON content ends with: "${jsonContent.slice(-50)}"`);
+
+        // Use ResponseLengthValidator for robust JSON parsing
+        const validationResult = this.responseValidator.validateAndRepairJson(jsonContent);
+
+        if (!validationResult.isValid) {
+          logger.error(`Anthropic JSON parsing failed for model ${this.model}`, validationResult.error, {
+            phase: 'response_parsing',
+            operation: 'processImage',
+            contentLength: content.length,
+            jsonContentLength: jsonContent.length,
+            contentPreview: jsonContent.substring(0, 500),
+            attempt
+          });
+          throw new Error(`Failed to parse JSON response: ${validationResult.error}`);
+        }
+
+        // Validate that the response contains actual text, not just dashes
+        if (this.isInvalidResponse(validationResult.json)) {
+          logger.warn('[AnthropicProvider] Response appears to contain invalid data (likely dashes instead of actual text)');
+          throw new Error('Invalid response: Claude returned dashes instead of actual text. This may indicate image quality issues or prompt confusion.');
+        }
+
+        // Log if JSON was repaired
+        if (validationResult.repaired) {
+          logger.info(`[AnthropicProvider] JSON response was successfully repaired (${validationResult.originalLength} -> ${validationResult.repairedLength} chars)`);
+        }
+
+        return { content: validationResult.json, usage };
+      },
+      {
+        maxRetries,
+        baseDelay: retryConfig.baseDelayMs ?? 1000,
+        maxDelay: retryConfig.maxDelayMs ?? 10000,
+        jitterMs: retryConfig.jitterMs ?? 1000,
+        onRetry: (error, attempt) => {
+          const errorType = classifyError(error);
+          logger.warn(`Anthropic API attempt ${attempt}/${maxRetries} failed for model ${this.model}`, {
+            error: error.message,
+            errorType,
+            attempt,
+            maxRetries
+          });
+        }
       }
-      
-      // Try to extract JSON from the response if it contains extra text
-      const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        jsonContent = jsonMatch[0];
-      }
-      
-      // Log response length for debugging
-      logger.info(`[AnthropicProvider] Response length: ${content.length} characters`);
-      logger.info(`[AnthropicProvider] JSON content length: ${jsonContent.length} characters`);
-      logger.info(`[AnthropicProvider] Response ends with: "${content.slice(-50)}"`);
-      logger.info(`[AnthropicProvider] JSON content ends with: "${jsonContent.slice(-50)}"`);
-      
-      // Use ResponseLengthValidator for robust JSON parsing
-      const validationResult = this.responseValidator.validateAndRepairJson(jsonContent);
-      
-      if (!validationResult.isValid) {
-        logger.error(`Anthropic JSON parsing failed for model ${this.model}`, validationResult.error, {
-          phase: 'response_parsing',
-          operation: 'processImage',
-          contentLength: content.length,
-          jsonContentLength: jsonContent.length,
-          contentPreview: jsonContent.substring(0, 500)
-        });
-        throw new Error(`Failed to parse JSON response: ${validationResult.error}`);
-      }
-      
-      // Validate that the response contains actual text, not just dashes
-      if (this.isInvalidResponse(validationResult.json)) {
-        logger.warn('[AnthropicProvider] Response appears to contain invalid data (likely dashes instead of actual text)');
-        throw new Error('Invalid response: Claude returned dashes instead of actual text. This may indicate image quality issues or prompt confusion.');
-      }
-      
-      // Log if JSON was repaired
-      if (validationResult.repaired) {
-        logger.info(`[AnthropicProvider] JSON response was successfully repaired (${validationResult.originalLength} -> ${validationResult.repairedLength} chars)`);
-      }
-      
-      return { content: validationResult.json, usage };
-    } catch (error) {
-      logger.error(`Anthropic API error for model ${this.model}`, error, {
+    ).catch(error => {
+      logger.error(`Anthropic API error for model ${this.model} after ${maxRetries} retries`, error, {
         phase: 'api_call',
         operation: 'processImage'
       });
@@ -200,7 +219,7 @@ class AnthropicProvider extends BaseVisionProvider {
         stack: error.stack
       });
       throw new Error(`Anthropic processing failed: ${error.message}`);
-    }
+    });
   }
 
   /**
@@ -212,30 +231,30 @@ class AnthropicProvider extends BaseVisionProvider {
     if (!response || typeof response !== 'object') {
       return true;
     }
-    
+
     // Check if inscription field contains mostly dashes
     if (response.inscription && typeof response.inscription === 'string') {
       const inscription = response.inscription.trim();
-      
+
       // If inscription is very long and contains mostly dashes, it's likely invalid
       if (inscription.length > 1000) {
         const dashCount = (inscription.match(/-/g) || []).length;
         const dashRatio = dashCount / inscription.length;
-        
+
         // If more than 80% of the text is dashes, it's likely invalid
         if (dashRatio > 0.8) {
           logger.warn(`[AnthropicProvider] Inscription field contains ${dashRatio.toFixed(2)} dashes (${dashCount}/${inscription.length} characters)`);
           return true;
         }
       }
-      
+
       // Check for patterns that indicate invalid responses
       if (inscription.includes('----------|----------|----------')) {
         logger.warn('[AnthropicProvider] Inscription contains repeated dash patterns');
         return true;
       }
     }
-    
+
     // Check if name fields contain only dashes
     if (response.first_name && typeof response.first_name === 'string') {
       const firstName = response.first_name.trim();
@@ -244,7 +263,7 @@ class AnthropicProvider extends BaseVisionProvider {
         return true;
       }
     }
-    
+
     if (response.last_name && typeof response.last_name === 'string') {
       const lastName = response.last_name.trim();
       if (lastName.length > 10 && /^-+$/.test(lastName)) {
@@ -252,7 +271,7 @@ class AnthropicProvider extends BaseVisionProvider {
         return true;
       }
     }
-    
+
     return false;
   }
 
@@ -281,4 +300,4 @@ class AnthropicProvider extends BaseVisionProvider {
   }
 }
 
-module.exports = AnthropicProvider; 
+module.exports = AnthropicProvider;

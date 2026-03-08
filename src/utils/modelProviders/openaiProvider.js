@@ -3,6 +3,7 @@ const OpenAI = require('openai');
 const BaseVisionProvider = require('./baseProvider');
 const { promptManager } = require('../prompts/templates/providerTemplates');
 const PerformanceTracker = require('../performanceTracker');
+const { withRetry, classifyError } = require('../retryHelper');
 const logger = require('../logger');
 
 /**
@@ -18,10 +19,10 @@ class OpenAIProvider extends BaseVisionProvider {
     this.model = this.config.OPENAI_MODEL || this.config.openAI?.model || 'gpt-5.4';
     this.maxTokens = this.config.MAX_TOKENS || this.config.openAI?.maxTokens || 4000;
     this.temperature = this.config.TEMPERATURE || 0;
-    
+
     // Read reasoningEffort from config, or auto-detect for GPT-5 models
     this.reasoningEffort = this.config.openAI?.reasoningEffort || null;
-    
+
     // Auto-detect GPT-5 models and set reasoning.effort to 'none' if not explicitly configured
     if (this.model.includes('gpt-5') && !this.reasoningEffort) {
       this.reasoningEffort = 'none';
@@ -47,27 +48,27 @@ class OpenAIProvider extends BaseVisionProvider {
    * @returns {Promise<Object>} - Parsed JSON response
    */
   async processImage(base64Image, prompt, options = {}) {
-    const maxRetries = 3;
+    const retryConfig = this.config.retry || {};
+    const maxRetries = retryConfig.maxProviderRetries ?? 3;
     // Allow timeout to be overridden via options, default to 30 seconds
-    const baseTimeout = options.timeout || this.config.openAI?.timeout || 30000; // Default 30 seconds base timeout
-    
+    const baseTimeout = options.timeout || this.config.openAI?.timeout || 30000;
+
     if (options.timeout && options.timeout !== 30000) {
       logger.debug(`Using custom API timeout: ${options.timeout}ms (default: 30000ms)`);
     }
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        // Format prompt if template is provided
-        let systemPrompt = options.systemPrompt || 'Return a JSON object with the extracted text details.';
-        let userPrompt = prompt;
 
-        if (options.promptTemplate) {
-          // Use the new prompt template system
-          const formatted = options.promptTemplate.getProviderPrompt('openai');
-          systemPrompt = formatted.systemPrompt || systemPrompt;
-          userPrompt = formatted.userPrompt || formatted;
-        }
+    // Format prompt if template is provided
+    let systemPrompt = options.systemPrompt || 'Return a JSON object with the extracted text details.';
+    let userPrompt = prompt;
 
+    if (options.promptTemplate) {
+      const formatted = options.promptTemplate.getProviderPrompt('openai');
+      systemPrompt = formatted.systemPrompt || systemPrompt;
+      userPrompt = formatted.userPrompt || formatted;
+    }
+
+    return withRetry(
+      async (attempt) => {
         const requestPayload = {
           model: this.model,
           messages: [
@@ -94,36 +95,32 @@ class OpenAIProvider extends BaseVisionProvider {
 
         // Include temperature for models that support it
         requestPayload.temperature = this.temperature;
-      
+
         // Add reasoning_effort parameter if configured (for GPT-5.x models)
-        // For Chat Completions API, use reasoning_effort (top-level string)
-        // For Responses API, use reasoning: { effort: "..." } (nested object)
         if (this.reasoningEffort) {
           requestPayload.reasoning_effort = this.reasoningEffort;
         }
 
         // Calculate timeout with exponential backoff
         const timeout = baseTimeout * attempt;
-        
+
         // Track API performance with timeout
         const result = await PerformanceTracker.trackAPICall(
           'openai',
           this.model,
           'processImage',
           async () => {
-            // Create timeout promise
             const timeoutPromise = new Promise((_, reject) => {
               setTimeout(() => reject(new Error(`Request timeout after ${timeout}ms`)), timeout);
             });
-            
-            // Race between API call and timeout
+
             return Promise.race([
               this.client.chat.completions.create(requestPayload),
               timeoutPromise
             ]);
           },
           {
-            imageSize: base64Image ? Math.round(base64Image.length * 0.75) : 0, // Approximate bytes
+            imageSize: base64Image ? Math.round(base64Image.length * 0.75) : 0,
             promptLength: userPrompt ? userPrompt.length : 0,
             systemPromptLength: systemPrompt ? systemPrompt.length : 0,
             maxTokens: this.maxTokens,
@@ -132,15 +129,13 @@ class OpenAIProvider extends BaseVisionProvider {
             timeout: timeout
           }
         );
-      
+
         const content = result.choices[0].message.content;
-        // OpenAI SDK: result.usage = { prompt_tokens, completion_tokens, total_tokens, ... }
         const usage = {
           input_tokens:  result.usage?.prompt_tokens     ?? 0,
           output_tokens: result.usage?.completion_tokens ?? 0
         };
 
-        // Return raw content if requested
         if (options.raw) {
           return { content, usage };
         }
@@ -156,29 +151,29 @@ class OpenAIProvider extends BaseVisionProvider {
           });
           throw new Error(`OpenAI processing failed: ${parseError.message}`);
         }
-        
-      } catch (error) {
-        logger.warn(`OpenAI API attempt ${attempt}/${maxRetries} failed for model ${this.model}`, {
-          error: error.message,
-          attempt: attempt,
-          maxRetries: maxRetries
-        });
-        
-        // If this is the last attempt, throw the error
-        if (attempt === maxRetries) {
-          logger.error(`OpenAI API error for model ${this.model} after ${maxRetries} attempts`, error, {
-            phase: 'api_call',
-            operation: 'processImage'
+      },
+      {
+        maxRetries,
+        baseDelay: retryConfig.baseDelayMs ?? 1000,
+        maxDelay: retryConfig.maxDelayMs ?? 10000,
+        jitterMs: retryConfig.jitterMs ?? 1000,
+        onRetry: (error, attempt) => {
+          const errorType = classifyError(error);
+          logger.warn(`OpenAI API attempt ${attempt}/${maxRetries} failed for model ${this.model}`, {
+            error: error.message,
+            errorType,
+            attempt,
+            maxRetries
           });
-          throw new Error(`OpenAI processing failed: ${error.message}`);
         }
-        
-        // Wait before retry (exponential backoff)
-        const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 10000); // Max 10 seconds
-        logger.info(`Retrying OpenAI API call in ${waitTime}ms (attempt ${attempt + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
       }
-    }
+    ).catch(error => {
+      logger.error(`OpenAI API error for model ${this.model} after ${maxRetries} retries`, error, {
+        phase: 'api_call',
+        operation: 'processImage'
+      });
+      throw new Error(`OpenAI processing failed: ${error.message}`);
+    });
   }
 
   /**
@@ -210,4 +205,4 @@ class OpenAIProvider extends BaseVisionProvider {
   }
 }
 
-module.exports = OpenAIProvider; 
+module.exports = OpenAIProvider;
