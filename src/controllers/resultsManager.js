@@ -52,7 +52,11 @@ const BURIAL_REGISTER_CSV_COLUMNS = [
   'ai_provider',
   'prompt_template',
   'prompt_version',
-  'processed_date'
+  'processed_date',
+  'confidence_scores',
+  'needs_review',
+  'reviewed_at',
+  'validation_warnings'
 ];
 
 // Memorial CSV column order
@@ -76,7 +80,11 @@ const MEMORIAL_CSV_COLUMNS = [
   'model_version',
   'prompt_version',
   'source_type',
-  'processed_date'
+  'processed_date',
+  'confidence_scores',
+  'needs_review',
+  'reviewed_at',
+  'validation_warnings'
 ];
 
 /**
