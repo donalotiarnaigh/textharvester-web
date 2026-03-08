@@ -255,4 +255,103 @@ describe('File Processing Module', () => {
       expect(data.memorial_number).toEqual({ value: '42', confidence: 0.85 });
     });
   });
+
+  describe('Validation failure retry', () => {
+    const testFilePath = 'test/image.jpg';
+
+    beforeEach(() => {
+      mockFs.promises.readFile.mockResolvedValue(mockBase64Image);
+      mockFs.promises.unlink.mockResolvedValue();
+      storeMemorial.mockResolvedValue();
+    });
+
+    test('retries on validation failure and succeeds on second attempt', async () => {
+      const validationError = new Error('Invalid JSON');
+      mockValidateAndConvert
+        .mockImplementationOnce(() => {
+          throw validationError;
+        })
+        .mockImplementationOnce(() => mockExtractedData);
+
+      mockProcessImage.mockResolvedValue({ content: mockExtractedData, usage: { input_tokens: 0, output_tokens: 0 } });
+
+      const result = await processFile(testFilePath);
+
+      expect(result).toEqual(expect.objectContaining(mockExtractedData));
+      expect(mockProcessImage).toHaveBeenCalledTimes(2);
+      expect(mockValidateAndConvert).toHaveBeenCalledTimes(2);
+    });
+
+    test('retry prompt includes format-enforcement preamble', async () => {
+      const validationError = new Error('Parse error');
+      mockValidateAndConvert
+        .mockImplementationOnce(() => {
+          throw validationError;
+        })
+        .mockImplementationOnce(() => mockExtractedData);
+
+      mockProcessImage.mockResolvedValue({ content: mockExtractedData, usage: { input_tokens: 0, output_tokens: 0 } });
+
+      await processFile(testFilePath);
+
+      // Check that the second call to processImage includes the preamble
+      const secondCall = mockProcessImage.mock.calls[1];
+      expect(secondCall[1]).toContain('IMPORTANT: Your previous response could not be parsed');
+      expect(secondCall[1]).toContain('Return ONLY valid JSON');
+    });
+
+    test('both attempts fail — error is thrown', async () => {
+      const validationError = new Error('Persistent validation failure');
+      mockValidateAndConvert.mockImplementation(() => {
+        throw validationError;
+      });
+
+      mockProcessImage.mockResolvedValue({ content: mockExtractedData, usage: { input_tokens: 0, output_tokens: 0 } });
+
+      await expect(processFile(testFilePath)).rejects.toThrow('Persistent validation failure');
+      expect(mockProcessImage).toHaveBeenCalledTimes(2);
+      expect(mockValidateAndConvert).toHaveBeenCalledTimes(2);
+    });
+
+    test('empty sheet error is NOT retried', async () => {
+      const emptySheetError = new Error('No readable text found');
+      emptySheetError.type = 'empty_sheet';
+      mockValidateAndConvert.mockImplementation(() => {
+        throw emptySheetError;
+      });
+
+      mockProcessImage.mockResolvedValue({ content: mockExtractedData, usage: { input_tokens: 0, output_tokens: 0 } });
+
+      const result = await processFile(testFilePath);
+
+      expect(result).toEqual(expect.objectContaining({
+        error: true,
+        errorType: 'empty_sheet'
+      }));
+      expect(mockProcessImage).toHaveBeenCalledTimes(1);
+      expect(mockValidateAndConvert).toHaveBeenCalledTimes(1);
+    });
+
+    test('grave card retries on validation failure', async () => {
+      const graveCardProcessor = require('../src/utils/imageProcessing/graveCardProcessor');
+      const graveCardStorage = require('../src/utils/graveCardStorage');
+      const gravCardData = { burial_date: '2020-01-01', first_name: 'John' };
+
+      const validationError = new Error('Invalid grave card format');
+      mockValidateAndConvert
+        .mockImplementationOnce(() => {
+          throw validationError;
+        })
+        .mockImplementationOnce(() => gravCardData);
+
+      mockProcessImage.mockResolvedValue({ content: gravCardData, usage: { input_tokens: 100, output_tokens: 50 } });
+
+      const result = await processFile('test/grave.pdf', { sourceType: 'grave_record_card' });
+
+      expect(result).toEqual(expect.objectContaining(gravCardData));
+      expect(mockProcessImage).toHaveBeenCalledTimes(2);
+      expect(mockValidateAndConvert).toHaveBeenCalledTimes(2);
+      expect(graveCardStorage.storeGraveCard).toHaveBeenCalled();
+    });
+  });
 }); 

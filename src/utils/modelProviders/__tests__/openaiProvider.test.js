@@ -22,7 +22,8 @@ describe('OpenAIProvider', () => {
       OPENAI_API_KEY: 'test-key',
       OPENAI_MODEL: 'gpt-5.4',
       MAX_TOKENS: 4000,
-      TEMPERATURE: 0.2
+      TEMPERATURE: 0.2,
+      retry: { maxProviderRetries: 0 }
     };
     
     mockOpenAIResponse = {
@@ -36,7 +37,12 @@ describe('OpenAIProvider', () => {
             inscription: 'Test inscription'
           })
         }
-      }]
+      }],
+      usage: {
+        prompt_tokens: 100,
+        completion_tokens: 50,
+        total_tokens: 150
+      }
     };
 
     provider = new OpenAIProvider(mockConfig);
@@ -182,7 +188,7 @@ describe('OpenAIProvider', () => {
           year_of_death: 1923,
           inscription: 'Test inscription'
         },
-        usage: { input_tokens: 0, output_tokens: 0 }
+        usage: { input_tokens: 100, output_tokens: 50 }
       });
     });
 

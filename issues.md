@@ -56,20 +56,6 @@ _Last updated: 2026-03-07 (marked #130 fixed; moved #132 and #136 to P1; reorder
 
 ---
 
-### [#131](https://github.com/donalotiarnaigh/textharvester-web/issues/131) Prompts lack few-shot examples — model behaviour on edge cases is undefined
-**Labels:** enhancement, high-priority, prompt-engineering
-
-All prompt templates have zero or one example and none cover the edge cases most common in real heritage records. Without examples, models handle partial illegibility, partial years, family stones, and multi-entry pages inconsistently across providers and model versions.
-
-**Current state:** `BurialRegisterPrompt.js` — 0 examples; `GraveCardPrompt.js` — 0 examples; `TypographicAnalysisPrompt.js` — 0 examples; `MemorialOCRPrompt.js` — 1 (happy path only); `MonumentPhotoOCRPrompt.js` — 1 normal + 2 partial, no edge cases.
-
-**Acceptance Criteria:**
-- Each prompt has 3–5 diverse examples including: at least one with illegible characters (dash notation), one with partially missing data, and one demonstrating a calibrated confidence spread.
-- `BurialRegisterPrompt` includes a multi-entry page example.
-- `GraveCardPrompt` includes a vacant grave example.
-
----
-
 ### [#132](https://github.com/donalotiarnaigh/textharvester-web/issues/132) No retry on validation or parse failure — single bad model response loses the file
 **Labels:** bug, high-priority
 

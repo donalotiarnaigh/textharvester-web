@@ -107,5 +107,12 @@
       "gemini-2.5-flash": { "inputPerMToken": 0.075, "outputPerMToken": 0.30 }
     },
     "maxCostPerSession": 5.00
+  },
+  "retry": {
+    "maxProviderRetries": 3,
+    "validationRetries": 1,
+    "baseDelayMs": 1000,
+    "maxDelayMs": 10000,
+    "jitterMs": 1000
   }
 }
