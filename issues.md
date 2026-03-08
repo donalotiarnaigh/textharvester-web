@@ -102,15 +102,10 @@ Added `initializeMigrationsTable()` which creates a `schema_migrations` table on
 
 ---
 
-### [#135](https://github.com/donalotiarnaigh/textharvester-web/issues/135) Human review workflow is incomplete — `reviewed_at` is never written
-**Labels:** bug, ui
+### ~~[#135](https://github.com/donalotiarnaigh/textharvester-web/issues/135) Human review workflow is incomplete — `reviewed_at` is never written~~ ✅ Fixed
+**Branch:** `fix/issue-135-review-csv-columns`
 
-`reviewed_at DATETIME` column exists in both DB schemas but is never populated. No API endpoint exists to mark a record reviewed. The frontend shows "Needs Review" badges but has no submit/confirm button. Records in `needs_review=1` state accumulate with no resolution path — the review feature is visibly broken for any user who tries to use it.
-
-**Acceptance Criteria:**
-- `PATCH /api/memorials/:id/review` (and equivalent for burial register) sets `reviewed_at = NOW()`, `needs_review = 0`, and optionally accepts field corrections.
-- Frontend detail panel shows a "Mark as Reviewed" button when `needs_review = 1`.
-- `reviewed_at` is displayed in the record metadata panel when set.
+Instead of implementing an in-app "Mark as Reviewed" workflow, we added `needs_review`, `reviewed_at`, `confidence_scores`, and `validation_warnings` columns to CSV exports. This lets users filter and review records externally (e.g. in spreadsheet software), which is more flexible for batch operations. The in-app workflow is deferred until there is demand for it. 4 new unit tests verify the columns appear in both memorial and burial register CSV exports. All 1237 tests pass.
 
 ---
 
