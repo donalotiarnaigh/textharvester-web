@@ -205,6 +205,63 @@ describe('AnthropicProvider', () => {
       const result = await provider.processImage(testImage, testPrompt);
       expect(result.content).toEqual({ memorial_number: '123' });
     });
+
+    describe('JSON extraction from multi-fragment responses', () => {
+      it('should extract first JSON object when response contains multiple fragments', async () => {
+        const multiFragmentResponse = '{"memorial_number": "456", "first_name": "Jane"} ' +
+          'Some extra text {"other": "data"}';
+        provider.client.messages.create.mockResolvedValue({
+          content: [{ type: 'text', text: multiFragmentResponse }],
+          usage: { input_tokens: 100, output_tokens: 50 }
+        });
+
+        const result = await provider.processImage(testImage, testPrompt);
+        expect(result.content).toEqual({
+          memorial_number: '456',
+          first_name: 'Jane'
+        });
+      });
+
+      it('should handle JSON with nested braces in string values', async () => {
+        const nestedBracesResponse = '{"inscription": "In memory of {beloved} father"}';
+        provider.client.messages.create.mockResolvedValue({
+          content: [{ type: 'text', text: nestedBracesResponse }],
+          usage: { input_tokens: 100, output_tokens: 50 }
+        });
+
+        const result = await provider.processImage(testImage, testPrompt);
+        expect(result.content).toEqual({
+          inscription: 'In memory of {beloved} father'
+        });
+      });
+
+      it('should prefer code_block extraction over balanced-brace scanning', async () => {
+        const codeBlockWithExtra = '```json\n{"from_block": true}\n```\n{"loose": true}';
+        provider.client.messages.create.mockResolvedValue({
+          content: [{ type: 'text', text: codeBlockWithExtra }],
+          usage: { input_tokens: 100, output_tokens: 50 }
+        });
+
+        const result = await provider.processImage(testImage, testPrompt);
+        expect(result.content).toEqual({ from_block: true });
+      });
+
+      it('should extract JSON when model first response mentions format then provides JSON', async () => {
+        // This tests the scenario where a model explains something first, then provides the JSON
+        const chattierResponse = 'Here is the extracted data: ' +
+          '{"memorial_number": "789", "inscription": "RIP"}';
+        provider.client.messages.create.mockResolvedValue({
+          content: [{ type: 'text', text: chattierResponse }],
+          usage: { input_tokens: 100, output_tokens: 50 }
+        });
+
+        const result = await provider.processImage(testImage, testPrompt);
+        expect(result.content).toEqual({
+          memorial_number: '789',
+          inscription: 'RIP'
+        });
+      });
+    });
   });
 
   describe('validateConfig', () => {

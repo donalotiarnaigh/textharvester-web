@@ -240,6 +240,71 @@ describe('GeminiProvider', () => {
       const callArgs = mockModel.generateContent.mock.calls[0][0];
       expect(callArgs).toContainEqual({ text: 'Extract data' });
     });
+
+    describe('JSON extraction from multi-fragment responses', () => {
+      it('should extract first JSON object when response contains multiple fragments', async () => {
+        const multiFragmentResponse = '{"memorial_number": "456", "first_name": "Jane"} ' +
+          'Some extra text {"other": "data"}';
+        mockModel.generateContent.mockResolvedValue({
+          response: {
+            text: () => multiFragmentResponse
+          },
+          usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+        });
+
+        const result = await provider.processImage(testImage, testPrompt);
+        expect(result.content).toEqual({
+          memorial_number: '456',
+          first_name: 'Jane'
+        });
+      });
+
+      it('should handle JSON with nested braces in string values', async () => {
+        const nestedBracesResponse = '{"inscription": "In memory of {beloved} father"}';
+        mockModel.generateContent.mockResolvedValue({
+          response: {
+            text: () => nestedBracesResponse
+          },
+          usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+        });
+
+        const result = await provider.processImage(testImage, testPrompt);
+        expect(result.content).toEqual({
+          inscription: 'In memory of {beloved} father'
+        });
+      });
+
+      it('should prefer code_block extraction over balanced-brace scanning', async () => {
+        const codeBlockWithExtra = '```json\n{"from_block": true}\n```\n{"loose": true}';
+        mockModel.generateContent.mockResolvedValue({
+          response: {
+            text: () => codeBlockWithExtra
+          },
+          usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+        });
+
+        const result = await provider.processImage(testImage, testPrompt);
+        expect(result.content).toEqual({ from_block: true });
+      });
+
+      it('should extract JSON when model first response mentions format then provides JSON', async () => {
+        // This tests the scenario where a model explains something first, then provides the JSON
+        const chattierResponse = 'Here is the extracted data: ' +
+          '{"memorial_number": "789", "inscription": "RIP"}';
+        mockModel.generateContent.mockResolvedValue({
+          response: {
+            text: () => chattierResponse
+          },
+          usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+        });
+
+        const result = await provider.processImage(testImage, testPrompt);
+        expect(result.content).toEqual({
+          memorial_number: '789',
+          inscription: 'RIP'
+        });
+      });
+    });
   });
 
   describe('validateConfig', () => {
