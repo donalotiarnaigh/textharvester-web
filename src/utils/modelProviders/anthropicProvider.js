@@ -5,6 +5,7 @@ const { promptManager } = require('../prompts/templates/providerTemplates');
 const PerformanceTracker = require('../performanceTracker');
 const { ResponseLengthValidator } = require('../responseLengthValidator');
 const { withRetry, classifyError } = require('../retryHelper');
+const { extractFirstJsonObject } = require('../jsonExtractor');
 const logger = require('../logger');
 
 /**
@@ -146,20 +147,26 @@ class AnthropicProvider extends BaseVisionProvider {
 
         // Parse the JSON response, handling the case where it's wrapped in a code block
         let jsonContent = content;
+        let extractionMethod = 'direct';
 
         // Check if the content is wrapped in a code block (```json ... ```)
         const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
         if (codeBlockMatch) {
           jsonContent = codeBlockMatch[1].trim();
+          extractionMethod = 'code_block';
         }
 
-        // Try to extract JSON from the response if it contains extra text
-        const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          jsonContent = jsonMatch[0];
+        // Use balanced-brace scanner to extract first complete JSON object
+        const extracted = extractFirstJsonObject(jsonContent);
+        if (extracted) {
+          if (extractionMethod !== 'code_block') {
+            extractionMethod = 'balanced_brace';
+          }
+          jsonContent = extracted;
         }
 
-        // Log response length for debugging
+        // Log extraction method and response lengths for debugging
+        logger.debug(`[AnthropicProvider] Extraction method: ${extractionMethod}`);
         logger.info(`[AnthropicProvider] Response length: ${content.length} characters`);
         logger.info(`[AnthropicProvider] JSON content length: ${jsonContent.length} characters`);
         logger.info(`[AnthropicProvider] Response ends with: "${content.slice(-50)}"`);
@@ -188,8 +195,10 @@ class AnthropicProvider extends BaseVisionProvider {
 
         // Log if JSON was repaired
         if (validationResult.repaired) {
+          extractionMethod = 'repaired';
           logger.info(`[AnthropicProvider] JSON response was successfully repaired (${validationResult.originalLength} -> ${validationResult.repairedLength} chars)`);
         }
+        logger.debug(`[AnthropicProvider] Final extraction method: ${extractionMethod}`);
 
         return { content: validationResult.json, usage };
       },

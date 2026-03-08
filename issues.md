@@ -56,27 +56,17 @@ _Last updated: 2026-03-07 (marked #130 fixed; moved #132 and #136 to P1; reorder
 
 ---
 
-### [#132](https://github.com/donalotiarnaigh/textharvester-web/issues/132) No retry on validation or parse failure — single bad model response loses the file
-**Labels:** bug, high-priority
+### ~~[#132](https://github.com/donalotiarnaigh/textharvester-web/issues/132) No retry on validation or parse failure — single bad model response loses the file~~ ✅ Fixed
+**Branch:** `fix/issue-132-retry-on-validation-failure` (PR #145)
 
-`fileProcessing.js:334` calls `validateAndConvert()` once; on failure the file fails completely. Anthropic provider has zero retries. OpenAI has 3 retries but treats all error types identically. `ResponseLengthValidator.generateRetryPrompt()` exists in `BasePrompt.js` but is never called. For heritage surveys where re-photography is impractical, permanent data loss on a single bad API response is unacceptable.
-
-**Acceptance Criteria:**
-- On parse/validation failure, one retry is attempted using `generateRetryPrompt()`.
-- OpenAI retry logic distinguishes error types: rate-limit → exponential backoff with jitter; parse error → format-enforcement prompt; timeout → single timeout increase then fail.
-- Anthropic provider implements at least one retry on parse failure.
+Two-layer retry system: Layer 1 (provider-level, max 3 retries) with error-type-aware backoff (rate_limit → exponential + jitter, timeout → 500ms, parse_error → 500ms). Layer 2 (validation-level, 1 retry) wraps processImage + validateAndConvert; on failure, prepends format-enforcement preamble. Both OpenAI and Anthropic providers integrated; Gemini follows same pattern. Config keys: `retry.maxProviderRetries`, `retry.validationRetries`, `retry.baseDelayMs`, `retry.maxDelayMs`, `retry.jitterMs`. 18 unit tests in `retryHelper.test.js` and `fileProcessing.test.js`; all 1190 tests passing.
 
 ---
 
-### [#136](https://github.com/donalotiarnaigh/textharvester-web/issues/136) Anthropic JSON extraction uses greedy regex — breaks on responses containing multiple JSON fragments
-**Labels:** bug
+### ~~[#136](https://github.com/donalotiarnaigh/textharvester-web/issues/136) Anthropic JSON extraction uses greedy regex — breaks on responses containing multiple JSON fragments~~ ✅ Fixed
+**Branch:** `fix/issue-136-json-extraction`
 
-`anthropicProvider.js:148` uses `/\{[\s\S]*\}/` which matches from the first `{` to the last `}`. A model response with explanatory text containing braces, or two separate JSON objects, produces malformed input to the JSON parser. No logging of which parsing branch succeeded makes failures opaque. This is an active silent data corruption risk on every Anthropic API call.
-
-**Acceptance Criteria:**
-- Greedy regex replaced with a balanced-brace scanner that reliably extracts the first complete top-level JSON object.
-- Which extraction branch was taken (`code_block`, `raw_json`, `repaired`) is logged per request.
-- Unit test: assert correct extraction when model response contains multiple `{...}` fragments.
+New utility `src/utils/jsonExtractor.js` implements `extractFirstJsonObject()` — a character-by-character balanced-brace scanner that correctly extracts the first complete top-level JSON object from a string, handling nested objects, braces inside string literals, and escaped quotes. Integrated into both `anthropicProvider.js` (line 157) and `geminiProvider.js` (line 155), replacing the greedy `/\{[\s\S]*\}/` regex. Extraction method logged at debug level: `code_block` (markdown fence), `balanced_brace` (scanner), or `repaired` (fallback repair). 37 unit tests in `jsonExtractor.test.js` cover edge cases including multi-fragment responses. 8 integration tests (4 each provider) validate with realistic responses. All 1235 tests passing.
 
 ---
 
