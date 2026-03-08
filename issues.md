@@ -63,15 +63,10 @@ Two-layer retry system: Layer 1 (provider-level, max 3 retries) with error-type-
 
 ---
 
-### [#136](https://github.com/donalotiarnaigh/textharvester-web/issues/136) Anthropic JSON extraction uses greedy regex — breaks on responses containing multiple JSON fragments
-**Labels:** bug
+### ~~[#136](https://github.com/donalotiarnaigh/textharvester-web/issues/136) Anthropic JSON extraction uses greedy regex — breaks on responses containing multiple JSON fragments~~ ✅ Fixed
+**Branch:** `fix/issue-136-json-extraction`
 
-`anthropicProvider.js:148` uses `/\{[\s\S]*\}/` which matches from the first `{` to the last `}`. A model response with explanatory text containing braces, or two separate JSON objects, produces malformed input to the JSON parser. No logging of which parsing branch succeeded makes failures opaque. This is an active silent data corruption risk on every Anthropic API call.
-
-**Acceptance Criteria:**
-- Greedy regex replaced with a balanced-brace scanner that reliably extracts the first complete top-level JSON object.
-- Which extraction branch was taken (`code_block`, `raw_json`, `repaired`) is logged per request.
-- Unit test: assert correct extraction when model response contains multiple `{...}` fragments.
+New utility `src/utils/jsonExtractor.js` implements `extractFirstJsonObject()` — a character-by-character balanced-brace scanner that correctly extracts the first complete top-level JSON object from a string, handling nested objects, braces inside string literals, and escaped quotes. Integrated into both `anthropicProvider.js` (line 157) and `geminiProvider.js` (line 155), replacing the greedy `/\{[\s\S]*\}/` regex. Extraction method logged at debug level: `code_block` (markdown fence), `balanced_brace` (scanner), or `repaired` (fallback repair). 37 unit tests in `jsonExtractor.test.js` cover edge cases including multi-fragment responses. 8 integration tests (4 each provider) validate with realistic responses. All 1235 tests passing.
 
 ---
 
