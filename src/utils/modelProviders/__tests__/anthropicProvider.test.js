@@ -20,7 +20,8 @@ describe('AnthropicProvider', () => {
       ANTHROPIC_API_KEY: 'test-key',
       ANTHROPIC_MODEL: 'claude-4-sonnet-20250514',
       MAX_TOKENS: 4000,
-      TEMPERATURE: 0.2
+      TEMPERATURE: 0.2,
+      retry: { maxProviderRetries: 0 }
     };
     
     mockAnthropicResponse = {
@@ -35,7 +36,11 @@ describe('AnthropicProvider', () => {
             inscription: 'Test inscription'
           })
         }
-      ]
+      ],
+      usage: {
+        input_tokens: 100,
+        output_tokens: 50
+      }
     };
 
     provider = new AnthropicProvider(mockConfig);
@@ -134,7 +139,7 @@ describe('AnthropicProvider', () => {
           year_of_death: 1923,
           inscription: 'Test inscription'
         },
-        usage: { input_tokens: 0, output_tokens: 0 }
+        usage: { input_tokens: 100, output_tokens: 50 }
       });
     });
 

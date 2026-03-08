@@ -14,6 +14,62 @@ const graveCardProcessor = require('./imageProcessing/graveCardProcessor');
 const graveCardStorage = require('./graveCardStorage');
 const config = require('../../config.json');
 
+const VALIDATION_RETRY_PREAMBLE =
+  'IMPORTANT: Your previous response could not be parsed. ' +
+  'Return ONLY valid JSON matching the exact schema specified. ' +
+  'Do not include any explanatory text, markdown code fences, or comments outside the JSON object.';
+
+/**
+ * Attempt processImage + validation, retrying once on validation failure.
+ * On retry, prepends a format-enforcement preamble to the user prompt.
+ * Empty-sheet errors are never retried.
+ *
+ * @param {Object} provider - AI provider instance
+ * @param {string} base64Image - base64-encoded image data
+ * @param {string} userPrompt - the user prompt text
+ * @param {Object} providerOptions - options passed to provider.processImage
+ * @param {Function} validateFn - function(rawContent) => validated data (throws on failure)
+ * @param {Object} [retryOptions]
+ * @param {number} [retryOptions.maxRetries=1] - max validation retries
+ * @returns {Promise<{ validatedData: Object, usage: Object }>}
+ */
+async function processWithValidationRetry(provider, base64Image, userPrompt, providerOptions, validateFn, retryOptions = {}) {
+  const maxRetries = retryOptions.maxRetries ?? config.retry?.validationRetries ?? 1;
+
+  let lastError;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const effectivePrompt = attempt === 0
+      ? userPrompt
+      : `${VALIDATION_RETRY_PREAMBLE}\n\n${userPrompt}`;
+
+    const { content: rawData, usage } = await provider.processImage(
+      base64Image,
+      effectivePrompt,
+      providerOptions
+    );
+
+    try {
+      const validatedData = validateFn(rawData);
+      return { validatedData, usage };
+    } catch (validationError) {
+      lastError = validationError;
+
+      // Never retry empty-sheet errors
+      if (isEmptySheetError(validationError)) {
+        throw validationError;
+      }
+
+      if (attempt < maxRetries) {
+        logger.warn(
+          `Validation failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying with format-enforcement preamble: ${validationError.message}`
+        );
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 /**
  * Calculate estimated cost in USD for a single API call.
  * @param {{ input_tokens: number, output_tokens: number }} usage
@@ -121,18 +177,17 @@ async function processFile(filePath, options = {}) {
       const userPrompt = typeof promptConfig === 'string' ? promptConfig : promptConfig.userPrompt;
       const systemPrompt = typeof promptConfig === 'object' ? promptConfig.systemPrompt : undefined;
 
-      // Step 3: Process through AI provider
-      const { content: rawExtractedData, usage: graveCardUsage } = await provider.processImage(base64Image, userPrompt, {
-        systemPrompt: systemPrompt,
-        promptTemplate: promptInstance
-      });
+      // Step 3: Process through AI provider + validate (with retry)
+      const { validatedData, usage: graveCardUsage } = await processWithValidationRetry(
+        provider,
+        base64Image,
+        userPrompt,
+        { systemPrompt, promptTemplate: promptInstance },
+        (raw) => promptInstance.validateAndConvert(raw)
+      );
 
       const apiDuration = Date.now() - startTime;
       logger.info(`Grave card API call completed in ${apiDuration}ms for ${filePath}`);
-      logger.debugPayload(`Raw ${providerName} grave card response for ${filePath}:`, rawExtractedData);
-
-      // Step 4: Validate and convert
-      const validatedData = promptInstance.validateAndConvert(rawExtractedData);
 
       // Extract confidence metadata
       const graveCardConfidenceScores = validatedData._confidence_scores;
@@ -194,23 +249,24 @@ async function processFile(filePath, options = {}) {
       // Use longer timeout for burial register processing (configurable, default 90 seconds)
       const burialRegisterTimeout = config.burialRegister?.apiTimeout || 90000;
       logger.debug(`Using API timeout of ${burialRegisterTimeout}ms for burial register processing`);
-      const { content: pageDataRaw, usage: burialUsage } = await provider.processImage(base64Image, userPrompt, {
-        systemPrompt: systemPrompt,
-        promptTemplate: promptInstance,
-        timeout: burialRegisterTimeout
-      });
+
+      const volumeId = options.volume_id || options.volumeId || config.burialRegister?.volumeId || 'vol1';
+
+      const { validatedData: pageData, usage: burialUsage } = await processWithValidationRetry(
+        provider,
+        base64Image,
+        userPrompt,
+        { systemPrompt, promptTemplate: promptInstance, timeout: burialRegisterTimeout },
+        (raw) => {
+          if (raw && typeof raw === 'object') {
+            raw.volume_id = volumeId;
+          }
+          return promptInstance.validateAndConvertPage(raw);
+        }
+      );
 
       const apiDuration = Date.now() - startTime;
       logger.info(`Burial register API call completed in ${apiDuration}ms for ${filePath}`);
-      logger.debugPayload(`Raw ${providerName} burial register response for ${filePath}:`, pageDataRaw);
-
-      // Inject user-provided volume_id before validation (API can't extract this from page)
-      const volumeId = options.volume_id || options.volumeId || config.burialRegister?.volumeId || 'vol1';
-      if (pageDataRaw && typeof pageDataRaw === 'object') {
-        pageDataRaw.volume_id = volumeId;
-      }
-
-      const pageData = promptInstance.validateAndConvertPage(pageDataRaw);
 
       logger.debugPayload(`Validated burial register page data for ${filePath}:`, pageData);
 
@@ -338,43 +394,44 @@ async function processFile(filePath, options = {}) {
     const userPrompt = typeof promptConfig === 'string' ? promptConfig : promptConfig.userPrompt;
     const systemPrompt = typeof promptConfig === 'object' ? promptConfig.systemPrompt : undefined;
 
-    // Process the image using the selected provider
-    const { content: rawExtractedData, usage: memUsage } = await provider.processImage(base64Image, userPrompt, {
-      systemPrompt: systemPrompt,
-      promptTemplate: promptInstance
-    });
-
-    // Log the raw API response for debugging
-    logger.debugPayload(`Raw ${providerName} API response for ${filePath}:`, rawExtractedData);
+    // For monument photos, prepare filename-based memorial number injection
+    const filename = path.basename(filePath);
+    const filenameMemorialNumber = getMemorialNumberForMonument(filename, sourceType);
 
     try {
-      // For monument photos, inject memorial number from filename if not provided by OCR
-      const filename = path.basename(filePath);
-      const filenameMemorialNumber = getMemorialNumberForMonument(filename, sourceType);
+      // Process image + validate with retry
+      const { validatedData: extractedData, usage: memUsage } = await processWithValidationRetry(
+        provider,
+        base64Image,
+        userPrompt,
+        { systemPrompt, promptTemplate: promptInstance },
+        (rawExtractedData) => {
+          // For monument photos, inject memorial number from filename if not provided by OCR
+          let enhancedData = { ...rawExtractedData };
+          if (sourceType === 'monument_photo' && filenameMemorialNumber) {
+            const rawMemNum = enhancedData.memorial_number;
+            const effectiveMemNum = (rawMemNum !== null && typeof rawMemNum === 'object' && 'value' in rawMemNum)
+              ? rawMemNum.value
+              : rawMemNum;
+            const PLACEHOLDER_VALUES = ['n/a', 'null', 'unknown', 'none'];
+            const memNumIsAbsent = !effectiveMemNum ||
+              (typeof effectiveMemNum === 'string' &&
+                PLACEHOLDER_VALUES.includes(effectiveMemNum.trim().toLowerCase()));
 
-      // Enhance raw data with filename-based memorial number for monuments
-      let enhancedData = { ...rawExtractedData };
-      if (sourceType === 'monument_photo' && filenameMemorialNumber) {
-        // Unwrap confidence-format wrapper {value, confidence} to check the actual OCR value
-        const rawMemNum = enhancedData.memorial_number;
-        const effectiveMemNum = (rawMemNum !== null && typeof rawMemNum === 'object' && 'value' in rawMemNum)
-          ? rawMemNum.value
-          : rawMemNum;
-        const PLACEHOLDER_VALUES = ['n/a', 'null', 'unknown', 'none'];
-        const memNumIsAbsent = !effectiveMemNum ||
-          (typeof effectiveMemNum === 'string' &&
-            PLACEHOLDER_VALUES.includes(effectiveMemNum.trim().toLowerCase()));
+            if (memNumIsAbsent) {
+              enhancedData.memorial_number = filenameMemorialNumber;
+              logger.info(`[FileProcessing] Injected memorial number from filename: ${filenameMemorialNumber} for ${filename}`);
+            } else {
+              logger.info(`[FileProcessing] OCR provided memorial number: ${effectiveMemNum}, keeping it over filename: ${filenameMemorialNumber}`);
+            }
+          }
 
-        if (memNumIsAbsent) {
-          enhancedData.memorial_number = filenameMemorialNumber;
-          logger.info(`[FileProcessing] Injected memorial number from filename: ${filenameMemorialNumber} for ${filename}`);
-        } else {
-          logger.info(`[FileProcessing] OCR provided memorial number: ${effectiveMemNum}, keeping it over filename: ${filenameMemorialNumber}`);
+          return promptInstance.validateAndConvert(enhancedData);
         }
-      }
+      );
 
-      // Validate and convert the data according to our type definitions
-      const extractedData = promptInstance.validateAndConvert(enhancedData);
+      // Log the validated data for debugging
+      logger.debugPayload(`Raw ${providerName} API response for ${filePath}:`, extractedData);
 
       // Extract confidence metadata
       const memConfidenceScores = extractedData._confidence_scores;
