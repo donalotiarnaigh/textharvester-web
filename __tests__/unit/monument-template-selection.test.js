@@ -82,7 +82,11 @@ describe('Monument Template Selection', () => {
 
     // Mock prompt instance
     const mockPromptInstance = {
-      validateAndConvert: jest.fn().mockImplementation((data) => data),
+      validateAndConvert: jest.fn().mockImplementation((data) => ({
+        data,
+        confidenceScores: {},
+        validationWarnings: []
+      })),
       getProviderPrompt: jest.fn().mockReturnValue('mock prompt text'),
       version: '1.0.0'
     };

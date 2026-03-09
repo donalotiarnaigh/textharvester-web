@@ -255,7 +255,7 @@ async function processFile(filePath, options = {}) {
 
       const volumeId = options.volume_id || options.volumeId || config.burialRegister?.volumeId || 'vol1';
 
-      const { validatedData: pageData, usage: burialUsage } = await processWithValidationRetry(
+      const { validationResult, usage: burialUsage } = await processWithValidationRetry(
         provider,
         base64Image,
         userPrompt,
@@ -267,6 +267,8 @@ async function processFile(filePath, options = {}) {
           return promptInstance.validateAndConvertPage(raw);
         }
       );
+
+      const pageData = validationResult.data;
 
       const apiDuration = Date.now() - startTime;
       logger.info(`Burial register API call completed in ${apiDuration}ms for ${filePath}`);
