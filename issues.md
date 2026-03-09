@@ -130,15 +130,15 @@ A UUIDv4 `processing_id` is now generated per file in `fileProcessing.js` and th
 
 ---
 
-### [#133](https://github.com/donalotiarnaigh/textharvester-web/issues/133) LLM inputs and outputs are not logged — failures are undebuggable and eval datasets cannot be built
-**Labels:** enhancement, high-priority
+### ~~[#133](https://github.com/donalotiarnaigh/textharvester-web/issues/133) LLM inputs and outputs are not logged — failures are undebuggable and eval datasets cannot be built~~ ✅ Fixed
+**Branch:** `fix/issue-133-llm-audit-logging`
 
-Full prompt text and full model response JSON are never stored or logged. Anthropic provider logs only the first 200 chars of the prompt (`anthropicProvider.js:76`). Payload logging sampling is 5% in config, meaning 95% of production calls leave no trace. Note: depends on #127 (correlation ID) to key log entries; completing this will also accelerate building the gold-standard dataset needed to unblock #121 (eval).
+New SQLite table `llm_audit_log` stores full system prompt, user prompt, raw response, token counts, response time, and error details for every LLM API call. Each entry keyed with `processing_id` from #127. Log is always-on via `config.audit.enabled` (default: true). Storage module `src/utils/llmAuditLog.js` provides `initialize()`, `logEntry()` (fire-and-forget), and `getEntriesByProcessingId()` functions. Integrated into all three providers (OpenAI, Anthropic, Gemini) to capture raw response before JSON parsing. Initialized at server startup alongside other tables. 10 unit tests passing.
 
 **Acceptance Criteria:**
-- Full rendered system prompt + user message and full raw model response logged to a dedicated `llm_audit_log` table or append-only JSONL file.
-- Each entry keyed with a request correlation ID (see #127).
-- Log is always-on (not sampled) — separate from operational logs.
+- ✅ Full rendered system prompt + user message and full raw model response logged to dedicated `llm_audit_log` table
+- ✅ Each entry keyed with request correlation ID (`processing_id` from #127)
+- ✅ Log is always-on (not sampled) — separate from operational logs
 
 ---
 

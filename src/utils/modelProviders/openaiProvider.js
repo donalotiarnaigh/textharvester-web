@@ -4,6 +4,7 @@ const BaseVisionProvider = require('./baseProvider');
 const { promptManager } = require('../prompts/templates/providerTemplates');
 const PerformanceTracker = require('../performanceTracker');
 const { withRetry, classifyError } = require('../retryHelper');
+const llmAuditLog = require('../llmAuditLog');
 const logger = require('../logger');
 
 /**
@@ -67,113 +68,155 @@ class OpenAIProvider extends BaseVisionProvider {
       userPrompt = formatted.userPrompt || formatted;
     }
 
-    return withRetry(
-      async (attempt) => {
-        const requestPayload = {
-          model: this.model,
-          messages: [
-            {
-              role: 'system',
-              content: systemPrompt,
-            },
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: userPrompt },
-                {
-                  type: 'image_url',
-                  image_url: {
-                    url: `data:image/jpeg;base64,${base64Image}`,
+    const processingId = options.processingId;
+    const startTime = Date.now();
+    const imageSizeBytes = base64Image ? Math.round(base64Image.length * 0.75) : 0;
+
+    try {
+      const result = await withRetry(
+        async (attempt) => {
+          const requestPayload = {
+            model: this.model,
+            messages: [
+              {
+                role: 'system',
+                content: systemPrompt,
+              },
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: userPrompt },
+                  {
+                    type: 'image_url',
+                    image_url: {
+                      url: `data:image/jpeg;base64,${base64Image}`,
+                    },
                   },
-                },
-              ],
-            },
-          ],
-          response_format: { type: 'json_object' },
-          max_completion_tokens: this.maxTokens
-        };
+                ],
+              },
+            ],
+            response_format: { type: 'json_object' },
+            max_completion_tokens: this.maxTokens
+          };
 
-        // Include temperature for models that support it
-        requestPayload.temperature = this.temperature;
+          // Include temperature for models that support it
+          requestPayload.temperature = this.temperature;
 
-        // Add reasoning_effort parameter if configured (for GPT-5.x models)
-        if (this.reasoningEffort) {
-          requestPayload.reasoning_effort = this.reasoningEffort;
-        }
-
-        // Calculate timeout with exponential backoff
-        const timeout = baseTimeout * attempt;
-
-        // Track API performance with timeout
-        const result = await PerformanceTracker.trackAPICall(
-          'openai',
-          this.model,
-          'processImage',
-          async () => {
-            const timeoutPromise = new Promise((_, reject) => {
-              setTimeout(() => reject(new Error(`Request timeout after ${timeout}ms`)), timeout);
-            });
-
-            return Promise.race([
-              this.client.chat.completions.create(requestPayload),
-              timeoutPromise
-            ]);
-          },
-          {
-            imageSize: base64Image ? Math.round(base64Image.length * 0.75) : 0,
-            promptLength: userPrompt ? userPrompt.length : 0,
-            systemPromptLength: systemPrompt ? systemPrompt.length : 0,
-            maxTokens: this.maxTokens,
-            temperature: requestPayload.temperature || 1,
-            attempt: attempt,
-            timeout: timeout
+          // Add reasoning_effort parameter if configured (for GPT-5.x models)
+          if (this.reasoningEffort) {
+            requestPayload.reasoning_effort = this.reasoningEffort;
           }
-        );
 
-        const content = result.choices[0].message.content;
-        const usage = {
-          input_tokens:  result.usage?.prompt_tokens     ?? 0,
-          output_tokens: result.usage?.completion_tokens ?? 0
-        };
+          // Calculate timeout with exponential backoff
+          const timeout = baseTimeout * attempt;
 
-        if (options.raw) {
-          return { content, usage };
-        }
+          // Track API performance with timeout
+          const apiResult = await PerformanceTracker.trackAPICall(
+            'openai',
+            this.model,
+            'processImage',
+            async () => {
+              const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error(`Request timeout after ${timeout}ms`)), timeout);
+              });
 
-        try {
-          return { content: JSON.parse(content), usage };
-        } catch (parseError) {
-          logger.error(`OpenAI JSON parsing failed for model ${this.model}`, parseError, {
-            phase: 'response_parsing',
-            operation: 'processImage',
-            contentPreview: content.substring(0, 200),
-            attempt: attempt
-          });
-          throw new Error(`OpenAI processing failed: ${parseError.message}`);
+              return Promise.race([
+                this.client.chat.completions.create(requestPayload),
+                timeoutPromise
+              ]);
+            },
+            {
+              imageSize: imageSizeBytes,
+              promptLength: userPrompt ? userPrompt.length : 0,
+              systemPromptLength: systemPrompt ? systemPrompt.length : 0,
+              maxTokens: this.maxTokens,
+              temperature: requestPayload.temperature || 1,
+              attempt: attempt,
+              timeout: timeout
+            }
+          );
+
+          const rawContent = apiResult.choices[0].message.content;
+          const usage = {
+            input_tokens:  apiResult.usage?.prompt_tokens     ?? 0,
+            output_tokens: apiResult.usage?.completion_tokens ?? 0
+          };
+
+          // Log to audit trail
+          const responseTimeMs = Date.now() - startTime;
+          if (processingId) {
+            await llmAuditLog.logEntry({
+              processing_id: processingId,
+              provider: 'openai',
+              model: this.model,
+              system_prompt: systemPrompt,
+              user_prompt: userPrompt,
+              image_size_bytes: imageSizeBytes,
+              raw_response: rawContent,
+              input_tokens: usage.input_tokens,
+              output_tokens: usage.output_tokens,
+              response_time_ms: responseTimeMs,
+              status: 'success'
+            });
+          }
+
+          if (options.raw) {
+            return { content: rawContent, usage };
+          }
+
+          try {
+            return { content: JSON.parse(rawContent), usage };
+          } catch (parseError) {
+            logger.error(`OpenAI JSON parsing failed for model ${this.model}`, parseError, {
+              phase: 'response_parsing',
+              operation: 'processImage',
+              contentPreview: rawContent.substring(0, 200),
+              attempt: attempt
+            });
+            throw new Error(`OpenAI processing failed: ${parseError.message}`);
+          }
+        },
+        {
+          maxRetries,
+          baseDelay: retryConfig.baseDelayMs ?? 1000,
+          maxDelay: retryConfig.maxDelayMs ?? 10000,
+          jitterMs: retryConfig.jitterMs ?? 1000,
+          onRetry: (error, attempt) => {
+            const errorType = classifyError(error);
+            logger.warn(`OpenAI API attempt ${attempt}/${maxRetries} failed for model ${this.model}`, {
+              error: error.message,
+              errorType,
+              attempt,
+              maxRetries
+            });
+          }
         }
-      },
-      {
-        maxRetries,
-        baseDelay: retryConfig.baseDelayMs ?? 1000,
-        maxDelay: retryConfig.maxDelayMs ?? 10000,
-        jitterMs: retryConfig.jitterMs ?? 1000,
-        onRetry: (error, attempt) => {
-          const errorType = classifyError(error);
-          logger.warn(`OpenAI API attempt ${attempt}/${maxRetries} failed for model ${this.model}`, {
-            error: error.message,
-            errorType,
-            attempt,
-            maxRetries
-          });
-        }
+      );
+
+      return result;
+    } catch (error) {
+      // Log error to audit trail
+      const responseTimeMs = Date.now() - startTime;
+      if (processingId) {
+        await llmAuditLog.logEntry({
+          processing_id: processingId,
+          provider: 'openai',
+          model: this.model,
+          system_prompt: systemPrompt,
+          user_prompt: userPrompt,
+          image_size_bytes: imageSizeBytes,
+          status: 'error',
+          error_message: error.message,
+          response_time_ms: responseTimeMs
+        });
       }
-    ).catch(error => {
+
       logger.error(`OpenAI API error for model ${this.model} after ${maxRetries} retries`, error, {
         phase: 'api_call',
         operation: 'processImage'
       });
       throw new Error(`OpenAI processing failed: ${error.message}`);
-    });
+    }
   }
 
   /**

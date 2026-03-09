@@ -11,10 +11,16 @@ const {
 const performanceRoutes = require('./src/routes/performanceRoutes');
 const graveCardRoutes = require('./src/routes/graveCardRoutes');
 const graveCardStorage = require('./src/utils/graveCardStorage');
+const llmAuditLog = require('./src/utils/llmAuditLog');
 
 // Initialize grave cards table
 graveCardStorage.initialize().catch(err => {
   logger.error('Error initializing grave cards table:', err);
+});
+
+// Initialize LLM audit log table
+llmAuditLog.initialize().catch(err => {
+  logger.error('Error initializing LLM audit log table:', err);
 });
 
 require('dotenv').config(); // Load environment variables from .env file
