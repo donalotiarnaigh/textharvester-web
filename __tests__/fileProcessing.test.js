@@ -397,14 +397,17 @@ describe('File Processing Module', () => {
 
     test('sets confidence_coverage to 0 when all scores are null', async () => {
       const dataWithNullConfidence = {
-        ...mockExtractedData,
-        _confidence_scores: {
+        data: {
+          ...mockExtractedData
+        },
+        confidenceScores: {
           memorial_number: null,
           first_name: null
-        }
+        },
+        validationWarnings: []
       };
       mockValidateAndConvert.mockReturnValue(dataWithNullConfidence);
-      mockProcessImage.mockResolvedValue({ content: dataWithNullConfidence, usage: { input_tokens: 0, output_tokens: 0 } });
+      mockProcessImage.mockResolvedValue({ content: mockExtractedData, usage: { input_tokens: 0, output_tokens: 0 } });
 
       const result = await processFile(testFilePath);
 
