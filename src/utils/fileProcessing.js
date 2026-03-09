@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const fs = require('fs').promises;
 const path = require('path');
 const logger = require('./logger'); // Assuming logger is modularized or its path adjusted
@@ -31,10 +32,12 @@ const VALIDATION_RETRY_PREAMBLE =
  * @param {Function} validateFn - function(rawContent) => { data, confidenceScores, validationWarnings } (throws on failure)
  * @param {Object} [retryOptions]
  * @param {number} [retryOptions.maxRetries=1] - max validation retries
+ * @param {Object} [retryOptions.log] - optional scoped logger (defaults to module logger)
  * @returns {Promise<{ validationResult: Object, usage: Object }>}
  */
 async function processWithValidationRetry(provider, base64Image, userPrompt, providerOptions, validateFn, retryOptions = {}) {
   const maxRetries = retryOptions.maxRetries ?? config.retry?.validationRetries ?? 1;
+  const log = retryOptions.log || logger;
 
   let lastError;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -60,7 +63,7 @@ async function processWithValidationRetry(provider, base64Image, userPrompt, pro
       }
 
       if (attempt < maxRetries) {
-        logger.warn(
+        log.warn(
           `Validation failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying with format-enforcement preamble: ${validationError.message}`
         );
       }
@@ -84,6 +87,22 @@ function calculateCost(usage, costConfig) {
 }
 
 /**
+ * Create a scoped logger that prefixes all messages with a processing ID.
+ * @param {string} processingId UUID for this processing session
+ * @returns {Object} Logger-like object with info, warn, error, debug, debugPayload methods
+ */
+function scopedLogger(processingId) {
+  const tag = `[pid:${processingId.substring(0, 8)}]`;
+  return {
+    info: (msg, ...args) => logger.info(`${tag} ${msg}`, ...args),
+    warn: (msg, ...args) => logger.warn(`${tag} ${msg}`, ...args),
+    error: (msg, ...args) => logger.error(`${tag} ${msg}`, ...args),
+    debug: (msg, ...args) => logger.debug(`${tag} ${msg}`, ...args),
+    debugPayload: (msg, ...args) => logger.debugPayload(`${tag} ${msg}`, ...args),
+  };
+}
+
+/**
  * Enhances the processFile function with detailed logging for better tracking and debugging.
  * Processes a given file by reading and sending its contents to the configured AI provider for OCR processing.
  * @param {string} filePath The path to the file to be processed.
@@ -93,6 +112,10 @@ function calculateCost(usage, costConfig) {
 async function processFile(filePath, options = {}) {
   const providerName = options.provider || process.env.AI_PROVIDER || 'openai';
   const sourceType = options.sourceType || options.source_type || 'record_sheet';
+
+  // Generate processing ID for this file
+  const processingId = crypto.randomUUID();
+  const log = scopedLogger(processingId);
 
   // Select template based on source_type (unless custom template is provided)
   const promptTemplate = options.promptTemplate ||
@@ -110,7 +133,7 @@ async function processFile(filePath, options = {}) {
 
   // Dynamic Routing for User-Extensible Schema
   if (options.schemaId) {
-    logger.info(`Processing ${path.basename(filePath)} using dynamic schema: ${options.schemaId}`);
+    log.info(`Processing ${path.basename(filePath)} using dynamic schema: ${options.schemaId}`);
     const DynamicProcessor = require('./dynamicProcessing');
     const processor = new DynamicProcessor(logger);
 
@@ -120,14 +143,15 @@ async function processFile(filePath, options = {}) {
         { path: filePath, provider: providerName },
         options.schemaId
       );
+      result.processing_id = processingId;
       return result.data; // Return the extracted data
     } catch (error) {
-      logger.error(`Dynamic processing failed for ${filePath}:`, error);
+      log.error(`Dynamic processing failed for ${filePath}:`, error);
       throw error;
     }
   }
 
-  logger.info(`Processing ${path.basename(filePath)} with provider: ${providerName}, source: ${sourceType}, template: ${promptTemplate}`);
+  log.info(`Processing ${path.basename(filePath)} with provider: ${providerName}, source: ${sourceType}, template: ${promptTemplate}`);
 
   try {
     // For burial register, skip image optimization (handled differently)
@@ -135,21 +159,21 @@ async function processFile(filePath, options = {}) {
     let base64Image;
     if (sourceType === 'burial_register') {
       base64Image = await fs.readFile(filePath, { encoding: 'base64' });
-      logger.info(`File ${filePath} read successfully (burial register, no optimization). Proceeding with OCR processing.`);
+      log.info(`File ${filePath} read successfully (burial register, no optimization). Proceeding with OCR processing.`);
     } else if (sourceType === 'grave_record_card') {
-      logger.info(`File ${filePath} identified as grave record card. Skipping initial image optimization.`);
+      log.info(`File ${filePath} identified as grave record card. Skipping initial image optimization.`);
       // Grave card processing handles its own file reading and conversion
     } else {
       // Analyze image to see if optimization is needed
       const analysis = await analyzeImageForProvider(filePath, providerName);
       if (analysis.needsOptimization) {
-        logger.info(`[ImageProcessor] Image requires optimization: ${analysis.reasons.join(', ')}`);
+        log.info(`[ImageProcessor] Image requires optimization: ${analysis.reasons.join(', ')}`);
         base64Image = await optimizeImageForProvider(filePath, providerName);
-        logger.info(`File ${filePath} optimized and processed successfully. Proceeding with OCR processing.`);
+        log.info(`File ${filePath} optimized and processed successfully. Proceeding with OCR processing.`);
       } else {
         // Image is already within limits, read directly
         base64Image = await fs.readFile(filePath, { encoding: 'base64' });
-        logger.info(`File ${filePath} read successfully (no optimization needed). Proceeding with OCR processing.`);
+        log.info(`File ${filePath} read successfully (no optimization needed). Proceeding with OCR processing.`);
       }
     }
 
@@ -162,13 +186,13 @@ async function processFile(filePath, options = {}) {
     // Handle grave_record_card processing
     if (sourceType === 'grave_record_card') {
       const startTime = Date.now();
-      logger.info(`Processing grave record card via ${providerName}: ${filePath}`);
+      log.info(`Processing grave record card via ${providerName}: ${filePath}`);
 
       // Step 1: Process PDF through GraveCardProcessor
       const stitchedBuffer = await graveCardProcessor.processPdf(filePath);
       const base64Image = stitchedBuffer.toString('base64');
 
-      logger.info(`Grave card PDF processed and stitched successfully for ${filePath}`);
+      log.info(`Grave card PDF processed and stitched successfully for ${filePath}`);
 
       // Step 2: Get prompt instance
       const promptInstance = getPrompt(providerName, 'graveCard', promptVersion);
@@ -182,12 +206,12 @@ async function processFile(filePath, options = {}) {
         provider,
         base64Image,
         userPrompt,
-        { systemPrompt, promptTemplate: promptInstance },
+        { systemPrompt, promptTemplate: promptInstance, log },
         (raw) => promptInstance.validateAndConvert(raw)
       );
 
       const apiDuration = Date.now() - startTime;
-      logger.info(`Grave card API call completed in ${apiDuration}ms for ${filePath}`);
+      log.info(`Grave card API call completed in ${apiDuration}ms for ${filePath}`);
 
       const validatedData = validationResult.data;
       const graveCardConfidenceScores = validationResult.confidenceScores;
@@ -209,7 +233,7 @@ async function processFile(filePath, options = {}) {
         validatedData.needs_review = 1; // force flag even if confidence disabled
       }
 
-      logger.info(`${providerName} grave card response validated successfully for ${filePath}`);
+      log.info(`${providerName} grave card response validated successfully for ${filePath}`);
 
       // Step 5: Add metadata
       const filename = path.basename(filePath);
@@ -229,10 +253,13 @@ async function processFile(filePath, options = {}) {
         validatedData.estimated_cost_usd = calculateCost(graveCardUsage, costConfig);
       }
 
+      // Attach processing ID
+      validatedData.processing_id = processingId;
+
       // Step 6: Store in database
       await graveCardStorage.storeGraveCard(validatedData);
 
-      logger.info(`Grave card data for ${filePath} stored in database with model: ${providerName}`);
+      log.info(`Grave card data for ${filePath} stored in database with model: ${providerName}`);
 
       // Note: GraveCardProcessor already cleaned up intermediate files and the PDF
 
@@ -241,7 +268,7 @@ async function processFile(filePath, options = {}) {
 
     if (sourceType === 'burial_register') {
       const startTime = Date.now();
-      logger.info(`Processing burial register file via ${providerName}: ${filePath}`);
+      log.info(`Processing burial register file via ${providerName}: ${filePath}`);
 
       const promptInstance = getPrompt(providerName, 'burialRegister', promptVersion);
       const promptConfig = promptInstance.getProviderPrompt(providerName);
@@ -251,7 +278,7 @@ async function processFile(filePath, options = {}) {
 
       // Use longer timeout for burial register processing (configurable, default 90 seconds)
       const burialRegisterTimeout = config.burialRegister?.apiTimeout || 90000;
-      logger.debug(`Using API timeout of ${burialRegisterTimeout}ms for burial register processing`);
+      log.debug(`Using API timeout of ${burialRegisterTimeout}ms for burial register processing`);
 
       const volumeId = options.volume_id || options.volumeId || config.burialRegister?.volumeId || 'vol1';
 
@@ -259,7 +286,7 @@ async function processFile(filePath, options = {}) {
         provider,
         base64Image,
         userPrompt,
-        { systemPrompt, promptTemplate: promptInstance, timeout: burialRegisterTimeout },
+        { systemPrompt, promptTemplate: promptInstance, timeout: burialRegisterTimeout, log },
         (raw) => {
           if (raw && typeof raw === 'object') {
             raw.volume_id = volumeId;
@@ -271,18 +298,18 @@ async function processFile(filePath, options = {}) {
       const pageData = validationResult.data;
 
       const apiDuration = Date.now() - startTime;
-      logger.info(`Burial register API call completed in ${apiDuration}ms for ${filePath}`);
+      log.info(`Burial register API call completed in ${apiDuration}ms for ${filePath}`);
 
-      logger.debugPayload(`Validated burial register page data for ${filePath}:`, pageData);
+      log.debugPayload(`Validated burial register page data for ${filePath}:`, pageData);
 
       // Extract page number from filename for entry_id generation
       const filename = path.basename(filePath);
       const filenamePageNumber = extractPageNumberFromFilename(filename);
 
       if (filenamePageNumber !== null) {
-        logger.info(`Extracted page number ${filenamePageNumber} from filename ${filename} for entry_id generation`);
+        log.info(`Extracted page number ${filenamePageNumber} from filename ${filename} for entry_id generation`);
       } else {
-        logger.warn(`Could not extract page number from filename ${filename}, will use AI-extracted page_number for entry_id`);
+        log.warn(`Could not extract page number from filename ${filename}, will use AI-extracted page_number for entry_id`);
       }
 
       // Pass filename page number for entry_id generation only (pageData.page_number remains AI-extracted)
@@ -299,7 +326,7 @@ async function processFile(filePath, options = {}) {
         pageData.page_number
       );
 
-      logger.info(`Prepared ${entries.length} burial register entries for ${filePath}`);
+      log.info(`Prepared ${entries.length} burial register entries for ${filePath}`);
 
       const processedEntries = [];
       let validCount = 0;
@@ -330,7 +357,8 @@ async function processFile(filePath, options = {}) {
             source_type: 'burial_register',
             input_tokens:       burialUsage.input_tokens,
             output_tokens:      burialUsage.output_tokens,
-            estimated_cost_usd: calculateCost(burialUsage, burialCostConfig)
+            estimated_cost_usd: calculateCost(burialUsage, burialCostConfig),
+            processing_id: processingId
           };
 
           if (entryConfidenceScores && config.confidence?.enabled !== false) {
@@ -355,33 +383,33 @@ async function processFile(filePath, options = {}) {
           // Check if this is a duplicate entry
           if (error.isDuplicate) {
             duplicateCount++;
-            logger.warn(`Duplicate entry skipped: ${error.message}`);
+            log.warn(`Duplicate entry skipped: ${error.message}`);
           } else {
-            logger.warn(`Entry validation or storage failed for entry_id=${entry.entry_id || 'unknown'}, page_number=${pageData.page_number}, volume_id=${pageData.volume_id}: ${error.message}`);
+            log.warn(`Entry validation or storage failed for entry_id=${entry.entry_id || 'unknown'}, page_number=${pageData.page_number}, volume_id=${pageData.volume_id}: ${error.message}`);
           }
         }
       }
 
       if (validCount < totalCount) {
-        logger.warn(`Validated ${validCount}/${totalCount} entries successfully for ${filePath}`);
+        log.warn(`Validated ${validCount}/${totalCount} entries successfully for ${filePath}`);
         if (duplicateCount > 0) {
-          logger.info(`Skipped ${duplicateCount} duplicate entries for ${filePath}`);
+          log.info(`Skipped ${duplicateCount} duplicate entries for ${filePath}`);
         }
       }
 
       if (processedEntries.length > 0) {
         const firstEntryId = processedEntries[0].entry_id;
         const lastEntryId = processedEntries[processedEntries.length - 1].entry_id;
-        logger.info(`Stored ${processedEntries.length} burial register entries for page ${pageData.page_number} (${filePath}). Entry IDs: ${firstEntryId} to ${lastEntryId}`);
+        log.info(`Stored ${processedEntries.length} burial register entries for page ${pageData.page_number} (${filePath}). Entry IDs: ${firstEntryId} to ${lastEntryId}`);
       } else {
         const errorMessage = duplicateCount > 0
           ? `${duplicateCount} entries were duplicates and ${totalCount - duplicateCount} entries failed validation or storage.`
           : 'All entries failed validation or storage.';
-        logger.warn(`No entries were stored for page ${pageData.page_number} (${filePath}). ${errorMessage}`);
+        log.warn(`No entries were stored for page ${pageData.page_number} (${filePath}). ${errorMessage}`);
       }
 
       await fs.unlink(filePath);
-      logger.info(`Cleaned up processed burial register file: ${filePath}`);
+      log.info(`Cleaned up processed burial register file: ${filePath}`);
 
       return {
         entries: processedEntries,
@@ -407,7 +435,7 @@ async function processFile(filePath, options = {}) {
         provider,
         base64Image,
         userPrompt,
-        { systemPrompt, promptTemplate: promptInstance },
+        { systemPrompt, promptTemplate: promptInstance, log },
         (rawExtractedData) => {
           // For monument photos, inject memorial number from filename if not provided by OCR
           let enhancedData = { ...rawExtractedData };
@@ -423,9 +451,9 @@ async function processFile(filePath, options = {}) {
 
             if (memNumIsAbsent) {
               enhancedData.memorial_number = filenameMemorialNumber;
-              logger.info(`[FileProcessing] Injected memorial number from filename: ${filenameMemorialNumber} for ${filename}`);
+              log.info(`[FileProcessing] Injected memorial number from filename: ${filenameMemorialNumber} for ${filename}`);
             } else {
-              logger.info(`[FileProcessing] OCR provided memorial number: ${effectiveMemNum}, keeping it over filename: ${filenameMemorialNumber}`);
+              log.info(`[FileProcessing] OCR provided memorial number: ${effectiveMemNum}, keeping it over filename: ${filenameMemorialNumber}`);
             }
           }
 
@@ -438,7 +466,7 @@ async function processFile(filePath, options = {}) {
       const memConfidenceScores = validationResult.confidenceScores;
       const memValidationWarnings = validationResult.validationWarnings;
 
-      logger.debugPayload(`Raw ${providerName} API response for ${filePath}:`, extractedData);
+      log.debugPayload(`Raw ${providerName} API response for ${filePath}:`, extractedData);
 
       // Extract confidence metadata
       if (memConfidenceScores && config.confidence?.enabled !== false) {
@@ -456,8 +484,8 @@ async function processFile(filePath, options = {}) {
         extractedData.needs_review = 1; // force flag even if confidence disabled
       }
 
-      logger.info(`${providerName} API response processed successfully for ${filePath}`);
-      logger.debugPayload(`Processed ${providerName} data for ${filePath}:`, extractedData);
+      log.info(`${providerName} API response processed successfully for ${filePath}`);
+      log.debugPayload(`Processed ${providerName} data for ${filePath}:`, extractedData);
 
       // Add metadata to the extracted data
       extractedData.fileName = filename;
@@ -480,20 +508,23 @@ async function processFile(filePath, options = {}) {
         extractedData.estimated_cost_usd = calculateCost(memUsage, costConfig);
       }
 
+      // Attach processing ID
+      extractedData.processing_id = processingId;
+
       // Store in database
       await storeMemorial(extractedData);
 
-      logger.info(`OCR text for ${filePath} stored in database with model: ${providerName}`);
+      log.info(`OCR text for ${filePath} stored in database with model: ${providerName}`);
 
       // Clean up the file after successful processing
       await fs.unlink(filePath);
-      logger.info(`Cleaned up processed file: ${filePath}`);
+      log.info(`Cleaned up processed file: ${filePath}`);
 
       return extractedData;
     } catch (error) {
       // Check if this is an empty sheet error
       if (isEmptySheetError(error)) {
-        logger.warn(`Empty sheet detected for ${filePath}: ${error.message}`);
+        log.warn(`Empty sheet detected for ${filePath}: ${error.message}`);
 
         // Return error info instead of throwing
         const errorResult = {
@@ -503,22 +534,23 @@ async function processFile(filePath, options = {}) {
           errorMessage: error.message,
           ai_provider: providerName,
           model_version: provider.getModelVersion(),
-          source_type: sourceType
+          source_type: sourceType,
+          processing_id: processingId
         };
 
         // Clean up the file even for empty sheets
         await fs.unlink(filePath);
-        logger.info(`Cleaned up empty sheet file: ${filePath}`);
+        log.info(`Cleaned up empty sheet file: ${filePath}`);
 
         return errorResult;
       }
 
       // Re-throw other errors
-      logger.error(`Validation error for ${filePath}: ${error.message}`);
+      log.error(`Validation error for ${filePath}: ${error.message}`);
       throw error;
     }
   } catch (error) {
-    logger.error(`Error processing file ${filePath}:`, error);
+    log.error(`Error processing file ${filePath}:`, error);
     throw error;
   }
 }

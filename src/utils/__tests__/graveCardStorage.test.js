@@ -100,6 +100,23 @@ describe('GraveCardStorage', () => {
       await expect(GraveCardStorage.storeGraveCard(invalidCard))
         .rejects.toThrow('Missing required metadata: fileName');
     });
+
+    test('stores and retrieves processing_id', async () => {
+      const processingId = '550e8400-e29b-41d4-a716-446655440000';
+      const cardWithId = { ...validCard, processing_id: processingId };
+
+      const id = await GraveCardStorage.storeGraveCard(cardWithId);
+
+      const rows = await new Promise((resolve, reject) => {
+        db.all('SELECT processing_id FROM grave_cards WHERE id = ?', [id], (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        });
+      });
+
+      expect(rows).toHaveLength(1);
+      expect(rows[0].processing_id).toBe(processingId);
+    });
   });
 
   describe('exportCardsToCsv', () => {

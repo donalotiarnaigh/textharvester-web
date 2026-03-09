@@ -116,33 +116,17 @@ Changed `needs_review` logic from `Object.values(scores).some(s => s === null ||
 
 ---
 
-### [#126](https://github.com/donalotiarnaigh/textharvester-web/issues/126) `_confidence_scores` must be manually deleted before storage — fragile convention, data leak risk
-**Labels:** bug, data
+### ~~[#126](https://github.com/donalotiarnaigh/textharvester-web/issues/126) `_confidence_scores` must be manually deleted before storage — fragile convention, data leak risk~~ ✅ Fixed
+**Branch:** `fix/issue-126-confidence-scores-api` (PR #149)
 
-`BasePrompt.validateAndConvert()` attaches `_confidence_scores` directly onto the returned data object, requiring callers to manually delete it before storage. Any new code path that bypasses `formatProviderResponse()` will accidentally store or leak the internal key. Note: fixing this before implementing #142 (DEBS classification) means the new prompt class gets a clean API from the start rather than inheriting the fragile convention.
-
-**Suggested fix:** Return a tuple `{ data, confidenceScores }` or add a separate `extractConfidenceScores()` method.
-
-**Acceptance Criteria:**
-- `_confidence_scores` is no longer attached to the returned data object.
-- Confidence scores returned via an explicit typed API.
-- All call sites updated; no `delete validatedData._confidence_scores` remaining.
-- Unit tests verify the returned `data` object never contains a key starting with `_`.
+Refactored `validateAndConvert()` across all prompt classes to return a tuple `[data, confidenceScores]` instead of attaching `_confidence_scores` to the data object. `fileProcessing.js` destructures the tuple and manages confidence scores separately. All call sites updated; no transient underscore-prefixed keys are stored in the database. 14 unit tests verify the clean API; all 1190 tests passing.
 
 ---
 
-### [#127](https://github.com/donalotiarnaigh/textharvester-web/issues/127) No request correlation ID — individual images untraceable through processing pipeline
-**Labels:** enhancement, data
+### ~~[#127](https://github.com/donalotiarnaigh/textharvester-web/issues/127) No request correlation ID — individual images untraceable through processing pipeline~~ ✅ Fixed
+**Branch:** `fix/issue-127-correlation-id`
 
-No single correlation ID is threaded through the upload-to-storage pipeline. Debugging requires correlating log lines across layers using filename alone (which is not unique for reprocessed files). Retry attempt counts and API latency cannot be linked to specific stored records. Note: #133 (LLM logging) depends on this — its acceptance criteria requires each log entry to be keyed with a correlation ID.
-
-**Suggested fix:** Generate a UUIDv4 `processing_id` per file in `IngestService` or `fileProcessing.js`, thread it through all log calls, store it in the DB, and surface it in the detail view.
-
-**Acceptance Criteria:**
-- `processing_id` (UUID) generated per file and propagated through all processing steps.
-- `processing_id` stored in the database on the processed record.
-- All log lines during a single file's processing share the same `processing_id`.
-- Detail view in the frontend displays `processing_id` for support/audit purposes.
+A UUIDv4 `processing_id` is now generated per file in `fileProcessing.js` and threaded through all log calls using a scoped logger that prefixes messages with `[pid:XXXXXXXX]`. The `processing_id` is stored in all three table schemas (`memorials`, `burial_register_entries`, `grave_cards`) and displayed in the detail view for each record type. CSV exports include the `processing_id` column for audit traceability. 13 unit tests verify correct UUID generation and storage.
 
 ---
 

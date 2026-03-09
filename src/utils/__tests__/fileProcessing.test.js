@@ -120,7 +120,8 @@ describe('Enhanced File Processing with Error Handling', () => {
       errorMessage: 'No readable text found on the sheet',
       ai_provider: expect.any(String), // Accept any string for the provider
       model_version: 'mock-model-1.0',
-      source_type: 'record_sheet' // Default source_type
+      source_type: 'record_sheet', // Default source_type
+      processing_id: expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i) // UUID v4
     });
 
     // Should still clean up the file

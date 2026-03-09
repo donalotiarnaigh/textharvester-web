@@ -57,7 +57,8 @@ const BURIAL_REGISTER_CSV_COLUMNS = [
   'confidence_coverage',
   'needs_review',
   'reviewed_at',
-  'validation_warnings'
+  'validation_warnings',
+  'processing_id'
 ];
 
 // Memorial CSV column order
@@ -86,7 +87,8 @@ const MEMORIAL_CSV_COLUMNS = [
   'confidence_coverage',
   'needs_review',
   'reviewed_at',
-  'validation_warnings'
+  'validation_warnings',
+  'processing_id'
 ];
 
 /**
