@@ -358,7 +358,11 @@ describe('File Processing Module', () => {
         .mockImplementationOnce(() => {
           throw validationError;
         })
-        .mockImplementationOnce(() => gravCardData);
+        .mockImplementationOnce(() => ({
+          data: gravCardData,
+          confidenceScores: {},
+          validationWarnings: []
+        }));
 
       mockProcessImage.mockResolvedValue({ content: gravCardData, usage: { input_tokens: 100, output_tokens: 50 } });
 
