@@ -192,7 +192,7 @@ CRITICAL VALIDATION RULES:
 
     // If we passed all checks, return the data
     // We could do deep cleaning/trimming here if needed, but for now return as-is
-    return rawData;
+    return { data: rawData, confidenceScores: {}, validationWarnings: [] };
   }
 
   _isValidDate(dateString) {

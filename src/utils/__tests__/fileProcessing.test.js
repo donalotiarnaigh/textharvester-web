@@ -72,7 +72,11 @@ describe('Enhanced File Processing with Error Handling', () => {
 
     mockPrompt = {
       getProviderPrompt: jest.fn().mockReturnValue({ systemPrompt: 'test', userPrompt: 'test' }),
-      validateAndConvert: jest.fn().mockReturnValue(mockProviderResponse),
+      validateAndConvert: jest.fn().mockReturnValue({
+        data: mockProviderResponse,
+        confidenceScores: {},
+        validationWarnings: []
+      }),
       version: '1.0.0'
     };
 
@@ -179,7 +183,11 @@ describe('Enhanced File Processing with Error Handling', () => {
           systemPrompt: 'Grave card system prompt',
           userPrompt: 'Grave card user prompt'
         }),
-        validateAndConvert: jest.fn().mockReturnValue(mockGraveCardData),
+        validateAndConvert: jest.fn().mockReturnValue({
+          data: mockGraveCardData,
+          confidenceScores: {},
+          validationWarnings: []
+        }),
         version: '1.0.0'
       };
 

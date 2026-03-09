@@ -41,7 +41,7 @@ describe('MemorialOCRPrompt', () => {
         inscription: 'In loving memory'
       };
 
-      const result = prompt.validateAndConvert(data);
+      const { data: result } = prompt.validateAndConvert(data);
 
       expect(result.memorial_number).toBe('123'); // Now extracts just the number
       expect(result.first_name).toBe('JOHN');
@@ -58,7 +58,7 @@ describe('MemorialOCRPrompt', () => {
         year_of_death: 1900
       };
 
-      const result = prompt.validateAndConvert(data);
+      const { data: result } = prompt.validateAndConvert(data);
 
       expect(result.first_name).toBe('JOHN');
       expect(result.last_name).toBe('SMITH');
@@ -72,7 +72,7 @@ describe('MemorialOCRPrompt', () => {
         year_of_death: 1900
       };
 
-      const result = prompt.validateAndConvert(data);
+      const { data: result } = prompt.validateAndConvert(data);
 
       expect(result.first_name).toBeUndefined(); // No complex processing, just undefined
       expect(result.last_name).toBe('SMITH');
@@ -85,7 +85,7 @@ describe('MemorialOCRPrompt', () => {
         last_name: 'Smith'
       };
 
-      const result = prompt.validateAndConvert(data);
+      const { data: result } = prompt.validateAndConvert(data);
 
       expect(result.first_name).toBe('JOHN');
       expect(result.last_name).toBe('SMITH');
@@ -113,7 +113,7 @@ describe('MemorialOCRPrompt', () => {
         last_name: 'Doe'
       };
 
-      const result = prompt.validateAndConvert(data);
+      const { data: result } = prompt.validateAndConvert(data);
 
       expect(result.memorial_number).toBe('456'); // Extracts numeric part
       expect(result.first_name).toBe('JANE');
@@ -128,7 +128,7 @@ describe('MemorialOCRPrompt', () => {
       };
 
       // This should not throw since current implementation is more permissive
-      const result = prompt.validateAndConvert(data);
+      const { data: result } = prompt.validateAndConvert(data);
       expect(result.memorial_number).toBe('123');
       expect(result.first_name).toBe('JOHN');
     });
@@ -144,10 +144,10 @@ describe('MemorialOCRPrompt', () => {
         inscription: 'In memory of SMITH SMITH'
       };
 
-      const result = prompt.validateAndConvert(data);
+      const { data: result, validationWarnings } = prompt.validateAndConvert(data);
 
-      expect(result._validation_warnings).toBeDefined();
-      expect(result._validation_warnings.some(w => w.includes('IDENTICAL_NAMES'))).toBe(true);
+      expect(validationWarnings).toBeDefined();
+      expect(validationWarnings.some(w => w.includes('IDENTICAL_NAMES'))).toBe(true);
     });
 
     it('caps first_name and last_name confidence to 0.4 on IDENTICAL_NAMES', () => {
@@ -159,10 +159,10 @@ describe('MemorialOCRPrompt', () => {
         inscription: { value: 'In memory of SMITH SMITH', confidence: 0.90 }
       };
 
-      const result = prompt.validateAndConvert(data);
+      const { confidenceScores } = prompt.validateAndConvert(data);
 
-      expect(result._confidence_scores.first_name).toBeLessThanOrEqual(0.4);
-      expect(result._confidence_scores.last_name).toBeLessThanOrEqual(0.4);
+      expect(confidenceScores.first_name).toBeLessThanOrEqual(0.4);
+      expect(confidenceScores.last_name).toBeLessThanOrEqual(0.4);
     });
 
     it('does not flag IDENTICAL_NAMES when names differ', () => {
@@ -174,9 +174,9 @@ describe('MemorialOCRPrompt', () => {
         inscription: 'In memory of JOHN SMITH'
       };
 
-      const result = prompt.validateAndConvert(data);
+      const { validationWarnings } = prompt.validateAndConvert(data);
 
-      expect(result._validation_warnings).toBeUndefined();
+      expect(validationWarnings.length).toBe(0);
     });
 
     it('flags IMPLAUSIBLE_AGE when inscription age exceeds 150', () => {
@@ -188,10 +188,10 @@ describe('MemorialOCRPrompt', () => {
         inscription: 'IN MEMORY OF JOHN SMITH AGED 200 YEARS'
       };
 
-      const result = prompt.validateAndConvert(data);
+      const { validationWarnings } = prompt.validateAndConvert(data);
 
-      expect(result._validation_warnings).toBeDefined();
-      expect(result._validation_warnings.some(w => w.includes('IMPLAUSIBLE_AGE'))).toBe(true);
+      expect(validationWarnings.length).toBeGreaterThan(0);
+      expect(validationWarnings.some(w => w.includes('IMPLAUSIBLE_AGE'))).toBe(true);
     });
 
     it('caps inscription confidence to 0.4 when age exceeds 150', () => {
@@ -203,9 +203,9 @@ describe('MemorialOCRPrompt', () => {
         inscription: { value: 'IN MEMORY OF JOHN SMITH AGED 200 YEARS', confidence: 0.92 }
       };
 
-      const result = prompt.validateAndConvert(data);
+      const { confidenceScores } = prompt.validateAndConvert(data);
 
-      expect(result._confidence_scores.inscription).toBeLessThanOrEqual(0.4);
+      expect(confidenceScores.inscription).toBeLessThanOrEqual(0.4);
     });
 
     it('flags implied birth year before 1400', () => {
@@ -217,10 +217,10 @@ describe('MemorialOCRPrompt', () => {
         inscription: 'IN MEMORY OF JOHN SMITH AGED 600 YEARS'
       };
 
-      const result = prompt.validateAndConvert(data);
+      const { validationWarnings } = prompt.validateAndConvert(data);
 
-      expect(result._validation_warnings).toBeDefined();
-      expect(result._validation_warnings.some(w => w.includes('IMPLAUSIBLE_AGE') && w.includes('birth year'))).toBe(true);
+      expect(validationWarnings.length).toBeGreaterThan(0);
+      expect(validationWarnings.some(w => w.includes('IMPLAUSIBLE_AGE') && w.includes('birth year'))).toBe(true);
     });
 
     it('caps year_of_death confidence when implied birth year is before 1400', () => {
@@ -232,9 +232,9 @@ describe('MemorialOCRPrompt', () => {
         inscription: { value: 'IN MEMORY OF JOHN SMITH AGED 600 YEARS', confidence: 0.92 }
       };
 
-      const result = prompt.validateAndConvert(data);
+      const { confidenceScores } = prompt.validateAndConvert(data);
 
-      expect(result._confidence_scores.year_of_death).toBeLessThanOrEqual(0.4);
+      expect(confidenceScores.year_of_death).toBeLessThanOrEqual(0.4);
     });
 
     it('does not flag plausible age (AGED 72 YEARS, year_of_death 1950)', () => {
@@ -246,9 +246,9 @@ describe('MemorialOCRPrompt', () => {
         inscription: 'IN MEMORY OF JOHN SMITH AGED 72 YEARS'
       };
 
-      const result = prompt.validateAndConvert(data);
+      const { validationWarnings } = prompt.validateAndConvert(data);
 
-      expect(result._validation_warnings).toBeUndefined();
+      expect(validationWarnings.length).toBe(0);
     });
   });
 }); 

@@ -199,9 +199,7 @@ class BasePrompt {
    */
   formatProviderResponse(provider, data) {
     this.validateProvider(provider);
-    const validatedData = this.validateAndConvert(data);
-    // Strip internal metadata before returning provider-facing response
-    delete validatedData._confidence_scores;
+    const { data: validatedData } = this.validateAndConvert(data);
 
     switch (provider.toLowerCase()) {
     case 'openai':
@@ -352,13 +350,14 @@ class BasePrompt {
   /**
    * Validate response data against field definitions
    * @param {Object} data Response data from AI model
-   * @returns {Object} Validated and converted data (includes _confidence_scores)
+   * @returns {Object} { data, confidenceScores, validationWarnings } - Validated data with metadata in explicit API
    * @throws {Error} If validation fails with details about the failures
    */
   validateAndConvert(data) {
     const result = {};
     const errors = [];
     const confidenceScores = {};
+    const validationWarnings = [];
 
     // First pass: validate required fields are present
     for (const [fieldName, field] of Object.entries(this.fields)) {
@@ -385,8 +384,7 @@ class BasePrompt {
       throw error;
     }
 
-    result._confidence_scores = confidenceScores;
-    return result;
+    return { data: result, confidenceScores, validationWarnings };
   }
 }
 

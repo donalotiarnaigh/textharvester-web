@@ -85,7 +85,7 @@ describe('BurialRegisterPrompt validation', () => {
 
   describe('validateAndConvertPage', () => {
     it('returns validated page data with entries when structure is valid', () => {
-      const result = prompt.validateAndConvertPage(samplePageData);
+      const { data: result } = prompt.validateAndConvertPage(samplePageData);
 
       expect(result.volume_id).toBe('vol1');
       expect(result.page_number).toBe(5);
@@ -122,10 +122,10 @@ describe('BurialRegisterPrompt validation', () => {
         year_header_raw: { value: '1832', confidence: 0.95 }
       };
 
-      const result = prompt.validateAndConvertPage(pageWithEnvelopes);
+      const { confidenceScores } = prompt.validateAndConvertPage(pageWithEnvelopes);
 
-      expect(result._confidence_scores).toBeDefined();
-      expect(result._confidence_scores.parish_header_raw).toBe(0.9);
+      expect(confidenceScores).toBeDefined();
+      expect(confidenceScores.parish_header_raw).toBe(0.9);
     });
 
     it('captures confidence scores for county_header_raw when returned as envelope', () => {
@@ -136,9 +136,9 @@ describe('BurialRegisterPrompt validation', () => {
         year_header_raw: { value: '1832', confidence: 0.95 }
       };
 
-      const result = prompt.validateAndConvertPage(pageWithEnvelopes);
+      const { confidenceScores } = prompt.validateAndConvertPage(pageWithEnvelopes);
 
-      expect(result._confidence_scores.county_header_raw).toBe(0.85);
+      expect(confidenceScores.county_header_raw).toBe(0.85);
     });
 
     it('captures confidence scores for year_header_raw when returned as envelope', () => {
@@ -149,19 +149,19 @@ describe('BurialRegisterPrompt validation', () => {
         year_header_raw: { value: '1832', confidence: 0.95 }
       };
 
-      const result = prompt.validateAndConvertPage(pageWithEnvelopes);
+      const { confidenceScores } = prompt.validateAndConvertPage(pageWithEnvelopes);
 
-      expect(result._confidence_scores.year_header_raw).toBe(0.95);
+      expect(confidenceScores.year_header_raw).toBe(0.95);
     });
 
     it('sets confidence to null for header fields returned as plain scalars', () => {
       // Plain scalars (no envelope) must yield null confidence, not a fake 1.0
-      const result = prompt.validateAndConvertPage(samplePageData);
+      const { confidenceScores } = prompt.validateAndConvertPage(samplePageData);
 
-      expect(result._confidence_scores).toBeDefined();
-      expect(result._confidence_scores.parish_header_raw).toBeNull();
-      expect(result._confidence_scores.county_header_raw).toBeNull();
-      expect(result._confidence_scores.year_header_raw).toBeNull();
+      expect(confidenceScores).toBeDefined();
+      expect(confidenceScores.parish_header_raw).toBeNull();
+      expect(confidenceScores.county_header_raw).toBeNull();
+      expect(confidenceScores.year_header_raw).toBeNull();
     });
   });
 
@@ -173,7 +173,7 @@ describe('BurialRegisterPrompt validation', () => {
         uncertainty_flags: ['uncertain_abode', ' unclear_age ']
       };
 
-      const result = prompt.validateAndConvertEntry(entry);
+      const { data: result } = prompt.validateAndConvertEntry(entry);
 
       expect(result.row_index_on_page).toBe(3);
       expect(result.uncertainty_flags).toEqual(['uncertain_abode', 'unclear_age']);
@@ -207,10 +207,10 @@ describe('BurialRegisterPrompt validation', () => {
         age_raw: '200'
       };
 
-      const result = prompt.validateAndConvertEntry(entry);
+      const { validationWarnings } = prompt.validateAndConvertEntry(entry);
 
-      expect(result._validation_warnings).toBeDefined();
-      expect(result._validation_warnings.some(w => w.includes('IMPLAUSIBLE_AGE'))).toBe(true);
+      expect(validationWarnings.length).toBeGreaterThan(0);
+      expect(validationWarnings.some(w => w.includes('IMPLAUSIBLE_AGE'))).toBe(true);
     });
 
     it('caps age_raw confidence to 0.4 when age exceeds 150', () => {
@@ -219,9 +219,9 @@ describe('BurialRegisterPrompt validation', () => {
         age_raw: { value: '200', confidence: 0.95 }
       };
 
-      const result = prompt.validateAndConvertEntry(entry);
+      const { confidenceScores } = prompt.validateAndConvertEntry(entry);
 
-      expect(result._confidence_scores.age_raw).toBeLessThanOrEqual(0.4);
+      expect(confidenceScores.age_raw).toBeLessThanOrEqual(0.4);
     });
 
     it('flags IMPLAUSIBLE_AGE when age_raw is "200 years"', () => {
@@ -230,10 +230,10 @@ describe('BurialRegisterPrompt validation', () => {
         age_raw: '200 years'
       };
 
-      const result = prompt.validateAndConvertEntry(entry);
+      const { validationWarnings } = prompt.validateAndConvertEntry(entry);
 
-      expect(result._validation_warnings).toBeDefined();
-      expect(result._validation_warnings.some(w => w.includes('IMPLAUSIBLE_AGE'))).toBe(true);
+      expect(validationWarnings.length).toBeGreaterThan(0);
+      expect(validationWarnings.some(w => w.includes('IMPLAUSIBLE_AGE'))).toBe(true);
     });
 
     it('does not flag IMPLAUSIBLE_AGE when age_raw is "42"', () => {
@@ -242,9 +242,9 @@ describe('BurialRegisterPrompt validation', () => {
         age_raw: '42'
       };
 
-      const result = prompt.validateAndConvertEntry(entry);
+      const { validationWarnings } = prompt.validateAndConvertEntry(entry);
 
-      expect(result._validation_warnings).toBeUndefined();
+      expect(validationWarnings.length).toBe(0);
     });
 
     it('does not flag IMPLAUSIBLE_AGE when age_raw is null', () => {
@@ -253,9 +253,9 @@ describe('BurialRegisterPrompt validation', () => {
         age_raw: null
       };
 
-      const result = prompt.validateAndConvertEntry(entry);
+      const { validationWarnings } = prompt.validateAndConvertEntry(entry);
 
-      expect(result._validation_warnings).toBeUndefined();
+      expect(validationWarnings.length).toBe(0);
     });
   });
 });

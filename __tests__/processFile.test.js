@@ -218,12 +218,20 @@ describe('processFile', () => {
         uncertainty_flags: ['flagged']
       }];
 
-      burialPromptMock.validateAndConvertPage.mockReturnValue(pageData);
+      burialPromptMock.validateAndConvertPage.mockReturnValue({
+        data: pageData,
+        confidenceScores: {},
+        validationWarnings: []
+      });
       burialPromptMock.validateAndConvertEntry.mockImplementation(entry => ({
-        row_index_on_page: entry.row_index_on_page,
-        entry_id: entry.entry_id,
-        name_raw: entry.name_raw,
-        uncertainty_flags: entry.uncertainty_flags
+        data: {
+          row_index_on_page: entry.row_index_on_page,
+          entry_id: entry.entry_id,
+          name_raw: entry.name_raw,
+          uncertainty_flags: entry.uncertainty_flags
+        },
+        confidenceScores: {},
+        validationWarnings: []
       }));
 
       providerTemplates.getPrompt.mockImplementationOnce(() => burialPromptMock);
@@ -293,15 +301,23 @@ describe('processFile', () => {
         uncertainty_flags: []
       }];
 
-      burialPromptMock.validateAndConvertPage.mockReturnValue(pageData);
+      burialPromptMock.validateAndConvertPage.mockReturnValue({
+        data: pageData,
+        confidenceScores: {},
+        validationWarnings: []
+      });
       burialPromptMock.validateAndConvertEntry.mockImplementation(entry => ({
-        row_index_on_page: entry.row_index_on_page,
-        entry_id: entry.entry_id,
-        name_raw: entry.name_raw,
-        parish_header_raw: entry.parish_header_raw,
-        county_header_raw: entry.county_header_raw,
-        year_header_raw: entry.year_header_raw,
-        uncertainty_flags: entry.uncertainty_flags
+        data: {
+          row_index_on_page: entry.row_index_on_page,
+          entry_id: entry.entry_id,
+          name_raw: entry.name_raw,
+          parish_header_raw: entry.parish_header_raw,
+          county_header_raw: entry.county_header_raw,
+          year_header_raw: entry.year_header_raw,
+          uncertainty_flags: entry.uncertainty_flags
+        },
+        confidenceScores: {},
+        validationWarnings: []
       }));
 
       providerTemplates.getPrompt.mockImplementationOnce(() => burialPromptMock);

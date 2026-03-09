@@ -245,7 +245,7 @@ Follow genealogical transcription standards - transcribe exactly what is visible
     }
 
     logger.info(`[MonumentPhotoOCRPrompt] Final result: ${JSON.stringify(result, null, 2)}`);
-    return result;
+    return { data: result, confidenceScores: {}, validationWarnings: [] };
   }
 
   /**

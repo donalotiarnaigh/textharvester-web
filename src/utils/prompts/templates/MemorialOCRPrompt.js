@@ -228,13 +228,8 @@ For inscription, also include: "uncertain_segments": ["word1", "word2"] for ambi
       }
     }
 
-    if (crossFieldWarnings.length > 0) {
-      result._validation_warnings = crossFieldWarnings;
-    }
-
-    result._confidence_scores = confidenceScores;
     logger.info('[MemorialOCRPrompt] Final result:', JSON.stringify(result, null, 2));
-    return result;
+    return { data: result, confidenceScores, validationWarnings: crossFieldWarnings };
   }
 }
 

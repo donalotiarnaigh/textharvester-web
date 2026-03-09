@@ -78,13 +78,13 @@ describe('TypographicAnalysisPrompt', () => {
     };
 
     test('should validate a complete valid response', () => {
-      const result = prompt.validateAndConvert(validFullResponse);
+      const { data: result, confidenceScores } = prompt.validateAndConvert(validFullResponse);
       expect(result).toEqual(expect.objectContaining(validFullResponse));
-      expect(result._confidence_scores).toBeDefined();
+      expect(confidenceScores).toBeDefined();
     });
 
     test('should validate a minimal valid response', () => {
-      const result = prompt.validateAndConvert(validMinimalResponse);
+      const { data: result } = prompt.validateAndConvert(validMinimalResponse);
       // We now ensure iconography is always an initialized object structure
       expect(result.iconography).toMatchObject({
         style_technique: {},
@@ -139,7 +139,7 @@ describe('TypographicAnalysisPrompt', () => {
         transcription_raw: 'Here lieſ ye Body'
       };
 
-      const result = prompt.validateAndConvert(historicalResponse);
+      const { data: result } = prompt.validateAndConvert(historicalResponse);
       expect(result.transcription_raw).toBe('Here lieſ ye Body');
     });
 
@@ -181,7 +181,7 @@ describe('TypographicAnalysisPrompt', () => {
     };
 
     test('should validate a complete iconography object', () => {
-      const result = prompt.validateAndConvert(validResponse);
+      const { data: result } = prompt.validateAndConvert(validResponse);
       expect(result.iconography).toEqual(validIconography);
     });
 
@@ -197,7 +197,7 @@ describe('TypographicAnalysisPrompt', () => {
         }
       };
 
-      const result = prompt.validateAndConvert(response);
+      const { data: result } = prompt.validateAndConvert(response);
       expect(result.iconography.daisy_wheels).toBe(true);
     });
 
@@ -230,7 +230,7 @@ describe('TypographicAnalysisPrompt', () => {
         }
       };
 
-      const result = prompt.validateAndConvert(response);
+      const { data: result } = prompt.validateAndConvert(response);
       expect(result.iconography).toBeDefined();
       // Should match "flower" or "rosette" in warning
       expect(spy).toHaveBeenCalledWith(expect.stringMatching(/quality warning/i));
@@ -243,7 +243,7 @@ describe('TypographicAnalysisPrompt', () => {
         iconography: {}
       };
 
-      const result = prompt.validateAndConvert(response);
+      const { data: result } = prompt.validateAndConvert(response);
       expect(result.iconography).toMatchObject({
         style_technique: {},
         central_symbol: {},
