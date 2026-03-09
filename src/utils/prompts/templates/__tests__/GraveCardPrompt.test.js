@@ -84,7 +84,7 @@ describe('GraveCardPrompt', () => {
     };
 
     test('should pass a valid comprehensive record', () => {
-      const result = prompt.validateAndConvert(validRecord);
+      const { data: result } = prompt.validateAndConvert(validRecord);
       expect(result).toEqual(validRecord);
     });
 
@@ -135,7 +135,7 @@ describe('GraveCardPrompt', () => {
     test('should allow empty interments list', () => {
       const emptyInterments = JSON.parse(JSON.stringify(validRecord));
       emptyInterments.interments = [];
-      const result = prompt.validateAndConvert(emptyInterments);
+      const { data: result } = prompt.validateAndConvert(emptyInterments);
       expect(result.interments).toEqual([]);
     });
 
