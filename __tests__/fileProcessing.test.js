@@ -83,7 +83,11 @@ describe('File Processing Module', () => {
     mockFs.promises.readFile.mockResolvedValue(mockBase64Image);
     mockFs.promises.unlink.mockResolvedValue();
     mockProcessImage.mockResolvedValue({ content: mockExtractedData, usage: { input_tokens: 0, output_tokens: 0 } });
-    mockValidateAndConvert.mockReturnValue(mockExtractedData);
+    mockValidateAndConvert.mockReturnValue({
+      data: mockExtractedData,
+      confidenceScores: {},
+      validationWarnings: []
+    });
     storeMemorial.mockResolvedValue();
   });
 
@@ -193,7 +197,11 @@ describe('File Processing Module', () => {
     beforeEach(() => {
       mockFs.promises.readFile.mockResolvedValue(mockBase64Image);
       mockFs.promises.unlink.mockResolvedValue();
-      mockValidateAndConvert.mockReturnValue(baseValidatedResult);
+      mockValidateAndConvert.mockReturnValue({
+        data: baseValidatedResult,
+        confidenceScores: {},
+        validationWarnings: []
+      });
       storeMemorial.mockResolvedValue();
     });
 
@@ -366,14 +374,17 @@ describe('File Processing Module', () => {
 
     test('does NOT flag needs_review when all confidence scores are null (scalar responses)', async () => {
       const dataWithNullConfidence = {
-        ...mockExtractedData,
-        _confidence_scores: {
+        data: {
+          ...mockExtractedData
+        },
+        confidenceScores: {
           memorial_number: null,
           first_name: null,
           last_name: null,
           year_of_death: null,
           inscription: null
-        }
+        },
+        validationWarnings: []
       };
       mockValidateAndConvert.mockReturnValue(dataWithNullConfidence);
       mockProcessImage.mockResolvedValue({ content: dataWithNullConfidence, usage: { input_tokens: 0, output_tokens: 0 } });
@@ -402,14 +413,17 @@ describe('File Processing Module', () => {
 
     test('flags needs_review when any score is explicitly below threshold', async () => {
       const dataWithLowConfidence = {
-        ...mockExtractedData,
-        _confidence_scores: {
+        data: {
+          ...mockExtractedData
+        },
+        confidenceScores: {
           memorial_number: 0.95,
           first_name: 0.5,
           last_name: 0.85,
           year_of_death: 0.80,
           inscription: 0.92
-        }
+        },
+        validationWarnings: []
       };
       mockValidateAndConvert.mockReturnValue(dataWithLowConfidence);
       mockProcessImage.mockResolvedValue({ content: dataWithLowConfidence, usage: { input_tokens: 0, output_tokens: 0 } });
@@ -422,14 +436,17 @@ describe('File Processing Module', () => {
 
     test('does NOT flag needs_review when all scores are above threshold', async () => {
       const dataWithHighConfidence = {
-        ...mockExtractedData,
-        _confidence_scores: {
+        data: {
+          ...mockExtractedData
+        },
+        confidenceScores: {
           memorial_number: 0.95,
           first_name: 0.92,
           last_name: 0.88,
           year_of_death: 0.90,
           inscription: 0.89
-        }
+        },
+        validationWarnings: []
       };
       mockValidateAndConvert.mockReturnValue(dataWithHighConfidence);
       mockProcessImage.mockResolvedValue({ content: dataWithHighConfidence, usage: { input_tokens: 0, output_tokens: 0 } });
@@ -442,14 +459,17 @@ describe('File Processing Module', () => {
 
     test('handles mixed null and low confidence — flags review for low, coverage is partial', async () => {
       const dataMixedNull = {
-        ...mockExtractedData,
-        _confidence_scores: {
+        data: {
+          ...mockExtractedData
+        },
+        confidenceScores: {
           memorial_number: null,
           first_name: 0.5,
           last_name: null,
           year_of_death: 0.85,
           inscription: null
-        }
+        },
+        validationWarnings: []
       };
       mockValidateAndConvert.mockReturnValue(dataMixedNull);
       mockProcessImage.mockResolvedValue({ content: dataMixedNull, usage: { input_tokens: 0, output_tokens: 0 } });
@@ -462,14 +482,17 @@ describe('File Processing Module', () => {
 
     test('handles mixed null and high confidence — no review flag, partial coverage', async () => {
       const dataMixedNull = {
-        ...mockExtractedData,
-        _confidence_scores: {
+        data: {
+          ...mockExtractedData
+        },
+        confidenceScores: {
           memorial_number: null,
           first_name: 0.92,
           last_name: null,
           year_of_death: 0.95,
           inscription: null
-        }
+        },
+        validationWarnings: []
       };
       mockValidateAndConvert.mockReturnValue(dataMixedNull);
       mockProcessImage.mockResolvedValue({ content: dataMixedNull, usage: { input_tokens: 0, output_tokens: 0 } });
@@ -482,15 +505,17 @@ describe('File Processing Module', () => {
 
     test('validation_warnings still force needs_review = 1 regardless of confidence', async () => {
       const dataWithWarnings = {
-        ...mockExtractedData,
-        _confidence_scores: {
+        data: {
+          ...mockExtractedData
+        },
+        confidenceScores: {
           memorial_number: 0.95,
           first_name: 0.92,
           last_name: 0.88,
           year_of_death: 0.90,
           inscription: 0.89
         },
-        _validation_warnings: ['IDENTICAL_NAMES: first_name and last_name are the same value']
+        validationWarnings: ['IDENTICAL_NAMES: first_name and last_name are the same value']
       };
       mockValidateAndConvert.mockReturnValue(dataWithWarnings);
       mockProcessImage.mockResolvedValue({ content: dataWithWarnings, usage: { input_tokens: 0, output_tokens: 0 } });

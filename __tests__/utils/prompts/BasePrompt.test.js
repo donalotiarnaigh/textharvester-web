@@ -99,22 +99,26 @@ describe('BasePrompt._extractValueAndConfidence', () => {
   // Verified through validateAndConvert: a field with null confidence should propagate
   // to _confidence_scores so the caller can flag needs_review.
 
-  test('validateAndConvert propagates null confidence into _confidence_scores for a scalar field', () => {
+  test('validateAndConvert propagates null confidence into confidenceScores for a scalar field', () => {
     // When the model returns a plain scalar (no envelope), confidence must be null
     const data = { name: 'John' };
-    const result = prompt.validateAndConvert(data);
-    expect(result._confidence_scores).toHaveProperty('name', null);
+    const { data: resultData, confidenceScores } = prompt.validateAndConvert(data);
+    expect(confidenceScores).toHaveProperty('name', null);
+    // Verify no underscore-prefixed keys in data
+    expect(Object.keys(resultData).every(k => !k.startsWith('_'))).toBe(true);
   });
 
   test('validateAndConvert propagates null confidence for missing confidence key in envelope', () => {
     const data = { name: { value: 'John' } };
-    const result = prompt.validateAndConvert(data);
-    expect(result._confidence_scores).toHaveProperty('name', null);
+    const { data: resultData, confidenceScores } = prompt.validateAndConvert(data);
+    expect(confidenceScores).toHaveProperty('name', null);
+    expect(Object.keys(resultData).every(k => !k.startsWith('_'))).toBe(true);
   });
 
   test('validateAndConvert propagates valid confidence score from envelope', () => {
     const data = { name: { value: 'John', confidence: 0.88 } };
-    const result = prompt.validateAndConvert(data);
-    expect(result._confidence_scores).toHaveProperty('name', 0.88);
+    const { data: resultData, confidenceScores } = prompt.validateAndConvert(data);
+    expect(confidenceScores).toHaveProperty('name', 0.88);
+    expect(Object.keys(resultData).every(k => !k.startsWith('_'))).toBe(true);
   });
 });

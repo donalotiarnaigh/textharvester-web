@@ -68,7 +68,7 @@ describe('Prompt System Integration', () => {
         inscription: 'SACRED HEART OF JESUS HAVE MERCY ON THE SOUL OF THOMAS O\'BRIEN...'
       };
 
-      const result = prompt.validateAndConvert(realWorldData);
+      const { data: result } = prompt.validateAndConvert(realWorldData);
       expect(result.memorial_number).toBe('HG-123');
       expect(result.first_name).toBe('THOMAS');
       expect(result.last_name).toBe('O\'BRIEN');
@@ -85,7 +85,7 @@ describe('Prompt System Integration', () => {
         inscription: 'SACRED HEART'
       };
 
-      const result = prompt.validateAndConvert(ocrData);
+      const { data: result } = prompt.validateAndConvert(ocrData);
       expect(result.memorial_number).toBe('HG124');
       expect(result.first_name).toBe('MARY');
       expect(result.last_name).toBe('O\'BRIEN');

@@ -167,13 +167,16 @@ describe('BasePrompt', () => {
         age: '25',
         email: 'john@example.com'
       };
-      const result = prompt.validateAndConvert(data);
-      expect(result).toEqual(expect.objectContaining({
+      const { data: validatedData, confidenceScores, validationWarnings } = prompt.validateAndConvert(data);
+      expect(validatedData).toEqual(expect.objectContaining({
         name: 'John Doe',
         age: 25,
         email: 'john@example.com'
       }));
-      expect(result._confidence_scores).toBeDefined();
+      expect(confidenceScores).toBeDefined();
+      expect(validationWarnings).toBeDefined();
+      // Verify no keys start with underscore
+      expect(Object.keys(validatedData).every(k => !k.startsWith('_'))).toBe(true);
     });
 
     it('should handle missing fields', () => {
@@ -183,11 +186,11 @@ describe('BasePrompt', () => {
         });
       }).toThrow('Name is required');
 
-      const result = prompt.validateAndConvert({
+      const { data: validatedData } = prompt.validateAndConvert({
         name: 'John Doe',
         age: 25
       });
-      expect(result.email).toBeNull();
+      expect(validatedData.email).toBeNull();
     });
 
     it('should handle invalid data', () => {
@@ -379,7 +382,7 @@ describe('BasePrompt', () => {
         email: 'john@example.com',
         score: 92.5
       };
-      const result = prompt.validateAndConvert(validData);
+      const { data: result } = prompt.validateAndConvert(validData);
       expect(result).toEqual(expect.objectContaining(validData));
 
       // Test maxLength constraint
@@ -416,7 +419,7 @@ describe('BasePrompt', () => {
       }).toThrow('Name is required');
 
       // Optional field can be omitted
-      const result = prompt.validateAndConvert({
+      const { data: result } = prompt.validateAndConvert({
         name: 'John Doe',
         age: 25,
         score: 92.5
@@ -444,7 +447,7 @@ describe('BasePrompt', () => {
     });
 
     it('should handle precision for float values', () => {
-      const result = prompt.validateAndConvert({
+      const { data: result } = prompt.validateAndConvert({
         name: 'John Doe',
         age: 25,
         score: 92.555
@@ -476,7 +479,7 @@ describe('BasePrompt', () => {
     });
 
     it('should handle type coercion with metadata', () => {
-      const result = prompt.validateAndConvert({
+      const { data: result } = prompt.validateAndConvert({
         name: '  John Doe  ', // Should trim
         age: '25', // Should convert to number
         score: '92.555' // Should convert and round

@@ -70,7 +70,7 @@ describe('MemorialOCRPrompt', () => {
         prompt_version: '2.0.0'
       };
 
-      const result = prompt.validateAndConvert(testData);
+      const { data: result, confidenceScores, validationWarnings } = prompt.validateAndConvert(testData);
       expect(result).toEqual(expect.objectContaining({
         memorial_number: '42',       // Now extracts just the number
         first_name: 'JOHN',          // Uppercase
@@ -78,7 +78,10 @@ describe('MemorialOCRPrompt', () => {
         year_of_death: 1923,         // Converted to number
         inscription: 'REST IN PEACE' // Trimmed
       }));
-      expect(result._confidence_scores).toBeDefined();
+      expect(confidenceScores).toBeDefined();
+      expect(validationWarnings).toBeDefined();
+      // Verify no underscore-prefixed keys in data
+      expect(Object.keys(result).every(k => !k.startsWith('_'))).toBe(true);
     });
 
     it('should handle missing optional fields', () => {
@@ -90,7 +93,7 @@ describe('MemorialOCRPrompt', () => {
         // inscription is optional
       };
 
-      const result = prompt.validateAndConvert(testData);
+      const { data: result } = prompt.validateAndConvert(testData);
       expect(result.memorial_number).toBe('43'); // Now extracts just the number
       expect(result.first_name).toBe('JOHN');
       expect(result.last_name).toBe('DOE');
@@ -131,7 +134,7 @@ describe('MemorialOCRPrompt', () => {
         inscription: null
       };
 
-      const result = prompt.validateAndConvert(testData);
+      const { data: result } = prompt.validateAndConvert(testData);
       expect(result.memorial_number).toBe('44'); // Now extracts just the number
       expect(result.first_name).toBe('JOHN');
       expect(result.last_name).toBe('DOE');
@@ -180,7 +183,7 @@ describe('MemorialOCRPrompt', () => {
 
       // The current implementation might not validate name format strictly
       // Let's check what actually happens
-      const result = prompt.validateAndConvert(testData);
+      const { data: result } = prompt.validateAndConvert(testData);
       expect(result.memorial_number).toBe('45');
       expect(result.first_name).toBe('JOHN123'); // It might just uppercase it
       expect(result.last_name).toBe('DOE');

@@ -162,8 +162,7 @@ For inscription, also include: "uncertain_segments": ["word1", "word2"] for ambi
         throw error;
       }
 
-      result._confidence_scores = confidenceScores;
-      return result;
+      return { data: result, confidenceScores, validationWarnings: [] };
     } catch (error) {
       if (!(error instanceof ProcessingError)) {
         throw new ProcessingError(error.message, 'validation_error');

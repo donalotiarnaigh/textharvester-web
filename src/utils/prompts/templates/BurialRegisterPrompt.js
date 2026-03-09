@@ -215,9 +215,12 @@ For every field shown as { "value": ..., "confidence": ... }, return that envelo
 
     const errors = [];
     let pageData = {};
+    let pageConfidenceScores = {};
 
     try {
-      pageData = super.validateAndConvert(pageDataRaw);
+      const superResult = super.validateAndConvert(pageDataRaw);
+      pageData = superResult.data;
+      pageConfidenceScores = superResult.confidenceScores;
     } catch (error) {
       if (error.details?.length) {
         errors.push(...error.details);
@@ -244,8 +247,12 @@ For every field shown as { "value": ..., "confidence": ... }, return that envelo
     }
 
     return {
-      ...pageData,
-      entries: pageDataRaw.entries || []
+      data: {
+        ...pageData,
+        entries: pageDataRaw.entries || []
+      },
+      confidenceScores: pageConfidenceScores,
+      validationWarnings: []
     };
   }
 
@@ -327,12 +334,7 @@ For every field shown as { "value": ..., "confidence": ... }, return that envelo
       }
     }
 
-    if (crossFieldWarnings.length > 0) {
-      result._validation_warnings = crossFieldWarnings;
-    }
-
-    result._confidence_scores = confidenceScores;
-    return result;
+    return { data: result, confidenceScores, validationWarnings: crossFieldWarnings };
   }
 
   validateEntryField(fieldName, value) {

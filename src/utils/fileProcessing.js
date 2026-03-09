@@ -28,10 +28,10 @@ const VALIDATION_RETRY_PREAMBLE =
  * @param {string} base64Image - base64-encoded image data
  * @param {string} userPrompt - the user prompt text
  * @param {Object} providerOptions - options passed to provider.processImage
- * @param {Function} validateFn - function(rawContent) => validated data (throws on failure)
+ * @param {Function} validateFn - function(rawContent) => { data, confidenceScores, validationWarnings } (throws on failure)
  * @param {Object} [retryOptions]
  * @param {number} [retryOptions.maxRetries=1] - max validation retries
- * @returns {Promise<{ validatedData: Object, usage: Object }>}
+ * @returns {Promise<{ validationResult: Object, usage: Object }>}
  */
 async function processWithValidationRetry(provider, base64Image, userPrompt, providerOptions, validateFn, retryOptions = {}) {
   const maxRetries = retryOptions.maxRetries ?? config.retry?.validationRetries ?? 1;
@@ -49,8 +49,8 @@ async function processWithValidationRetry(provider, base64Image, userPrompt, pro
     );
 
     try {
-      const validatedData = validateFn(rawData);
-      return { validatedData, usage };
+      const validationResult = validateFn(rawData);
+      return { validationResult, usage };
     } catch (validationError) {
       lastError = validationError;
 
@@ -178,7 +178,7 @@ async function processFile(filePath, options = {}) {
       const systemPrompt = typeof promptConfig === 'object' ? promptConfig.systemPrompt : undefined;
 
       // Step 3: Process through AI provider + validate (with retry)
-      const { validatedData, usage: graveCardUsage } = await processWithValidationRetry(
+      const { validationResult, usage: graveCardUsage } = await processWithValidationRetry(
         provider,
         base64Image,
         userPrompt,
@@ -189,9 +189,11 @@ async function processFile(filePath, options = {}) {
       const apiDuration = Date.now() - startTime;
       logger.info(`Grave card API call completed in ${apiDuration}ms for ${filePath}`);
 
+      const validatedData = validationResult.data;
+      const graveCardConfidenceScores = validationResult.confidenceScores;
+      const graveCardValidationWarnings = validationResult.validationWarnings;
+
       // Extract confidence metadata
-      const graveCardConfidenceScores = validatedData._confidence_scores;
-      delete validatedData._confidence_scores;
       if (graveCardConfidenceScores && config.confidence?.enabled !== false) {
         validatedData.confidence_scores = graveCardConfidenceScores;
         const threshold = config.confidence?.reviewThreshold ?? 0.70;
@@ -202,8 +204,6 @@ async function processFile(filePath, options = {}) {
       }
 
       // Extract validation warnings
-      const graveCardValidationWarnings = validatedData._validation_warnings ?? null;
-      delete validatedData._validation_warnings;
       if (graveCardValidationWarnings && graveCardValidationWarnings.length > 0) {
         validatedData.validation_warnings = graveCardValidationWarnings;
         validatedData.needs_review = 1; // force flag even if confidence disabled
@@ -306,15 +306,10 @@ async function processFile(filePath, options = {}) {
 
       for (const entry of entries) {
         try {
-          const validatedEntry = promptInstance.validateAndConvertEntry(entry);
-
-          // Extract confidence metadata
-          const entryConfidenceScores = validatedEntry._confidence_scores;
-          delete validatedEntry._confidence_scores;
-
-          // Extract validation warnings
-          const entryValidationWarnings = validatedEntry._validation_warnings ?? null;
-          delete validatedEntry._validation_warnings;
+          const validationResult = promptInstance.validateAndConvertEntry(entry);
+          const validatedEntry = validationResult.data;
+          const entryConfidenceScores = validationResult.confidenceScores;
+          const entryValidationWarnings = validationResult.validationWarnings;
 
           const burialCostConfig = config.costs?.[providerName]?.[provider.getModelVersion()] || {};
           const entryWithMetadata = {
@@ -406,7 +401,7 @@ async function processFile(filePath, options = {}) {
 
     try {
       // Process image + validate with retry
-      const { validatedData: extractedData, usage: memUsage } = await processWithValidationRetry(
+      const { validationResult, usage: memUsage } = await processWithValidationRetry(
         provider,
         base64Image,
         userPrompt,
@@ -437,11 +432,13 @@ async function processFile(filePath, options = {}) {
       );
 
       // Log the validated data for debugging
+      const extractedData = validationResult.data;
+      const memConfidenceScores = validationResult.confidenceScores;
+      const memValidationWarnings = validationResult.validationWarnings;
+
       logger.debugPayload(`Raw ${providerName} API response for ${filePath}:`, extractedData);
 
       // Extract confidence metadata
-      const memConfidenceScores = extractedData._confidence_scores;
-      delete extractedData._confidence_scores;
       if (memConfidenceScores && config.confidence?.enabled !== false) {
         extractedData.confidence_scores = memConfidenceScores;
         const threshold = config.confidence?.reviewThreshold ?? 0.70;
@@ -452,8 +449,6 @@ async function processFile(filePath, options = {}) {
       }
 
       // Extract validation warnings
-      const memValidationWarnings = extractedData._validation_warnings ?? null;
-      delete extractedData._validation_warnings;
       if (memValidationWarnings && memValidationWarnings.length > 0) {
         extractedData.validation_warnings = memValidationWarnings;
         extractedData.needs_review = 1; // force flag even if confidence disabled
