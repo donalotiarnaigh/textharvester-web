@@ -4,6 +4,7 @@ const database = require('../../src/utils/database');
 const fileQueue = require('../../src/utils/fileQueue');
 const burialRegisterStorage = require('../../src/utils/burialRegisterStorage');
 const graveCardStorage = require('../../src/utils/graveCardStorage');
+const llmAuditLog = require('../../src/utils/llmAuditLog');
 
 // Mock dependencies
 jest.mock('../../src/utils/database');
@@ -11,6 +12,7 @@ jest.mock('../../src/utils/fileQueue');
 jest.mock('../../src/utils/logger');
 jest.mock('../../src/utils/burialRegisterStorage');
 jest.mock('../../src/utils/graveCardStorage');
+jest.mock('../../src/utils/llmAuditLog');
 
 describe('SystemService', () => {
   let service;
@@ -21,6 +23,8 @@ describe('SystemService', () => {
     mockConfig = {
       dbPath: './data/test.db'
     };
+    // Setup llmAuditLog mock
+    llmAuditLog.initialize = jest.fn().mockResolvedValue();
     service = new SystemService(mockConfig);
   });
 
