@@ -279,7 +279,11 @@ describe('File Processing Module', () => {
         .mockImplementationOnce(() => {
           throw validationError;
         })
-        .mockImplementationOnce(() => mockExtractedData);
+        .mockImplementationOnce(() => ({
+          data: mockExtractedData,
+          confidenceScores: {},
+          validationWarnings: []
+        }));
 
       mockProcessImage.mockResolvedValue({ content: mockExtractedData, usage: { input_tokens: 0, output_tokens: 0 } });
 
@@ -296,7 +300,11 @@ describe('File Processing Module', () => {
         .mockImplementationOnce(() => {
           throw validationError;
         })
-        .mockImplementationOnce(() => mockExtractedData);
+        .mockImplementationOnce(() => ({
+          data: mockExtractedData,
+          confidenceScores: {},
+          validationWarnings: []
+        }));
 
       mockProcessImage.mockResolvedValue({ content: mockExtractedData, usage: { input_tokens: 0, output_tokens: 0 } });
 
