@@ -4,6 +4,7 @@ const logger = require('../utils/logger');
 const database = require('../utils/database');
 const burialRegisterStorage = require('../utils/burialRegisterStorage');
 const graveCardStorage = require('../utils/graveCardStorage');
+const llmAuditLog = require('../utils/llmAuditLog');
 const fileQueue = require('../utils/fileQueue');
 
 class SystemService {
@@ -28,6 +29,9 @@ class SystemService {
 
       // Initialize grave cards table
       await graveCardStorage.initialize();
+
+      // Initialize LLM audit log table
+      await llmAuditLog.initialize();
 
       return {
         success: true,
