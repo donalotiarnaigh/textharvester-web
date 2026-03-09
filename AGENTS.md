@@ -135,6 +135,41 @@ Only run full tests or implementations when explicitly required.
 
 * * *
 
+## Testing Features Manually
+
+### Testing Database-Backed Features
+
+For features that modify the database schema or storage layers (e.g., `processing_id` correlation IDs), use the provided test scripts to safely verify functionality without risking sample data.
+
+**Example: Testing processing_id Feature**
+
+The `processing_id` feature adds request correlation IDs. Test it safely:
+
+```bash
+# Dry run (preview without API calls)
+./test-processing-id.sh --dry-run
+
+# Test with all record types
+./test-processing-id.sh
+
+# Test specific record type
+./test-processing-id.sh --type memorial --provider openai --verbose
+
+# Full documentation
+cat docs/testing-processing-id.md
+```
+
+**Key Points:**
+- Sample data in `sample_data/source_sets/` is never modified
+- Test files are copied to `/tmp/` for processing
+- Files are auto-deleted after processing (expected behavior)
+- Database storage is verified automatically
+- Original sample data can be regenerated anytime
+
+For details on manually testing database-backed features, see `docs/testing-processing-id.md`.
+
+* * *
+
 ## Coding & Style Conventions
 
 -   Use **English** for all code, comments, commit messages.
@@ -197,6 +232,18 @@ When writing prompts and validation logic, use these conventions:
 
 * * *
 
-**Last Updated:** 2026-02-02
+**Last Updated:** 2026-03-09
 
-**Purpose:** Provide a robust, clear, and minimal-risk instruction set for AI coding agents working on the Typographic Analysis feature.
+**Purpose:** Provide a robust, clear, and minimal-risk instruction set for AI coding agents working on the Typographic Analysis feature and other backend enhancements.
+
+## Cross-Feature Testing Resources
+
+The following testing utilities are available for agents implementing backend features:
+
+| Feature | Test Script | Documentation |
+|---------|-------------|---|
+| `processing_id` (request correlation) | `./test-processing-id.sh` | `docs/testing-processing-id.md` |
+| Database migrations | `npm run init-db` | `docs/` |
+| Full test suite | `npm test` | `__tests__/` |
+
+When implementing database-backed features, follow the pattern in `docs/testing-processing-id.md` to provide safe, repeatable manual testing.

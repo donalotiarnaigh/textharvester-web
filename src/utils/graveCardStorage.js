@@ -16,7 +16,8 @@ function initialize() {
       ai_provider TEXT,
       input_tokens INTEGER DEFAULT 0,
       output_tokens INTEGER DEFAULT 0,
-      estimated_cost_usd REAL DEFAULT 0
+      estimated_cost_usd REAL DEFAULT 0,
+      processing_id TEXT
     )
   `;
 
@@ -40,7 +41,8 @@ function initialize() {
         const costMigrations = [
           { name: 'input_tokens', def: 'INTEGER DEFAULT 0' },
           { name: 'output_tokens', def: 'INTEGER DEFAULT 0' },
-          { name: 'estimated_cost_usd', def: 'REAL DEFAULT 0' }
+          { name: 'estimated_cost_usd', def: 'REAL DEFAULT 0' },
+          { name: 'processing_id', def: 'TEXT' }
         ];
         const missing = costMigrations.filter(col => !existingCols.includes(col.name));
         if (missing.length === 0) {
@@ -104,6 +106,7 @@ function storeGraveCard(data) {
     const inputTokens = data.input_tokens ?? 0;
     const outputTokens = data.output_tokens ?? 0;
     const estimatedCostUsd = data.estimated_cost_usd ?? 0;
+    const processingId = data.processing_id || null;
 
     const sql = `
       INSERT INTO grave_cards (
@@ -114,11 +117,12 @@ function storeGraveCard(data) {
         ai_provider,
         input_tokens,
         output_tokens,
-        estimated_cost_usd
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        estimated_cost_usd,
+        processing_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    db.run(sql, [fileName, section, graveNumber, dataJson, aiProvider, inputTokens, outputTokens, estimatedCostUsd], function (err) {
+    db.run(sql, [fileName, section, graveNumber, dataJson, aiProvider, inputTokens, outputTokens, estimatedCostUsd, processingId], function (err) {
       if (err) {
         logger.error('Error storing grave card:', err);
         reject(err);

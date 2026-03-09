@@ -186,7 +186,8 @@ const SanitizeUtils = {
       fileName: this.sanitizeAttribute(memorial.fileName),
       processed_date: memorial.processed_date, // Date objects are safe as they're processed by formatDate
       source_type: memorial.source_type, // Keep original value for logic, will be sanitized in display functions
-      site_code: memorial.site_code // Keep original for formatting in display
+      site_code: memorial.site_code, // Keep original for formatting in display
+      processing_id: this.sanitizeText(memorial.processing_id)
     };
   },
 
@@ -219,7 +220,8 @@ const SanitizeUtils = {
       grave_number: this.sanitizeText(card.grave_number),
       processed_date: card.processed_date,
       ai_provider: this.sanitizeText(card.ai_provider),
-      source_type: 'grave_record_card', // Explicitly set for this type
+      source_type: 'grave_record_card', // Explicitly set for this type,
+      processing_id: this.sanitizeText(card.processing_id || data.processing_id),
 
       // Fields from the JSON blob
       // Fields from the JSON blob - using safe optional chaining
@@ -288,6 +290,9 @@ const SanitizeUtils = {
 
                 <dt class="col-sm-4">Source File:</dt>
                 <dd class="col-sm-8">${safe.fileName || 'N/A'}</dd>
+
+                <dt class="col-sm-4">Processing ID:</dt>
+                <dd class="col-sm-8"><code>${safe.processing_id || 'N/A'}</code></dd>
               </dl>
             </div>
           </div>
@@ -527,6 +532,7 @@ const SanitizeUtils = {
                 <dt class="col-sm-2">Source:</dt> <dd class="col-sm-4">${safe.fileName}</dd>
                 <dt class="col-sm-2">Model:</dt> <dd class="col-sm-4">${safe.ai_provider}</dd>
                 <dt class="col-sm-2">Processed:</dt> <dd class="col-sm-4">${formatDate(safe.processed_date)}</dd>
+                <dt class="col-sm-2">Processing ID:</dt> <dd class="col-sm-4"><code>${safe.processing_id || 'N/A'}</code></dd>
               </dl>
             </div>
           </div>
@@ -941,7 +947,8 @@ function sanitizeBurialRegisterEntry(entry) {
     prompt_version: SanitizeUtils.sanitizeText(entry.prompt_version),
     fileName: SanitizeUtils.sanitizeAttribute(entry.fileName || entry.file_name),
     volume_id: SanitizeUtils.sanitizeText(entry.volume_id),
-    processed_date: entry.processed_date
+    processed_date: entry.processed_date,
+    processing_id: SanitizeUtils.sanitizeText(entry.processing_id)
   };
 }
 
@@ -1068,6 +1075,9 @@ function createBurialRegisterDetailHTML(entry, colSpan, uniqueId) {
 
               <dt class="col-sm-4">Source File:</dt>
               <dd class="col-sm-8">${safe.fileName || 'N/A'}</dd>
+
+              <dt class="col-sm-4">Processing ID:</dt>
+              <dd class="col-sm-8"><code>${safe.processing_id || 'N/A'}</code></dd>
             </dl>
           </div>
         </div>

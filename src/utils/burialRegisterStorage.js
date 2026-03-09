@@ -159,7 +159,8 @@ function buildBurialEntryParams(entry) {
     entry.validation_warnings ? JSON.stringify(entry.validation_warnings) : null,
     entry.input_tokens        ?? 0,
     entry.output_tokens       ?? 0,
-    entry.estimated_cost_usd  ?? 0
+    entry.estimated_cost_usd  ?? 0,
+    entry.processing_id || null
   ];
 }
 
@@ -225,8 +226,9 @@ async function storeBurialRegisterEntry(entry) {
       validation_warnings,
       input_tokens,
       output_tokens,
-      estimated_cost_usd
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      estimated_cost_usd,
+      processing_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const params = buildBurialEntryParams(entry);

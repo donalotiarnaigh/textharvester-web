@@ -72,6 +72,7 @@ describe('burialRegisterStorage', () => {
         input_tokens INTEGER DEFAULT 0,
         output_tokens INTEGER DEFAULT 0,
         estimated_cost_usd REAL DEFAULT 0,
+        processing_id TEXT,
         UNIQUE(volume_id, file_name, row_index_on_page, ai_provider)
       )
     `, (err) => {
@@ -190,6 +191,34 @@ describe('burialRegisterStorage', () => {
     expect(stored.model_name).toBe('gpt-5.1');
     expect(stored.prompt_template).toBe('burialRegister');
     expect(stored.uncertainty_flags).toBe('["flag1"]');
+  });
+
+  test('storeBurialRegisterEntry stores and retrieves processing_id', async () => {
+    const processingId = '550e8400-e29b-41d4-a716-446655440000';
+    const sampleEntry = {
+      volume_id: 'vol1',
+      page_number: 3,
+      row_index_on_page: 1,
+      entry_id: 'vol1_p003_r001',
+      fileName: 'page3.png',
+      ai_provider: 'openai',
+      processing_id: processingId
+    };
+
+    await storeBurialRegisterEntry(sampleEntry);
+
+    const rows = await new Promise((resolve, reject) => {
+      db.all('SELECT processing_id FROM burial_register_entries WHERE entry_id = ?', ['vol1_p003_r001'], (err, result) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(result);
+      });
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].processing_id).toBe(processingId);
   });
 
   test('storeBurialRegisterEntry handles multiple rows for the same page', async () => {
