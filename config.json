@@ -114,5 +114,8 @@
     "baseDelayMs": 1000,
     "maxDelayMs": 10000,
     "jitterMs": 1000
+  },
+  "audit": {
+    "enabled": true
   }
 }

@@ -206,7 +206,7 @@ async function processFile(filePath, options = {}) {
         provider,
         base64Image,
         userPrompt,
-        { systemPrompt, promptTemplate: promptInstance, log },
+        { systemPrompt, promptTemplate: promptInstance, log, processingId },
         (raw) => promptInstance.validateAndConvert(raw)
       );
 
@@ -286,7 +286,7 @@ async function processFile(filePath, options = {}) {
         provider,
         base64Image,
         userPrompt,
-        { systemPrompt, promptTemplate: promptInstance, timeout: burialRegisterTimeout, log },
+        { systemPrompt, promptTemplate: promptInstance, timeout: burialRegisterTimeout, log, processingId },
         (raw) => {
           if (raw && typeof raw === 'object') {
             raw.volume_id = volumeId;
@@ -435,7 +435,7 @@ async function processFile(filePath, options = {}) {
         provider,
         base64Image,
         userPrompt,
-        { systemPrompt, promptTemplate: promptInstance, log },
+        { systemPrompt, promptTemplate: promptInstance, log, processingId },
         (rawExtractedData) => {
           // For monument photos, inject memorial number from filename if not provided by OCR
           let enhancedData = { ...rawExtractedData };

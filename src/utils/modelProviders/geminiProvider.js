@@ -5,6 +5,7 @@ const PerformanceTracker = require('../performanceTracker');
 const { ResponseLengthValidator } = require('../responseLengthValidator');
 const { withRetry, classifyError } = require('../retryHelper');
 const { extractFirstJsonObject } = require('../jsonExtractor');
+const llmAuditLog = require('../llmAuditLog');
 const logger = require('../logger');
 
 /**
@@ -89,127 +90,169 @@ class GeminiProvider extends BaseVisionProvider {
       }
     });
 
-    return withRetry(
-      async (attempt) => {
-        // Track API performance
-        const response = await PerformanceTracker.trackAPICall(
-          'gemini',
-          this.model,
-          'processImage',
-          async () => {
-            return await geminiModel.generateContent([
-              { text: userPrompt },
-              {
-                inlineData: {
-                  data: base64Image,
-                  mimeType: 'image/jpeg'
+    const processingId = options.processingId;
+    const startTime = Date.now();
+    const imageSizeBytes = base64Image ? Math.round(base64Image.length * 0.75) : 0;
+
+    try {
+      const result = await withRetry(
+        async (attempt) => {
+          // Track API performance
+          const response = await PerformanceTracker.trackAPICall(
+            'gemini',
+            this.model,
+            'processImage',
+            async () => {
+              return await geminiModel.generateContent([
+                { text: userPrompt },
+                {
+                  inlineData: {
+                    data: base64Image,
+                    mimeType: 'image/jpeg'
+                  }
                 }
-              }
-            ]);
-          },
-          {
-            imageSize: base64Image ? Math.round(base64Image.length * 0.75) : 0,
-            promptLength: userPrompt ? userPrompt.length : 0,
-            systemPromptLength: systemPrompt ? systemPrompt.length : 0,
-            maxTokens: this.maxTokens,
-            temperature: this.temperature,
-            attempt
+              ]);
+            },
+            {
+              imageSize: imageSizeBytes,
+              promptLength: userPrompt ? userPrompt.length : 0,
+              systemPromptLength: systemPrompt ? systemPrompt.length : 0,
+              maxTokens: this.maxTokens,
+              temperature: this.temperature,
+              attempt
+            }
+          );
+
+          // Extract the text content from the response
+          const rawContent = response.response.text();
+
+          // Normalize usage from Gemini response
+          const usage = {
+            input_tokens: response.usageMetadata?.promptTokenCount ?? 0,
+            output_tokens: response.usageMetadata?.candidatesTokenCount ?? 0
+          };
+
+          if (!rawContent) {
+            throw new Error('No text content in response');
           }
-        );
 
-        // Extract the text content from the response
-        const content = response.response.text();
-
-        // Normalize usage from Gemini response
-        const usage = {
-          input_tokens: response.usageMetadata?.promptTokenCount ?? 0,
-          output_tokens: response.usageMetadata?.candidatesTokenCount ?? 0
-        };
-
-        if (!content) {
-          throw new Error('No text content in response');
-        }
-
-        // Validate response length to detect potential truncation issues
-        const responseValidation = this.responseValidator.validateResponseLength(content, 'gemini');
-        if (responseValidation.exceedsLimit) {
-          logger.warn(`[GeminiProvider] Response exceeds limit (${content.length}/${responseValidation.maxLength} chars) - may be truncated`);
-        } else if (responseValidation.isApproachingLimit) {
-          logger.info(`[GeminiProvider] Response approaching limit (${content.length}/${responseValidation.maxLength} chars)`);
-        }
-
-        // Return raw content if requested
-        if (options.raw) {
-          return { content, usage };
-        }
-
-        // Parse the JSON response, handling the case where it's wrapped in a code block
-        let jsonContent = content;
-        let extractionMethod = 'direct';
-
-        // Check if the content is wrapped in a code block (```json ... ```)
-        const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (codeBlockMatch) {
-          jsonContent = codeBlockMatch[1].trim();
-          extractionMethod = 'code_block';
-        }
-
-        // Use balanced-brace scanner to extract first complete JSON object
-        const extracted = extractFirstJsonObject(jsonContent);
-        if (extracted) {
-          if (extractionMethod !== 'code_block') {
-            extractionMethod = 'balanced_brace';
+          // Log to audit trail
+          const responseTimeMs = Date.now() - startTime;
+          if (processingId) {
+            await llmAuditLog.logEntry({
+              processing_id: processingId,
+              provider: 'gemini',
+              model: this.model,
+              system_prompt: systemPrompt,
+              user_prompt: userPrompt,
+              image_size_bytes: imageSizeBytes,
+              raw_response: rawContent,
+              input_tokens: usage.input_tokens,
+              output_tokens: usage.output_tokens,
+              response_time_ms: responseTimeMs,
+              status: 'success'
+            });
           }
-          jsonContent = extracted;
+
+          // Validate response length to detect potential truncation issues
+          const responseValidation = this.responseValidator.validateResponseLength(rawContent, 'gemini');
+          if (responseValidation.exceedsLimit) {
+            logger.warn(`[GeminiProvider] Response exceeds limit (${rawContent.length}/${responseValidation.maxLength} chars) - may be truncated`);
+          } else if (responseValidation.isApproachingLimit) {
+            logger.info(`[GeminiProvider] Response approaching limit (${rawContent.length}/${responseValidation.maxLength} chars)`);
+          }
+
+          // Return raw content if requested
+          if (options.raw) {
+            return { content: rawContent, usage };
+          }
+
+          // Parse the JSON response, handling the case where it's wrapped in a code block
+          let jsonContent = rawContent;
+          let extractionMethod = 'direct';
+
+          // Check if the content is wrapped in a code block (```json ... ```)
+          const codeBlockMatch = rawContent.match(/```(?:json)?\s*([\s\S]*?)```/);
+          if (codeBlockMatch) {
+            jsonContent = codeBlockMatch[1].trim();
+            extractionMethod = 'code_block';
+          }
+
+          // Use balanced-brace scanner to extract first complete JSON object
+          const extracted = extractFirstJsonObject(jsonContent);
+          if (extracted) {
+            if (extractionMethod !== 'code_block') {
+              extractionMethod = 'balanced_brace';
+            }
+            jsonContent = extracted;
+          }
+
+          // Log extraction method and response lengths for debugging
+          logger.debug(`[GeminiProvider] Extraction method: ${extractionMethod}`);
+          logger.info(`[GeminiProvider] Response length: ${rawContent.length} characters`);
+          logger.info(`[GeminiProvider] JSON content length: ${jsonContent.length} characters`);
+          logger.info(`[GeminiProvider] Response ends with: "${rawContent.slice(-50)}"`);
+          logger.info(`[GeminiProvider] JSON content ends with: "${jsonContent.slice(-50)}"`);
+
+          // Use ResponseLengthValidator for robust JSON parsing
+          const validationResult = this.responseValidator.validateAndRepairJson(jsonContent);
+
+          if (!validationResult.isValid) {
+            logger.error(`Gemini JSON parsing failed for model ${this.model}`, validationResult.error, {
+              phase: 'response_parsing',
+              operation: 'processImage',
+              contentLength: rawContent.length,
+              jsonContentLength: jsonContent.length,
+              contentPreview: jsonContent.substring(0, 500),
+              attempt
+            });
+            throw new Error(`Failed to parse JSON response: ${validationResult.error}`);
+          }
+
+          // Log if JSON was repaired
+          if (validationResult.repaired) {
+            extractionMethod = 'repaired';
+            logger.info(`[GeminiProvider] JSON response was successfully repaired (${validationResult.originalLength} -> ${validationResult.repairedLength} chars)`);
+          }
+          logger.debug(`[GeminiProvider] Final extraction method: ${extractionMethod}`);
+
+          return { content: validationResult.json, usage };
+        },
+        {
+          maxRetries,
+          baseDelay: retryConfig.baseDelayMs ?? 1000,
+          maxDelay: retryConfig.maxDelayMs ?? 10000,
+          jitterMs: retryConfig.jitterMs ?? 1000,
+          onRetry: (error, attempt) => {
+            const errorType = classifyError(error);
+            logger.warn(`Gemini API attempt ${attempt}/${maxRetries} failed for model ${this.model}`, {
+              error: error.message,
+              errorType,
+              attempt,
+              maxRetries
+            });
+          }
         }
+      );
 
-        // Log extraction method and response lengths for debugging
-        logger.debug(`[GeminiProvider] Extraction method: ${extractionMethod}`);
-        logger.info(`[GeminiProvider] Response length: ${content.length} characters`);
-        logger.info(`[GeminiProvider] JSON content length: ${jsonContent.length} characters`);
-        logger.info(`[GeminiProvider] Response ends with: "${content.slice(-50)}"`);
-        logger.info(`[GeminiProvider] JSON content ends with: "${jsonContent.slice(-50)}"`);
-
-        // Use ResponseLengthValidator for robust JSON parsing
-        const validationResult = this.responseValidator.validateAndRepairJson(jsonContent);
-
-        if (!validationResult.isValid) {
-          logger.error(`Gemini JSON parsing failed for model ${this.model}`, validationResult.error, {
-            phase: 'response_parsing',
-            operation: 'processImage',
-            contentLength: content.length,
-            jsonContentLength: jsonContent.length,
-            contentPreview: jsonContent.substring(0, 500),
-            attempt
-          });
-          throw new Error(`Failed to parse JSON response: ${validationResult.error}`);
-        }
-
-        // Log if JSON was repaired
-        if (validationResult.repaired) {
-          extractionMethod = 'repaired';
-          logger.info(`[GeminiProvider] JSON response was successfully repaired (${validationResult.originalLength} -> ${validationResult.repairedLength} chars)`);
-        }
-        logger.debug(`[GeminiProvider] Final extraction method: ${extractionMethod}`);
-
-        return { content: validationResult.json, usage };
-      },
-      {
-        maxRetries,
-        baseDelay: retryConfig.baseDelayMs ?? 1000,
-        maxDelay: retryConfig.maxDelayMs ?? 10000,
-        jitterMs: retryConfig.jitterMs ?? 1000,
-        onRetry: (error, attempt) => {
-          const errorType = classifyError(error);
-          logger.warn(`Gemini API attempt ${attempt}/${maxRetries} failed for model ${this.model}`, {
-            error: error.message,
-            errorType,
-            attempt,
-            maxRetries
-          });
-        }
+      return result;
+    } catch (error) {
+      // Log error to audit trail
+      const responseTimeMs = Date.now() - startTime;
+      if (processingId) {
+        await llmAuditLog.logEntry({
+          processing_id: processingId,
+          provider: 'gemini',
+          model: this.model,
+          system_prompt: systemPrompt,
+          user_prompt: userPrompt,
+          image_size_bytes: imageSizeBytes,
+          status: 'error',
+          error_message: error.message,
+          response_time_ms: responseTimeMs
+        });
       }
-    ).catch(error => {
+
       logger.error(`Gemini API error for model ${this.model} after ${maxRetries} retries`, error, {
         phase: 'api_call',
         operation: 'processImage'
@@ -220,7 +263,7 @@ class GeminiProvider extends BaseVisionProvider {
         stack: error.stack
       });
       throw new Error(`Gemini processing failed: ${error.message}`);
-    });
+    }
   }
 
   /**

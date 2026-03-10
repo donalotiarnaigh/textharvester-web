@@ -6,6 +6,7 @@ const PerformanceTracker = require('../performanceTracker');
 const { ResponseLengthValidator } = require('../responseLengthValidator');
 const { withRetry, classifyError } = require('../retryHelper');
 const { extractFirstJsonObject } = require('../jsonExtractor');
+const llmAuditLog = require('../llmAuditLog');
 const logger = require('../logger');
 
 /**
@@ -80,144 +81,186 @@ class AnthropicProvider extends BaseVisionProvider {
     logger.info(`[AnthropicProvider] System prompt: ${systemPrompt}`);
     logger.info(`[AnthropicProvider] Prompt length: ${userPrompt.length} characters`);
 
-    return withRetry(
-      async (attempt) => {
-        // Track API performance
-        const result = await PerformanceTracker.trackAPICall(
-          'anthropic',
-          this.model,
-          'processImage',
-          async () => {
-            return await this.client.messages.create({
-              model: this.model,
-              max_tokens: this.maxTokens,
-              temperature: this.temperature,
-              system: systemPrompt,
-              messages: [
-                {
-                  role: 'user',
-                  content: [
-                    { type: 'text', text: userPrompt },
-                    {
-                      type: 'image',
-                      source: {
-                        type: 'base64',
-                        media_type: 'image/jpeg',
-                        data: base64Image
+    const processingId = options.processingId;
+    const startTime = Date.now();
+    const imageSizeBytes = base64Image ? Math.round(base64Image.length * 0.75) : 0;
+
+    try {
+      const result = await withRetry(
+        async (attempt) => {
+          // Track API performance
+          const apiResult = await PerformanceTracker.trackAPICall(
+            'anthropic',
+            this.model,
+            'processImage',
+            async () => {
+              return await this.client.messages.create({
+                model: this.model,
+                max_tokens: this.maxTokens,
+                temperature: this.temperature,
+                system: systemPrompt,
+                messages: [
+                  {
+                    role: 'user',
+                    content: [
+                      { type: 'text', text: userPrompt },
+                      {
+                        type: 'image',
+                        source: {
+                          type: 'base64',
+                          media_type: 'image/jpeg',
+                          data: base64Image
+                        }
                       }
-                    }
-                  ]
-                }
-              ]
+                    ]
+                  }
+                ]
+              });
+            },
+            {
+              imageSize: imageSizeBytes,
+              promptLength: userPrompt ? userPrompt.length : 0,
+              systemPromptLength: systemPrompt ? systemPrompt.length : 0,
+              maxTokens: this.maxTokens,
+              temperature: this.temperature,
+              attempt
+            }
+          );
+
+          // Extract the text content from the response
+          const rawContent = apiResult.content.find(item => item.type === 'text')?.text;
+          const usage = {
+            input_tokens:  apiResult.usage?.input_tokens  ?? 0,
+            output_tokens: apiResult.usage?.output_tokens ?? 0
+          };
+
+          if (!rawContent) {
+            throw new Error('No text content in response');
+          }
+
+          // Log to audit trail
+          const responseTimeMs = Date.now() - startTime;
+          if (processingId) {
+            await llmAuditLog.logEntry({
+              processing_id: processingId,
+              provider: 'anthropic',
+              model: this.model,
+              system_prompt: systemPrompt,
+              user_prompt: userPrompt,
+              image_size_bytes: imageSizeBytes,
+              raw_response: rawContent,
+              input_tokens: usage.input_tokens,
+              output_tokens: usage.output_tokens,
+              response_time_ms: responseTimeMs,
+              status: 'success'
             });
-          },
-          {
-            imageSize: base64Image ? Math.round(base64Image.length * 0.75) : 0,
-            promptLength: userPrompt ? userPrompt.length : 0,
-            systemPromptLength: systemPrompt ? systemPrompt.length : 0,
-            maxTokens: this.maxTokens,
-            temperature: this.temperature,
-            attempt
           }
-        );
 
-        // Extract the text content from the response
-        const content = result.content.find(item => item.type === 'text')?.text;
-        const usage = {
-          input_tokens:  result.usage?.input_tokens  ?? 0,
-          output_tokens: result.usage?.output_tokens ?? 0
-        };
-
-        if (!content) {
-          throw new Error('No text content in response');
-        }
-
-        // Validate response length to detect potential truncation issues
-        const responseValidation = this.responseValidator.validateResponseLength(content, 'anthropic');
-        if (responseValidation.exceedsLimit) {
-          logger.warn(`[AnthropicProvider] Response exceeds limit (${content.length}/${responseValidation.maxLength} chars) - may be truncated`);
-        } else if (responseValidation.isApproachingLimit) {
-          logger.info(`[AnthropicProvider] Response approaching limit (${content.length}/${responseValidation.maxLength} chars)`);
-        }
-
-        // Return raw content if requested
-        if (options.raw) {
-          return { content, usage };
-        }
-
-        // Parse the JSON response, handling the case where it's wrapped in a code block
-        let jsonContent = content;
-        let extractionMethod = 'direct';
-
-        // Check if the content is wrapped in a code block (```json ... ```)
-        const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (codeBlockMatch) {
-          jsonContent = codeBlockMatch[1].trim();
-          extractionMethod = 'code_block';
-        }
-
-        // Use balanced-brace scanner to extract first complete JSON object
-        const extracted = extractFirstJsonObject(jsonContent);
-        if (extracted) {
-          if (extractionMethod !== 'code_block') {
-            extractionMethod = 'balanced_brace';
+          // Validate response length to detect potential truncation issues
+          const responseValidation = this.responseValidator.validateResponseLength(rawContent, 'anthropic');
+          if (responseValidation.exceedsLimit) {
+            logger.warn(`[AnthropicProvider] Response exceeds limit (${rawContent.length}/${responseValidation.maxLength} chars) - may be truncated`);
+          } else if (responseValidation.isApproachingLimit) {
+            logger.info(`[AnthropicProvider] Response approaching limit (${rawContent.length}/${responseValidation.maxLength} chars)`);
           }
-          jsonContent = extracted;
-        }
 
-        // Log extraction method and response lengths for debugging
-        logger.debug(`[AnthropicProvider] Extraction method: ${extractionMethod}`);
-        logger.info(`[AnthropicProvider] Response length: ${content.length} characters`);
-        logger.info(`[AnthropicProvider] JSON content length: ${jsonContent.length} characters`);
-        logger.info(`[AnthropicProvider] Response ends with: "${content.slice(-50)}"`);
-        logger.info(`[AnthropicProvider] JSON content ends with: "${jsonContent.slice(-50)}"`);
+          // Return raw content if requested
+          if (options.raw) {
+            return { content: rawContent, usage };
+          }
 
-        // Use ResponseLengthValidator for robust JSON parsing
-        const validationResult = this.responseValidator.validateAndRepairJson(jsonContent);
+          // Parse the JSON response, handling the case where it's wrapped in a code block
+          let jsonContent = rawContent;
+          let extractionMethod = 'direct';
 
-        if (!validationResult.isValid) {
-          logger.error(`Anthropic JSON parsing failed for model ${this.model}`, validationResult.error, {
-            phase: 'response_parsing',
-            operation: 'processImage',
-            contentLength: content.length,
+          // Check if the content is wrapped in a code block (```json ... ```)
+          const codeBlockMatch = rawContent.match(/```(?:json)?\s*([\s\S]*?)```/);
+          if (codeBlockMatch) {
+            jsonContent = codeBlockMatch[1].trim();
+            extractionMethod = 'code_block';
+          }
+
+          // Use balanced-brace scanner to extract first complete JSON object
+          const extracted = extractFirstJsonObject(jsonContent);
+          if (extracted) {
+            if (extractionMethod !== 'code_block') {
+              extractionMethod = 'balanced_brace';
+            }
+            jsonContent = extracted;
+          }
+
+          // Log extraction method and response lengths for debugging
+          logger.debug(`[AnthropicProvider] Extraction method: ${extractionMethod}`);
+          logger.info(`[AnthropicProvider] Response length: ${rawContent.length} characters`);
+          logger.info(`[AnthropicProvider] JSON content length: ${jsonContent.length} characters`);
+          logger.info(`[AnthropicProvider] Response ends with: "${rawContent.slice(-50)}"`);
+          logger.info(`[AnthropicProvider] JSON content ends with: "${jsonContent.slice(-50)}"`);
+
+          // Use ResponseLengthValidator for robust JSON parsing
+          const validationResult = this.responseValidator.validateAndRepairJson(jsonContent);
+
+          if (!validationResult.isValid) {
+            logger.error(`Anthropic JSON parsing failed for model ${this.model}`, validationResult.error, {
+              phase: 'response_parsing',
+              operation: 'processImage',
+              contentLength: rawContent.length,
             jsonContentLength: jsonContent.length,
             contentPreview: jsonContent.substring(0, 500),
-            attempt
-          });
-          throw new Error(`Failed to parse JSON response: ${validationResult.error}`);
-        }
+              attempt
+            });
+            throw new Error(`Failed to parse JSON response: ${validationResult.error}`);
+          }
 
-        // Validate that the response contains actual text, not just dashes
-        if (this.isInvalidResponse(validationResult.json)) {
-          logger.warn('[AnthropicProvider] Response appears to contain invalid data (likely dashes instead of actual text)');
-          throw new Error('Invalid response: Claude returned dashes instead of actual text. This may indicate image quality issues or prompt confusion.');
-        }
+          // Validate that the response contains actual text, not just dashes
+          if (this.isInvalidResponse(validationResult.json)) {
+            logger.warn('[AnthropicProvider] Response appears to contain invalid data (likely dashes instead of actual text)');
+            throw new Error('Invalid response: Claude returned dashes instead of actual text. This may indicate image quality issues or prompt confusion.');
+          }
 
-        // Log if JSON was repaired
-        if (validationResult.repaired) {
-          extractionMethod = 'repaired';
-          logger.info(`[AnthropicProvider] JSON response was successfully repaired (${validationResult.originalLength} -> ${validationResult.repairedLength} chars)`);
-        }
-        logger.debug(`[AnthropicProvider] Final extraction method: ${extractionMethod}`);
+          // Log if JSON was repaired
+          if (validationResult.repaired) {
+            extractionMethod = 'repaired';
+            logger.info(`[AnthropicProvider] JSON response was successfully repaired (${validationResult.originalLength} -> ${validationResult.repairedLength} chars)`);
+          }
+          logger.debug(`[AnthropicProvider] Final extraction method: ${extractionMethod}`);
 
-        return { content: validationResult.json, usage };
-      },
-      {
-        maxRetries,
-        baseDelay: retryConfig.baseDelayMs ?? 1000,
-        maxDelay: retryConfig.maxDelayMs ?? 10000,
-        jitterMs: retryConfig.jitterMs ?? 1000,
-        onRetry: (error, attempt) => {
-          const errorType = classifyError(error);
-          logger.warn(`Anthropic API attempt ${attempt}/${maxRetries} failed for model ${this.model}`, {
-            error: error.message,
-            errorType,
-            attempt,
-            maxRetries
-          });
+          return { content: validationResult.json, usage };
+        },
+        {
+          maxRetries,
+          baseDelay: retryConfig.baseDelayMs ?? 1000,
+          maxDelay: retryConfig.maxDelayMs ?? 10000,
+          jitterMs: retryConfig.jitterMs ?? 1000,
+          onRetry: (error, attempt) => {
+            const errorType = classifyError(error);
+            logger.warn(`Anthropic API attempt ${attempt}/${maxRetries} failed for model ${this.model}`, {
+              error: error.message,
+              errorType,
+              attempt,
+              maxRetries
+            });
+          }
         }
+      );
+
+      return result;
+    } catch (error) {
+      // Log error to audit trail
+      const responseTimeMs = Date.now() - startTime;
+      if (processingId) {
+        await llmAuditLog.logEntry({
+          processing_id: processingId,
+          provider: 'anthropic',
+          model: this.model,
+          system_prompt: systemPrompt,
+          user_prompt: userPrompt,
+          image_size_bytes: imageSizeBytes,
+          status: 'error',
+          error_message: error.message,
+          response_time_ms: responseTimeMs
+        });
       }
-    ).catch(error => {
+
       logger.error(`Anthropic API error for model ${this.model} after ${maxRetries} retries`, error, {
         phase: 'api_call',
         operation: 'processImage'
@@ -228,7 +271,7 @@ class AnthropicProvider extends BaseVisionProvider {
         stack: error.stack
       });
       throw new Error(`Anthropic processing failed: ${error.message}`);
-    });
+    }
   }
 
   /**
