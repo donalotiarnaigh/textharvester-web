@@ -94,6 +94,10 @@ function resetFileProcessingState() {
   activeWorkers = 0;
   fileQueue = [];
   processedResults = [];
+  // Clear stale retryLimits entries from previous batch
+  for (const key of Object.keys(retryLimits)) {
+    delete retryLimits[key];
+  }
   logger.info('File processing state reset for a new session.');
 }
 
@@ -193,6 +197,8 @@ function checkAndProcessNextFile() {
         }
 
         processedFiles++;
+        // Clean up retryLimits for successfully processed files to prevent stale entries
+        delete retryLimits[file.path];
       })
       .catch((error) => {
         logger.error(`Error processing file ${file.path}: ${error}`);
