@@ -50,6 +50,10 @@ jest.mock('../src/utils/graveCardStorage', () => ({
 jest.mock('../src/utils/imageProcessing/graveCardProcessor', () => ({
   processPdf: jest.fn().mockResolvedValue(Buffer.from('stitched-image-data'))
 }));
+jest.mock('../src/utils/monumentClassificationStorage', () => ({
+  initialize: jest.fn().mockResolvedValue(undefined),
+  storeClassification: jest.fn().mockResolvedValue(1)
+}));
 jest.mock('../../config.json', () => ({
   dbPath: 'test/db',
   uploadPath: 'test/uploads'
@@ -539,6 +543,87 @@ describe('File Processing Module', () => {
 
       expect(result.needs_review).toBe(1);
       expect(result.validation_warnings).toBeDefined();
+    });
+  });
+
+  describe('Monument Classification', () => {
+    const monumentClassificationStorage = require('../src/utils/monumentClassificationStorage');
+    const testFilePath = 'test/monument.jpg';
+    const mockMonumentData = {
+      broad_type: 'Headstone',
+      memorial_number: '123',
+      material_primary: 'Granite',
+      height_mm: 1200,
+      confidence_level: 'High'
+    };
+
+    beforeEach(() => {
+      mockFs.promises.readFile.mockResolvedValue(mockBase64Image);
+      mockFs.promises.unlink.mockResolvedValue();
+      monumentClassificationStorage.storeClassification.mockResolvedValue(1);
+      mockValidateAndConvert.mockReturnValue({
+        data: mockMonumentData,
+        confidenceScores: { confidence_level: 1.0 },
+        validationWarnings: []
+      });
+      mockProcessImage.mockResolvedValue({ content: mockMonumentData, usage: { input_tokens: 1500, output_tokens: 500 } });
+    });
+
+    test('selects monumentClassification template when sourceType is monument_classification', async () => {
+      await processFile(testFilePath, { sourceType: 'monument_classification' });
+
+      expect(getPrompt).toHaveBeenCalledWith('openai', 'monumentClassification', 'latest');
+    });
+
+    test('stores result via monumentClassificationStorage.storeClassification', async () => {
+      const result = await processFile(testFilePath, { sourceType: 'monument_classification' });
+
+      expect(monumentClassificationStorage.storeClassification).toHaveBeenCalled();
+      expect(result.broad_type).toBe('Headstone');
+    });
+
+    test('attaches cost tracking metadata', async () => {
+      const result = await processFile(testFilePath, { sourceType: 'monument_classification' });
+
+      expect(result.input_tokens).toBe(1500);
+      expect(result.output_tokens).toBe(500);
+      expect(result.estimated_cost_usd).toBeDefined();
+    });
+
+    test('attaches processing_id to classification', async () => {
+      const result = await processFile(testFilePath, { sourceType: 'monument_classification' });
+
+      expect(result.processing_id).toBeDefined();
+      expect(typeof result.processing_id).toBe('string');
+      expect(result.processing_id.length).toBeGreaterThan(0);
+    });
+
+    test('maps confidence_level Low to needs_review = 1', async () => {
+      mockValidateAndConvert.mockReturnValue({
+        data: { ...mockMonumentData, confidence_level: 'Low' },
+        confidenceScores: { confidence_level: 0.3 },
+        validationWarnings: []
+      });
+      mockProcessImage.mockResolvedValue({
+        content: { ...mockMonumentData, confidence_level: 'Low' },
+        usage: { input_tokens: 1500, output_tokens: 500 }
+      });
+
+      const result = await processFile(testFilePath, { sourceType: 'monument_classification' });
+
+      expect(result.needs_review).toBe(1);
+    });
+
+    test('reads image file directly (no PDF processing)', async () => {
+      await processFile(testFilePath, { sourceType: 'monument_classification' });
+
+      expect(mockFs.promises.readFile).toHaveBeenCalledWith(testFilePath, { encoding: 'base64' });
+    });
+
+    test('cleans up file after processing', async () => {
+      await processFile(testFilePath, { sourceType: 'monument_classification' });
+
+      expect(mockFs.promises.unlink).toHaveBeenCalledWith(testFilePath);
     });
   });
 }); 

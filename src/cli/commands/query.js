@@ -28,6 +28,7 @@ query
       const config = await loadConfig(optsWithGlobals);
       configureLogger(config);
 
+      const monumentClassificationStorage = require('../../utils/monumentClassificationStorage');
       const storageAdapters = {
         memorials: {
           getAll: require('../../utils/database').getAllMemorials,
@@ -40,6 +41,10 @@ query
         graveCards: {
           getAll: require('../../utils/graveCardStorage').getAllGraveCards,
           getById: require('../../utils/graveCardStorage').getGraveCardById
+        },
+        monumentClassifications: {
+          getAll: monumentClassificationStorage.getAllClassifications,
+          getById: monumentClassificationStorage.getClassificationById
         }
       };
 
@@ -86,6 +91,7 @@ query
       const config = await loadConfig(optsWithGlobals);
       configureLogger(config);
 
+      const monumentClassificationStorage = require('../../utils/monumentClassificationStorage');
       const storageAdapters = {
         memorials: {
           getAll: require('../../utils/database').getAllMemorials,
@@ -98,6 +104,10 @@ query
         graveCards: {
           getAll: require('../../utils/graveCardStorage').getAllGraveCards,
           getById: require('../../utils/graveCardStorage').getGraveCardById
+        },
+        monumentClassifications: {
+          getAll: monumentClassificationStorage.getAllClassifications,
+          getById: monumentClassificationStorage.getClassificationById
         }
       };
 
@@ -128,6 +138,7 @@ query
       const config = await loadConfig(optsWithGlobals);
       configureLogger(config);
 
+      const monumentClassificationStorage = require('../../utils/monumentClassificationStorage');
       const storageAdapters = {
         memorials: {
           getAll: require('../../utils/database').getAllMemorials,
@@ -140,6 +151,10 @@ query
         graveCards: {
           getAll: require('../../utils/graveCardStorage').getAllGraveCards,
           getById: require('../../utils/graveCardStorage').getGraveCardById
+        },
+        monumentClassifications: {
+          getAll: monumentClassificationStorage.getAllClassifications,
+          getById: monumentClassificationStorage.getClassificationById
         }
       };
 

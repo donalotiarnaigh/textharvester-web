@@ -7,6 +7,7 @@ const TypographicAnalysisPrompt = require('./TypographicAnalysisPrompt');
 const BurialRegisterPrompt = require('./BurialRegisterPrompt');
 const MonumentPhotoOCRPrompt = require('./MonumentPhotoOCRPrompt');
 const GraveCardPrompt = require('./GraveCardPrompt');
+const MonumentClassificationPrompt = require('./MonumentClassificationPrompt');
 const ProviderPromptManager = require('../ProviderPromptManager');
 const { MEMORIAL_FIELDS } = require('../types/memorialFields');
 
@@ -218,6 +219,25 @@ const typographicAnalysisTemplates = {
   })
 };
 
+const monumentClassificationTemplates = {
+  openai: new MonumentClassificationPrompt({
+    version: '1.0.0',
+    provider: 'openai'
+  }),
+  anthropic: new MonumentClassificationPrompt({
+    version: '1.0.0',
+    provider: 'anthropic'
+  }),
+  gemini: new MonumentClassificationPrompt({
+    version: '1.0.0',
+    provider: 'gemini'
+  }),
+  mock: new MonumentClassificationPrompt({
+    version: '1.0.0',
+    provider: 'mock'
+  })
+};
+
 
 
 /**
@@ -269,6 +289,15 @@ const getPrompt = (provider, templateName, version = 'latest') => {
     const promptInstance = typographicAnalysisTemplates[provider];
     if (!promptInstance) {
       throw new Error(`No typographic analysis template found for provider: ${provider}`);
+    }
+    return promptInstance;
+  }
+
+  // Handle monument classification template
+  if (templateName === 'monumentClassification') {
+    const promptInstance = monumentClassificationTemplates[provider];
+    if (!promptInstance) {
+      throw new Error(`No monument classification template found for provider: ${provider}`);
     }
     return promptInstance;
   }

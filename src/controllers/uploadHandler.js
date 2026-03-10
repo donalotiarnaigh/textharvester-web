@@ -73,7 +73,7 @@ const handleFileUpload = async (req, res) => {
     logger.info(`Upload request size: ${sizeMB}MB`);
   }
 
-  const validSourceTypes = ['record_sheet', 'monument_photo', 'burial_register', 'grave_record_card', 'typographic_analysis'];
+  const validSourceTypes = ['record_sheet', 'monument_photo', 'burial_register', 'grave_record_card', 'typographic_analysis', 'monument_classification'];
 
   try {
     const uploadMiddleware = multer(multerConfig).fields([{ name: 'file', maxCount: 10 }]);

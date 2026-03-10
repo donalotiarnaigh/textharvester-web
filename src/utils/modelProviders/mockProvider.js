@@ -39,6 +39,8 @@ class MockProvider extends BaseVisionProvider {
       content = this.getMockBurialRegisterResponse();
     } else if (templateName === 'graveCard') {
       content = this.getMockGraveCardResponse();
+    } else if (templateName === 'monumentClassification') {
+      content = this.getMockMonumentClassificationResponse();
     } else {
       content = this.getMockMemorialResponse();
     }
@@ -80,6 +82,32 @@ class MockProvider extends BaseVisionProvider {
       section: 'North',
       deceased_name: 'John Smith',
       interment_date: '1920-05-15'
+    };
+  }
+
+  getMockMonumentClassificationResponse() {
+    return {
+      memorial_number: '123',
+      broad_type: 'Headstone',
+      detailed_type: 'Headstone with round top',
+      memorial_condition: 'Sound and in situ',
+      inscription_condition: 'All legible',
+      height_mm: 1200,
+      width_mm: 600,
+      depth_mm: 100,
+      material_primary: 'Granite',
+      material_base: null,
+      orientation: 'N',
+      additional_elements: 'Footstone present',
+      text_panel_shape: 'Rectangle',
+      text_panel_definition: 'Rectilinear',
+      inscription_technique: 'Incised',
+      letter_style: 'Roman',
+      central_motifs: 'Cross',
+      marginal_motifs: 'Floral border',
+      date_of_monument: '1850-1870',
+      confidence_level: 'High',
+      comments: 'Well-preserved example'
     };
   }
 

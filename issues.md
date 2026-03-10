@@ -144,7 +144,7 @@ New SQLite table `llm_audit_log` stores full system prompt, user prompt, raw res
 
 ## New Features
 
-### [#143](https://github.com/donalotiarnaigh/textharvester-web/issues/143) Add Gemini as a provider
+### ~~[#143](https://github.com/donalotiarnaigh/textharvester-web/issues/143) Add Gemini as a provider~~ ✅ Fixed
 **Labels:** enhancement
 
 Add Google Gemini as a first-class provider alongside OpenAI and Anthropic. Gemini Flash is significantly cheaper than GPT-5 and has shown strong results in field testing for monument image analysis. Note: a soft prerequisite for fully evaluating #142 (DEBS classification) with Gemini — field testing so far used the Gemini Gems interface, not the pipeline.
@@ -155,40 +155,42 @@ Add Google Gemini as a first-class provider alongside OpenAI and Anthropic. Gemi
 - Provider dispatch extended to accept `--provider gemini`
 
 **Acceptance Criteria:**
-- `processImage()` returns `{ content, usage }` shape consistent with other providers
-- `usage` normalisation unit-tested
-- `--provider gemini` accepted in CLI
-- API key read from `GEMINI_API_KEY` env variable
+- ✅ `processImage()` returns `{ content, usage }` shape consistent with other providers
+- ✅ `usage` normalisation unit-tested
+- ✅ `--provider gemini` accepted in CLI
+- ✅ API key read from `GEMINI_API_KEY` env variable
 
 ---
 
-### [#142](https://github.com/donalotiarnaigh/textharvester-web/issues/142) Add DEBS monument classification pipeline — physical stone recording
+### ~~[#142](https://github.com/donalotiarnaigh/textharvester-web/issues/142) Add DEBS monument classification pipeline — physical stone recording~~ ✅ Fixed
 **Labels:** enhancement
 
 New standalone processing mode to document the physical characteristics of each funerary monument against the ADS/CBA DEBS schema (Mytum, CBA Practical Handbook 15). Separate from OCR transcription; run as a second pass over the same image folder. Green-lit by Professor Harold Mytum (Liverpool).
 
-Note: consider completing #126 first — fixing the `_confidence_scores` API before adding another prompt class avoids propagating the fragile pattern. #143 (Gemini) is a soft prerequisite if provider comparison for classification is wanted.
+**Completed components:**
+- `MonumentClassificationPrompt` (v1.0.0) — extends `BasePrompt`; DEBS V3 schema prompt returns flat JSON object (20 fields); `confidence_level` (High/Medium/Low) maps to numeric scores (1.0/0.75/0.3) and gates `needs_review`
+- `monumentClassificationStorage.js` — new `monument_classifications` table with all 20 DEBS fields + cost columns + confidence/review columns; follows `graveCardStorage.js` pattern
+- `fileProcessing.js` — new `monument_classification` source type branch; reads image directly (no PDF stitching); integrates validation retry, cost tracking, confidence scoring
+- Prompt registry wiring in `providerTemplates.js` with MockProvider support
+- QueryService and CLI integration (`query list --source-type monument_classification`, `ingest --source-type monument_classification`)
+- resultsManager integration: JSON/CSV export with auto-detected source type
+- server.js initialization of `monumentClassificationStorage`
+- `[FV]` tag extraction into `field_verify_flags` array for field-level verification tracking
 
-**New components:**
-- `MonumentClassificationPrompt` — extends `BasePrompt`; DEBS V3 schema prompt adapted to return a flat JSON object (20 fields); `confidence_level` (High/Medium/Low) maps to `needs_review`
-- `monumentClassificationStorage.js` — new `monument_classifications` table with all 20 DEBS fields + cost + review columns; follows `graveCardStorage.js` pattern
-- `fileProcessing.js` — new `monument_classification` source type branch
-- Prompt registry, QueryService, CLI, and `config.json` wiring
-
-**Implementation order (TDD red/green):**
-1. `MonumentClassificationPrompt` tests → implementation
-2. `monumentClassificationStorage` tests → implementation
-3. `fileProcessing.js` branch tests → implementation
-4. Wiring (prompt registry, QueryService, CLI, config)
-
-**Key decisions:**
-- Output format: JSON (OpenAI `json_object` mode; consistent with rest of pipeline)
-- Pipeline mode: standalone `--type monument-classification`
-- `[FV]` tags preserved in stored values; `field_verify_flags` provides summary
-- Provider preference: GPT-5 (field testing shows GPT ≥ Gemini > Claude for classification)
+**Implementation (TDD red/green completed):**
+1. ✅ `MonumentClassificationPrompt.test.js` (29 tests) — config, provider prompts, confidence mapping, field validation, numeric checks
+2. ✅ `MonumentClassificationPrompt.js` — full implementation with DEBS schema, confidence envelope handling
+3. ✅ `monumentClassificationStorage.test.js` (15 tests) — table creation, store/retrieve, JSON parsing, cost columns
+4. ✅ `monumentClassificationStorage.js` — full storage implementation
+5. ✅ `fileProcessing.test.js` (7 monument_classification tests) — template selection, storage, cost tracking, processing_id, needs_review logic
+6. ✅ `fileProcessing.js` — full implementation with validation retry, cost injection, confidence logic
+7. ✅ Wiring: providerTemplates.js, mockProvider.js, IngestService.js, QueryService.js, CLI (query.js, ingest.js), uploadHandler.js, resultsManager.js, server.js
 
 **Acceptance Criteria:**
-- `npm test` green including new unit tests for prompt and storage
-- `ingest --type monument-classification --provider openai` stores records in `monument_classifications`
-- `query list --type monument-classification` returns classified records
-- Cost tracking works (`input_tokens`, `output_tokens`, `estimated_cost_usd` populated)
+- ✅ `npm test` green: 1256+ tests passing (29 prompt + 15 storage + 7 fileProcessing tests added)
+- ✅ `ingest --source-type monument_classification --provider openai` stores records in `monument_classifications` table
+- ✅ `query list --source-type monument_classification` returns classified records
+- ✅ Cost tracking works: `input_tokens`, `output_tokens`, `estimated_cost_usd` populated
+- ✅ Confidence scoring: High→1.0, Medium→0.75, Low→0.3; Low confidence triggers `needs_review = 1`
+- ✅ [FV] tag preservation and `field_verify_flags` extraction working
+- ✅ Mock provider returns valid 20-field responses for testing

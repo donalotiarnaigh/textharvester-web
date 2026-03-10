@@ -6,6 +6,7 @@ const { getProcessedResults, getProcessingProgress } = require('../utils/fileQue
 const { getAllMemorials, getMemorialById, db } = require('../utils/database');
 const { getAllBurialRegisterEntries, getBurialRegisterEntryById } = require('../utils/burialRegisterStorage');
 const { getAllGraveCards, getGraveCardById } = require('../utils/graveCardStorage');
+const { getAllClassifications, getClassificationById } = require('../utils/monumentClassificationStorage');
 const { validateAndConvertRecords } = require('../utils/dataValidation');
 const QueryService = require('../services/QueryService');
 const SchemaManager = require('../services/SchemaManager');
@@ -23,6 +24,10 @@ const storageAdapters = {
   graveCards: {
     getAll: getAllGraveCards,
     getById: getGraveCardById
+  },
+  monumentClassifications: {
+    getAll: getAllClassifications,
+    getById: getClassificationById
   }
 };
 const queryService = new QueryService(config, storageAdapters);
@@ -87,6 +92,40 @@ const MEMORIAL_CSV_COLUMNS = [
   'confidence_coverage',
   'needs_review',
   'reviewed_at',
+  'validation_warnings',
+  'processing_id'
+];
+
+// Monument Classification CSV column order
+const MONUMENT_CLASSIFICATION_CSV_COLUMNS = [
+  'memorial_number',
+  'broad_type',
+  'detailed_type',
+  'memorial_condition',
+  'inscription_condition',
+  'height_mm',
+  'width_mm',
+  'depth_mm',
+  'material_primary',
+  'material_base',
+  'orientation',
+  'additional_elements',
+  'text_panel_shape',
+  'text_panel_definition',
+  'inscription_technique',
+  'letter_style',
+  'central_motifs',
+  'marginal_motifs',
+  'date_of_monument',
+  'confidence_level',
+  'comments',
+  'file_name',
+  'ai_provider',
+  'prompt_template',
+  'prompt_version',
+  'processed_date',
+  'confidence_scores',
+  'needs_review',
   'validation_warnings',
   'processing_id'
 ];
@@ -186,6 +225,35 @@ async function downloadResultsJSON(req, res) {
       // Generate filename
       defaultFilename = `grave_cards_${moment().format('YYYYMMDD_HHmmss')}.json`;
       logger.info(`Exporting grave cards JSON: ${results.length} entries`);
+    } else if (sourceType === 'monument_classification') {
+      // Get monument classifications
+      const { records } = await queryService.list({ sourceType: 'monument_classification', limit: 1000000 });
+      const results = records;
+
+      // Transform and parse data_json
+      validatedResults = results.map(classification => {
+        let classificationData = {};
+        try {
+          if (typeof classification.data_json === 'string') {
+            classificationData = JSON.parse(classification.data_json);
+          } else {
+            classificationData = classification.data_json || {};
+          }
+        } catch (e) {
+          logger.warn(`Failed to parse data_json for classification ID ${classification.id}`, e);
+        }
+
+        return {
+          ...classification,
+          ...classificationData, // Merge classification data at top level
+          fileName: classification.file_name,
+          source_type: 'monument_classification'
+        };
+      });
+
+      // Generate filename
+      defaultFilename = `monuments_${moment().format('YYYYMMDD_HHmmss')}.json`;
+      logger.info(`Exporting monument classifications JSON: ${results.length} entries`);
     } else {
       // Get memorials (default)
       const { records } = await queryService.list({ sourceType: 'memorial', limit: 1000000 });
@@ -244,7 +312,8 @@ async function detectSourceType() {
     const standardQueries = [
       new Promise(r => db.get('SELECT MAX(processed_date) as max_date FROM memorials', [], (err, row) => r({ type: 'memorial', date: row?.max_date }))),
       new Promise(r => db.get('SELECT MAX(processed_date) as max_date FROM burial_register_entries', [], (err, row) => r({ type: 'burial_register', date: row?.max_date }))),
-      new Promise(r => db.get('SELECT MAX(processed_date) as max_date FROM grave_cards', [], (err, row) => r({ type: 'grave_record_card', date: row?.max_date })))
+      new Promise(r => db.get('SELECT MAX(processed_date) as max_date FROM grave_cards', [], (err, row) => r({ type: 'grave_record_card', date: row?.max_date }))),
+      new Promise(r => db.get('SELECT MAX(processed_date) as max_date FROM monument_classifications', [], (err, row) => r({ type: 'monument_classification', date: row?.max_date })))
     ];
 
     // Get all custom schemas and query their tables
@@ -439,6 +508,45 @@ async function downloadResultsCSV(req, res) {
       const safeName = schema.name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
       defaultFilename = `${safeName}_${moment().format('YYYYMMDD_HHmmss')}.csv`;
       logger.info(`Exporting custom schema CSV (${schema.name}): ${entryCount} entries with ${csvColumns.length} columns`);
+    } else if (sourceType === 'monument_classification') {
+      // Get monument classifications
+      const { records } = await queryService.list({ sourceType: 'monument_classification', limit: 1000000 });
+      const results = records;
+      entryCount = results.length;
+
+      // Parse and flatten monument classification data
+      const flattenedRecords = results.map(classification => {
+        let classificationData = {};
+        try {
+          if (typeof classification.data_json === 'string') {
+            classificationData = JSON.parse(classification.data_json);
+          } else {
+            classificationData = classification.data_json || {};
+          }
+        } catch (e) {
+          logger.warn(`Failed to parse data_json for classification ID ${classification.id}`, e);
+        }
+
+        // Merge top-level fields with classification data
+        const mergedData = {
+          id: classification.id,
+          file_name: classification.file_name,
+          processed_date: classification.processed_date,
+          ai_provider: classification.ai_provider,
+          prompt_template: classification.prompt_template,
+          prompt_version: classification.prompt_version,
+          ...classificationData
+        };
+
+        return flattenObject(mergedData);
+      });
+
+      // Convert to CSV with explicit column order
+      csvData = jsonToCsv(flattenedRecords, MONUMENT_CLASSIFICATION_CSV_COLUMNS);
+
+      // Generate filename
+      defaultFilename = `monuments_${moment().format('YYYYMMDD_HHmmss')}.csv`;
+      logger.info(`Exporting monument classifications CSV: ${entryCount} entries`);
     } else {
       // Get memorials (default)
       const { records } = await queryService.list({ sourceType: 'memorial', limit: 1000000 });
@@ -546,6 +654,23 @@ async function getResults(req, res) {
       res.json({
         memorials: transformedResults, // Send as memorials
         sourceType: 'grave_record_card',
+        errors: allErrors.length > 0 ? allErrors : undefined
+      });
+    } else if (sourceType === 'monument_classification') {
+      // Get monument classifications
+      const { records } = await queryService.list({ sourceType: 'monument_classification', limit: 1000000 });
+      const dbResults = records;
+
+      // Transform to match frontend expectations
+      const transformedResults = dbResults.map(classification => ({
+        ...classification,
+        fileName: classification.file_name,
+        source_type: 'monument_classification'
+      }));
+
+      res.json({
+        monuments: transformedResults,
+        sourceType: 'monument_classification',
         errors: allErrors.length > 0 ? allErrors : undefined
       });
     } else if (sourceType.startsWith('custom:')) {
