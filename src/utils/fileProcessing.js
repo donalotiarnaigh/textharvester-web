@@ -13,6 +13,7 @@ const { getMemorialNumberForMonument } = require('./filenameParser');
 const { optimizeImageForProvider, analyzeImageForProvider } = require('./imageProcessor');
 const graveCardProcessor = require('./imageProcessing/graveCardProcessor');
 const graveCardStorage = require('./graveCardStorage');
+const monumentClassificationStorage = require('./monumentClassificationStorage');
 const config = require('../../config.json');
 
 const VALIDATION_RETRY_PREAMBLE =
@@ -125,9 +126,11 @@ async function processFile(filePath, options = {}) {
         ? 'monumentPhotoOCR'
         : sourceType === 'grave_record_card'
           ? 'graveCard'
-          : sourceType === 'typographic_analysis'
-            ? 'typographicAnalysis'
-            : 'memorialOCR');
+          : sourceType === 'monument_classification'
+            ? 'monumentClassification'
+            : sourceType === 'typographic_analysis'
+              ? 'typographicAnalysis'
+              : 'memorialOCR');
 
   const promptVersion = options.promptVersion || 'latest';
 
@@ -415,6 +418,85 @@ async function processFile(filePath, options = {}) {
         entries: processedEntries,
         pageData
       };
+    }
+
+    // Handle monument_classification processing
+    if (sourceType === 'monument_classification') {
+      const startTime = Date.now();
+      log.info(`Processing monument classification via ${providerName}: ${filePath}`);
+
+      // Step 1: Get prompt instance
+      const promptInstance = getPrompt(providerName, 'monumentClassification', promptVersion);
+      const promptConfig = promptInstance.getProviderPrompt(providerName);
+
+      const userPrompt = typeof promptConfig === 'string' ? promptConfig : promptConfig.userPrompt;
+      const systemPrompt = typeof promptConfig === 'object' ? promptConfig.systemPrompt : undefined;
+
+      // Step 2: Process through AI provider + validate (with retry)
+      const { validationResult, usage: classificationUsage } = await processWithValidationRetry(
+        provider,
+        base64Image,
+        userPrompt,
+        { systemPrompt, promptTemplate: promptInstance, log, processingId },
+        (raw) => promptInstance.validateAndConvert(raw)
+      );
+
+      const apiDuration = Date.now() - startTime;
+      log.info(`Monument classification API call completed in ${apiDuration}ms for ${filePath}`);
+
+      const validatedData = validationResult.data;
+      const classificationConfidenceScores = validationResult.confidenceScores;
+      const classificationValidationWarnings = validationResult.validationWarnings;
+
+      // Extract confidence metadata
+      if (classificationConfidenceScores && config.confidence?.enabled !== false) {
+        validatedData.confidence_scores = classificationConfidenceScores;
+        const threshold = config.confidence?.reviewThreshold ?? 0.70;
+        const allScores = Object.values(classificationConfidenceScores);
+        const numericCount = allScores.filter(s => typeof s === 'number').length;
+        validatedData.confidence_coverage = allScores.length > 0 ? numericCount / allScores.length : null;
+        validatedData.needs_review = allScores.some(s => typeof s === 'number' && s < threshold) ? 1 : 0;
+      }
+
+      // Extract validation warnings
+      if (classificationValidationWarnings && classificationValidationWarnings.length > 0) {
+        validatedData.validation_warnings = classificationValidationWarnings;
+        validatedData.needs_review = 1; // force flag even if confidence disabled
+      }
+
+      log.info(`${providerName} monument classification response validated successfully for ${filePath}`);
+
+      // Step 3: Add metadata
+      const filename = path.basename(filePath);
+      validatedData.fileName = filename;
+      validatedData.ai_provider = providerName;
+      validatedData.model_version = provider.getModelVersion();
+      validatedData.prompt_template = 'monumentClassification';
+      validatedData.prompt_version = promptInstance.version;
+      validatedData.source_type = sourceType;
+
+      // Inject cost data
+      {
+        const modelVersion = provider.getModelVersion();
+        const costConfig = config.costs?.[providerName]?.[modelVersion] || {};
+        validatedData.input_tokens = classificationUsage.input_tokens;
+        validatedData.output_tokens = classificationUsage.output_tokens;
+        validatedData.estimated_cost_usd = calculateCost(classificationUsage, costConfig);
+      }
+
+      // Attach processing ID
+      validatedData.processing_id = processingId;
+
+      // Step 4: Store in database
+      await monumentClassificationStorage.storeClassification(validatedData);
+
+      log.info(`Monument classification data for ${filePath} stored in database with model: ${providerName}`);
+
+      // Clean up file after processing
+      await fs.unlink(filePath);
+      log.info(`Cleaned up processed monument classification file: ${filePath}`);
+
+      return validatedData;
     }
 
     // Get the appropriate prompt for this provider

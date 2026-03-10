@@ -12,6 +12,7 @@ const performanceRoutes = require('./src/routes/performanceRoutes');
 const graveCardRoutes = require('./src/routes/graveCardRoutes');
 const graveCardStorage = require('./src/utils/graveCardStorage');
 const llmAuditLog = require('./src/utils/llmAuditLog');
+const monumentClassificationStorage = require('./src/utils/monumentClassificationStorage');
 
 // Initialize grave cards table
 graveCardStorage.initialize().catch(err => {
@@ -21,6 +22,11 @@ graveCardStorage.initialize().catch(err => {
 // Initialize LLM audit log table
 llmAuditLog.initialize().catch(err => {
   logger.error('Error initializing LLM audit log table:', err);
+});
+
+// Initialize monument classifications table
+monumentClassificationStorage.initialize().catch(err => {
+  logger.error('Error initializing monument classifications table:', err);
 });
 
 require('dotenv').config(); // Load environment variables from .env file
