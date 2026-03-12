@@ -16,9 +16,10 @@ export const handleFileUpload = (dropzoneInstance) => {
   dropzoneInstance.on("complete", function (file) {
     console.log("File upload complete:", file.name); // Log when a file upload is complete
 
-    // With autoProcessQueue: false, we must manually trigger the next batch
-    if (dropzoneInstance.getQueuedFiles().length > 0 && dropzoneInstance.getUploadingFiles().length === 0) {
-      console.log("Triggering next batch of files...");
+    // With autoProcessQueue: false, we must manually trigger queue draining.
+    // Remove the getUploadingFiles check to enable continuous pipeline processing instead of wave-based batches.
+    if (dropzoneInstance.getQueuedFiles().length > 0) {
+      console.log("Processing next queued file(s)...");
       dropzoneInstance.processQueue();
     }
   });
