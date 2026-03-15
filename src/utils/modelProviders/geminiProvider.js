@@ -4,6 +4,7 @@ const { promptManager } = require('../prompts/templates/providerTemplates');
 const PerformanceTracker = require('../performanceTracker');
 const { ResponseLengthValidator } = require('../responseLengthValidator');
 const { withRetry, classifyError } = require('../retryHelper');
+const { FatalError } = require('../errorTypes');
 const { extractFirstJsonObject } = require('../jsonExtractor');
 const llmAuditLog = require('../llmAuditLog');
 const logger = require('../logger');
@@ -262,6 +263,13 @@ class GeminiProvider extends BaseVisionProvider {
         error: error.message,
         stack: error.stack
       });
+
+      // Detect fatal errors and wrap as FatalError
+      const errorType = classifyError(error);
+      if (['auth_error', 'quota_error', 'config_error'].includes(errorType)) {
+        throw new FatalError(`Gemini processing failed: ${error.message}`, errorType);
+      }
+
       throw new Error(`Gemini processing failed: ${error.message}`);
     }
   }
@@ -269,16 +277,16 @@ class GeminiProvider extends BaseVisionProvider {
   /**
    * Validate provider-specific configuration
    * @returns {boolean} True if configuration is valid
-   * @throws {Error} If configuration is invalid
+   * @throws {FatalError} If configuration is invalid
    */
   validateConfig() {
     // Check for API key - use instance property directly
     const hasApiKey = this.apiKey || (this.client !== null);
     if (!hasApiKey) {
-      throw new Error('Gemini API key not configured. Check GEMINI_API_KEY environment variable or config.');
+      throw new FatalError('Gemini API key not configured. Check GEMINI_API_KEY environment variable or config.', 'config_error');
     }
     if (!this.model.toLowerCase().includes('gemini')) {
-      throw new Error('Invalid model specified. Must be a Gemini model.');
+      throw new FatalError('Invalid model specified. Must be a Gemini model.', 'config_error');
     }
     return true;
   }

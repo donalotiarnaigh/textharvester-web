@@ -5,6 +5,7 @@ const { promptManager } = require('../prompts/templates/providerTemplates');
 const PerformanceTracker = require('../performanceTracker');
 const { ResponseLengthValidator } = require('../responseLengthValidator');
 const { withRetry, classifyError } = require('../retryHelper');
+const { FatalError } = require('../errorTypes');
 const { extractFirstJsonObject } = require('../jsonExtractor');
 const llmAuditLog = require('../llmAuditLog');
 const logger = require('../logger');
@@ -270,6 +271,13 @@ class AnthropicProvider extends BaseVisionProvider {
         error: error.message,
         stack: error.stack
       });
+
+      // Detect fatal errors and wrap as FatalError
+      const errorType = classifyError(error);
+      if (['auth_error', 'quota_error', 'config_error'].includes(errorType)) {
+        throw new FatalError(`Anthropic processing failed: ${error.message}`, errorType);
+      }
+
       throw new Error(`Anthropic processing failed: ${error.message}`);
     }
   }
@@ -334,10 +342,10 @@ class AnthropicProvider extends BaseVisionProvider {
    */
   validateConfig() {
     if (!this.client) {
-      throw new Error('Anthropic client not initialized. Check API key configuration.');
+      throw new FatalError('Anthropic client not initialized. Check API key configuration.', 'config_error');
     }
     if (!this.model.includes('opus') && !this.model.includes('sonnet') && !this.model.includes('haiku') && !this.model.includes('claude-4')) {
-      throw new Error('Invalid model specified. Must be a vision-capable model.');
+      throw new FatalError('Invalid model specified. Must be a vision-capable model.', 'config_error');
     }
     return true;
   }

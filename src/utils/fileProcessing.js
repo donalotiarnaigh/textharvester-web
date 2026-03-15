@@ -5,7 +5,7 @@ const logger = require('./logger'); // Assuming logger is modularized or its pat
 const { createProvider } = require('./modelProviders');
 const { storeMemorial } = require('./database');
 const { getPrompt } = require('./prompts/templates/providerTemplates');
-const { isEmptySheetError } = require('./errorTypes');
+const { isEmptySheetError, FatalError, isFatalError } = require('./errorTypes');
 const burialRegisterFlattener = require('./burialRegisterFlattener');
 const burialRegisterStorage = require('./burialRegisterStorage');
 const { extractPageNumberFromFilename } = require('./burialRegisterStorage');
@@ -69,6 +69,12 @@ async function processWithValidationRetry(provider, base64Image, userPrompt, pro
         );
       }
     }
+  }
+
+  // After all validation retries exhausted, wrap as fatal error
+  if (lastError && !isFatalError(lastError)) {
+    log.warn(`Validation failed after all retries exhausted. Marking as fatal: ${lastError.message}`);
+    throw new FatalError(lastError.message, 'validation_exhausted');
   }
 
   throw lastError;

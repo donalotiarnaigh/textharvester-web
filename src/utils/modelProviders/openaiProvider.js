@@ -4,6 +4,7 @@ const BaseVisionProvider = require('./baseProvider');
 const { promptManager } = require('../prompts/templates/providerTemplates');
 const PerformanceTracker = require('../performanceTracker');
 const { withRetry, classifyError } = require('../retryHelper');
+const { FatalError } = require('../errorTypes');
 const llmAuditLog = require('../llmAuditLog');
 const logger = require('../logger');
 
@@ -215,6 +216,13 @@ class OpenAIProvider extends BaseVisionProvider {
         phase: 'api_call',
         operation: 'processImage'
       });
+
+      // Detect fatal errors and wrap as FatalError
+      const errorType = classifyError(error);
+      if (['auth_error', 'quota_error', 'config_error'].includes(errorType)) {
+        throw new FatalError(`OpenAI processing failed: ${error.message}`, errorType);
+      }
+
       throw new Error(`OpenAI processing failed: ${error.message}`);
     }
   }
@@ -222,18 +230,18 @@ class OpenAIProvider extends BaseVisionProvider {
   /**
    * Validate provider-specific configuration
    * @returns {boolean} True if configuration is valid
-   * @throws {Error} If configuration is invalid
+   * @throws {FatalError} If configuration is invalid
    */
   validateConfig() {
     if (!this.client) {
-      throw new Error('OpenAI client not initialized. Check API key configuration.');
+      throw new FatalError('OpenAI client not initialized. Check API key configuration.', 'config_error');
     }
     // Allow GPT-4, GPT-5, and vision models
     const isValidModel = this.model.includes('vision') ||
                         this.model.includes('gpt-4') ||
                         this.model.includes('gpt-5');
     if (!isValidModel) {
-      throw new Error('Invalid model specified. Must be a vision-capable model (gpt-4, gpt-5, or vision models).');
+      throw new FatalError('Invalid model specified. Must be a vision-capable model (gpt-4, gpt-5, or vision models).', 'config_error');
     }
     return true;
   }
