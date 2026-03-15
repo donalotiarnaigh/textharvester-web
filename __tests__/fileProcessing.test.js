@@ -171,6 +171,38 @@ describe('File Processing Module', () => {
         .rejects
         .toThrow('Database error');
     });
+
+    test('marks validation errors as fatal after retries exhausted', async () => {
+      const { FatalError } = require('../src/utils/errorTypes');
+      const validationError = new Error('Invalid JSON response');
+      mockValidateAndConvert.mockImplementation(() => {
+        throw validationError;
+      });
+      mockProcessImage.mockResolvedValue({ content: 'invalid', usage: { input_tokens: 0, output_tokens: 0 } });
+
+      try {
+        await processFile(mockFilePath);
+        fail('Expected processFile to throw');
+      } catch (error) {
+        expect(error).toBeInstanceOf(FatalError);
+        expect(error.type).toBe('validation_exhausted');
+        expect(error.fatal).toBe(true);
+      }
+    });
+
+    test('empty sheet errors are returned as error result, not fatal', async () => {
+      const { ProcessingError } = require('../src/utils/errorTypes');
+      const emptySheetError = new ProcessingError('Sheet is empty', 'empty_sheet');
+      mockValidateAndConvert.mockImplementation(() => {
+        throw emptySheetError;
+      });
+      mockProcessImage.mockResolvedValue({ content: '', usage: { input_tokens: 0, output_tokens: 0 } });
+
+      const result = await processFile(mockFilePath);
+      expect(result.error).toBe(true);
+      expect(result.errorType).toBe('empty_sheet');
+      expect(result.fatal).not.toBe(true);
+    });
   });
 
   describe('Data Validation', () => {

@@ -1,20 +1,43 @@
 const logger = require('./logger');
+const { isFatalError } = require('./errorTypes');
 
 /**
  * Classify an error to determine retry strategy.
  * @param {Error} error
- * @returns {'rate_limit' | 'timeout' | 'parse_error' | 'unknown'}
+ * @returns {'auth_error' | 'quota_error' | 'rate_limit' | 'timeout' | 'parse_error' | 'unknown'}
  */
 function classifyError(error) {
+  // Check for authentication errors (401/403)
+  if (error.status === 401 || error.status === 403) {
+    return 'auth_error';
+  }
+  if (error.message && (error.message.toLowerCase().includes('authentication') || error.message.toLowerCase().includes('unauthorized'))) {
+    return 'auth_error';
+  }
+
+  // Check for quota/billing errors (402)
+  if (error.status === 402) {
+    return 'quota_error';
+  }
+  if (error.message && (error.message.toLowerCase().includes('quota') || error.message.toLowerCase().includes('billing'))) {
+    return 'quota_error';
+  }
+
+  // Check for rate limit errors
   if (error.status === 429 || (error.message && error.message.toLowerCase().includes('rate limit'))) {
     return 'rate_limit';
   }
+
+  // Check for timeout errors
   if (error.message && (error.message.toLowerCase().includes('timeout') || error.message.includes('ETIMEDOUT'))) {
     return 'timeout';
   }
+
+  // Check for parse errors
   if (error.message && (error.message.includes('JSON') || error.message.toLowerCase().includes('parse'))) {
     return 'parse_error';
   }
+
   return 'unknown';
 }
 
@@ -63,6 +86,12 @@ async function withRetry(fn, options = {}) {
       return await fn(attempt);
     } catch (error) {
       lastError = error;
+
+      // Short-circuit on fatal errors — do not retry
+      if (isFatalError(error)) {
+        logger.info(`Fatal error encountered: ${error.message}, skipping retries`);
+        throw error;
+      }
 
       if (attempt > maxRetries) {
         break;
