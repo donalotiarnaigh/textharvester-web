@@ -1,6 +1,6 @@
 # Open Issues — P1 / P2
 
-_Last updated: 2026-03-07 (marked #130 fixed; moved #132 and #136 to P1; reordered P2; added dependency notes)_
+_Last updated: 2026-03-16 (closed #116, #124, #125, #126, #142 — all completion audit complete)_
 
 ---
 
@@ -24,6 +24,13 @@ _Last updated: 2026-03-07 (marked #130 fixed; moved #132 and #136 to P1; reorder
 **Branch:** `fix/issue-130-token-cost-tracking` (PR #140)
 
 `processImage()` now returns `{ content, usage }` in both providers. `input_tokens`, `output_tokens`, and `estimated_cost_usd` columns added to all three tables (`memorials`, `burial_register_entries`, `grave_cards`). A `calculateCost(usage, costConfig)` helper in `fileProcessing.js` computes cost from per-model pricing rates in `config.json`. `IngestService.js` accumulates `sessionCostUsd` and halts with a warning when `maxCostPerSession` is exceeded. CLI `system cost [--from] [--to] [--provider]` subcommand added. `storeMemorial()` now takes 23 parameters.
+
+---
+
+### ~~[#116](https://github.com/donalotiarnaigh/textharvester-web/issues/116) Add per-field confidence scoring with human review queue~~ ✅ Fixed
+**Branch:** `feature/typographic-analysis` (PR #117)
+
+Per-field confidence scoring implemented with `{value, confidence}` envelope format for all field types across `MemorialOCRPrompt`, `BurialRegisterPrompt`, and `TypographicAnalysisPrompt`. `_extractValueAndConfidence()` in `BasePrompt` handles both envelope and scalar responses, returning numeric confidence (0–1) or `null` for missing/invalid confidence. Records with any field below `reviewThreshold` (0.70) are flagged with `needs_review = 1`. Frontend displays per-field confidence with color coding (green ≥0.90, yellow 0.70–0.89, red <0.70). CLI provides `query --needs-review` filter for review queue. 45 unit tests added; all 1200+ tests passing.
 
 ---
 
@@ -194,3 +201,43 @@ New standalone processing mode to document the physical characteristics of each 
 - ✅ Confidence scoring: High→1.0, Medium→0.75, Low→0.3; Low confidence triggers `needs_review = 1`
 - ✅ [FV] tag preservation and `field_verify_flags` extraction working
 - ✅ Mock provider returns valid 20-field responses for testing
+
+---
+
+## Backlog — Open Issues
+
+_19 open, unstarted issues organized by category:_
+
+### Advanced Accuracy & ML
+
+**#115** — Fine-tune GPT-4o on Historic Graves verified data for domain-specific accuracy
+**#114** — Implement evaluation metrics (IFR, field-level F1) with Historic Graves ground truth
+**#113** — Implement RimAG (Retrieval-in-the-Middle) two-pass processing strategy
+**#112** — Integrate Logainm API for placename validation (RAG enhancement)
+**#96** — Feature: Enable simultaneous GPT and Claude processing for burial registers
+
+### Architecture & Code Quality
+
+**#105** — Arch: Enforce Filename-Based Identity
+**#102** — Refactor: Abstract StorageService for Record Types
+**#101** — Feat: Implement Strict Validation Middleware
+**#100** — Refactor: Decouple Type-Specific UI Config from main.js
+**#99** — Refactor: Implement Strategy Pattern for Record Processors
+
+### Data Export & Streaming
+
+**#98** — Enhancement: Dynamic CSV Flattening for All Types
+**#39** — Paginate results and stream exports (CSV/JSONL)
+
+### Performance & Optimization
+
+**#40** — Optimize image pipeline and retry caching
+**#41** — Reduce logging verbosity and sample performance metrics
+**#37** — Add controlled concurrency to file processing queue
+**#38** — Respond immediately on upload and offload PDF conversion
+
+### UI/UX & Features
+
+**#26** — Enhancement: Provider-Specific Name Handling Configuration
+**#23** — UI Inconsistency: Copy Button Visible But Only Works When Modal Expanded
+**#10** — Enhancement: Implement Parallel Model Processing & Automated Comparison
