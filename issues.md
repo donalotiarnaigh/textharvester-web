@@ -206,38 +206,77 @@ New standalone processing mode to document the physical characteristics of each 
 
 ## Backlog — Open Issues
 
-_19 open, unstarted issues organized by category:_
+_19 open issues ordered by impact (highest first):_
 
-### Advanced Accuracy & ML
+### High Impact — Data Quality & Accuracy
+
+These directly improve the correctness and trustworthiness of extracted data.
+
+**#114** — Implement evaluation metrics (IFR, field-level F1) with Historic Graves ground truth
+_Without measurement there is no way to know if changes improve or regress quality. Prerequisite for #115._
+
+**#112** — Integrate Logainm API for placename validation (RAG enhancement)
+_Post-processing validation of placenames against an authoritative source; catches a class of error no prompt tuning can fix._
+
+**#113** — Implement RimAG (Retrieval-in-the-Middle) two-pass processing strategy
+_Two-pass extraction has shown significant accuracy gains in VLM literature; highest-leverage prompt-level improvement available._
 
 **#115** — Fine-tune GPT-4o on Historic Graves verified data for domain-specific accuracy
-**#114** — Implement evaluation metrics (IFR, field-level F1) with Historic Graves ground truth
-**#113** — Implement RimAG (Retrieval-in-the-Middle) two-pass processing strategy
-**#112** — Integrate Logainm API for placename validation (RAG enhancement)
-**#96** — Feature: Enable simultaneous GPT and Claude processing for burial registers
-
-### Architecture & Code Quality
+_Domain fine-tuning, but blocked on #114 (need metrics first) and on obtaining a labelled dataset._
 
 **#105** — Arch: Enforce Filename-Based Identity
-**#102** — Refactor: Abstract StorageService for Record Types
-**#101** — Feat: Implement Strict Validation Middleware
-**#100** — Refactor: Decouple Type-Specific UI Config from main.js
-**#99** — Refactor: Implement Strategy Pattern for Record Processors
+_Prevents duplicate/conflicting records from re-processed files; data integrity safeguard._
 
-### Data Export & Streaming
+### Medium Impact — Throughput & Scalability
 
-**#98** — Enhancement: Dynamic CSV Flattening for All Types
+These affect how many files can be processed and how quickly results are delivered.
+
+**#37** — Add controlled concurrency to file processing queue
+_Currently processes one file at a time; parallel processing would cut batch ingest time proportionally._
+
+**#38** — Respond immediately on upload and offload PDF conversion
+_Users wait for PDF→image conversion before getting a response; async offloading improves perceived responsiveness._
+
 **#39** — Paginate results and stream exports (CSV/JSONL)
+_Large result sets cause memory pressure and slow UI; pagination is essential as data grows._
 
-### Performance & Optimization
+**#96** — Enable simultaneous GPT and Claude processing for burial registers
+_Run two providers in parallel and compare/merge; improves throughput and enables consensus quality checks._
+
+**#10** — Implement Parallel Model Processing & Automated Comparison
+_Broader version of #96 across all record types; enables provider benchmarking._
+
+### Medium Impact — Code Health & Maintainability
+
+These reduce defect risk and make future feature work cheaper.
+
+**#99** — Refactor: Implement Strategy Pattern for Record Processors
+_`fileProcessing.js` has three near-identical branches; a strategy pattern would cut duplication and simplify adding new types._
+
+**#102** — Refactor: Abstract StorageService for Record Types
+_Four storage modules (`database.js`, `burialRegisterStorage.js`, `graveCardStorage.js`, `monumentClassificationStorage.js`) share boilerplate; a base class would reduce maintenance surface._
+
+**#101** — Implement Strict Validation Middleware
+_Input validation is scattered; centralised middleware prevents malformed data from reaching processing logic._
+
+**#100** — Decouple Type-Specific UI Config from main.js
+_Frontend `main.js` has type-specific rendering logic interleaved; extracting config improves readability and testability._
+
+### Lower Impact — Polish & Optimisation
+
+Valuable but not blocking other work or affecting correctness.
+
+**#98** — Dynamic CSV Flattening for All Types
+_Current CSV export is hard-coded per type; dynamic flattening would auto-adapt to schema changes._
 
 **#40** — Optimize image pipeline and retry caching
+_Performance improvement; current pipeline works but wastes bandwidth on retries of already-converted images._
+
 **#41** — Reduce logging verbosity and sample performance metrics
-**#37** — Add controlled concurrency to file processing queue
-**#38** — Respond immediately on upload and offload PDF conversion
+_Operational polish; noisy logs make debugging harder but don't affect functionality._
 
-### UI/UX & Features
+**#26** — Provider-Specific Name Handling Configuration
+_Edge-case name formatting differences between providers; low frequency in practice._
 
-**#26** — Enhancement: Provider-Specific Name Handling Configuration
 **#23** — UI Inconsistency: Copy Button Visible But Only Works When Modal Expanded
-**#10** — Enhancement: Implement Parallel Model Processing & Automated Comparison
+_Minor UX bug; button is visible but non-functional in collapsed state._
