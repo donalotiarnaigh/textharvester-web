@@ -5,6 +5,22 @@ jest.mock('../../src/utils/fileProcessing', () => ({
   processFile: jest.fn()
 }));
 jest.mock('../../src/utils/dynamicProcessing'); // Auto-mock the class
+jest.mock('../../src/utils/fileQueue', () => ({
+  enqueueFiles: jest.fn()
+}));
+jest.mock('../../src/utils/pdfConverter', () => ({
+  convertPdfToJpegs: jest.fn()
+}));
+jest.mock('../../src/utils/conversionTracker', () => ({
+  registerPdfsForConversion: jest.fn(),
+  markConversionComplete: jest.fn(),
+  markConversionFailed: jest.fn(),
+  isConverting: jest.fn(),
+  resetConversionState: jest.fn()
+}));
+jest.mock('../../src/utils/processingFlag', () => ({
+  clearProcessingCompleteFlag: jest.fn()
+}));
 // Removed explicit jest.mock for logger to use spyOn instead
 
 
@@ -284,6 +300,193 @@ describe('IngestService', () => {
         success: false,
         error: 'Validation Failed'
       });
+    });
+  });
+
+  describe('prepareAndQueue', () => {
+    let mockEnqueueFiles;
+    let mockConversionTracker;
+    let mockPdfConverter;
+    let mockClearFlag;
+
+    beforeEach(() => {
+      mockEnqueueFiles = require('../../src/utils/fileQueue').enqueueFiles;
+      mockConversionTracker = require('../../src/utils/conversionTracker');
+      mockPdfConverter = require('../../src/utils/pdfConverter');
+      mockClearFlag = require('../../src/utils/processingFlag').clearProcessingCompleteFlag;
+
+      jest.clearAllMocks();
+    });
+
+    test('should return immediately without awaiting PDF conversion', async () => {
+      const files = [
+        { path: '/uploads/file1.pdf', originalname: 'file1.pdf', mimetype: 'application/pdf' }
+      ];
+
+      // Deliberately make PDF conversion slow/never complete
+      mockPdfConverter.convertPdfToJpegs.mockImplementation(
+        () => new Promise(() => { /* never resolves */ })
+      );
+
+      const options = {
+        sourceType: 'burial_register',
+        volumeId: 'vol1',
+        provider: 'openai',
+        promptVersion: '1.0'
+      };
+
+      // This should resolve immediately
+      const startTime = Date.now();
+      const result = await service.prepareAndQueue(files, options);
+      const duration = Date.now() - startTime;
+
+      // Should return count of files (1 PDF)
+      expect(result).toBe(1);
+      // Should return quickly (< 100ms, not waiting for PDF conversion)
+      expect(duration).toBeLessThan(100);
+      // PDF converter should NOT have been awaited
+      expect(mockConversionTracker.registerPdfsForConversion).toHaveBeenCalledWith(files);
+    });
+
+    test('should enqueue non-PDF files immediately', async () => {
+      const files = [
+        { path: '/uploads/image.jpg', originalname: 'image.jpg', mimetype: 'image/jpeg' }
+      ];
+
+      const options = {
+        sourceType: 'memorial',
+        provider: 'openai',
+        promptVersion: '1.0'
+      };
+
+      await service.prepareAndQueue(files, options);
+
+      expect(mockEnqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: '/uploads/image.jpg',
+            provider: 'openai',
+            sourceType: 'memorial'
+          })
+        ])
+      );
+    });
+
+    test('should enqueue grave_record_card PDFs directly (no background conversion)', async () => {
+      const files = [
+        { path: '/uploads/grave.pdf', originalname: 'grave.pdf', mimetype: 'application/pdf' }
+      ];
+
+      const options = {
+        sourceType: 'grave_record_card',
+        provider: 'anthropic',
+        promptVersion: '1.0'
+      };
+
+      await service.prepareAndQueue(files, options);
+
+      // Should enqueue directly without registering for conversion
+      expect(mockEnqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: '/uploads/grave.pdf',
+            mimetype: 'application/pdf',
+            sourceType: 'grave_record_card'
+          })
+        ])
+      );
+      expect(mockConversionTracker.registerPdfsForConversion).not.toHaveBeenCalled();
+    });
+
+    test('should handle mixed PDF and non-PDF uploads', async () => {
+      const files = [
+        { path: '/uploads/image.jpg', originalname: 'image.jpg', mimetype: 'image/jpeg' },
+        { path: '/uploads/file.pdf', originalname: 'file.pdf', mimetype: 'application/pdf' }
+      ];
+
+      const options = {
+        sourceType: 'burial_register',
+        volumeId: 'vol1',
+        provider: 'openai',
+        promptVersion: '1.0'
+      };
+
+      await service.prepareAndQueue(files, options);
+
+      // Non-PDF should be enqueued
+      expect(mockEnqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: '/uploads/image.jpg'
+          })
+        ])
+      );
+      // PDF should be registered for background conversion
+      expect(mockConversionTracker.registerPdfsForConversion).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: '/uploads/file.pdf'
+          })
+        ])
+      );
+    });
+
+    test('should return total count of all files', async () => {
+      const files = [
+        { path: '/uploads/image.jpg', originalname: 'image.jpg', mimetype: 'image/jpeg' },
+        { path: '/uploads/file.pdf', originalname: 'file.pdf', mimetype: 'application/pdf' }
+      ];
+
+      const options = {
+        sourceType: 'burial_register',
+        volumeId: 'vol1',
+        provider: 'openai',
+        promptVersion: '1.0'
+      };
+
+      const result = await service.prepareAndQueue(files, options);
+
+      // Should return 2 (1 non-PDF + 1 PDF)
+      expect(result).toBe(2);
+    });
+
+    test('should clear processing complete flag', async () => {
+      const files = [
+        { path: '/uploads/image.jpg', originalname: 'image.jpg', mimetype: 'image/jpeg' }
+      ];
+
+      const options = {
+        sourceType: 'memorial',
+        provider: 'openai',
+        promptVersion: '1.0'
+      };
+
+      await service.prepareAndQueue(files, options);
+
+      expect(mockClearFlag).toHaveBeenCalled();
+    });
+
+    test('should pass schemaId through to enqueued files', async () => {
+      const files = [
+        { path: '/uploads/image.jpg', originalname: 'image.jpg', mimetype: 'image/jpeg' }
+      ];
+
+      const options = {
+        sourceType: 'memorial',
+        provider: 'openai',
+        promptVersion: '1.0',
+        schemaId: 'custom-schema-123'
+      };
+
+      await service.prepareAndQueue(files, options);
+
+      expect(mockEnqueueFiles).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            schemaId: 'custom-schema-123'
+          })
+        ])
+      );
     });
   });
 });

@@ -32,7 +32,8 @@ describe('ProgressClient', () => {
         progress: 45,
         state: 'ocr',
         errors: [],
-        files: {}
+        files: {},
+        conversion: null
       });
       expect(fetch).toHaveBeenCalledWith('/processing-status', expect.any(Object));
     });
