@@ -38,8 +38,9 @@ Direct improvements to correctness and trustworthiness of extracted data.
 **#114** — Implement evaluation metrics (IFR, field-level F1) with Historic Graves ground truth
 Without measurement there is no way to know if changes improve or regress quality. Prerequisite for #115.
 
-**#112** — Integrate Logainm API for placename validation (RAG enhancement)
+**#112** — ~~Integrate Logainm API for placename validation (RAG enhancement)~~ ⏸️ Deferred
 Post-processing validation of placenames against an authoritative source; catches a class of error no prompt tuning can fix.
+**Exploratory finding (2026-03-18):** The primary record type (memorials/monument photos) has no structured placename fields — location data is embedded in free-text `inscription` only. Logainm integration maps cleanly to burial registers (`parish_header_raw`, `county_header_raw`, `abode_raw`) but burial registers are not the primary business use case. Extracting placenames from inscription text would require NER/regex parsing, adding significant complexity for uncertain value. Deferred until structured placename fields are added to the memorial schema or burial register processing becomes a priority.
 
 **#113** — Implement RimAG (Retrieval-in-the-Middle) two-pass processing strategy
 Two-pass extraction has shown significant accuracy gains in VLM literature; highest-leverage prompt-level improvement available.
