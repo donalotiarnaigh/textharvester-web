@@ -1,6 +1,6 @@
 # Issue Tracker — TextHarvester Web
 
-_Last updated: 2026-03-16 · 19 open issues · [15 completed](#completed-issues)_
+_Last updated: 2026-03-18 · 16 open issues · [18 completed](#completed-issues)_
 
 ---
 
@@ -47,18 +47,9 @@ Two-pass extraction has shown significant accuracy gains in VLM literature; high
 **#115** — Fine-tune GPT-4o on Historic Graves verified data for domain-specific accuracy
 Domain fine-tuning, but blocked on #114 (need metrics first) and on obtaining a labelled dataset.
 
-**#105** — Arch: Enforce Filename-Based Identity
-Prevents duplicate/conflicting records from re-processed files; data integrity safeguard.
-
 ### Medium Impact — Throughput & Scalability
 
 Affects batch processing capacity and result delivery speed.
-
-**#37** — Add controlled concurrency to file processing queue
-Currently processes one file at a time; parallel processing would cut batch ingest time proportionally.
-
-**#38** — Respond immediately on upload and offload PDF conversion
-Users wait for PDF→image conversion before getting a response; async offloading improves perceived responsiveness.
 
 **#39** — Paginate results and stream exports (CSV/JSONL)
 Large result sets cause memory pressure and slow UI; pagination is essential as data grows.
@@ -108,7 +99,7 @@ Minor UX bug; button is visible but non-functional in collapsed state.
 
 ## Completed Issues
 
-_15 issues resolved. Click issue number for full details on GitHub._
+_18 issues resolved. Click issue number for full details on GitHub._
 
 ### P1 Completed (5)
 
@@ -120,7 +111,7 @@ _15 issues resolved. Click issue number for full details on GitHub._
 | #130 | Token and cost tracking | [#140](https://github.com/donalotiarnaigh/textharvester-web/pull/140) | ✅ |
 | #132 | Retry on validation or parse failure | [#145](https://github.com/donalotiarnaigh/textharvester-web/pull/145) | ✅ |
 
-### P2 Completed (10)
+### P2 Completed (13)
 
 | # | Title | PR | Status |
 |---|-------|----|----|
@@ -134,6 +125,9 @@ _15 issues resolved. Click issue number for full details on GitHub._
 | #127 | Request correlation ID (processing_id) | [#150](https://github.com/donalotiarnaigh/textharvester-web/pull/150) | ✅ |
 | #133 | LLM audit logging for debugging | [#152](https://github.com/donalotiarnaigh/textharvester-web/pull/152) | ✅ |
 | #142 | DEBS monument classification pipeline | [#153](https://github.com/donalotiarnaigh/textharvester-web/pull/153) | ✅ |
+| #105 | Enforce filename-based identity | [#156](https://github.com/donalotiarnaigh/textharvester-web/pull/156) | ✅ |
+| #38 | Respond immediately on upload and offload PDF conversion | [#157](https://github.com/donalotiarnaigh/textharvester-web/pull/157) | ✅ |
+| #37 | Add controlled concurrency to file processing queue | [#141](https://github.com/donalotiarnaigh/textharvester-web/pull/141) | ✅ |
 
 ### Also Completed
 
