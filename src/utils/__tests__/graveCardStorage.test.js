@@ -117,6 +117,44 @@ describe('GraveCardStorage', () => {
       expect(rows).toHaveLength(1);
       expect(rows[0].processing_id).toBe(processingId);
     });
+
+    test('rejects duplicate grave cards (same file_name, ai_provider)', async () => {
+      // Store first card
+      await GraveCardStorage.storeGraveCard(validCard);
+
+      // Try to store duplicate with same file_name and ai_provider
+      const duplicate = { ...validCard };
+
+      // Verify error is thrown and has isDuplicate flag
+      const error = await GraveCardStorage.storeGraveCard(duplicate).catch(e => e);
+      expect(error).toBeInstanceOf(Error);
+      expect(error.isDuplicate).toBe(true);
+    });
+
+    test('allows same file_name with different ai_provider', async () => {
+      // Store card with openai provider
+      const card1 = { ...validCard, ai_provider: 'openai' };
+      const id1 = await GraveCardStorage.storeGraveCard(card1);
+      expect(id1).toBeDefined();
+
+      // Store same file with different provider should succeed
+      const card2 = { ...validCard, ai_provider: 'claude' };
+      const id2 = await GraveCardStorage.storeGraveCard(card2);
+      expect(id2).toBeDefined();
+      expect(id1).not.toBe(id2);
+
+      // Verify both records exist
+      const rows = await new Promise((resolve, reject) => {
+        db.all('SELECT * FROM grave_cards ORDER BY id', (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        });
+      });
+
+      expect(rows).toHaveLength(2);
+      expect(rows[0].ai_provider).toBe('openai');
+      expect(rows[1].ai_provider).toBe('claude');
+    });
   });
 
   describe('exportCardsToCsv', () => {

@@ -46,7 +46,8 @@ function initialize() {
         ];
         const missing = costMigrations.filter(col => !existingCols.includes(col.name));
         if (missing.length === 0) {
-          resolve();
+          // After migrations complete, deduplicate and add unique index
+          deduplicateAndIndexGraveCards();
           return;
         }
         let remaining = missing.length;
@@ -58,11 +59,33 @@ function initialize() {
               logger.info('grave_cards: added column ' + col.name);
             }
             remaining--;
-            if (remaining === 0) resolve();
+            if (remaining === 0) {
+              deduplicateAndIndexGraveCards();
+            }
           });
         });
       });
     });
+
+    function deduplicateAndIndexGraveCards() {
+      // Deduplicate existing records (keep newest by id)
+      db.run(`DELETE FROM grave_cards WHERE id NOT IN (
+        SELECT MAX(id) FROM grave_cards GROUP BY file_name, ai_provider
+      )`, function(dedupErr) {
+        if (dedupErr) {
+          logger.error('grave_cards dedup failed:', dedupErr);
+          resolve();
+          return;
+        }
+        if (this.changes > 0) logger.info(`grave_cards: removed ${this.changes} duplicates`);
+
+        db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_grave_cards_file_provider ON grave_cards(file_name, ai_provider)', (idxErr) => {
+          if (idxErr) logger.error('grave_cards unique index failed:', idxErr);
+          else logger.info('grave_cards: unique index on (file_name, ai_provider) ensured');
+          resolve();
+        });
+      });
+    }
   });
 }
 /**
@@ -124,6 +147,14 @@ function storeGraveCard(data) {
 
     db.run(sql, [fileName, section, graveNumber, dataJson, aiProvider, inputTokens, outputTokens, estimatedCostUsd, processingId], function (err) {
       if (err) {
+        // Check if this is a unique constraint violation (true duplicate)
+        if (err.code === 'SQLITE_CONSTRAINT' && err.message && err.message.includes('UNIQUE constraint failed')) {
+          logger.warn(`Duplicate grave card detected: file ${fileName}, provider ${aiProvider}`);
+          const error = new Error(`Duplicate entry: grave card already exists for file ${fileName}, provider ${aiProvider}`);
+          error.isDuplicate = true;
+          reject(error);
+          return;
+        }
         logger.error('Error storing grave card:', err);
         reject(err);
         return;

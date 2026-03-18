@@ -371,5 +371,48 @@ describe('Database Storage Layer: Typographic Analysis Fields', () => {
       await expect(storeMemorial({ fileName: 'error.jpg' }))
         .rejects.toThrow('DB Error');
     });
+
+    /**
+     * Duplicate detection: SQLITE_CONSTRAINT should set isDuplicate flag
+     */
+    it('should catch SQLITE_CONSTRAINT and set isDuplicate flag', async () => {
+      // Make mock return SQLITE_CONSTRAINT error with UNIQUE constraint message
+      mockRun.mockImplementationOnce((sql, params, cb) => {
+        const callback = typeof params === 'function' ? params : cb;
+        const err = new Error('UNIQUE constraint failed: memorials(file_name, ai_provider)');
+        err.code = 'SQLITE_CONSTRAINT';
+        callback(err);
+      });
+
+      const data = {
+        ...validCompleteData,
+        fileName: 'duplicate_memorial.jpg'
+      };
+
+      const error = await storeMemorial(data).catch(e => e);
+      expect(error).toBeInstanceOf(Error);
+      expect(error.isDuplicate).toBe(true);
+      expect(error.message).toContain('Duplicate');
+    });
+
+    /**
+     * Non-constraint errors should not have isDuplicate flag
+     */
+    it('should not set isDuplicate for non-UNIQUE constraint errors', async () => {
+      // Make mock return generic database error
+      mockRun.mockImplementationOnce((sql, params, cb) => {
+        const callback = typeof params === 'function' ? params : cb;
+        const err = new Error('Disk I/O error');
+        err.code = 'SQLITE_IOERR';
+        callback(err);
+      });
+
+      const data = { ...validCompleteData };
+
+      const error = await storeMemorial(data).catch(e => e);
+      expect(error).toBeInstanceOf(Error);
+      expect(error.isDuplicate).toBeUndefined();
+      expect(error.message).toBe('Disk I/O error');
+    });
   });
 });
