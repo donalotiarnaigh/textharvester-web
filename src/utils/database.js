@@ -159,6 +159,26 @@ function initializeDatabase() {
       ];
       const missing = migrations.filter(col => !existingCols.includes(col.name));
       runColumnMigration('memorials', missing, 'add_cost_columns_v1');
+
+      // Schedule deduplication and index creation (runs asynchronously after migrations)
+      // Note: SQLite3 driver is async, so these fire after the migrations above
+      setTimeout(() => {
+        // Deduplicate existing records (keep newest by id)
+        db.run(`DELETE FROM memorials WHERE id NOT IN (
+          SELECT MAX(id) FROM memorials GROUP BY file_name, ai_provider
+        )`, function(dedupErr) {
+          if (dedupErr) {
+            logger.error('memorials dedup failed:', dedupErr);
+            return;
+          }
+          if (this.changes > 0) logger.info(`memorials: removed ${this.changes} duplicates`);
+
+          db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_memorials_file_provider ON memorials(file_name, ai_provider)', (idxErr) => {
+            if (idxErr) logger.error('memorials unique index failed:', idxErr);
+            else logger.info('memorials: unique index on (file_name, ai_provider) ensured');
+          });
+        });
+      }, 100);
     });
   });
 }
@@ -357,6 +377,14 @@ function storeMemorial(data) {
 
     db.run(sql, params, function (err) {
       if (err) {
+        // Check if this is a unique constraint violation (true duplicate)
+        if (err.code === 'SQLITE_CONSTRAINT' && err.message && err.message.includes('UNIQUE constraint failed')) {
+          logger.warn(`Duplicate memorial detected: file ${data.fileName}, provider ${data.ai_provider}`);
+          const error = new Error(`Duplicate entry: memorial already exists for file ${data.fileName}, provider ${data.ai_provider}`);
+          error.isDuplicate = true;
+          reject(error);
+          return;
+        }
         logger.error('Error storing memorial:', err);
         reject(err);
         return;

@@ -266,7 +266,24 @@ async function processFile(filePath, options = {}) {
       validatedData.processing_id = processingId;
 
       // Step 6: Store in database
-      await graveCardStorage.storeGraveCard(validatedData);
+      try {
+        await graveCardStorage.storeGraveCard(validatedData);
+      } catch (storageError) {
+        if (storageError.isDuplicate) {
+          log.warn(`Duplicate grave card skipped: ${storageError.message}`);
+          return {
+            fileName: path.basename(filePath),
+            error: true,
+            errorType: 'duplicate',
+            errorMessage: storageError.message,
+            ai_provider: providerName,
+            model_version: provider.getModelVersion(),
+            source_type: sourceType,
+            processing_id: processingId
+          };
+        }
+        throw storageError;
+      }
 
       log.info(`Grave card data for ${filePath} stored in database with model: ${providerName}`);
 
@@ -600,7 +617,25 @@ async function processFile(filePath, options = {}) {
       extractedData.processing_id = processingId;
 
       // Store in database
-      await storeMemorial(extractedData);
+      try {
+        await storeMemorial(extractedData);
+      } catch (storageError) {
+        if (storageError.isDuplicate) {
+          log.warn(`Duplicate memorial skipped: ${storageError.message}`);
+          await fs.unlink(filePath);
+          return {
+            fileName: path.basename(filePath),
+            error: true,
+            errorType: 'duplicate',
+            errorMessage: storageError.message,
+            ai_provider: providerName,
+            model_version: provider.getModelVersion(),
+            source_type: sourceType,
+            processing_id: processingId
+          };
+        }
+        throw storageError;
+      }
 
       log.info(`OCR text for ${filePath} stored in database with model: ${providerName}`);
 

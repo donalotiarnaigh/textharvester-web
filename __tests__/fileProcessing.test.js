@@ -578,9 +578,64 @@ describe('File Processing Module', () => {
     });
   });
 
-  describe('Monument Classification', () => {
+  describe('Duplicate handling', () => {
+    const testFilePath = 'test/duplicate.jpg';
+
+    beforeEach(() => {
+      mockFs.promises.readFile.mockResolvedValue(mockBase64Image);
+      mockFs.promises.unlink.mockResolvedValue();
+    });
+
+    test('handles duplicate memorial gracefully', async () => {
+      // Mock storeMemorial to reject with isDuplicate error
+      const duplicateError = new Error('Duplicate entry: memorial already exists for file test/duplicate.jpg');
+      duplicateError.isDuplicate = true;
+      storeMemorial.mockRejectedValue(duplicateError);
+
+      mockValidateAndConvert.mockReturnValue({
+        data: mockExtractedData,
+        confidenceScores: {},
+        validationWarnings: []
+      });
+      mockProcessImage.mockResolvedValue({ content: mockExtractedData, usage: { input_tokens: 100, output_tokens: 50 } });
+
+      const result = await processFile(testFilePath);
+
+      expect(result).toEqual(expect.objectContaining({
+        error: true,
+        errorType: 'duplicate'
+      }));
+      expect(result.errorMessage).toContain('Duplicate');
+      expect(mockFs.promises.unlink).toHaveBeenCalledWith(testFilePath);
+    });
+
+    test('handles duplicate grave card gracefully', async () => {
+      // Mock graveCardStorage.storeGraveCard to reject with isDuplicate error
+      const graveCardStorage = require('../src/utils/graveCardStorage');
+      const duplicateError = new Error('Duplicate entry: grave card already exists for file test/grave.pdf');
+      duplicateError.isDuplicate = true;
+      graveCardStorage.storeGraveCard.mockRejectedValue(duplicateError);
+
+      mockValidateAndConvert.mockReturnValue({
+        data: { burial_date: '2020-01-01', first_name: 'John' },
+        confidenceScores: {},
+        validationWarnings: []
+      });
+      mockProcessImage.mockResolvedValue({ content: { burial_date: '2020-01-01' }, usage: { input_tokens: 100, output_tokens: 50 } });
+
+      const result = await processFile('test/grave.pdf', { sourceType: 'grave_record_card' });
+
+      expect(result).toEqual(expect.objectContaining({
+        error: true,
+        errorType: 'duplicate'
+      }));
+      expect(result.errorMessage).toContain('Duplicate');
+    });
+  });
+
+  describe('Monument classification', () => {
     const monumentClassificationStorage = require('../src/utils/monumentClassificationStorage');
-    const testFilePath = 'test/monument.jpg';
+    const testFilePath = 'test/image.jpg';
     const mockMonumentData = {
       broad_type: 'Headstone',
       memorial_number: '123',
