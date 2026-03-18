@@ -171,7 +171,7 @@ function initializeDatabase() {
             logger.error('memorials dedup failed:', dedupErr);
             return;
           }
-          if (this.changes > 0) logger.info(`memorials: removed ${this.changes} duplicates`);
+          if (this && this.changes > 0) logger.info(`memorials: removed ${this.changes} duplicates`);
 
           db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_memorials_file_provider ON memorials(file_name, ai_provider)', (idxErr) => {
             if (idxErr) logger.error('memorials unique index failed:', idxErr);
