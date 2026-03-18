@@ -31,6 +31,12 @@ jest.mock('../fileProcessing', () => ({
   processFile: jest.fn()
 }));
 
+jest.mock('../conversionTracker', () => ({
+  getConversionProgress: jest.fn(() => null),
+  resetConversionState: jest.fn(),
+  isConverting: jest.fn(() => false)
+}));
+
 jest.mock('../../config.json', () => ({
   uploadPath: 'uploads',
   processingCompleteFlagPath: 'processing-complete.flag',
@@ -223,6 +229,147 @@ describe('Enhanced File Queue with Error Handling', () => {
       expect(finalProgress.state).toBe('complete');
       expect(finalProgress.progress).toBe(100);
       expect(processFile).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('Conversion State Tracking', () => {
+    let conversionTracker;
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+      conversionTracker = require('../conversionTracker');
+      conversionTracker.getConversionProgress.mockReturnValue(null);
+      conversionTracker.isConverting.mockReturnValue(false);
+      cancelProcessing();
+    });
+
+    test('should return converting state when PDFs are being converted', async () => {
+      conversionTracker.getConversionProgress.mockReturnValue({
+        total: 2,
+        completed: 0,
+        currentFile: 'document.pdf',
+        errors: []
+      });
+      conversionTracker.isConverting.mockReturnValue(true);
+
+      // No files enqueued yet, conversion in progress
+      const progress = getProcessingProgress();
+
+      expect(progress.state).toBe('converting');
+      expect(progress.conversion).toEqual({
+        total: 2,
+        completed: 0,
+        currentFile: 'document.pdf',
+        errors: []
+      });
+    });
+
+    test('should include conversion data in processing state', async () => {
+      processFile.mockResolvedValue({
+        memorial_id: 1,
+        fileName: 'file1.jpg'
+      });
+
+      conversionTracker.getConversionProgress.mockReturnValue({
+        total: 2,
+        completed: 1,
+        currentFile: 'document2.pdf',
+        errors: []
+      });
+      conversionTracker.isConverting.mockReturnValue(true);
+
+      const files = [
+        { path: 'uploads/file1.jpg', originalname: 'file1.jpg' }
+      ];
+
+      enqueueFiles(files);
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const progress = getProcessingProgress();
+
+      expect(progress.conversion).toBeDefined();
+      expect(progress.conversion.total).toBe(2);
+      expect(progress.conversion.completed).toBe(1);
+    });
+
+    test('should merge conversion errors into errors array', async () => {
+      conversionTracker.getConversionProgress.mockReturnValue({
+        total: 2,
+        completed: 1,
+        currentFile: null,
+        errors: [
+          { file: '/path/to/file.pdf', message: 'Conversion timeout' }
+        ]
+      });
+      conversionTracker.isConverting.mockReturnValue(false);
+
+      // Enqueue a file so we have totalFiles > 0
+      const files = [
+        { path: 'uploads/file1.jpg', originalname: 'file1.jpg' }
+      ];
+      enqueueFiles(files);
+
+      const progress = getProcessingProgress();
+
+      expect(progress.errors).toBeDefined();
+      expect(progress.errors.some(e => e.errorType === 'conversion_failed')).toBe(true);
+    });
+
+    test('should transition from converting to processing state', async () => {
+      processFile.mockResolvedValue({
+        memorial_id: 1,
+        fileName: 'converted.jpg'
+      });
+
+      // Initially converting
+      conversionTracker.getConversionProgress.mockReturnValue({
+        total: 1,
+        completed: 0,
+        currentFile: 'file.pdf',
+        errors: []
+      });
+      conversionTracker.isConverting.mockReturnValue(true);
+
+      let progress = getProcessingProgress();
+      expect(progress.state).toBe('converting');
+
+      // Conversion completes, files are enqueued
+      conversionTracker.getConversionProgress.mockReturnValue(null);
+      conversionTracker.isConverting.mockReturnValue(false);
+
+      const files = [
+        { path: 'uploads/converted1.jpg', originalname: 'converted1.jpg' },
+        { path: 'uploads/converted2.jpg', originalname: 'converted2.jpg' }
+      ];
+      enqueueFiles(files);
+
+      // Check immediately after enqueue (before processing completes)
+      progress = getProcessingProgress();
+      expect(progress.state).toBe('processing');
+      expect(progress.progress).toBeLessThan(100);
+
+      // Wait for processing to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      progress = getProcessingProgress();
+      expect(progress.state).toBe('complete');
+    });
+
+    test('should reset conversion state when cancelProcessing is called', async () => {
+      conversionTracker.getConversionProgress.mockReturnValue({
+        total: 2,
+        completed: 0,
+        currentFile: 'document.pdf',
+        errors: []
+      });
+      conversionTracker.isConverting.mockReturnValue(true);
+
+      const progress1 = getProcessingProgress();
+      expect(progress1.state).toBe('converting');
+
+      cancelProcessing();
+
+      expect(conversionTracker.resetConversionState).toHaveBeenCalled();
     });
   });
 

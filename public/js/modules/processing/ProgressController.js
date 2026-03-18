@@ -138,7 +138,13 @@ export class ProgressController {
     }
 
     // Update progress bar with current phase
-    this.progressBar.updateProgress(currentProgress, progressData.state);
+    // If converting, show more detailed conversion message
+    let statusMessage = progressData.state;
+    if (progressData.state === 'converting' && progressData.conversion) {
+      console.log('[ProgressController] Converting PDFs:', progressData.conversion);
+      statusMessage = `Converting PDF ${progressData.conversion.completed + 1} of ${progressData.conversion.total}`;
+    }
+    this.progressBar.updateProgress(currentProgress, statusMessage);
 
     // Handle state transitions
     if (progressData.state === 'complete') {
@@ -151,6 +157,10 @@ export class ProgressController {
         console.log('[ProgressController] Scheduling cleanup in 1 second');
         setTimeout(() => this._runCleanup(), 1000);
       }
+    } else if (progressData.state === 'converting') {
+      // Don't trigger completion logic when converting
+      console.log('[ProgressController] PDF conversion in progress, skipping completion checks');
+      return;
     } else if (currentProgress === 100) {
       // We're at 100% but state isn't complete yet
       // This can happen when all files are processed (including errors) but state hasn't updated

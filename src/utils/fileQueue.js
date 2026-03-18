@@ -4,6 +4,7 @@ const logger = require('./logger');
 const config = require('../../config.json');
 const path = require('path');
 const QueueMonitor = require('./queueMonitor');
+const conversionTracker = require('./conversionTracker');
 
 const maxConcurrent = parseInt(
   process.env.UPLOAD_MAX_CONCURRENT || config.upload.maxConcurrent || 3,
@@ -98,6 +99,8 @@ function resetFileProcessingState() {
   for (const key of Object.keys(retryLimits)) {
     delete retryLimits[key];
   }
+  // Also reset conversion state
+  conversionTracker.resetConversionState();
   logger.info('File processing state reset for a new session.');
 }
 
@@ -285,11 +288,25 @@ function getProcessingProgress() {
     processedFiles
   });
 
+  // Get conversion progress if conversion is happening
+  const conversionProgress = conversionTracker.getConversionProgress();
+
+  // If we're converting PDFs but have no files enqueued yet, return converting state
+  if (conversionProgress && totalFiles === 0 && activeWorkers === 0 && processedFiles === 0) {
+    logger.debug('[FileQueue] Converting PDFs, no files enqueued yet');
+    return {
+      state: 'converting',
+      progress: 0,
+      conversion: conversionProgress
+    };
+  }
+
   // Only mark complete if:
   // 1. No files in queue AND
   // 2. No active workers AND
   // 3. All files have been processed
-  if (totalFiles === 0 && activeWorkers === 0 && processedFiles > 0) {
+  // 4. No conversion in progress
+  if (totalFiles === 0 && activeWorkers === 0 && processedFiles > 0 && !conversionProgress) {
     logger.info('[FileQueue] All files processed and no active workers, marking as complete');
     return {
       state: 'complete',
@@ -297,8 +314,16 @@ function getProcessingProgress() {
     };
   }
 
-  // If there are no files and we haven't processed any, we're waiting
+  // If there are no files and we haven't processed any, check conversion
   if (totalFiles === 0) {
+    if (conversionProgress) {
+      logger.debug('[FileQueue] Converting PDFs');
+      return {
+        state: 'converting',
+        progress: 0,
+        conversion: conversionProgress
+      };
+    }
     logger.debug('[FileQueue] No files to process, waiting state');
     return {
       state: 'waiting',
@@ -333,8 +358,16 @@ function getProcessingProgress() {
     }
   });
 
-  // Combine errors and conflict warnings
-  const allWarnings = [...errors, ...conflictWarnings];
+  // Merge conversion errors into errors array if conversion failed
+  let allWarnings = [...errors, ...conflictWarnings];
+  if (conversionProgress && conversionProgress.errors && conversionProgress.errors.length > 0) {
+    const conversionErrors = conversionProgress.errors.map(err => ({
+      fileName: err.file,
+      errorType: 'conversion_failed',
+      errorMessage: `PDF conversion failed: ${err.message}`
+    }));
+    allWarnings = [...allWarnings, ...conversionErrors];
+  }
 
   if (errors.length > 0) {
     logger.warn('[FileQueue] Errors detected during processing', {
@@ -354,19 +387,26 @@ function getProcessingProgress() {
     });
   }
 
-  // Only mark complete if progress is 100% AND no active workers
-  const state = (progress === 100 && activeWorkers === 0) ? 'complete' : 'processing';
+  // Determine state: converting, processing, or complete
+  let state = 'processing';
+  if (progress === 100 && activeWorkers === 0 && !conversionProgress) {
+    state = 'complete';
+  } else if (conversionProgress && conversionTracker.isConverting()) {
+    state = 'converting';
+  }
+
   logger.debug('[FileQueue] Progress calculation complete', {
     progress,
     state,
     hasErrors: errors.length > 0,
-    hasConflicts: conflictWarnings.length > 0
+    hasConflicts: conflictWarnings.length > 0,
+    isConverting: conversionProgress ? true : false
   });
 
   // Get queue performance metrics
   const queueMetrics = queueMonitor.getPerformanceSummary();
 
-  return {
+  const responseObj = {
     state,
     progress,
     errors: allWarnings.length > 0 ? allWarnings : undefined,
@@ -379,10 +419,17 @@ function getProcessingProgress() {
       totalFailed: queueMetrics.totals.failed
     }
   };
+
+  // Include conversion data if converting
+  if (conversionProgress) {
+    responseObj.conversion = conversionProgress;
+  }
+
+  return responseObj;
 }
 
 function cancelProcessing() {
-  if (activeWorkers === 0) {
+  if (activeWorkers === 0 && !conversionTracker.isConverting()) {
     logger.info('No active processing to cancel.');
     return;
   }
@@ -403,6 +450,7 @@ function cancelProcessing() {
   processedFiles = 0;
   totalFiles = 0;
   processedResults = [];
+  conversionTracker.resetConversionState();
   logger.info('Processing has been cancelled and the queue has been cleared.');
 }
 
