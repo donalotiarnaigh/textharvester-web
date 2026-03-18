@@ -133,7 +133,8 @@ export class ProgressClient {
       progress: progressValue,
       state: data.status || 'idle',
       errors: data.errors || [],
-      files: data.files || {}
+      files: data.files || {},
+      conversion: data.conversion || null
     };
     console.log('[ProgressClient] Normalized result:', normalized);
     return normalized;

@@ -164,7 +164,8 @@ function getProcessingStatus(req, res) {
     progress: progressData.progress,
     errors: errors.length > 0 ? errors : undefined,
     queue: progressData.queue, // Include queue data for performance widget
-    files: progressData.files  // Include files data for compatibility
+    files: progressData.files,  // Include files data for compatibility
+    conversion: progressData.conversion || null // Include conversion data if converting
   });
 }
 

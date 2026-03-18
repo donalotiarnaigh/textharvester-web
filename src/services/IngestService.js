@@ -12,6 +12,7 @@ const { clearAllBurialRegisterEntries } = require('../utils/burialRegisterStorag
 const graveCardStorage = require('../utils/graveCardStorage');
 const { getPrompt } = require('../utils/prompts/templates/providerTemplates');
 const { promptManager } = require('../utils/prompts/templates/providerTemplates');
+const conversionTracker = require('../utils/conversionTracker');
 
 class IngestService {
   constructor(config = {}, loggerInstance = null) {
@@ -70,8 +71,10 @@ class IngestService {
 
   /**
    * Prepare files (handle PDFs) and queue them for processing.
+   * Returns immediately without awaiting PDF conversion (offloaded to background).
    * @param {Array} files - Array of file objects from multer
    * @param {Object} options - Processing options (provider, promptVersion, etc.)
+   * @returns {number} Total number of files (PDFs + non-PDFs)
    */
   async prepareAndQueue(files, options) {
     const {
@@ -79,78 +82,111 @@ class IngestService {
       volumeId,
       provider,
       promptVersion,
-      schemaId // Destructure schemaId
+      schemaId
     } = options;
 
     const filesToQueue = [];
+    const pdfsForConversion = [];
 
+    // Separate PDFs from other files
     for (const file of files) {
-      try {
-        if (file.mimetype === 'application/pdf') {
-          // For grave cards, we process the whole PDF (2 pages) at once via GraveCardProcessor
-          // So we do NOT want to split it into generic JPEGs here.
-          if (sourceType === 'grave_record_card') {
-            this.logger.info(`Enqueuing Grave Card PDF for processing: ${file.originalname}`);
-            filesToQueue.push({
-              path: file.path,
-              mimetype: 'application/pdf',
-              provider: provider,
-              promptVersion: promptVersion,
-              source_type: sourceType,
-              sourceType,
-              uploadDir: path.dirname(file.path),
-              ...(schemaId && { schemaId }) // Propagate schemaId
-            });
-          } else {
-            // For other types (e.g. legacy/standard PDF upload), split into images
-            this.logger.info(`Processing PDF file: ${file.originalname}`);
-            const imagePaths = await convertPdfToJpegs(file.path);
-            this.logger.info(`Converted PDF to images: ${imagePaths}`);
-            filesToQueue.push(
-              ...imagePaths.map((imagePath) => ({
-                path: imagePath,
-                mimetype: 'image/jpeg',
-                provider: provider,
-                promptVersion: promptVersion,
-                source_type: sourceType,
-                sourceType,
-                ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
-                uploadDir: path.dirname(imagePath),
-                ...(schemaId && { schemaId }) // Propagate schemaId
-              }))
-            );
-          }
-        } else {
+      if (file.mimetype === 'application/pdf') {
+        // For grave cards, enqueue PDF directly (no background conversion)
+        if (sourceType === 'grave_record_card') {
+          this.logger.info(`Enqueuing Grave Card PDF for processing: ${file.originalname}`);
           filesToQueue.push({
-            ...file,
+            path: file.path,
+            mimetype: 'application/pdf',
             provider: provider,
             promptVersion: promptVersion,
             source_type: sourceType,
             sourceType,
-            ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
             uploadDir: path.dirname(file.path),
-            ...(schemaId && { schemaId }) // Propagate schemaId
+            ...(schemaId && { schemaId })
           });
+        } else {
+          // For other types, register for background conversion
+          pdfsForConversion.push(file);
         }
-      } catch (conversionError) {
-        this.logger.error(
-          `Error converting file ${file.originalname}:`,
-          conversionError
-        );
-        throw conversionError;
+      } else {
+        // Non-PDF files enqueue immediately
+        filesToQueue.push({
+          ...file,
+          provider: provider,
+          promptVersion: promptVersion,
+          source_type: sourceType,
+          sourceType,
+          ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
+          uploadDir: path.dirname(file.path),
+          ...(schemaId && { schemaId })
+        });
       }
     }
 
-    // Enqueue all files in a single call to maintain sequential processing order
-    enqueueFiles(filesToQueue);
+    // Enqueue non-PDF files immediately
+    if (filesToQueue.length > 0) {
+      enqueueFiles(filesToQueue);
+    }
 
-    if (sourceType === 'burial_register') {
+    // Register PDFs for background conversion
+    if (pdfsForConversion.length > 0) {
+      conversionTracker.registerPdfsForConversion(pdfsForConversion);
+      // Start background conversion (fire-and-forget)
+      this._startBackgroundConversion(
+        pdfsForConversion,
+        sourceType,
+        volumeId,
+        provider,
+        promptVersion,
+        schemaId
+      );
+    }
+
+    if (sourceType === 'burial_register' && filesToQueue.length > 0) {
       this.logger.info(`Enqueued ${filesToQueue.length} burial register files for processing (volume_id=${volumeId}, provider=${provider})`);
     }
 
     clearProcessingCompleteFlag();
 
-    return filesToQueue.length;
+    // Return total count of all files (non-PDFs enqueued + PDFs pending conversion)
+    return filesToQueue.length + pdfsForConversion.length;
+  }
+
+  /**
+   * Start background PDF conversion (fire-and-forget).
+   * @private
+   */
+  _startBackgroundConversion(pdfsForConversion, sourceType, volumeId, provider, promptVersion, schemaId) {
+    // Use an async IIFE to avoid blocking
+    (async () => {
+      for (const pdfFile of pdfsForConversion) {
+        try {
+          this.logger.info(`[Background] Converting PDF: ${pdfFile.originalname}`);
+          const imagePaths = await convertPdfToJpegs(pdfFile.path);
+          this.logger.info(`[Background] Converted ${pdfFile.originalname} to ${imagePaths.length} images`);
+
+          // Build file objects for enqueuing
+          const convertedFiles = imagePaths.map((imagePath) => ({
+            path: imagePath,
+            mimetype: 'image/jpeg',
+            provider: provider,
+            promptVersion: promptVersion,
+            source_type: sourceType,
+            sourceType,
+            ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
+            uploadDir: path.dirname(imagePath),
+            ...(schemaId && { schemaId })
+          }));
+
+          // Enqueue converted images
+          enqueueFiles(convertedFiles);
+          conversionTracker.markConversionComplete(pdfFile.path, imagePaths.length);
+        } catch (error) {
+          this.logger.error(`[Background] Error converting PDF ${pdfFile.originalname}:`, error);
+          conversionTracker.markConversionFailed(pdfFile.path, error.message);
+        }
+      }
+    })();
   }
 
   /**
