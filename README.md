@@ -142,7 +142,7 @@ CREATE INDEX IF NOT EXISTS idx_burial_volume_page ON burial_register_entries(vol
 
 ## Running the App Locally
 
-To run the Historic Graves Text Harvester locally, follow these steps:
+To run Curlew TextHarvester locally, follow these steps:
 
 1. **Clone the Repository**:
    ```sh
