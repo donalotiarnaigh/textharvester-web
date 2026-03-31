@@ -1,7 +1,7 @@
 {
   "name": "hg_textharvest_v2",
   "version": "1.0.0",
-  "description": "Text extraction tool for Historic Graves",
+  "description": "Text extraction tool by Curlew Geospatial",
   "main": "index.js",
   "bin": {
     "th": "./bin/textharvester"
