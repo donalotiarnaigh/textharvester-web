@@ -79,7 +79,8 @@ function logValidationResults(status, log) {
   if (configured.length === 0) {
     log.error(
       'No API keys configured. The server will start, but all processing requests will fail. ' +
-      'Set at least one provider API key in your .env file.'
+      'Set at least one provider API key in your .env file.',
+      { message: 'No API keys found in environment' }
     );
     return;
   }
