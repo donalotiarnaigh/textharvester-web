@@ -4,17 +4,28 @@ Welcome to the Text Harvester, a community-driven web application designed to pr
 
 ## Features
 
-- **Drag-and-Drop File Upload**: Drag and drop JPEG images into the drop zone for processing, or click to select individual files or entire folders.
+- **Drag-and-Drop File Upload**: Drag and drop JPEG images or PDFs into the drop zone for processing, or click to select individual files or entire folders. PDFs are automatically converted to JPEG in the background.
 - **Progress Monitoring**: Real-time updates on the status of your uploads and OCR processing.
 - **Multiple AI Providers**: Support for different vision AI models:
-  - OpenAI GPT-5 (default)
-  - Anthropic Claude 4 Sonnet
-- **Burial Register Pilot**: Dedicated prompt template for burial register pages, dual-provider support, and CSV exports for per-entry records.
-- **Typographic Analysis**: Specialized extraction of lettering styles, historical characters, and botanical iconography.
+  - OpenAI GPT-5.4 (default)
+  - Anthropic Claude Opus 4.6
+  - Google Gemini 3.1 Pro
+- **Source Types**:
+  - **Memorial OCR**: Standard memorial/headstone transcription
+  - **Burial Register**: Dedicated prompt template for burial register pages with per-entry CSV exports
+  - **Grave Record Card**: Structured extraction from grave record cards
+  - **Typographic Analysis**: Specialized extraction of lettering styles, historical characters, and botanical iconography
+- **Confidence Scoring**: AI-assigned confidence per field, with automatic flagging for human review when scores fall below configurable thresholds
+- **Cross-Field Validation**: Automatic detection of implausible ages, identical names, and other data quality issues
+- **Token and Cost Tracking**: Per-request token usage and cost estimates, with configurable session cost caps
+- **Retry Logic**: Two-layer retry system — provider-level retries for transient API failures, and validation-level retries for malformed responses
+- **LLM Audit Logging**: Full prompt and response logging for debugging and eval dataset building
+- **Request Correlation**: UUID-based `processing_id` per file for end-to-end audit tracing
 - **Results Management**:
   - Choose to replace existing results or add to them
   - Download extracted text data in JSON or CSV formats
   - Custom filename support for downloads
+  - "Needs Review" filtering and colour-coded confidence panels
 - **Persistent Storage**: SQLite database ensures your data is safely stored and easily accessible
 - **Automatic Backups**: Database backups are created automatically in the `backups/` directory
 
@@ -35,36 +46,52 @@ npm run th -- --help
 ### Key Commands
 
 - **`ingest`**: Batch process images using glob patterns.
-- **`query`**: Search and filter processed records.
+- **`query`**: Search and filter processed records (supports `--needs-review` flag).
 - **`export`**: Export data to JSON or CSV.
-- **`system`**: Manage database and system status.
+- **`system`**: Manage database and system status (includes `system cost` for cost reporting).
 
 For detailed usage instructions, see [CLI Usage Guide](docs/cli/usage.md).
 
 ## Database
 
-The application uses SQLite to store memorial records. The database file is located in `data/memorials.db`.
+The application uses SQLite to store records across four tables. The database file is located in `data/memorials.db`.
 
-### Schema
+### Memorials schema
 ```sql
-CREATE TABLE memorials (
+CREATE TABLE IF NOT EXISTS memorials (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    memorial_number INTEGER,
+    memorial_number TEXT,
     first_name TEXT,
     last_name TEXT,
-    year_of_death INTEGER CONSTRAINT valid_year CHECK (year_of_death IS NULL OR (year_of_death > 1500 AND year_of_death <= 2100 AND typeof(year_of_death) = 'integer')),
+    year_of_death TEXT CONSTRAINT valid_year CHECK (
+        year_of_death IS NULL OR
+        year_of_death = '-' OR
+        year_of_death GLOB '*-*' OR
+        (CAST(year_of_death AS INTEGER) >= 1500 AND CAST(year_of_death AS INTEGER) <= 2100)
+    ),
     inscription TEXT,
-    file_name TEXT NOT NULL,
+    file_name TEXT,
     ai_provider TEXT,
     model_version TEXT,
     prompt_template TEXT,
     prompt_version TEXT,
+    processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    source_type TEXT,
+    site_code TEXT,
     transcription_raw TEXT,
     stone_condition TEXT,
     typography_analysis TEXT,
     iconography TEXT,
     structural_observations TEXT,
-    processed_date DATETIME DEFAULT CURRENT_TIMESTAMP
+    confidence_scores TEXT,
+    confidence_coverage REAL DEFAULT NULL,
+    needs_review INTEGER DEFAULT 0,
+    reviewed_at DATETIME,
+    validation_warnings TEXT,
+    input_tokens INTEGER DEFAULT 0,
+    output_tokens INTEGER DEFAULT 0,
+    estimated_cost_usd REAL DEFAULT 0,
+    processing_id TEXT
 );
 
 -- Indexes for optimized queries
@@ -101,6 +128,12 @@ CREATE TABLE IF NOT EXISTS burial_register_entries (
   prompt_template TEXT,
   prompt_version TEXT,
   processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+  confidence_scores TEXT,
+  confidence_coverage REAL DEFAULT NULL,
+  needs_review INTEGER DEFAULT 0,
+  reviewed_at DATETIME,
+  validation_warnings TEXT,
+  processing_id TEXT,
   UNIQUE(volume_id, file_name, row_index_on_page, ai_provider)
 );
 
@@ -110,21 +143,64 @@ CREATE INDEX IF NOT EXISTS idx_burial_entry_id ON burial_register_entries(entry_
 CREATE INDEX IF NOT EXISTS idx_burial_volume_page ON burial_register_entries(volume_id, page_number);
 ```
 
+### Grave cards schema
+```sql
+CREATE TABLE IF NOT EXISTS grave_cards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_name TEXT NOT NULL,
+    section TEXT,
+    grave_number TEXT,
+    data_json TEXT,
+    processed_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ai_provider TEXT,
+    input_tokens INTEGER DEFAULT 0,
+    output_tokens INTEGER DEFAULT 0,
+    estimated_cost_usd REAL DEFAULT 0,
+    processing_id TEXT
+);
+```
+
+### LLM audit log schema
+```sql
+CREATE TABLE IF NOT EXISTS llm_audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    processing_id TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    model TEXT NOT NULL,
+    system_prompt TEXT,
+    user_prompt TEXT,
+    image_size_bytes INTEGER DEFAULT 0,
+    raw_response TEXT,
+    input_tokens INTEGER DEFAULT 0,
+    output_tokens INTEGER DEFAULT 0,
+    response_time_ms INTEGER DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'success',
+    error_message TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
 ### Data Types and Constraints
-- `memorial_number`: Integer for consistent numeric handling
-- `year_of_death`: Integer with validation (must be between 1500 and 2100, allows NULL)
+- `memorial_number`: Text (supports non-numeric identifiers)
+- `year_of_death`: Text with validation (supports integers 1500-2100, date ranges, dashes, and NULL)
 - `file_name`: Required field (NOT NULL)
-- `ai_provider`: Tracks which AI service was used (e.g., 'openai', 'anthropic')
+- `ai_provider`: Tracks which AI service was used (e.g., 'openai', 'anthropic', 'gemini')
 - `model_version`: Records the specific model version used
 - `prompt_template`: Stores the prompt template used for extraction
 - `prompt_version`: Tracks the version of the prompt used for extraction
+- `processing_id`: UUID correlating a file through the entire processing pipeline
+- `confidence_scores`: JSON object mapping field names to confidence values (0-1)
+- `needs_review`: Flag set when any confidence score falls below the review threshold
+- `validation_warnings`: JSON array of cross-field validation warnings
+- `input_tokens` / `output_tokens` / `estimated_cost_usd`: Token usage and cost tracking per request
 - `processed_date`: Timestamp of when the record was processed
 - Optimized indexes for common search patterns
 
 ## How It Works
 
-1. **Upload Your Images**:
-   - Drag and drop JPEG images into the drop zone or click to select files
+1. **Upload Your Files**:
+   - Drag and drop JPEG images or PDFs into the drop zone or click to select files
+   - PDFs are automatically converted to JPEG pages in the background
    - Choose whether to replace existing results or add to them
    - Support for both single files and entire folders
    - Process up to 1,000 files simultaneously
@@ -132,10 +208,12 @@ CREATE INDEX IF NOT EXISTS idx_burial_volume_page ON burial_register_entries(vol
 2. **Monitor Processing**:
    - Track progress on the processing page
    - Background processing allows continued app use
-   - Real-time status updates
+   - Real-time status updates (including PDF conversion progress)
 
 3. **View and Download Results**:
    - View all processed results on the results page
+   - Confidence scores shown per field with colour coding
+   - "Needs Review" badge for records below the confidence threshold
    - Download in JSON or CSV format
    - Customize download filenames
    - Results persist between sessions
@@ -146,12 +224,12 @@ To run Curlew TextHarvester locally, follow these steps:
 
 1. **Clone the Repository**:
    ```sh
-   git clone https://github.com/dtcurragh/HG_TextHarvester_v2.git
+   git clone https://github.com/donalotiarnaigh/textharvester-web.git
    ```
 
 2. **Install Dependencies**:
    ```sh
-   cd HG_TextHarvester_v2
+   cd textharvester-web
    npm install
    ```
 
@@ -161,11 +239,12 @@ To run Curlew TextHarvester locally, follow these steps:
      ```
      PORT=3000
      # AI Provider Configuration
-     # Set AI_PROVIDER to 'openai' or 'anthropic'
+     # Set AI_PROVIDER to 'openai', 'anthropic', or 'gemini'
      AI_PROVIDER=openai
-     # API Keys
+     # API Keys (add keys for the providers you intend to use)
      OPENAI_API_KEY=your_openai_api_key
      ANTHROPIC_API_KEY=your_anthropic_api_key
+     GOOGLE_API_KEY=your_google_api_key
      ```
 
 4. **Run the App**:
@@ -174,19 +253,33 @@ To run Curlew TextHarvester locally, follow these steps:
    ```
    The app will run on `localhost:3000`
 
+## Configuration
+
+Application settings are managed in `config.json`. Key sections:
+
+- **`openAI`** / **`anthropic`** / **`gemini`**: Per-provider model selection and token limits
+- **`confidence`**: Thresholds for auto-accept (0.90), review (0.70), and reject (0.50)
+- **`costs`**: Per-model token pricing and `maxCostPerSession` cap (default $5.00)
+- **`retry`**: Provider-level retries (3), validation retries (1), backoff settings
+- **`audit`**: Enable/disable LLM audit logging
+- **`graveCard`**: Stitch padding, min resolution, max export interments
+- **`burialRegister`**: Output directory, default volume ID, CSV options
+
 ## Technology
 
 - **Express.js**: Web framework
 - **SQLite**: Persistent data storage
 - **Multer**: File upload handling
-- **AI Vision Models**: 
-  - OpenAI GPT-5
-  - Anthropic Claude 4 Sonnet
+- **AI Vision Models**:
+  - OpenAI GPT-5.4
+  - Anthropic Claude Opus 4.6
+  - Google Gemini 3.1 Pro
 - **Node.js**: Runtime environment
 
 ## Data Management
 
 - Uploaded images are processed and automatically cleaned up after use
+- PDFs are converted to JPEG pages in the background before processing
 - Extracted text is stored in SQLite database
 - Regular database backups are maintained
 - Option to replace or append to existing records
@@ -200,7 +293,7 @@ To run Curlew TextHarvester locally, follow these steps:
 
 ### Burial register prompt template
 
-The `BurialRegisterPrompt` extends the shared `BasePrompt` to describe both page-level metadata and entry-level fields for register pages. The template supports OpenAI and Anthropic providers, exposes provider-specific system/user prompts, and validates the returned JSON before flattening. Expected JSON structure:
+The `BurialRegisterPrompt` extends the shared `BasePrompt` to describe both page-level metadata and entry-level fields for register pages. The template supports OpenAI, Anthropic, and Gemini providers, exposes provider-specific system/user prompts, and validates the returned JSON before flattening. Expected JSON structure:
 
 ```json
 {
@@ -235,7 +328,7 @@ The `BurialRegisterPrompt` extends the shared `BasePrompt` to describe both page
    ```sh
    node scripts/migrate-add-burial-register-table.js
    ```
-2. **Upload a page image** using the existing `/upload` endpoint with `source_type=burial_register` and the desired provider (e.g. `openai` or `anthropic`). The upload handler stores page JSON under `data/burial_register/{volumeId}/pages/{provider}/` and flattens entries into the `burial_register_entries` table.
+2. **Upload a page image** using the existing `/upload` endpoint with `source_type=burial_register` and the desired provider (e.g. `openai`, `anthropic`, or `gemini`). The upload handler stores page JSON under `data/burial_register/{volumeId}/pages/{provider}/` and flattens entries into the `burial_register_entries` table.
 3. **Export per-entry CSVs** once a volume is processed:
    ```sh
    node scripts/export-burial-register-csv.js gpt vol1
@@ -249,7 +342,7 @@ The existing `POST /upload` route accepts burial register uploads without additi
 
 - `file`: JPEG image(s) or PDF of register pages
 - `source_type`: `burial_register`
-- `aiProvider`: `openai` or `anthropic`
+- `aiProvider`: `openai`, `anthropic`, or `gemini`
 - `volume_id` (optional): volume identifier, defaults to `vol1`
 - `promptVersion` (optional): prompt version, defaults to `latest`
 
@@ -286,6 +379,8 @@ The application includes utilities to test and compare different AI providers:
    node scripts/process-with-provider.js openai path/to/image.jpg
    # or
    node scripts/process-with-provider.js anthropic path/to/image.jpg
+   # or
+   node scripts/process-with-provider.js gemini path/to/image.jpg
    ```
 
 2. **Compare results from all providers**:
