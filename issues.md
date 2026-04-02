@@ -1,6 +1,6 @@
 # Issue Tracker — TextHarvester Web
 
-_Last updated: 2026-04-02 · 25 open issues · [19 completed](#completed-issues)_
+_Last updated: 2026-04-02 · 26 open issues · [19 completed](#completed-issues)_
 
 ---
 
@@ -116,6 +116,9 @@ Input validation is scattered; centralised middleware prevents malformed data fr
 
 **#100** — Refactor: Decouple Type-Specific UI Config from main.js
 Frontend `main.js` has type-specific rendering logic interleaved; extracting config improves readability and testability.
+
+**#173** — Upgrade sqlite3 to v6 to resolve tar and @tootallnate/once vulnerabilities
+9 Dependabot alerts (5 high `tar`, 1 low `@tootallnate/once`, plus transitive deps) all root in `sqlite3@5.x` → `node-gyp` → `tar`. Build-time only (not runtime exploitable), but blocks a clean `npm audit`. Requires breaking upgrade to `sqlite3@6.0.1` with verification across all storage modules.
 
 ### Lower Impact — Polish & Optimisation
 
