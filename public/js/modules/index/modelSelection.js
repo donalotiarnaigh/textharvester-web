@@ -67,6 +67,9 @@ export const initModelSelection = () => {
     
     // Listen for upload mode changes to update model availability
     setupModeChangeListener();
+
+    // Check which providers have API keys configured
+    fetchProviderStatus();
   }
 };
 
@@ -141,6 +144,56 @@ function updateModelAvailability(uploadMode) {
     if (anthropicWarning) {
       anthropicWarning.style.display = 'none';
     }
+  }
+}
+
+/**
+ * Fetch provider status from the server and disable unavailable providers
+ */
+async function fetchProviderStatus() {
+  try {
+    const response = await fetch('/api/providers/status');
+    if (!response.ok) return;
+    const data = await response.json();
+    const providers = data.providers;
+    if (!providers) return;
+
+    const modelSelect = document.getElementById('modelSelect');
+    if (!modelSelect) return;
+
+    const availableProviders = [];
+    for (const [key, status] of Object.entries(providers)) {
+      const option = modelSelect.querySelector(`option[value="${key}"]`);
+      if (!option) continue;
+
+      if (status.available) {
+        availableProviders.push(key);
+      } else {
+        option.disabled = true;
+        option.textContent += ' (no API key)';
+      }
+    }
+
+    // If current selection is unavailable, switch to first available
+    if (!providers[modelSelect.value]?.available && availableProviders.length > 0) {
+      modelSelect.value = availableProviders[0];
+      localStorage.setItem('selectedModel', availableProviders[0]);
+      updateModelInfo(availableProviders[0]);
+    }
+
+    // If no providers available, show alert
+    if (availableProviders.length === 0) {
+      const card = modelSelect.closest('.card-body');
+      if (card) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger mt-2';
+        alert.id = 'no-api-keys-warning';
+        alert.innerHTML = '<strong>No API keys configured.</strong> Set at least one provider API key in your <code>.env</code> file to enable processing.';
+        card.appendChild(alert);
+      }
+    }
+  } catch (err) {
+    console.warn('Could not fetch provider status:', err.message);
   }
 }
 

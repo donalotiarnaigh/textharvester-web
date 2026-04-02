@@ -13,6 +13,7 @@ const graveCardRoutes = require('./src/routes/graveCardRoutes');
 const graveCardStorage = require('./src/utils/graveCardStorage');
 const llmAuditLog = require('./src/utils/llmAuditLog');
 const monumentClassificationStorage = require('./src/utils/monumentClassificationStorage');
+const { validateApiKeys, getProviderStatus, logValidationResults } = require('./src/utils/apiKeyValidator');
 
 // Initialize grave cards table
 graveCardStorage.initialize().catch(err => {
@@ -30,6 +31,10 @@ monumentClassificationStorage.initialize().catch(err => {
 });
 
 require('dotenv').config(); // Load environment variables from .env file
+
+// Validate API keys on startup (non-blocking — server starts regardless)
+const apiKeyStatus = validateApiKeys();
+logValidationResults(apiKeyStatus);
 
 const app = express();
 const port = process.env.PORT || config.port;
@@ -80,6 +85,11 @@ app.use('/api/schemas', apiRoutes);
 // Mobile Upload routes (iOS app integration)
 const mobileUploadRoutes = require('./src/routes/mobileUploadRoutes');
 app.use('/api/mobile', mobileUploadRoutes);
+
+// Provider status endpoint (for frontend to check which providers have keys configured)
+app.get('/api/providers/status', (req, res) => {
+  res.json({ providers: getProviderStatus() });
+});
 
 // Performance monitoring routes
 app.use('/api/performance', performanceRoutes);

@@ -1,6 +1,6 @@
 # Issue Tracker — TextHarvester Web
 
-_Last updated: 2026-03-18 · 16 open issues · [18 completed](#completed-issues)_
+_Last updated: 2026-04-02 · 25 open issues · [19 completed](#completed-issues)_
 
 ---
 
@@ -29,7 +29,47 @@ _Last updated: 2026-03-18 · 16 open issues · [18 completed](#completed-issues)
 
 ## Backlog — Open Issues by Impact
 
-**19 unstarted issues. Ordered by impact (highest first):**
+**29 unstarted issues. Ordered by impact (highest first):**
+
+### Critical — Product Readiness
+
+Blocking adoption by external customers. Each unresolved item is a ceiling on how many users can be served without direct support.
+
+**#162** — Managed API keys and user onboarding for hosted deployments
+Hosted infrastructure exists (prod on Fly.dev, staging on Fly.dev) but serves a single set of server-side API keys with no per-user isolation, authentication, or usage tracking. External customers need accounts, metered usage, and either managed keys or a bring-your-own-key flow.
+
+~~**#163** — Startup API key validation with guidance~~ ✅ Fixed
+Server starts silently with no API keys. Users only discover the problem when their first upload fails. Need validation on startup, clear error messages, and links to provider key creation pages.
+
+**Fix (branch `fix/issue-163-startup-api-key-validation`):** Added `src/utils/apiKeyValidator.js` with `validateApiKeys()`, `getProviderStatus()`, and `logValidationResults()`. Server now logs warnings with env var names and key creation URLs for each missing provider on startup, and an error-level message if no keys are configured at all. New `GET /api/providers/status` endpoint exposes availability (never key values) so the frontend can disable unavailable providers in the model selection dropdown. 20 new tests (17 unit + 3 integration), all 1464 tests passing.
+
+### High Impact — Customer Self-Service
+
+Determines whether customers can work independently or need ongoing support.
+
+**#164** — Schema wizard should analyse all uploaded example images
+Wizard instructs users to upload 3-5 examples but `SchemaGenerator` only analyses the first image. Remaining uploads are wasted. Variable-format documents get incomplete schemas.
+
+**#165** — Schema wizard — required/optional toggle per field
+All detected fields are marked required (hardcoded MVP assumption). Optional fields that the AI can't always extract cause false validation failures users can't fix without database access.
+
+**#166** — Inline result correction without re-processing
+No way to fix AI errors in the UI. "Needs Review" badge flags problems but offers no edit form. Users must re-process (burning API credits) or access the database directly.
+
+**#167** — Project/collection model to group uploads
+All records go into flat tables with no project concept. Users processing multiple graveyards or surveys have no way to partition, filter, or export by collection.
+
+**#168** — Custom schemas — integrate with confidence scoring and retry pipeline
+`DynamicProcessor` bypasses the standard pipeline entirely. Custom schemas get no confidence scoring, no validation warnings, no retry logic, no audit logging, no cost tracking. Materially worse experience than built-in types.
+
+**#169** — Pre-processing cost estimate before batch submission
+No cost visibility before processing. Session cap ($5.00) is buried in config.json. Community groups uploading large batches hit the cap partway through with no prior warning.
+
+**#170** — Volume ID autocomplete from existing values
+Freeform text field with no validation. Teams using inconsistent naming ("Vol 1", "volume_1", "vol-1") fragment their data with no way to merge or reconcile.
+
+**#171** — Schema versioning with column migration on edit
+No migration path when a schema is edited after processing documents. `version` column exists but is never incremented. Users who missed a field after processing 500 documents need direct support.
 
 ### High Impact — Data Quality & Accuracy
 
@@ -129,6 +169,12 @@ _18 issues resolved. Click issue number for full details on GitHub._
 | #105 | Enforce filename-based identity | [#156](https://github.com/donalotiarnaigh/textharvester-web/pull/156) | ✅ |
 | #38 | Respond immediately on upload and offload PDF conversion | [#157](https://github.com/donalotiarnaigh/textharvester-web/pull/157) | ✅ |
 | #37 | Add controlled concurrency to file processing queue | [#141](https://github.com/donalotiarnaigh/textharvester-web/pull/141) | ✅ |
+
+### P1 — Recently Completed
+
+| # | Title | PR | Status |
+|---|-------|----|----|
+| #163 | Startup API key validation with guidance | — | ✅ |
 
 ### Also Completed
 
