@@ -1,6 +1,6 @@
 # Issue Tracker — TextHarvester Web
 
-_Last updated: 2026-04-03 · 30 open issues · [19 completed](#completed-issues)_
+_Last updated: 2026-04-03 · 28 open issues · [20 completed](#completed-issues)_
 
 ---
 
@@ -29,7 +29,7 @@ _Last updated: 2026-04-03 · 30 open issues · [19 completed](#completed-issues)
 
 ## Backlog — Open Issues by Impact
 
-**29 unstarted issues. Ordered by impact (highest first):**
+**27 unstarted issues. Ordered by impact (highest first):**
 
 ### Critical — Product Readiness
 
@@ -57,8 +57,10 @@ Wizard instructs users to upload 3-5 examples but `SchemaGenerator` only analyse
 
 **Fix (branch `fix/issue-164-schema-wizard-all-images`):** Refactored `SchemaGenerator.generateSchema()` to analyze each uploaded image independently via new `_analyzeFile()` helper, then merge schemas with `_mergeSchemas()`. Union of fields across all images; majority-vote on conflicting types; first non-empty description wins. Gracefully handles partial failures (skips failed images, uses successful ones). Error thrown only if all analyses fail. 6 new tests added (multi-image analysis, field merging, type conflicts, partial failures, backward compatibility, all-fail error). All 1470 tests passing.
 
-**#165** — Schema wizard — required/optional toggle per field
+~~**#165** — Schema wizard — required/optional toggle per field~~ ✅ Fixed
 All detected fields are marked required (hardcoded MVP assumption). Optional fields that the AI can't always extract cause false validation failures users can't fix without database access.
+
+**Fix (branch `fix/issue-165-schema-required-optional-toggle`):** Modified `SchemaGenerator._mergeSchemas()` to track field frequency (how many schemas each field appeared in) and mark fields as required only if they appear in ALL analyzed images. Frontend wizard UI now displays a Required checkbox column in the field editor table, allowing users to toggle required/optional status. Manually added fields default to unchecked (optional). CLI `schema propose` command displays Required column in output. Backward compatible: single-image uploads and existing schemas continue to work as before. 5 new tests covering frequency tracking, required/optional computation, and edge cases. All 1480 tests passing.
 
 **#166** — Inline result correction without re-processing
 No way to fix AI errors in the UI. "Needs Review" badge flags problems but offers no edit form. Users must re-process (burning API credits) or access the database directly.
