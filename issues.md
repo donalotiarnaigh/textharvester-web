@@ -1,6 +1,6 @@
 # Issue Tracker — TextHarvester Web
 
-_Last updated: 2026-04-02 · 26 open issues · [19 completed](#completed-issues)_
+_Last updated: 2026-04-03 · 30 open issues · [19 completed](#completed-issues)_
 
 ---
 
@@ -35,8 +35,13 @@ _Last updated: 2026-04-02 · 26 open issues · [19 completed](#completed-issues)
 
 Blocking adoption by external customers. Each unresolved item is a ceiling on how many users can be served without direct support.
 
-**#162** — Managed API keys and user onboarding for hosted deployments
-Hosted infrastructure exists (prod on Fly.dev, staging on Fly.dev) but serves a single set of server-side API keys with no per-user isolation, authentication, or usage tracking. External customers need accounts, metered usage, and either managed keys or a bring-your-own-key flow.
+**#162** — ~~Managed API keys and user onboarding for hosted deployments~~ ⏸️ Deferred — split into sub-issues
+Hosted infrastructure exists (prod on Fly.dev, staging on Fly.dev) but serves a single set of server-side API keys with no per-user isolation, authentication, or usage tracking. Split into 5 incremental sub-issues:
+- **#175** — User authentication and session management (foundation)
+- **#176** — Bring-your-own-key (BYOK) API key management (depends on #175)
+- **#177** — Per-user data isolation (depends on #175)
+- **#178** — Frontend auth UI and user onboarding (depends on #175, #176)
+- **#179** — Per-user usage dashboard (depends on #175, #177)
 
 ~~**#163** — Startup API key validation with guidance~~ ✅ Fixed
 Server starts silently with no API keys. Users only discover the problem when their first upload fails. Need validation on startup, clear error messages, and links to provider key creation pages.
