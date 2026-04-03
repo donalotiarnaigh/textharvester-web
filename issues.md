@@ -73,6 +73,11 @@ No way to fix AI errors in the UI. "Needs Review" badge flags problems but offer
 - **Tests**: 9 updateMemorial tests, 9 updateBurialRegisterEntry tests, 9 updateGraveCard tests, 23 API controller tests; all 1528 tests passing
 - **Follow-up for Phase 2**: Full inline edit UI with form fields, save/cancel logic, optimistic updates
 
+**#183** — Inline edit forms for all record types
+Phase 2 of #166. Complete the inline correction feature by adding full edit form UI with field editing, save/cancel, and optimistic updates. Users can now edit any extracted field directly in the detail view without re-processing.
+
+**Status:** Backlog — Foundation complete (API endpoints, DB functions ready). Frontend UI implementation pending.
+
 **#167** — Project/collection model to group uploads
 All records go into flat tables with no project concept. Users processing multiple graveyards or surveys have no way to partition, filter, or export by collection.
 
