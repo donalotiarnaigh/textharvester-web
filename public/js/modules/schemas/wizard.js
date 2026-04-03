@@ -40,6 +40,7 @@ export function renderEditor(proposal) {
       proposal.fields.forEach(field => {
         const tr = document.createElement('tr');
         tr.className = 'field-row';
+        const isRequired = field.required !== false; // Default to checked for backward compatibility
         tr.innerHTML = `
                     <td><input type="text" class="form-control field-name" value="${escapeHtml(field.name)}" required></td>
                     <td>
@@ -51,6 +52,9 @@ export function renderEditor(proposal) {
                         </select>
                     </td>
                     <td><input type="text" class="form-control field-desc" value="${escapeHtml(field.description || '')}"></td>
+                    <td class="text-center">
+                        <input type="checkbox" class="field-required" ${isRequired ? 'checked' : ''}>
+                    </td>
                     <td>
                         <button type="button" class="btn btn-sm btn-danger remove-field" onclick="this.closest('tr').remove()">&times;</button>
                     </td>
@@ -81,14 +85,16 @@ export async function saveSchema() {
     const fieldName = row.querySelector('.field-name').value;
     const fieldType = row.querySelector('.field-type').value;
     const fieldDesc = row.querySelector('.field-desc').value;
+    const isRequired = row.querySelector('.field-required')?.checked ?? true;
 
     if (fieldName) {
       properties[fieldName] = {
         type: fieldType,
         description: fieldDesc
       };
-      // Assume all detected fields are required for simplicity in MVP, or add a checkbox
-      required.push(fieldName);
+      if (isRequired) {
+        required.push(fieldName);
+      }
     }
   });
 

@@ -245,5 +245,116 @@ describe('SchemaGenerator', () => {
       expect(result.fields).toHaveLength(1);
       expect(result.fields[0].name).toBe('date');
     });
+
+    it('should mark all-image fields as required and partial fields as optional', async () => {
+      // Image 1: date, amount
+      // Image 2: date, vendor
+      // Image 3: date (only date in all 3)
+      mockLlmProvider.processImage
+        .mockResolvedValueOnce({
+          content: JSON.stringify({
+            tableName: 'Invoice',
+            fields: [
+              { name: 'date', type: 'date', description: 'Date' },
+              { name: 'amount', type: 'number', description: 'Amount' }
+            ]
+          }),
+          usage: { input_tokens: 0, output_tokens: 0 }
+        })
+        .mockResolvedValueOnce({
+          content: JSON.stringify({
+            tableName: 'Invoice',
+            fields: [
+              { name: 'date', type: 'date', description: 'Date' },
+              { name: 'vendor', type: 'string', description: 'Vendor' }
+            ]
+          }),
+          usage: { input_tokens: 0, output_tokens: 0 }
+        })
+        .mockResolvedValueOnce({
+          content: JSON.stringify({
+            tableName: 'Invoice',
+            fields: [{ name: 'date', type: 'date', description: 'Date' }]
+          }),
+          usage: { input_tokens: 0, output_tokens: 0 }
+        });
+
+      const result = await schemaGenerator.generateSchema(['/path/to/img1.jpg', '/path/to/img2.jpg', '/path/to/img3.jpg']);
+
+      expect(result.jsonSchema.required).toEqual(['date']);
+      const dateField = result.fields.find(f => f.name === 'date');
+      expect(dateField.required).toBe(true);
+      const amountField = result.fields.find(f => f.name === 'amount');
+      expect(amountField.required).toBe(false);
+      const vendorField = result.fields.find(f => f.name === 'vendor');
+      expect(vendorField.required).toBe(false);
+    });
+
+    it('should set required field property on field objects', async () => {
+      mockLlmProvider.processImage.mockResolvedValue({
+        content: JSON.stringify({
+          tableName: 'Document',
+          fields: [
+            { name: 'field1', type: 'string', description: 'Field 1' },
+            { name: 'field2', type: 'number', description: 'Field 2' }
+          ]
+        }),
+        usage: { input_tokens: 0, output_tokens: 0 }
+      });
+
+      const result = await schemaGenerator.generateSchema(['/path/to/single.jpg']);
+
+      result.fields.forEach(field => {
+        expect(field).toHaveProperty('required');
+        expect(typeof field.required).toBe('boolean');
+      });
+    });
+
+    it('should mark all fields as required when single image', async () => {
+      mockLlmProvider.processImage.mockResolvedValue({
+        content: JSON.stringify({
+          tableName: 'Document',
+          fields: [
+            { name: 'field1', type: 'string', description: 'F1' },
+            { name: 'field2', type: 'number', description: 'F2' }
+          ]
+        }),
+        usage: { input_tokens: 0, output_tokens: 0 }
+      });
+
+      const result = await schemaGenerator.generateSchema(['/path/to/img.jpg']);
+
+      expect(result.jsonSchema.required).toEqual(['field1', 'field2']);
+      result.fields.forEach(field => {
+        expect(field.required).toBe(true);
+      });
+    });
+
+    it('should have empty required array when no fields appear in all images', async () => {
+      // Image 1: field1
+      // Image 2: field2 (no common fields)
+      mockLlmProvider.processImage
+        .mockResolvedValueOnce({
+          content: JSON.stringify({
+            tableName: 'Doc',
+            fields: [{ name: 'field1', type: 'string', description: 'F1' }]
+          }),
+          usage: { input_tokens: 0, output_tokens: 0 }
+        })
+        .mockResolvedValueOnce({
+          content: JSON.stringify({
+            tableName: 'Doc',
+            fields: [{ name: 'field2', type: 'string', description: 'F2' }]
+          }),
+          usage: { input_tokens: 0, output_tokens: 0 }
+        });
+
+      const result = await schemaGenerator.generateSchema(['/path/to/img1.jpg', '/path/to/img2.jpg']);
+
+      expect(result.jsonSchema.required).toEqual([]);
+      result.fields.forEach(field => {
+        expect(field.required).toBe(false);
+      });
+    });
   });
 });
