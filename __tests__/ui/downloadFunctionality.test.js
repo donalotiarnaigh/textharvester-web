@@ -1,17 +1,17 @@
 const httpMocks = require('node-mocks-http');
 
 // Auto-mock QueryService
-jest.mock('../src/services/QueryService');
+jest.mock('../../src/services/QueryService');
 
 // Mock database module only for detectSourceType if needed
-jest.mock('../src/utils/database', () => ({
+jest.mock('../../src/utils/database', () => ({
   db: {
     get: jest.fn((query, params, cb) => cb(null, { max_date: '2024-01-01' })) // defaults to memorial
   }
 }));
 
-const QueryService = require('../src/services/QueryService');
-const { downloadResultsJSON, downloadResultsCSV } = require('../src/controllers/resultsManager'); // Require AFTER mocking
+const QueryService = require('../../src/services/QueryService');
+const { downloadResultsJSON, downloadResultsCSV } = require('../../src/controllers/resultsManager'); // Require AFTER mocking
 
 describe('Download Functionality', () => {
   let req, res;

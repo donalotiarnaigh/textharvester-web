@@ -18,39 +18,39 @@ const mockGetModelVersion = jest.fn().mockReturnValue('test-model-v1');
 const originalEnv = process.env;
 
 jest.mock('fs', () => mockFs);
-jest.mock('../src/utils/modelProviders', () => ({
+jest.mock('../../src/utils/modelProviders', () => ({
   createProvider: jest.fn().mockReturnValue({
     processImage: mockProcessImage,
     getModelVersion: mockGetModelVersion
   })
 }));
-jest.mock('../src/utils/database', () => ({
+jest.mock('../../src/utils/database', () => ({
   storeMemorial: jest.fn()
 }));
-jest.mock('../src/utils/prompts/templates/providerTemplates', () => ({
+jest.mock('../../src/utils/prompts/templates/providerTemplates', () => ({
   getPrompt: jest.fn().mockReturnValue({
     getProviderPrompt: mockGetProviderPrompt,
     validateAndConvert: mockValidateAndConvert,
     version: '1.0'
   })
 }));
-jest.mock('../src/utils/logger');
-jest.mock('../src/utils/imageProcessor', () => ({
+jest.mock('../../src/utils/logger');
+jest.mock('../../src/utils/imageProcessor', () => ({
   analyzeImageForProvider: jest.fn().mockResolvedValue({
     needsOptimization: false,
     reasons: []
   }),
   optimizeImageForProvider: jest.fn().mockResolvedValue('optimized-base64-data')
 }));
-jest.mock('../src/utils/graveCardStorage', () => ({
+jest.mock('../../src/utils/graveCardStorage', () => ({
   initialize: jest.fn().mockResolvedValue(undefined),
   storeGraveCard: jest.fn().mockResolvedValue(1),
   exportCardsToCsv: jest.fn().mockResolvedValue('')
 }));
-jest.mock('../src/utils/imageProcessing/graveCardProcessor', () => ({
+jest.mock('../../src/utils/imageProcessing/graveCardProcessor', () => ({
   processPdf: jest.fn().mockResolvedValue(Buffer.from('stitched-image-data'))
 }));
-jest.mock('../src/utils/monumentClassificationStorage', () => ({
+jest.mock('../../src/utils/monumentClassificationStorage', () => ({
   initialize: jest.fn().mockResolvedValue(undefined),
   storeClassification: jest.fn().mockResolvedValue(1)
 }));
@@ -59,10 +59,10 @@ jest.mock('../../config.json', () => ({
   uploadPath: 'test/uploads'
 }), { virtual: true });
 
-const { processFile } = require('../src/utils/fileProcessing.js');
-const { createProvider } = require('../src/utils/modelProviders');
-const { storeMemorial } = require('../src/utils/database');
-const { getPrompt } = require('../src/utils/prompts/templates/providerTemplates');
+const { processFile } = require('../../src/utils/fileProcessing.js');
+const { createProvider } = require('../../src/utils/modelProviders');
+const { storeMemorial } = require('../../src/utils/database');
+const { getPrompt } = require('../../src/utils/prompts/templates/providerTemplates');
 
 describe('File Processing Module', () => {
   const mockBase64Image = 'base64encodedimage';
@@ -173,7 +173,7 @@ describe('File Processing Module', () => {
     });
 
     test('marks validation errors as fatal after retries exhausted', async () => {
-      const { FatalError } = require('../src/utils/errorTypes');
+      const { FatalError } = require('../../src/utils/errorTypes');
       const validationError = new Error('Invalid JSON response');
       mockValidateAndConvert.mockImplementation(() => {
         throw validationError;
@@ -191,7 +191,7 @@ describe('File Processing Module', () => {
     });
 
     test('empty sheet errors are returned as error result, not fatal', async () => {
-      const { ProcessingError } = require('../src/utils/errorTypes');
+      const { ProcessingError } = require('../../src/utils/errorTypes');
       const emptySheetError = new ProcessingError('Sheet is empty', 'empty_sheet');
       mockValidateAndConvert.mockImplementation(() => {
         throw emptySheetError;
@@ -385,8 +385,8 @@ describe('File Processing Module', () => {
     });
 
     test('grave card retries on validation failure', async () => {
-      const graveCardProcessor = require('../src/utils/imageProcessing/graveCardProcessor');
-      const graveCardStorage = require('../src/utils/graveCardStorage');
+      const graveCardProcessor = require('../../src/utils/imageProcessing/graveCardProcessor');
+      const graveCardStorage = require('../../src/utils/graveCardStorage');
       const gravCardData = { burial_date: '2020-01-01', first_name: 'John' };
 
       const validationError = new Error('Invalid grave card format');
@@ -611,7 +611,7 @@ describe('File Processing Module', () => {
 
     test('handles duplicate grave card gracefully', async () => {
       // Mock graveCardStorage.storeGraveCard to reject with isDuplicate error
-      const graveCardStorage = require('../src/utils/graveCardStorage');
+      const graveCardStorage = require('../../src/utils/graveCardStorage');
       const duplicateError = new Error('Duplicate entry: grave card already exists for file test/grave.pdf');
       duplicateError.isDuplicate = true;
       graveCardStorage.storeGraveCard.mockRejectedValue(duplicateError);
@@ -634,7 +634,7 @@ describe('File Processing Module', () => {
   });
 
   describe('Monument classification', () => {
-    const monumentClassificationStorage = require('../src/utils/monumentClassificationStorage');
+    const monumentClassificationStorage = require('../../src/utils/monumentClassificationStorage');
     const testFilePath = 'test/image.jpg';
     const mockMonumentData = {
       broad_type: 'Headstone',

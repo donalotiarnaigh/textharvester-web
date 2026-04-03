@@ -1,5 +1,5 @@
 const fs = require('fs').promises;
-const { analyzeTranscriptionAccuracy } = require('../src/utils/transcriptionAnalysis');
+const { analyzeTranscriptionAccuracy } = require('../../src/utils/transcriptionAnalysis');
 
 // Mock fs.promises module
 jest.mock('fs', () => ({

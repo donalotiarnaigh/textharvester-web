@@ -1,4 +1,4 @@
-const { buildCsvData } = require('../scripts/export-burial-register-csv');
+const { buildCsvData } = require('../../scripts/export-burial-register-csv');
 
 function parseCsvLine(line) {
   const values = [];

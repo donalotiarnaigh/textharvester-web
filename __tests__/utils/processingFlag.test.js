@@ -1,6 +1,6 @@
 const fs = require('fs');
-const { clearProcessingCompleteFlag } = require('../src/utils/processingFlag');
-const config = require('../config.json');
+const { clearProcessingCompleteFlag } = require('../../src/utils/processingFlag');
+const config = require('../../config.json');
 
 // Mock fs module
 jest.mock('fs', () => ({

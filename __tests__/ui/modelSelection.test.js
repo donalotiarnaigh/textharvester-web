@@ -3,18 +3,18 @@
  */
 
 // Mock the modules we'll be testing
-jest.mock('../public/js/modules/index/modelSelection.js', () => ({
+jest.mock('../../public/js/modules/index/modelSelection.js', () => ({
   initModelSelection: jest.fn(),
   getSelectedModel: jest.fn(),
 }));
 
-jest.mock('../public/js/modules/index/fileUpload.js', () => ({
+jest.mock('../../public/js/modules/index/fileUpload.js', () => ({
   handleFileUpload: jest.fn(),
 }));
 
 // Import the modules
-const { initModelSelection, getSelectedModel } = require('../public/js/modules/index/modelSelection.js');
-const { handleFileUpload } = require('../public/js/modules/index/fileUpload.js');
+const { initModelSelection, getSelectedModel } = require('../../public/js/modules/index/modelSelection.js');
+const { handleFileUpload } = require('../../public/js/modules/index/fileUpload.js');
 
 describe('Model Selection Module', () => {
   let mockFormData;

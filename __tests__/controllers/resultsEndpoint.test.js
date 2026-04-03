@@ -1,14 +1,14 @@
 const httpMocks = require('node-mocks-http');
 
 // Auto-mock QueryService
-jest.mock('../src/services/QueryService');
-jest.mock('../src/utils/fileQueue.js');
-jest.mock('../src/utils/database'); // mocking database for detecting source type DB calls if any
+jest.mock('../../src/services/QueryService');
+jest.mock('../../src/utils/fileQueue.js');
+jest.mock('../../src/utils/database'); // mocking database for detecting source type DB calls if any
 
-const QueryService = require('../src/services/QueryService');
-const { getResults } = require('../src/controllers/resultsManager'); // Require AFTER mocking
-const { getProcessedResults } = require('../src/utils/fileQueue.js');
-const { db } = require('../src/utils/database');
+const QueryService = require('../../src/services/QueryService');
+const { getResults } = require('../../src/controllers/resultsManager'); // Require AFTER mocking
+const { getProcessedResults } = require('../../src/utils/fileQueue.js');
+const { db } = require('../../src/utils/database');
 
 describe('Results Endpoint', () => {
   let req, res;

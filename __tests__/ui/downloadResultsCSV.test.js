@@ -1,8 +1,8 @@
-const { downloadResultsJSON } = require('../src/controllers/resultsManager'); // Adjust path as needed
+const { downloadResultsJSON } = require('../../src/controllers/resultsManager'); // Adjust path as needed
 const httpMocks = require('node-mocks-http'); // Mock HTTP request/response
-const { downloadResultsCSV } = require('../src/controllers/resultsManager');
+const { downloadResultsCSV } = require('../../src/controllers/resultsManager');
 
-jest.mock('../src/utils/database', () => ({
+jest.mock('../../src/utils/database', () => ({
   getAllMemorials: jest.fn().mockResolvedValue([{
     memorial_number: '001',
     first_name: 'John'

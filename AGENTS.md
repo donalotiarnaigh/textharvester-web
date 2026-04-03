@@ -236,14 +236,9 @@ When writing prompts and validation logic, use these conventions:
 
 **Purpose:** Provide a robust, clear, and minimal-risk instruction set for AI coding agents working on the Typographic Analysis feature and other backend enhancements.
 
-## Cross-Feature Testing Resources
+## Testing Guidelines
 
-The following testing utilities are available for agents implementing backend features:
-
-| Feature | Test Script | Documentation |
-|---------|-------------|---|
-| `processing_id` (request correlation) | `./test-processing-id.sh` | `docs/testing-processing-id.md` |
-| Database migrations | `npm run init-db` | `docs/` |
-| Full test suite | `npm test` | `__tests__/` |
-
-When implementing database-backed features, follow the pattern in `docs/testing-processing-id.md` to provide safe, repeatable manual testing.
+When implementing backend features:
+- Run full test suite: `npm test`
+- For database-backed features, review patterns in existing tests under `src/**/__tests__/` and `__tests__/`
+- Check that your changes don't break existing tests before committing

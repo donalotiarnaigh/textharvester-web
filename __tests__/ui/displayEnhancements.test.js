@@ -2,7 +2,7 @@ const {
   PromptMetadataDisplay,
   TypeInfoDisplay,
   ValidationStatusDisplay
-} = require('../src/components/displayEnhancements');
+} = require('../../src/components/displayEnhancements');
 
 describe('Display Enhancements', () => {
   describe('PromptMetadataDisplay', () => {

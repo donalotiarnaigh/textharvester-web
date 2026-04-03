@@ -7,11 +7,11 @@
 
 const path = require('path');
 const fs = require('fs').promises;
-const { processFile } = require('../src/utils/fileProcessing');
-const { getProcessor } = require('../src/utils/processors');
+const { processFile } = require('../../src/utils/fileProcessing');
+const { getProcessor } = require('../../src/utils/processors');
 
 // Mock prompts to return proper validation
-jest.mock('../src/utils/prompts/templates/providerTemplates', () => ({
+jest.mock('../../src/utils/prompts/templates/providerTemplates', () => ({
   getPrompt: jest.fn((provider, template) => ({
     getProviderPrompt: jest.fn(() => 'Test prompt'),
     version: '1.0',
@@ -55,7 +55,7 @@ jest.mock('../src/utils/prompts/templates/providerTemplates', () => ({
 }));
 
 // Mock the providers to avoid actual API calls
-jest.mock('../src/utils/modelProviders', () => ({
+jest.mock('../../src/utils/modelProviders', () => ({
   createProvider: jest.fn(() => ({
     processImage: jest.fn(async () => ({
       content: JSON.stringify({
@@ -80,7 +80,7 @@ const storedData = {
   classifications: [],
 };
 
-jest.mock('../src/utils/database', () => ({
+jest.mock('../../src/utils/database', () => ({
   storeMemorial: jest.fn(async (data) => {
     storedData.memorials.push(data);
   }),
@@ -88,7 +88,7 @@ jest.mock('../src/utils/database', () => ({
   getAllMemorials: jest.fn(),
 }));
 
-jest.mock('../src/utils/burialRegisterStorage', () => ({
+jest.mock('../../src/utils/burialRegisterStorage', () => ({
   storeBurialRegisterEntry: jest.fn(async (data) => {
     storedData.burialEntries.push(data);
   }),
@@ -96,14 +96,14 @@ jest.mock('../src/utils/burialRegisterStorage', () => ({
   extractPageNumberFromFilename: jest.fn(() => 1),
 }));
 
-jest.mock('../src/utils/graveCardStorage', () => ({
+jest.mock('../../src/utils/graveCardStorage', () => ({
   storeGraveCard: jest.fn(async (data) => {
     storedData.graveCards.push(data);
   }),
   initialize: jest.fn(),
 }));
 
-jest.mock('../src/utils/monumentClassificationStorage', () => ({
+jest.mock('../../src/utils/monumentClassificationStorage', () => ({
   storeClassification: jest.fn(async (data) => {
     storedData.classifications.push(data);
   }),
@@ -120,7 +120,7 @@ jest.mock('fs', () => ({
 }));
 
 // Mock image optimization
-jest.mock('../src/utils/imageProcessor', () => ({
+jest.mock('../../src/utils/imageProcessor', () => ({
   analyzeImageForProvider: jest.fn(async () => ({
     needsOptimization: false,
   })),
@@ -128,12 +128,12 @@ jest.mock('../src/utils/imageProcessor', () => ({
 }));
 
 // Mock grave card processor
-jest.mock('../src/utils/imageProcessing/graveCardProcessor', () => ({
+jest.mock('../../src/utils/imageProcessing/graveCardProcessor', () => ({
   processPdf: jest.fn(async () => Buffer.from('mock-grave-card-image')),
 }));
 
 // Mock burial register flattener
-jest.mock('../src/utils/burialRegisterFlattener', () => ({
+jest.mock('../../src/utils/burialRegisterFlattener', () => ({
   flattenPageToEntries: jest.fn(() => [
     {
       entry_id: 'BE001',

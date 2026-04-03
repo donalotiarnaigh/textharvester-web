@@ -36,26 +36,26 @@ jest.mock('fs', () => ({
   statSync: jest.fn().mockReturnValue({ size: 1000000 })
 }));
 
-jest.mock('../src/utils/prompts/templates/providerTemplates', () => {
-  const actualProviderTemplates = jest.requireActual('../src/utils/prompts/templates/providerTemplates');
+jest.mock('../../src/utils/prompts/templates/providerTemplates', () => {
+  const actualProviderTemplates = jest.requireActual('../../src/utils/prompts/templates/providerTemplates');
   return {
     ...actualProviderTemplates,
     getPrompt: jest.fn(actualProviderTemplates.getPrompt)
   };
 });
 
-const actualProviderTemplates = jest.requireActual('../src/utils/prompts/templates/providerTemplates');
+const actualProviderTemplates = jest.requireActual('../../src/utils/prompts/templates/providerTemplates');
 
-jest.mock('../src/utils/logger');
-jest.mock('../src/utils/database', () => ({
+jest.mock('../../src/utils/logger');
+jest.mock('../../src/utils/database', () => ({
   storeMemorial: jest.fn().mockResolvedValue(true)
 }));
 
-jest.mock('../src/utils/burialRegisterFlattener', () => ({
+jest.mock('../../src/utils/burialRegisterFlattener', () => ({
   flattenPageToEntries: jest.fn()
 }));
 
-jest.mock('../src/utils/burialRegisterStorage', () => ({
+jest.mock('../../src/utils/burialRegisterStorage', () => ({
   storePageJSON: jest.fn().mockResolvedValue('/tmp/page.json'),
   storeBurialRegisterEntry: jest.fn().mockResolvedValue(1),
   extractPageNumberFromFilename: jest.fn((fileName) => {
@@ -70,7 +70,7 @@ jest.mock('../src/utils/burialRegisterStorage', () => ({
   })
 }));
 
-jest.mock('../src/utils/imageProcessor', () => ({
+jest.mock('../../src/utils/imageProcessor', () => ({
   analyzeImageForProvider: jest.fn().mockResolvedValue({
     needsOptimization: false,
     reasons: []
@@ -78,18 +78,18 @@ jest.mock('../src/utils/imageProcessor', () => ({
   optimizeImageForProvider: jest.fn().mockResolvedValue('optimized_base64_string')
 }));
 
-jest.mock('../src/utils/graveCardStorage', () => ({
+jest.mock('../../src/utils/graveCardStorage', () => ({
   initialize: jest.fn().mockResolvedValue(undefined),
   storeGraveCard: jest.fn().mockResolvedValue(1),
   exportCardsToCsv: jest.fn().mockResolvedValue('')
 }));
 
-jest.mock('../src/utils/imageProcessing/graveCardProcessor', () => ({
+jest.mock('../../src/utils/imageProcessing/graveCardProcessor', () => ({
   processPdf: jest.fn().mockResolvedValue(Buffer.from('stitched-image-data'))
 }));
 
 // Mock the model providers
-jest.mock('../src/utils/modelProviders', () => {
+jest.mock('../../src/utils/modelProviders', () => {
   const OpenAIProvider = jest.fn().mockImplementation(() => ({
     processImage: mockOpenAICreateMethod,
     getModelVersion: () => 'gpt-5'
@@ -118,10 +118,10 @@ jest.mock('../src/utils/modelProviders', () => {
 
 // Then import modules
 const fs = require('fs').promises;
-const { processFile } = require('../src/utils/fileProcessing.js');
-const providerTemplates = require('../src/utils/prompts/templates/providerTemplates');
-const burialRegisterFlattener = require('../src/utils/burialRegisterFlattener');
-const burialRegisterStorage = require('../src/utils/burialRegisterStorage');
+const { processFile } = require('../../src/utils/fileProcessing.js');
+const providerTemplates = require('../../src/utils/prompts/templates/providerTemplates');
+const burialRegisterFlattener = require('../../src/utils/burialRegisterFlattener');
+const burialRegisterStorage = require('../../src/utils/burialRegisterStorage');
 
 describe('processFile', () => {
   beforeEach(() => {
@@ -189,7 +189,7 @@ describe('processFile', () => {
   });
 
   it('should handle database storage errors', async () => {
-    const storeMemorial = require('../src/utils/database').storeMemorial;
+    const storeMemorial = require('../../src/utils/database').storeMemorial;
     storeMemorial.mockRejectedValueOnce(new Error('Database error'));
     await expect(processFile('test.jpg', { provider: 'openai' }))
       .rejects

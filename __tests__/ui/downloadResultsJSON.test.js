@@ -1,7 +1,7 @@
 const httpMocks = require('node-mocks-http');
-const { downloadResultsJSON } = require('../src/controllers/resultsManager');
+const { downloadResultsJSON } = require('../../src/controllers/resultsManager');
 
-jest.mock('../src/utils/database', () => ({
+jest.mock('../../src/utils/database', () => ({
   getAllMemorials: jest.fn().mockResolvedValue([
     {
       memorial_number: '001',

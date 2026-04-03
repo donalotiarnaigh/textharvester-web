@@ -2,7 +2,7 @@
  * Tests for PerformanceTracker utility
  */
 
-const PerformanceTracker = require('../src/utils/performanceTracker');
+const PerformanceTracker = require('../../src/utils/performanceTracker');
 
 // Mock logger to avoid file system operations in tests
 jest.mock('../src/utils/logger', () => ({

@@ -1,4 +1,4 @@
-const { ResponseLengthValidator } = require('../src/utils/responseLengthValidator');
+const { ResponseLengthValidator } = require('../../src/utils/responseLengthValidator');
 
 describe('ResponseLengthValidator', () => {
   let validator;
