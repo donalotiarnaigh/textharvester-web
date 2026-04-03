@@ -34,11 +34,11 @@ describe('GeminiProvider', () => {
           last_name: 'Doe',
           year_of_death: 1923,
           inscription: 'Test inscription'
-        })
-      },
-      usageMetadata: {
-        promptTokenCount: 100,
-        candidatesTokenCount: 50
+        }),
+        usageMetadata: {
+          promptTokenCount: 100,
+          candidatesTokenCount: 50
+        }
       }
     };
 
@@ -147,11 +147,11 @@ describe('GeminiProvider', () => {
     it('should extract usage tokens from API response', async () => {
       mockModel.generateContent.mockResolvedValue({
         response: {
-          text: () => JSON.stringify({ test: 'data' })
-        },
-        usageMetadata: {
-          promptTokenCount: 200,
-          candidatesTokenCount: 75
+          text: () => JSON.stringify({ test: 'data' }),
+          usageMetadata: {
+            promptTokenCount: 200,
+            candidatesTokenCount: 75
+          }
         }
       });
       const result = await provider.processImage(testImage, testPrompt);
@@ -161,9 +161,9 @@ describe('GeminiProvider', () => {
     it('should default usage tokens to 0 when usage is absent', async () => {
       mockModel.generateContent.mockResolvedValue({
         response: {
-          text: () => JSON.stringify({ test: 'data' })
-        },
-        usageMetadata: undefined
+          text: () => JSON.stringify({ test: 'data' }),
+          usageMetadata: undefined
+        }
       });
       const result = await provider.processImage(testImage, testPrompt);
       expect(result.usage).toEqual({ input_tokens: 0, output_tokens: 0 });
@@ -173,9 +173,9 @@ describe('GeminiProvider', () => {
       const rawText = JSON.stringify({ test: 'data' });
       mockModel.generateContent.mockResolvedValue({
         response: {
-          text: () => rawText
-        },
-        usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+          text: () => rawText,
+          usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+        }
       });
       const result = await provider.processImage(testImage, testPrompt, { raw: true });
       expect(result.content).toBe(rawText);
@@ -194,9 +194,9 @@ describe('GeminiProvider', () => {
     it('should handle missing text content in response', async () => {
       mockModel.generateContent.mockResolvedValue({
         response: {
-          text: () => null
-        },
-        usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+          text: () => null,
+          usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+        }
       });
 
       await expect(provider.processImage(testImage, testPrompt))
@@ -207,9 +207,9 @@ describe('GeminiProvider', () => {
     it('should handle invalid JSON response', async () => {
       mockModel.generateContent.mockResolvedValue({
         response: {
-          text: () => 'Invalid JSON'
-        },
-        usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+          text: () => 'Invalid JSON',
+          usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+        }
       });
 
       await expect(provider.processImage(testImage, testPrompt))
@@ -221,9 +221,9 @@ describe('GeminiProvider', () => {
       const jsonInCodeBlock = '```json\n{"memorial_number":"123"}\n```';
       mockModel.generateContent.mockResolvedValue({
         response: {
-          text: () => jsonInCodeBlock
-        },
-        usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+          text: () => jsonInCodeBlock,
+          usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+        }
       });
 
       const result = await provider.processImage(testImage, testPrompt);
@@ -247,9 +247,9 @@ describe('GeminiProvider', () => {
           'Some extra text {"other": "data"}';
         mockModel.generateContent.mockResolvedValue({
           response: {
-            text: () => multiFragmentResponse
-          },
-          usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+            text: () => multiFragmentResponse,
+            usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+          }
         });
 
         const result = await provider.processImage(testImage, testPrompt);
@@ -263,9 +263,9 @@ describe('GeminiProvider', () => {
         const nestedBracesResponse = '{"inscription": "In memory of {beloved} father"}';
         mockModel.generateContent.mockResolvedValue({
           response: {
-            text: () => nestedBracesResponse
-          },
-          usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+            text: () => nestedBracesResponse,
+            usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+          }
         });
 
         const result = await provider.processImage(testImage, testPrompt);
@@ -278,9 +278,9 @@ describe('GeminiProvider', () => {
         const codeBlockWithExtra = '```json\n{"from_block": true}\n```\n{"loose": true}';
         mockModel.generateContent.mockResolvedValue({
           response: {
-            text: () => codeBlockWithExtra
-          },
-          usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+            text: () => codeBlockWithExtra,
+            usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+          }
         });
 
         const result = await provider.processImage(testImage, testPrompt);
@@ -293,9 +293,9 @@ describe('GeminiProvider', () => {
           '{"memorial_number": "789", "inscription": "RIP"}';
         mockModel.generateContent.mockResolvedValue({
           response: {
-            text: () => chattierResponse
-          },
-          usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+            text: () => chattierResponse,
+            usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50 }
+          }
         });
 
         const result = await provider.processImage(testImage, testPrompt);
