@@ -176,6 +176,22 @@ describe('IngestService', () => {
         .rejects.toThrow('Unknown source type: invalid_type');
     });
 
+    it('should accept monument_photo as a valid source type', async () => {
+      glob.mockImplementation((pattern, cb) => cb(null, ['test.jpg']));
+      processFile.mockImplementation(() => Promise.resolve({ success: true }));
+
+      await expect(service.ingest('*.jpg', { sourceType: 'monument_photo' }))
+        .resolves.not.toThrow();
+    });
+
+    it('should accept record_sheet as a valid source type', async () => {
+      glob.mockImplementation((pattern, cb) => cb(null, ['test.jpg']));
+      processFile.mockImplementation(() => Promise.resolve({ success: true }));
+
+      await expect(service.ingest('*.jpg', { sourceType: 'record_sheet' }))
+        .resolves.not.toThrow();
+    });
+
     it('should log progress', async () => {
       glob.mockImplementation((pattern, cb) => cb(null, ['test.jpg']));
       processFile.mockImplementation(() => Promise.resolve({ success: true }));
