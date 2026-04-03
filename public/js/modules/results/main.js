@@ -352,6 +352,12 @@ const SanitizeUtils = {
           <button class="btn btn-sm btn-info copy-inscription ml-2" data-inscription="${safe.inscription.replace(/"/g, '&quot;')}">
             <i class="fas fa-copy"></i> Copy Inscription
           </button>
+          <button class="btn btn-sm btn-primary edit-record ml-2" data-record-id="${memorial.id}" data-record-type="memorial">
+            <i class="fas fa-edit"></i> Edit
+          </button>
+          ${memorial.needs_review ? `<button class="btn btn-sm btn-warning mark-reviewed ml-2" data-record-id="${memorial.id}" data-record-type="memorial">
+            <i class="fas fa-check"></i> Mark as Reviewed
+          </button>` : ''}
         </div>
       </div>
     </td>
@@ -542,6 +548,12 @@ const SanitizeUtils = {
           <button class="btn btn-sm btn-secondary close-detail" data-memorial="${uniqueId}">
             <i class="fas fa-chevron-up"></i> Close Details
           </button>
+          <button class="btn btn-sm btn-primary edit-record ml-2" data-record-id="${entry.id}" data-record-type="burial-register">
+            <i class="fas fa-edit"></i> Edit
+          </button>
+          ${entry.needs_review ? `<button class="btn btn-sm btn-warning mark-reviewed ml-2" data-record-id="${entry.id}" data-record-type="burial-register">
+            <i class="fas fa-check"></i> Mark as Reviewed
+          </button>` : ''}
         </div>
       </div>
     </td>
@@ -1097,6 +1109,12 @@ function createBurialRegisterDetailHTML(entry, colSpan, uniqueId) {
         <button class="btn btn-sm btn-secondary close-detail" data-memorial="${uniqueId}">
           <i class="fas fa-chevron-up"></i> Close Details
         </button>
+        <button class="btn btn-sm btn-primary edit-record ml-2" data-record-id="${graveCard.id}" data-record-type="grave-card">
+          <i class="fas fa-edit"></i> Edit
+        </button>
+        ${graveCard.needs_review ? `<button class="btn btn-sm btn-warning mark-reviewed ml-2" data-record-id="${graveCard.id}" data-record-type="grave-card">
+          <i class="fas fa-check"></i> Mark as Reviewed
+        </button>` : ''}
       </div>
     </div>
     </td>
@@ -1656,6 +1674,62 @@ document.addEventListener('click', function (event) {
       button.classList.remove('btn-success');
       button.classList.add('btn-info');
     }, 2000);
+  }
+
+  // Handle edit record button clicks
+  if (event.target.closest('.edit-record')) {
+    event.preventDefault();
+    const button = event.target.closest('.edit-record');
+    const recordId = button.getAttribute('data-record-id');
+    const recordType = button.getAttribute('data-record-type');
+
+    // Show a toast that editing requires a reload - simplified implementation
+    alert('Edit functionality will be available in a future update. For now, please mark records as reviewed using the "Mark as Reviewed" button.');
+  }
+
+  // Handle mark as reviewed button clicks
+  if (event.target.closest('.mark-reviewed')) {
+    event.preventDefault();
+    const button = event.target.closest('.mark-reviewed');
+    const recordId = button.getAttribute('data-record-id');
+    const recordType = button.getAttribute('data-record-type');
+
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Marking...';
+
+    // Map record type to API endpoint type
+    const apiTypeMap = {
+      'memorial': 'memorials',
+      'burial-register': 'burial-register',
+      'grave-card': 'grave-cards'
+    };
+
+    const apiType = apiTypeMap[recordType];
+
+    fetch(`/api/results/${apiType}/${recordId}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+      .then(res => {
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        // Close the detail view
+        const memorialId = button.getAttribute('data-memorial') || document.querySelector('.detail-row')?.id?.replace('detail-', '');
+        if (memorialId) {
+          toggleRow(memorialId);
+        } else {
+          // If we can't find memorialId, just reload
+          window.location.reload();
+        }
+      })
+      .catch(err => {
+        console.error('Error marking as reviewed:', err);
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-check"></i> Mark as Reviewed';
+        alert('Failed to mark as reviewed. Please try again.');
+      });
   }
 });
 
