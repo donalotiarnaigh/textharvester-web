@@ -164,8 +164,10 @@ Minor UX bug; button is visible but non-functional in collapsed state.
 **#187** — Cost data (tokens, USD) missing from CSV export and web results UI
 Database stores `input_tokens`, `output_tokens`, `estimated_cost_usd` for all records, but these are not visible in CSV exports or the web results table. Users cannot compare cost efficiency across providers or export cost analysis. Discovered during ardmore flash photography test — OpenAI cost $0.31 for 26 files vs Anthropic $0.47.
 
-**#188** — Gemini cost tracking returns 0 tokens and $0 cost for all records
-Gemini provider shows 0 input_tokens, 0 output_tokens, $0.00 estimated_cost for all successful records (26 monument photos processed with 100% extraction success). Root cause unknown — likely an issue with how Gemini API response is parsed for usage data. Blocks cost comparison analysis across all 3 providers.
+~~**#188** — Gemini cost tracking returns 0 tokens and $0 cost for all records~~ ✅ Fixed
+Gemini provider showed 0 input_tokens, 0 output_tokens, $0.00 estimated_cost for all successful records.
+
+**Fix (branch `claude/next-issue-qoTF5`):** `usageMetadata` is nested under `response.response` in the Google Generative AI SDK, but `geminiProvider.js` was reading `response.usageMetadata` (top level) — always `undefined`, always defaulting to 0. Changed lines 132-133 to `response.response.usageMetadata?.promptTokenCount` / `candidatesTokenCount`. Updated all 11 test mocks to reflect the real SDK structure. 26 tests passing.
 
 ---
 

@@ -129,8 +129,8 @@ class GeminiProvider extends BaseVisionProvider {
 
           // Normalize usage from Gemini response
           const usage = {
-            input_tokens: response.usageMetadata?.promptTokenCount ?? 0,
-            output_tokens: response.usageMetadata?.candidatesTokenCount ?? 0
+            input_tokens: response.response.usageMetadata?.promptTokenCount ?? 0,
+            output_tokens: response.response.usageMetadata?.candidatesTokenCount ?? 0
           };
 
           if (!rawContent) {
