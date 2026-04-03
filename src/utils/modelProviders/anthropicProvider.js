@@ -205,8 +205,8 @@ class AnthropicProvider extends BaseVisionProvider {
               phase: 'response_parsing',
               operation: 'processImage',
               contentLength: rawContent.length,
-            jsonContentLength: jsonContent.length,
-            contentPreview: jsonContent.substring(0, 500),
+              jsonContentLength: jsonContent.length,
+              contentPreview: jsonContent.substring(0, 500),
               attempt
             });
             throw new Error(`Failed to parse JSON response: ${validationResult.error}`);

@@ -390,12 +390,12 @@ class AuditLogE2ETester {
       console.log(`   • ${p.file} (${p.sourceType}) - ${p.processingId ? '✓' : '✗'}`);
     });
 
-    console.log(`\n📝 AUDIT LOG ENTRIES:`);
+    console.log('\n📝 AUDIT LOG ENTRIES:');
     console.log(`   Total entries in llm_audit_log: ${this.results.auditEntries.length}`);
 
     if (this.results.auditEntries.length > 0) {
       const entry = this.results.auditEntries[0];
-      console.log(`\n   Latest Entry Details:`);
+      console.log('\n   Latest Entry Details:');
       console.log(`   • Processing ID: ${entry.processing_id?.substring(0, 16)}...`);
       console.log(`   • Provider: ${entry.provider}`);
       console.log(`   • Model: ${entry.model}`);
@@ -407,12 +407,12 @@ class AuditLogE2ETester {
       console.log(`   • Response Time: ${entry.response_time_ms}ms`);
     }
 
-    console.log(`\n✅ VALIDATION CHECKS:`);
+    console.log('\n✅ VALIDATION CHECKS:');
     const allValidationsPassed = this.results.auditEntries.every(e =>
       e.processing_id && e.system_prompt_len > 0 && e.user_prompt_len > 0 && e.raw_response_len > 0
     );
 
-    console.log(`   • Audit log table exists: ✓`);
+    console.log('   • Audit log table exists: ✓');
     console.log(`   • Entries created: ${this.results.auditEntries.length > 0 ? '✓' : '⚠'}`);
     console.log(`   • processing_id captured: ${allValidationsPassed ? '✓' : '⚠'}`);
     console.log(`   • Full system_prompt stored: ${allValidationsPassed ? '✓' : '⚠'}`);
@@ -428,14 +428,14 @@ class AuditLogE2ETester {
       });
     }
 
-    console.log(`\n🔍 QUERY AUDIT LOG:`);
-    console.log(`   sqlite3 data/memorials.db`);
-    console.log(`   SELECT * FROM llm_audit_log ORDER BY id DESC LIMIT 5;`);
+    console.log('\n🔍 QUERY AUDIT LOG:');
+    console.log('   sqlite3 data/memorials.db');
+    console.log('   SELECT * FROM llm_audit_log ORDER BY id DESC LIMIT 5;');
 
-    console.log(`\n📈 NEXT STEPS:`);
-    console.log(`   1. Review audit entries using sqlite3 CLI`);
-    console.log(`   2. Export entries for eval dataset building (Issue #121)`);
-    console.log(`   3. Use processing_id for cross-referencing with memorials`);
+    console.log('\n📈 NEXT STEPS:');
+    console.log('   1. Review audit entries using sqlite3 CLI');
+    console.log('   2. Export entries for eval dataset building (Issue #121)');
+    console.log('   3. Use processing_id for cross-referencing with memorials');
 
     console.log('\n');
   }

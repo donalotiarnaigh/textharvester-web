@@ -155,7 +155,9 @@ function initializeDatabase() {
         { name: 'input_tokens', def: 'INTEGER DEFAULT 0' },
         { name: 'output_tokens', def: 'INTEGER DEFAULT 0' },
         { name: 'estimated_cost_usd', def: 'REAL DEFAULT 0' },
-        { name: 'processing_id', def: 'TEXT' }
+        { name: 'processing_id', def: 'TEXT' },
+        { name: 'edited_at', def: 'DATETIME' },
+        { name: 'edited_fields', def: 'TEXT' }
       ];
       const missing = migrations.filter(col => !existingCols.includes(col.name));
       runColumnMigration('memorials', missing, 'add_cost_columns_v1');
@@ -245,7 +247,9 @@ function initializeBurialRegisterTable() {
         { name: 'input_tokens', def: 'INTEGER DEFAULT 0' },
         { name: 'output_tokens', def: 'INTEGER DEFAULT 0' },
         { name: 'estimated_cost_usd', def: 'REAL DEFAULT 0' },
-        { name: 'processing_id', def: 'TEXT' }
+        { name: 'processing_id', def: 'TEXT' },
+        { name: 'edited_at', def: 'DATETIME' },
+        { name: 'edited_fields', def: 'TEXT' }
       ];
       const missingBurial = burialMigrations.filter(col => !existingCols.includes(col.name));
       runColumnMigration('burial_register_entries', missingBurial, 'burial_register_add_columns_v1');
@@ -485,6 +489,123 @@ const backupDatabase = async () => {
   });
 };
 
+const MEMORIAL_EDITABLE_FIELDS = [
+  'first_name', 'last_name', 'year_of_death', 'inscription',
+  'site_code', 'memorial_number', 'transcription_raw',
+  'stone_condition', 'typography_analysis', 'iconography',
+  'structural_observations'
+];
+
+const VALID_YEAR_OF_DEATH_PATTERN = /^(\d{4}(-\d{4})?|-)$/;
+
+function validateYearOfDeath(value) {
+  if (value === null || value === undefined) return true;
+  if (value === '-') return true;
+  if (typeof value !== 'string') return false;
+  if (!VALID_YEAR_OF_DEATH_PATTERN.test(value)) return false;
+
+  // Extract year and validate range
+  const year = parseInt(value.split('-')[0], 10);
+  return year >= 1500 && year <= 2100;
+}
+
+const updateMemorial = async (id, fields) => {
+  if (!id || id <= 0) {
+    throw new Error('Invalid memorial ID');
+  }
+
+  if (!fields || Object.keys(fields).length === 0) {
+    throw new Error('No fields to update');
+  }
+
+  // Filter to editable fields only
+  const editableUpdates = {};
+  const editedFields = [];
+
+  for (const [key, value] of Object.entries(fields)) {
+    if (MEMORIAL_EDITABLE_FIELDS.includes(key)) {
+      // Validate specific fields
+      if (key === 'year_of_death' && !validateYearOfDeath(value)) {
+        throw new Error(`Invalid year_of_death format: ${value}`);
+      }
+
+      editableUpdates[key] = value;
+      editedFields.push(key);
+    }
+  }
+
+  if (editedFields.length === 0) {
+    throw new Error('No valid editable fields provided');
+  }
+
+  return new Promise((resolve, reject) => {
+    const setClauses = Object.keys(editableUpdates)
+      .map(key => `${key} = ?`)
+      .concat(['edited_at = CURRENT_TIMESTAMP', 'edited_fields = ?'])
+      .join(', ');
+
+    const params = [
+      ...Object.values(editableUpdates),
+      JSON.stringify(editedFields),
+      id
+    ];
+
+    const sql = `UPDATE memorials SET ${setClauses} WHERE id = ?`;
+
+    db.run(sql, params, function(err) {
+      if (err) {
+        logger.error('Error updating memorial:', err);
+        reject(err);
+        return;
+      }
+
+      // Fetch the updated record
+      db.get('SELECT * FROM memorials WHERE id = ?', [id], (err, row) => {
+        if (err) {
+          logger.error('Error fetching updated memorial:', err);
+          reject(err);
+          return;
+        }
+        resolve(row || null);
+      });
+    });
+  });
+};
+
+const markAsReviewed = async (tableName, id) => {
+  const VALID_TABLES = ['memorials', 'burial_register_entries', 'grave_cards'];
+
+  if (!VALID_TABLES.includes(tableName)) {
+    throw new Error(`Invalid table name: ${tableName}`);
+  }
+
+  if (!id || id <= 0) {
+    throw new Error('Invalid ID');
+  }
+
+  return new Promise((resolve, reject) => {
+    const sql = `UPDATE ${tableName} SET needs_review = 0, reviewed_at = CURRENT_TIMESTAMP WHERE id = ?`;
+
+    db.run(sql, [id], function(err) {
+      if (err) {
+        logger.error(`Error marking record as reviewed in ${tableName}:`, err);
+        reject(err);
+        return;
+      }
+
+      // Fetch the updated record
+      db.get(`SELECT * FROM ${tableName} WHERE id = ?`, [id], (err, row) => {
+        if (err) {
+          logger.error(`Error fetching reviewed record from ${tableName}:`, err);
+          reject(err);
+          return;
+        }
+        resolve(row || null);
+      });
+    });
+  });
+};
+
 // Initialize database on module load
 initializeMigrationsTable();
 initializeDatabase();
@@ -506,6 +627,9 @@ module.exports = {
   getMemorialsBySiteCode,
   clearAllMemorials,
   backupDatabase,
+  updateMemorial,
+  markAsReviewed,
+  MEMORIAL_EDITABLE_FIELDS,
   initializeMigrationsTable,
   runColumnMigration,
   initializeDatabase,

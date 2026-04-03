@@ -133,7 +133,7 @@ async function logEntry(entry) {
  */
 async function getEntriesByProcessingId(processingId) {
   return new Promise((resolve) => {
-    const sql = `SELECT * FROM llm_audit_log WHERE processing_id = ? ORDER BY timestamp ASC`;
+    const sql = 'SELECT * FROM llm_audit_log WHERE processing_id = ? ORDER BY timestamp ASC';
 
     db.all(sql, [processingId], (err, rows) => {
       if (err) {

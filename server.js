@@ -82,6 +82,10 @@ app.use('/api/grave-cards', graveCardRoutes);
 const apiRoutes = require('./src/routes/api');
 app.use('/api/schemas', apiRoutes);
 
+// Result Edit routes (inline correction of results)
+const resultEditRoutes = require('./src/routes/resultEditRoutes');
+app.use('/api/results', resultEditRoutes);
+
 // Mobile Upload routes (iOS app integration)
 const mobileUploadRoutes = require('./src/routes/mobileUploadRoutes');
 app.use('/api/mobile', mobileUploadRoutes);
