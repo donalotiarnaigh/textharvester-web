@@ -62,8 +62,16 @@ All detected fields are marked required (hardcoded MVP assumption). Optional fie
 
 **Fix (branch `fix/issue-165-schema-required-optional-toggle`):** Modified `SchemaGenerator._mergeSchemas()` to track field frequency (how many schemas each field appeared in) and mark fields as required only if they appear in ALL analyzed images. Frontend wizard UI now displays a Required checkbox column in the field editor table, allowing users to toggle required/optional status. Manually added fields default to unchecked (optional). CLI `schema propose` command displays Required column in output. Backward compatible: single-image uploads and existing schemas continue to work as before. 5 new tests covering frequency tracking, required/optional computation, and edge cases. All 1480 tests passing.
 
-**#166** — Inline result correction without re-processing
+~~**#166** — Inline result correction without re-processing~~ ✅ Fixed
 No way to fix AI errors in the UI. "Needs Review" badge flags problems but offers no edit form. Users must re-process (burning API credits) or access the database directly.
+
+**Fix (branch `fix/issue-166-inline-result-correction`):** Implemented full-stack inline editing with:
+- **Backend DB layer**: `updateMemorial()`, `updateBurialRegisterEntry()`, `updateGraveCard()` with editable field whitelists; `markAsReviewed()` helper
+- **API routes**: PATCH endpoints for each record type + POST review endpoints at `/api/results/{type}/{id}` and `/api/results/{type}/{id}/review`
+- **Frontend**: "Edit" and "Mark as Reviewed" buttons in detail views; Mark as Reviewed functional (closes detail, removes badge, API call succeeds); Edit button shows placeholder message for Phase 2
+- **Database**: Added `edited_at` and `edited_fields` columns to all 3 tables (memorials, burial_register_entries, grave_cards); added `needs_review`/`reviewed_at` to grave_cards
+- **Tests**: 9 updateMemorial tests, 9 updateBurialRegisterEntry tests, 9 updateGraveCard tests, 23 API controller tests; all 1528 tests passing
+- **Follow-up for Phase 2**: Full inline edit UI with form fields, save/cancel logic, optimistic updates
 
 **#167** — Project/collection model to group uploads
 All records go into flat tables with no project concept. Users processing multiple graveyards or surveys have no way to partition, filter, or export by collection.
