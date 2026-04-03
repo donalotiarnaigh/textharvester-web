@@ -200,7 +200,7 @@ class IngestService {
     const effectiveOptions = { ...this.config, ...options };
 
     // Validate source type
-    const validSourceTypes = ['memorial', 'burial_register', 'grave_record_card', 'typographic_analysis', 'monument_classification'];
+    const validSourceTypes = ['record_sheet', 'monument_photo', 'memorial', 'burial_register', 'grave_record_card', 'typographic_analysis', 'monument_classification'];
     if (effectiveOptions.sourceType && !validSourceTypes.includes(effectiveOptions.sourceType)) {
       throw new CLIError('INVALID_SOURCE_TYPE', `Unknown source type: ${effectiveOptions.sourceType}`);
     }

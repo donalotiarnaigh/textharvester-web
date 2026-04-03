@@ -48,6 +48,18 @@ describe('QueryService', () => {
       await expect(service.list({ sourceType: 'unknown' }))
         .rejects.toThrow('Unknown source type');
     });
+
+    it('should resolve monument_photo to memorials storage', async () => {
+      mockStorage.memorials.getAll.mockResolvedValue([]);
+      await service.list({ sourceType: 'monument_photo' });
+      expect(mockStorage.memorials.getAll).toHaveBeenCalled();
+    });
+
+    it('should resolve record_sheet to memorials storage', async () => {
+      mockStorage.memorials.getAll.mockResolvedValue([]);
+      await service.list({ sourceType: 'record_sheet' });
+      expect(mockStorage.memorials.getAll).toHaveBeenCalled();
+    });
   });
 
   describe('get', () => {
