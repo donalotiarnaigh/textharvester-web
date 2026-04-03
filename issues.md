@@ -52,8 +52,10 @@ Server starts silently with no API keys. Users only discover the problem when th
 
 Determines whether customers can work independently or need ongoing support.
 
-**#164** — Schema wizard should analyse all uploaded example images
+~~**#164** — Schema wizard should analyse all uploaded example images~~ ✅ Fixed
 Wizard instructs users to upload 3-5 examples but `SchemaGenerator` only analyses the first image. Remaining uploads are wasted. Variable-format documents get incomplete schemas.
+
+**Fix (branch `fix/issue-164-schema-wizard-all-images`):** Refactored `SchemaGenerator.generateSchema()` to analyze each uploaded image independently via new `_analyzeFile()` helper, then merge schemas with `_mergeSchemas()`. Union of fields across all images; majority-vote on conflicting types; first non-empty description wins. Gracefully handles partial failures (skips failed images, uses successful ones). Error thrown only if all analyses fail. 6 new tests added (multi-image analysis, field merging, type conflicts, partial failures, backward compatibility, all-fail error). All 1470 tests passing.
 
 **#165** — Schema wizard — required/optional toggle per field
 All detected fields are marked required (hardcoded MVP assumption). Optional fields that the AI can't always extract cause false validation failures users can't fix without database access.

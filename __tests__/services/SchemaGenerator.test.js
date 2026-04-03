@@ -85,15 +85,165 @@ describe('SchemaGenerator', () => {
     it('should throw error when LLM returns invalid JSON', async () => {
       mockLlmProvider.processImage.mockResolvedValue({ content: 'Not JSON', usage: { input_tokens: 0, output_tokens: 0 } });
 
+      // When all images fail to parse, should throw "Could not analyze any of the provided images"
       await expect(schemaGenerator.generateSchema(['/path/to/image1.jpg']))
-        .rejects.toThrow('Failed to parse LLM response');
+        .rejects.toThrow('Could not analyze any of the provided images');
     });
 
     it('should throw error when LLM cannot find consistent structure', async () => {
       mockLlmProvider.processImage.mockResolvedValue({ content: JSON.stringify({ error: 'No structure found' }), usage: { input_tokens: 0, output_tokens: 0 } });
 
+      // When all images fail, should throw "Could not analyze any of the provided images"
       await expect(schemaGenerator.generateSchema(['/path/to/image1.jpg']))
-        .rejects.toThrow('No consistent structure found');
+        .rejects.toThrow('Could not analyze any of the provided images');
+    });
+
+    it('should analyze all provided images (multi-image)', async () => {
+      mockLlmProvider.processImage.mockResolvedValue({
+        content: JSON.stringify({
+          tableName: 'Invoice',
+          fields: [{ name: 'date', type: 'date', description: 'Invoice date' }]
+        }),
+        usage: { input_tokens: 0, output_tokens: 0 }
+      });
+
+      await schemaGenerator.generateSchema(['/path/to/img1.jpg', '/path/to/img2.jpg', '/path/to/img3.jpg']);
+
+      expect(mockLlmProvider.processImage).toHaveBeenCalledTimes(3);
+    });
+
+    it('should merge fields from multiple images (union)', async () => {
+      // Image 1: date, amount
+      // Image 2: date, vendor (overlapping + new)
+      // Image 3: amount, total (overlapping + new)
+      mockLlmProvider.processImage
+        .mockResolvedValueOnce({
+          content: JSON.stringify({
+            tableName: 'Invoice',
+            fields: [
+              { name: 'date', type: 'date', description: 'Invoice date' },
+              { name: 'amount', type: 'number', description: 'Total amount' }
+            ]
+          }),
+          usage: { input_tokens: 0, output_tokens: 0 }
+        })
+        .mockResolvedValueOnce({
+          content: JSON.stringify({
+            tableName: 'Invoice',
+            fields: [
+              { name: 'date', type: 'date', description: 'Invoice date' },
+              { name: 'vendor', type: 'string', description: 'Vendor name' }
+            ]
+          }),
+          usage: { input_tokens: 0, output_tokens: 0 }
+        })
+        .mockResolvedValueOnce({
+          content: JSON.stringify({
+            tableName: 'Invoice',
+            fields: [
+              { name: 'amount', type: 'number', description: 'Total amount' },
+              { name: 'total', type: 'number', description: 'Final total' }
+            ]
+          }),
+          usage: { input_tokens: 0, output_tokens: 0 }
+        });
+
+      const result = await schemaGenerator.generateSchema(['/path/to/img1.jpg', '/path/to/img2.jpg', '/path/to/img3.jpg']);
+
+      // Should have all 4 unique fields: date, amount, vendor, total
+      expect(result.fields).toHaveLength(4);
+      const fieldNames = result.fields.map(f => f.name);
+      expect(fieldNames).toContain('date');
+      expect(fieldNames).toContain('amount');
+      expect(fieldNames).toContain('vendor');
+      expect(fieldNames).toContain('total');
+    });
+
+    it('should resolve type conflicts by majority vote', async () => {
+      // 2 images say "string", 1 says "number" → should be "string"
+      mockLlmProvider.processImage
+        .mockResolvedValueOnce({
+          content: JSON.stringify({
+            tableName: 'Document',
+            fields: [{ name: 'id', type: 'string', description: 'ID' }]
+          }),
+          usage: { input_tokens: 0, output_tokens: 0 }
+        })
+        .mockResolvedValueOnce({
+          content: JSON.stringify({
+            tableName: 'Document',
+            fields: [{ name: 'id', type: 'string', description: 'ID field' }]
+          }),
+          usage: { input_tokens: 0, output_tokens: 0 }
+        })
+        .mockResolvedValueOnce({
+          content: JSON.stringify({
+            tableName: 'Document',
+            fields: [{ name: 'id', type: 'number', description: 'ID' }]
+          }),
+          usage: { input_tokens: 0, output_tokens: 0 }
+        });
+
+      const result = await schemaGenerator.generateSchema(['/path/to/img1.jpg', '/path/to/img2.jpg', '/path/to/img3.jpg']);
+
+      const idField = result.fields.find(f => f.name === 'id');
+      expect(idField.type).toBe('string'); // Majority wins: 2 string vs 1 number
+    });
+
+    it('should handle partial failures gracefully', async () => {
+      // Image 1 succeeds
+      // Image 2 fails LLM
+      // Image 3 succeeds
+      mockLlmProvider.processImage
+        .mockResolvedValueOnce({
+          content: JSON.stringify({
+            tableName: 'Invoice',
+            fields: [{ name: 'date', type: 'date', description: 'Date' }]
+          }),
+          usage: { input_tokens: 0, output_tokens: 0 }
+        })
+        .mockRejectedValueOnce(new Error('LLM API error'))
+        .mockResolvedValueOnce({
+          content: JSON.stringify({
+            tableName: 'Invoice',
+            fields: [{ name: 'amount', type: 'number', description: 'Amount' }]
+          }),
+          usage: { input_tokens: 0, output_tokens: 0 }
+        });
+
+      const result = await schemaGenerator.generateSchema(['/path/to/img1.jpg', '/path/to/img2.jpg', '/path/to/img3.jpg']);
+
+      // Should return merged schema from 2 successful images
+      expect(result.fields).toHaveLength(2);
+      const fieldNames = result.fields.map(f => f.name);
+      expect(fieldNames).toContain('date');
+      expect(fieldNames).toContain('amount');
+    });
+
+    it('should throw error when all images fail', async () => {
+      mockLlmProvider.processImage
+        .mockRejectedValueOnce(new Error('API error'))
+        .mockRejectedValueOnce(new Error('API error'))
+        .mockRejectedValueOnce(new Error('API error'));
+
+      await expect(schemaGenerator.generateSchema(['/path/to/img1.jpg', '/path/to/img2.jpg', '/path/to/img3.jpg']))
+        .rejects.toThrow('Could not analyze any of the provided images');
+    });
+
+    it('should maintain backward compatibility with single image', async () => {
+      mockLlmProvider.processImage.mockResolvedValue({
+        content: JSON.stringify({
+          tableName: 'Invoice',
+          fields: [{ name: 'date', type: 'date', description: 'Date' }]
+        }),
+        usage: { input_tokens: 0, output_tokens: 0 }
+      });
+
+      const result = await schemaGenerator.generateSchema(['/path/to/single.jpg']);
+
+      expect(mockLlmProvider.processImage).toHaveBeenCalledTimes(1);
+      expect(result.fields).toHaveLength(1);
+      expect(result.fields[0].name).toBe('date');
     });
   });
 });
