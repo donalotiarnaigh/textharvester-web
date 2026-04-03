@@ -24,28 +24,77 @@ class SchemaGenerator {
 
   /**
    * Analyzes example files and generates a schema definition.
+   * Analyzes all provided files and merges the schemas.
    * @param {string[]} filePaths - Paths to the example files.
-   * @returns {Promise<Object>} - The generated schema definition.
+   * @returns {Promise<Object>} - The merged schema definition.
    */
   async generateSchema(filePaths) {
-    // Construct prompt with system instructions
-    const prompt = `${SchemaGenerator.SYSTEM_PROMPT}\n\nAnalyze this image and extract a schema definition.`;
+    if (!filePaths || filePaths.length === 0) {
+      throw new Error('No files provided for analysis');
+    }
 
-    // Limit to first file for now as provider handles single image
-    const sampleFile = filePaths[0];
-    let fileToProcess = sampleFile;
+    // Analyze each file independently
+    const analysisResults = [];
+    for (const filePath of filePaths) {
+      try {
+        const result = await this._analyzeFile(filePath);
+        if (result) {
+          analysisResults.push(result);
+        }
+      } catch (error) {
+        // Log and continue with next file
+        console.warn(`Failed to analyze ${filePath}: ${error.message}`);
+      }
+    }
+
+    // If no files could be analyzed, throw error
+    if (analysisResults.length === 0) {
+      throw new Error('Could not analyze any of the provided images');
+    }
+
+    // Merge schemas from all successful analyses
+    const merged = this._mergeSchemas(analysisResults);
+
+    const sanitizedTableName = `custom_${this._sanitizeName(merged.tableName)}`;
+    const sanitizedFields = merged.fields.map(field => ({
+      ...field,
+      name: this._sanitizeName(field.name)
+    }));
+
+    return {
+      recommendedName: this._sanitizeName(merged.tableName).replace(/_/g, ' '),
+      tableName: sanitizedTableName,
+      fields: sanitizedFields,
+      jsonSchema: {
+        type: 'object',
+        properties: sanitizedFields.reduce((acc, f) => ({ ...acc, [f.name]: { type: f.type, description: f.description } }), {}),
+        required: sanitizedFields.map(f => f.name)
+      },
+      systemPrompt: 'You are a data entry clerk. Extract the following fields from the document image.',
+      userPromptTemplate: `Extract these fields: ${sanitizedFields.map(f => f.name).join(', ')}`
+    };
+  }
+
+  /**
+   * Analyzes a single file and returns its schema.
+   * @param {string} filePath - Path to the file.
+   * @returns {Promise<Object|null>} - The schema { tableName, fields } or null on failure.
+   */
+  async _analyzeFile(filePath) {
+    const prompt = `${SchemaGenerator.SYSTEM_PROMPT}\n\nAnalyze this document image and extract a schema definition.`;
+
+    let fileToProcess = filePath;
     let cleanupFile = null;
 
     try {
-      if (path.extname(sampleFile).toLowerCase() === '.pdf') {
-        process.stdout.write(`Converting PDF ${path.basename(sampleFile)} for analysis... `);
-        // keepSource: true because we are just proposing, we don't own the file to delete it
-        const images = await convertPdfToJpegs(sampleFile, { keepSource: true });
+      if (path.extname(filePath).toLowerCase() === '.pdf') {
+        process.stdout.write(`Converting PDF ${path.basename(filePath)} for analysis... `);
+        const images = await convertPdfToJpegs(filePath, { keepSource: true });
         if (images.length > 0) {
           fileToProcess = images[0];
-          cleanupFile = images[0]; // We only use the first page
+          cleanupFile = images[0];
 
-          // Let's clean up unused pages immediately
+          // Clean up unused pages
           for (let i = 1; i < images.length; i++) {
             await fs.promises.unlink(images[i]).catch(() => { });
           }
@@ -63,16 +112,10 @@ class SchemaGenerator {
 
       let response;
       try {
-        // Use processImage with raw=true because we handle parsing below
         const rawResult = await this.llmProvider.processImage(base64Image, prompt, { raw: true });
         response = rawResult.content;
       } catch (error) {
         throw new Error(`LLM interaction failed: ${error.message}`);
-      }
-
-      // Cleanup temp image if we created one
-      if (cleanupFile) {
-        await fs.promises.unlink(cleanupFile).catch(() => { });
       }
 
       let parsed;
@@ -87,27 +130,12 @@ class SchemaGenerator {
       }
 
       if (!parsed.tableName || !parsed.fields || !Array.isArray(parsed.fields)) {
-        throw new Error('No consistent structure found'); // Generic fallback for malformed schema
+        throw new Error('No consistent structure found');
       }
 
-      const sanitizedTableName = `custom_${this._sanitizeName(parsed.tableName)}`;
-      const sanitizedFields = parsed.fields.map(field => ({
-        ...field,
-        name: this._sanitizeName(field.name)
-      }));
-
       return {
-        recommendedName: this._sanitizeName(parsed.tableName).replace(/_/g, ' '), // Human readable default name
-        tableName: sanitizedTableName,
-        fields: sanitizedFields,
-        // Include system/user prompts for future use by DynamicProcessor
-        jsonSchema: {
-          type: 'object',
-          properties: sanitizedFields.reduce((acc, f) => ({ ...acc, [f.name]: { type: f.type, description: f.description } }), {}),
-          required: sanitizedFields.map(f => f.name)
-        },
-        systemPrompt: 'You are a data entry clerk. Extract the following fields from the document image.',
-        userPromptTemplate: `Extract these fields: ${sanitizedFields.map(f => f.name).join(', ')}`
+        tableName: parsed.tableName,
+        fields: parsed.fields
       };
 
     } catch (e) {
@@ -116,6 +144,56 @@ class SchemaGenerator {
       }
       throw e;
     }
+  }
+
+  /**
+   * Merges multiple schemas into a single unified schema.
+   * Union of fields; majority vote on types; first non-empty description.
+   * @param {Array<Object>} schemas - Array of { tableName, fields }
+   * @returns {Object} - Merged schema { tableName, fields }
+   */
+  _mergeSchemas(schemas) {
+    if (schemas.length === 0) {
+      throw new Error('No schemas to merge');
+    }
+
+    if (schemas.length === 1) {
+      return schemas[0];
+    }
+
+    // Use first tableName (deterministic)
+    const tableName = schemas[0].tableName;
+
+    // Group fields by name and collect all instances
+    const fieldsByName = {};
+    for (const schema of schemas) {
+      for (const field of schema.fields) {
+        if (!fieldsByName[field.name]) {
+          fieldsByName[field.name] = [];
+        }
+        fieldsByName[field.name].push(field);
+      }
+    }
+
+    // Merge each field group
+    const mergedFields = Object.entries(fieldsByName).map(([name, instances]) => {
+      // Majority vote on type
+      const typeCounts = {};
+      for (const instance of instances) {
+        typeCounts[instance.type] = (typeCounts[instance.type] || 0) + 1;
+      }
+      const type = Object.entries(typeCounts).reduce((a, b) => (b[1] > a[1] ? b : a))[0];
+
+      // First non-empty description
+      const description = instances.find(f => f.description && f.description.trim())?.description || '';
+
+      return { name, type, description };
+    });
+
+    return {
+      tableName,
+      fields: mergedFields
+    };
   }
 
   /**
