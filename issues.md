@@ -1,6 +1,6 @@
 # Issue Tracker — TextHarvester Web
 
-_Last updated: 2026-04-03 · 28 open issues · [20 completed](#completed-issues)_
+_Last updated: 2026-04-03 · 30 open issues · [20 completed](#completed-issues)_
 
 ---
 
@@ -160,6 +160,12 @@ Edge-case name formatting differences between providers; low frequency in practi
 
 **#23** — UI Inconsistency: Copy Button Visible But Only Works When Modal Expanded
 Minor UX bug; button is visible but non-functional in collapsed state.
+
+**#187** — Cost data (tokens, USD) missing from CSV export and web results UI
+Database stores `input_tokens`, `output_tokens`, `estimated_cost_usd` for all records, but these are not visible in CSV exports or the web results table. Users cannot compare cost efficiency across providers or export cost analysis. Discovered during ardmore flash photography test — OpenAI cost $0.31 for 26 files vs Anthropic $0.47.
+
+**#188** — Gemini cost tracking returns 0 tokens and $0 cost for all records
+Gemini provider shows 0 input_tokens, 0 output_tokens, $0.00 estimated_cost for all successful records (26 monument photos processed with 100% extraction success). Root cause unknown — likely an issue with how Gemini API response is parsed for usage data. Blocks cost comparison analysis across all 3 providers.
 
 ---
 
