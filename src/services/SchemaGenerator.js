@@ -68,7 +68,7 @@ class SchemaGenerator {
       jsonSchema: {
         type: 'object',
         properties: sanitizedFields.reduce((acc, f) => ({ ...acc, [f.name]: { type: f.type, description: f.description } }), {}),
-        required: sanitizedFields.map(f => f.name)
+        required: sanitizedFields.filter(f => f.required).map(f => f.name)
       },
       systemPrompt: 'You are a data entry clerk. Extract the following fields from the document image.',
       userPromptTemplate: `Extract these fields: ${sanitizedFields.map(f => f.name).join(', ')}`
@@ -149,6 +149,7 @@ class SchemaGenerator {
   /**
    * Merges multiple schemas into a single unified schema.
    * Union of fields; majority vote on types; first non-empty description.
+   * Tracks field frequency to determine which are required (present in all schemas).
    * @param {Array<Object>} schemas - Array of { tableName, fields }
    * @returns {Object} - Merged schema { tableName, fields }
    */
@@ -157,8 +158,19 @@ class SchemaGenerator {
       throw new Error('No schemas to merge');
     }
 
+    const totalSchemas = schemas.length;
+
     if (schemas.length === 1) {
-      return schemas[0];
+      // Single schema: all fields are required (appear in 1/1 schemas)
+      return {
+        tableName: schemas[0].tableName,
+        fields: schemas[0].fields.map(f => ({
+          ...f,
+          frequency: 1,
+          totalSchemas: 1,
+          required: true
+        }))
+      };
     }
 
     // Use first tableName (deterministic)
@@ -187,7 +199,11 @@ class SchemaGenerator {
       // First non-empty description
       const description = instances.find(f => f.description && f.description.trim())?.description || '';
 
-      return { name, type, description };
+      // Frequency: count of schemas this field appeared in
+      const frequency = instances.length;
+      const required = frequency === totalSchemas;
+
+      return { name, type, description, frequency, totalSchemas, required };
     });
 
     return {

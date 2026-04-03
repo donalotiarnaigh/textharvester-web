@@ -47,6 +47,7 @@ schemaCommand
       console.table(analysis.fields.map(f => ({
         Name: f.name,
         Type: f.type,
+        Required: f.required ? 'Yes' : 'No',
         Description: f.description
       })));
       console.log('-----------------------\n');

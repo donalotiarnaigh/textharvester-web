@@ -93,9 +93,10 @@
                 <table class="table table-bordered">
                     <thead class="thead-light">
                         <tr>
-                            <th style="width: 30%">Field Name</th>
-                            <th style="width: 20%">Type</th>
-                            <th style="width: 40%">Description</th>
+                            <th style="width: 28%">Field Name</th>
+                            <th style="width: 18%">Type</th>
+                            <th style="width: 36%">Description</th>
+                            <th style="width: 8%">Required</th>
                             <th style="width: 10%">Action</th>
                         </tr>
                     </thead>
@@ -206,6 +207,9 @@
                     </select>
                 </td>
                 <td><input type="text" class="form-control field-desc" placeholder="Description"></td>
+                <td class="text-center">
+                    <input type="checkbox" class="field-required">
+                </td>
                 <td>
                     <button type="button" class="btn btn-sm btn-danger remove-field" onclick="this.closest('tr').remove()">&times;</button>
                 </td>
