@@ -415,4 +415,210 @@ describe('Database Storage Layer: Typographic Analysis Fields', () => {
       expect(error.message).toBe('Disk I/O error');
     });
   });
+
+  describe('Update Operations: updateMemorial()', () => {
+    let updateMemorial;
+
+    beforeEach(() => {
+      // Re-import to get fresh mock state
+      jest.resetModules();
+      const db = require('../../src/utils/database');
+      updateMemorial = db.updateMemorial;
+    });
+
+    it('should update editable fields and return updated row', async () => {
+      const updates = {
+        first_name: 'JANE',
+        inscription: 'Updated inscription'
+      };
+
+      const updatedRow = {
+        id: 1,
+        first_name: 'JANE',
+        inscription: 'Updated inscription',
+        edited_at: '2026-04-03T12:00:00.000Z',
+        edited_fields: JSON.stringify(['first_name', 'inscription'])
+      };
+
+      mockRun.mockImplementationOnce((sql, params, cb) => {
+        expect(sql).toContain('UPDATE memorials');
+        expect(sql).toContain('first_name');
+        expect(sql).toContain('inscription');
+        expect(sql).toContain('edited_at');
+        cb(null);
+      });
+
+      mockGet.mockImplementationOnce((sql, params, cb) => {
+        cb(null, updatedRow);
+      });
+
+      const result = await updateMemorial(1, updates);
+      expect(result).toEqual(updatedRow);
+    });
+
+    it('should return null for non-existent id', async () => {
+      const updates = { first_name: 'JANE' };
+
+      mockRun.mockImplementationOnce((sql, params, cb) => cb(null));
+      mockGet.mockImplementationOnce((sql, params, cb) => {
+        cb(null, null); // Not found
+      });
+
+      const result = await updateMemorial(999, updates);
+      expect(result).toBeNull();
+    });
+
+    it('should ignore non-editable fields (ai_provider, tokens, etc.)', async () => {
+      const updates = {
+        first_name: 'JANE',
+        ai_provider: 'anthropic', // Should be ignored
+        input_tokens: 500, // Should be ignored
+        processed_date: '2026-04-03' // Should be ignored
+      };
+
+      mockRun.mockImplementationOnce((sql, params, cb) => {
+        expect(sql).toContain('first_name');
+        expect(sql).not.toContain('ai_provider');
+        expect(sql).not.toContain('input_tokens');
+        expect(sql).not.toContain('processed_date');
+        cb(null);
+      });
+
+      mockGet.mockImplementationOnce((sql, params, cb) => {
+        cb(null, { id: 1, first_name: 'JANE' });
+      });
+
+      await updateMemorial(1, updates);
+    });
+
+    it('should set edited_at timestamp', async () => {
+      const updates = { first_name: 'JANE' };
+
+      let capturedSql = '';
+      mockRun.mockImplementationOnce((sql, params, cb) => {
+        capturedSql = sql;
+        cb(null);
+      });
+
+      mockGet.mockImplementationOnce((sql, params, cb) => {
+        cb(null, { id: 1, first_name: 'JANE' });
+      });
+
+      await updateMemorial(1, updates);
+      expect(capturedSql).toContain('edited_at');
+      expect(capturedSql).toContain('CURRENT_TIMESTAMP');
+    });
+
+    it('should store edited_fields as JSON array of changed field names', async () => {
+      const updates = {
+        first_name: 'JANE',
+        inscription: 'New inscription'
+      };
+
+      let capturedParams;
+      mockRun.mockImplementationOnce((sql, params, cb) => {
+        capturedParams = params;
+        cb(null);
+      });
+
+      mockGet.mockImplementationOnce((sql, params, cb) => {
+        cb(null, { id: 1 });
+      });
+
+      await updateMemorial(1, updates);
+
+      // Find the edited_fields parameter
+      const editedFieldsJson = capturedParams.find(p =>
+        typeof p === 'string' && p.includes('first_name')
+      );
+      expect(editedFieldsJson).toBeTruthy();
+    });
+
+    it('should validate year_of_death format', async () => {
+      const validUpdates = [
+        { year_of_death: '1857' },
+        { year_of_death: '1800-1900' },
+        { year_of_death: '-' },
+        { year_of_death: null }
+      ];
+
+      for (const update of validUpdates) {
+        mockRun.mockImplementationOnce((sql, params, cb) => cb(null));
+        mockGet.mockImplementationOnce((sql, params, cb) => cb(null, { id: 1 }));
+
+        const result = await updateMemorial(1, update);
+        expect(result).toBeTruthy();
+      }
+    });
+
+    it('should reject invalid year_of_death (outside 1500-2100 range)', async () => {
+      const invalidUpdates = [
+        { year_of_death: '1000' },
+        { year_of_death: '2500' }
+      ];
+
+      for (const update of invalidUpdates) {
+        const error = await updateMemorial(1, update).catch(e => e);
+        expect(error).toBeInstanceOf(Error);
+      }
+    });
+  });
+
+  describe('Update Operations: markAsReviewed()', () => {
+    let markAsReviewed;
+
+    beforeEach(() => {
+      jest.resetModules();
+      const db = require('../../src/utils/database');
+      markAsReviewed = db.markAsReviewed;
+    });
+
+    it('should set needs_review=0 and reviewed_at=CURRENT_TIMESTAMP', async () => {
+      let capturedSql = '';
+      mockRun.mockImplementationOnce((sql, params, cb) => {
+        capturedSql = sql;
+        cb(null);
+      });
+
+      mockGet.mockImplementationOnce((sql, params, cb) => {
+        cb(null, { id: 1, needs_review: 0, reviewed_at: '2026-04-03T12:00:00Z' });
+      });
+
+      await markAsReviewed('memorials', 1);
+      expect(capturedSql).toContain('needs_review = 0');
+      expect(capturedSql).toContain('reviewed_at');
+      expect(capturedSql).toContain('CURRENT_TIMESTAMP');
+    });
+
+    it('should return null for non-existent id', async () => {
+      mockRun.mockImplementationOnce((sql, params, cb) => cb(null));
+      mockGet.mockImplementationOnce((sql, params, cb) => cb(null, null));
+
+      const result = await markAsReviewed('memorials', 999);
+      expect(result).toBeNull();
+    });
+
+    it('should work for all 3 table names', async () => {
+      const tables = ['memorials', 'burial_register_entries', 'grave_cards'];
+
+      for (const table of tables) {
+        mockRun.mockImplementationOnce((sql, params, cb) => {
+          expect(sql).toContain(`UPDATE ${table}`);
+          cb(null);
+        });
+
+        mockGet.mockImplementationOnce((sql, params, cb) => {
+          cb(null, { id: 1, needs_review: 0 });
+        });
+
+        await markAsReviewed(table, 1);
+      }
+    });
+
+    it('should reject invalid table names (SQL injection protection)', async () => {
+      const error = await markAsReviewed('invalid_table; DROP TABLE memorials;--', 1)
+        .catch(e => e);
+      expect(error).toBeInstanceOf(Error);
+    });
+  });
 });

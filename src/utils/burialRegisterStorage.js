@@ -319,7 +319,7 @@ function getAllBurialRegisterEntries() {
 
 /**
  * Retrieve a single burial register entry by ID.
- * @param {number|string} id 
+ * @param {number|string} id
  * @returns {Promise<Object|null>}
  */
 function getBurialRegisterEntryById(id) {
@@ -336,6 +336,75 @@ function getBurialRegisterEntryById(id) {
   });
 }
 
+const BURIAL_EDITABLE_FIELDS = [
+  'entry_no_raw', 'name_raw', 'abode_raw', 'burial_date_raw',
+  'age_raw', 'officiant_raw', 'marginalia_raw', 'extra_notes_raw'
+];
+
+/**
+ * Update a burial register entry with specified fields.
+ * @param {number|string} id
+ * @param {Object} fields - Fields to update (only editable fields will be applied)
+ * @returns {Promise<Object|null>} Updated entry or null if not found
+ */
+async function updateBurialRegisterEntry(id, fields) {
+  if (!id || id <= 0) {
+    throw new Error('Invalid burial register entry ID');
+  }
+
+  if (!fields || Object.keys(fields).length === 0) {
+    throw new Error('No fields to update');
+  }
+
+  // Filter to editable fields only
+  const editableUpdates = {};
+  const editedFields = [];
+
+  for (const [key, value] of Object.entries(fields)) {
+    if (BURIAL_EDITABLE_FIELDS.includes(key)) {
+      editableUpdates[key] = value;
+      editedFields.push(key);
+    }
+  }
+
+  if (editedFields.length === 0) {
+    throw new Error('No valid editable fields provided');
+  }
+
+  return new Promise((resolve, reject) => {
+    const setClauses = Object.keys(editableUpdates)
+      .map(key => `${key} = ?`)
+      .concat(['edited_at = CURRENT_TIMESTAMP', 'edited_fields = ?'])
+      .join(', ');
+
+    const params = [
+      ...Object.values(editableUpdates),
+      JSON.stringify(editedFields),
+      id
+    ];
+
+    const sql = `UPDATE burial_register_entries SET ${setClauses} WHERE id = ?`;
+
+    db.run(sql, params, function(err) {
+      if (err) {
+        logger.error('Error updating burial register entry:', err);
+        reject(err);
+        return;
+      }
+
+      // Fetch the updated record
+      db.get('SELECT * FROM burial_register_entries WHERE id = ?', [id], (err, row) => {
+        if (err) {
+          logger.error('Error fetching updated burial register entry:', err);
+          reject(err);
+          return;
+        }
+        resolve(row || null);
+      });
+    });
+  });
+}
+
 module.exports = {
   storePageJSON,
   storeBurialRegisterEntry,
@@ -343,5 +412,7 @@ module.exports = {
   clearAllBurialRegisterEntries,
   getAllBurialRegisterEntries,
   getBurialRegisterEntryById,
+  updateBurialRegisterEntry,
+  BURIAL_EDITABLE_FIELDS,
   extractPageNumberFromFilename
 };

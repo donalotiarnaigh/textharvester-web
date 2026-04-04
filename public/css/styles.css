@@ -685,3 +685,32 @@ button {
 .modal-body .row p {
   margin-bottom: 0.5rem;
 }
+
+/* Edit Record Button Styles */
+.edit-record {
+  transition: all 0.3s ease;
+}
+
+.edit-record:hover {
+  background-color: #0056b3 !important;
+}
+
+.edit-record:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mark-reviewed {
+  transition: all 0.3s ease;
+}
+
+.mark-reviewed:hover {
+  background-color: #cc9e00 !important;
+  color: #212529;
+}
+
+.mark-reviewed:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+}

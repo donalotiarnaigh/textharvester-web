@@ -42,7 +42,11 @@ function initialize() {
           { name: 'input_tokens', def: 'INTEGER DEFAULT 0' },
           { name: 'output_tokens', def: 'INTEGER DEFAULT 0' },
           { name: 'estimated_cost_usd', def: 'REAL DEFAULT 0' },
-          { name: 'processing_id', def: 'TEXT' }
+          { name: 'processing_id', def: 'TEXT' },
+          { name: 'needs_review', def: 'INTEGER DEFAULT 0' },
+          { name: 'reviewed_at', def: 'DATETIME' },
+          { name: 'edited_at', def: 'DATETIME' },
+          { name: 'edited_fields', def: 'TEXT' }
         ];
         const missing = costMigrations.filter(col => !existingCols.includes(col.name));
         if (missing.length === 0) {
@@ -231,6 +235,96 @@ function getGraveCardById(id) {
 
 
 /**
+ * Deep merge an updates object into a target object.
+ * @param {Object} target - The target object to merge into
+ * @param {Object} updates - The updates to apply
+ * @returns {Object} A new merged object
+ */
+function deepMerge(target, updates) {
+  const result = { ...target };
+  for (const [key, value] of Object.entries(updates)) {
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      result[key] = deepMerge(result[key] || {}, value);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+/**
+ * Update a grave card with specified fields.
+ * Supports nested paths like 'location.section', 'grave.status', etc.
+ * @param {number|string} id
+ * @param {Object} fields - Fields to update
+ * @returns {Promise<Object|null>} Updated grave card with parsed data or null if not found
+ */
+async function updateGraveCard(id, fields) {
+  if (!id || id <= 0) {
+    throw new Error('Invalid grave card ID');
+  }
+
+  if (!fields || Object.keys(fields).length === 0) {
+    throw new Error('No fields to update');
+  }
+
+  // Get current grave card
+  const currentCard = await getGraveCardById(id);
+  if (!currentCard) {
+    return null;
+  }
+
+  let currentData = currentCard.data || {};
+  if (typeof currentData !== 'object') {
+    currentData = {};
+  }
+
+  // Merge the updates into the data
+  const updatedData = deepMerge(currentData, fields);
+
+  // Extract top-level section and grave_number if they exist in the updates
+  let topLevelUpdates = {
+    data_json: JSON.stringify(updatedData)
+  };
+
+  if (fields.section !== undefined) {
+    topLevelUpdates.section = fields.section;
+  }
+  if (fields.grave_number !== undefined) {
+    topLevelUpdates.grave_number = fields.grave_number;
+  }
+
+  // Build the UPDATE statement
+  const editedFields = Object.keys(fields);
+
+  return new Promise((resolve, reject) => {
+    const setClauses = Object.keys(topLevelUpdates)
+      .map(key => `${key} = ?`)
+      .concat(['edited_at = CURRENT_TIMESTAMP', 'edited_fields = ?'])
+      .join(', ');
+
+    const params = [
+      ...Object.values(topLevelUpdates),
+      JSON.stringify(editedFields),
+      id
+    ];
+
+    const sql = `UPDATE grave_cards SET ${setClauses} WHERE id = ?`;
+
+    db.run(sql, params, function(err) {
+      if (err) {
+        logger.error('Error updating grave card:', err);
+        reject(err);
+        return;
+      }
+
+      // Fetch the updated record
+      getGraveCardById(id).then(resolve).catch(reject);
+    });
+  });
+}
+
+/**
  * Export all grave cards to a flattened CSV format.
  * @returns {Promise<string>} - The CSV string.
  */
@@ -355,5 +449,6 @@ module.exports = {
   exportCardsToCsv,
   getAllGraveCards,
   getGraveCardById,
+  updateGraveCard,
   clearAllGraveCards
 };
