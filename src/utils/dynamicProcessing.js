@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
+const crypto = require('crypto');
 const Ajv = require('ajv');
 const SchemaManager = require('../services/SchemaManager');
 const { db } = require('./database');
@@ -7,6 +8,31 @@ const { createProvider } = require('./modelProviders');
 const defaultLogger = require('./logger');
 const { analyzeImageForProvider, optimizeImageForProvider } = require('./imageProcessor');
 const { convertPdfToJpegs } = require('./pdfConverter');
+const llmAuditLog = require('./llmAuditLog');
+const config = require('../../config.json');
+const {
+  processWithValidationRetry,
+  injectCostData,
+  scopedLogger,
+} = require('./processingHelpers');
+
+/**
+ * Get the column names for a SQLite table via PRAGMA.
+ * Returns an empty array if the table doesn't exist or the query fails.
+ * @param {string} tableName - Safe (sanitized) table name
+ * @returns {Promise<string[]>}
+ */
+async function getTableColumns(tableName) {
+  return new Promise((resolve) => {
+    db.all(`PRAGMA table_info(${tableName})`, [], (err, rows) => {
+      if (err || !rows) {
+        resolve([]);
+      } else {
+        resolve(rows.map(r => r.name));
+      }
+    });
+  });
+}
 
 class DynamicProcessor {
   constructor(logger = defaultLogger) {
@@ -16,11 +42,11 @@ class DynamicProcessor {
   }
 
   /**
-       * Process a file using a specific dynamic schema.
-       * @param {Object} file - File object (path, provider, etc.)
-       * @param {string} schemaId - UUID of the custom schema
-       * @returns {Promise<Object>} Result with recordId and data
-       */
+   * Process a file using a specific dynamic schema.
+   * @param {Object} file - File object (path, provider, etc.)
+   * @param {string} schemaId - UUID of the custom schema
+   * @returns {Promise<Object>} Result with recordId and data
+   */
   async processFileWithSchema(file, schemaId) {
     // 1. Retrieve Schema
     const schema = await SchemaManager.getSchema(schemaId);
@@ -35,6 +61,8 @@ class DynamicProcessor {
     }
 
     const providerName = file.provider || process.env.AI_PROVIDER || 'openai';
+    const processingId = crypto.randomUUID();
+    const log = scopedLogger(processingId);
 
     // PDF Conversion if needed
     let fileToProcess = filePath;
@@ -54,10 +82,16 @@ class DynamicProcessor {
           }
         }
       } catch (err) {
-        this.logger.warn(`PDF conversion failed for ${filePath}`, err);
+        log.warn(`PDF conversion failed for ${filePath}`, err);
         throw err;
       }
     }
+
+    let providerForAudit;
+    let modelVersionForAudit = 'unknown';
+    let systemPromptForAudit = '';
+    let userPromptForAudit = '';
+    const startTime = Date.now();
 
     try {
       // Image Optimization Logic
@@ -71,45 +105,24 @@ class DynamicProcessor {
         }
       } catch (err) {
         // Fallback to direct read if analysis fails
-        this.logger.warn(`Optimization check failed for ${fileToProcess}, falling back to raw read`, err);
+        log.warn(`Optimization check failed for ${fileToProcess}, falling back to raw read`, err);
         base64Image = await fs.readFile(fileToProcess, { encoding: 'base64' });
       }
 
       const provider = createProvider({ AI_PROVIDER: providerName });
+      providerForAudit = provider;
       const modelVersion = provider.getModelVersion();
+      modelVersionForAudit = modelVersion;
 
       // Construct Prompts
       const systemPrompt = (schema.system_prompt || 'Analyze this image and extract the data based on the requirements.') + ' Return valid JSON.';
       const fieldList = schema.json_schema && schema.json_schema.properties ? Object.keys(schema.json_schema.properties).join(', ') : '';
       const userPrompt = (schema.user_prompt_template || 'Extract the data fields matching the schema.') + (fieldList ? ` Ensure you use these exact keys: ${fieldList}.` : '');
 
-      // 3. Call LLM
-      this.logger.info(`Processing ${path.basename(filePath)} with schema ${schema.name} (${schemaId})`);
-      let rawResponse;
-      try {
-        rawResponse = await provider.processImage(base64Image, userPrompt, { systemPrompt });
-      } catch (err) {
-        this.logger.error('LLM Error', err);
-        throw err;
-      }
+      systemPromptForAudit = systemPrompt;
+      userPromptForAudit = userPrompt;
 
-      // 4. Validate and Normalise
-      let data;
-      let records = [];
-      try {
-        if (typeof rawResponse === 'object') {
-          data = rawResponse;
-        } else {
-          // Handle "```json" blocks if provider returns markdown
-          const cleanJson = rawResponse.replace(/```json\n?|```/g, '').trim();
-          data = JSON.parse(cleanJson);
-        }
-      } catch (e) {
-        this.logger.warn('JSON Parse Error', e);
-        // Only call substring if rawResponse is a string
-        const responseStr = typeof rawResponse === 'string' ? rawResponse : JSON.stringify(rawResponse);
-        throw new Error(`LLM returned invalid JSON: ${responseStr ? responseStr.substring(0, 100) : 'null'}...`);
-      }
+      log.info(`Processing ${path.basename(filePath)} with schema ${schema.name} (${schemaId})`);
 
       // Helper to validate a single record against schema
       const validateRecord = (record) => {
@@ -137,7 +150,6 @@ class DynamicProcessor {
               } else if (['no', 'n', 'false', '0'].includes(lower)) {
                 clean[key] = false;
               } else if (lower === '' || lower === 'null' || lower === 'n/a' || lower === 'na' || lower === '-') {
-                // Empty or null-like strings for booleans become null
                 clean[key] = null;
               }
             } else if (value === null || value === undefined) {
@@ -147,10 +159,9 @@ class DynamicProcessor {
 
           // Handle Numbers (remove commas, handle numeric strings)
           if ((type === 'number' || type === 'integer') && typeof value === 'string') {
-            // Remove commas from numbers like "1,000"
             const numStr = value.replace(/,/g, '').trim();
             if (numStr === '' || numStr.toLowerCase() === 'null') {
-              clean[key] = null; // Let validation decide if null is allowed
+              clean[key] = null;
             } else if (!isNaN(Number(numStr))) {
               clean[key] = Number(numStr);
             }
@@ -164,164 +175,188 @@ class DynamicProcessor {
         return clean;
       };
 
-      // Determine if we have one record or multiple
-      if (Array.isArray(data)) {
-        records = data;
-      } else if (typeof data === 'object' && data !== null) {
-        // Check if it matches schema directly
-        const singleValidation = validateRecord(data);
-        if (singleValidation.valid) {
-          records = [data];
-        } else {
-          // Check for nested array property that might contain records
-          // Heuristic: Recursive search for first array, accumulating context (parent fields)
-          const findArrayWithContext = (obj, context = {}) => {
-            if (!obj || typeof obj !== 'object') return null;
+      // Helper to find nested array with inherited context (for multi-record extraction)
+      const findArrayWithContext = (obj, context = {}) => {
+        if (!obj || typeof obj !== 'object') return null;
 
-            // 1. Gather current level primitives to add to context
-            const currentContext = { ...context };
-            for (const key of Object.keys(obj)) {
-              if (typeof obj[key] !== 'object' || obj[key] === null) {
-                currentContext[key] = obj[key];
-              }
-            }
-
-            // 2. Check for direct array child (nested records)
-            for (const key of Object.keys(obj)) {
-              if (Array.isArray(obj[key])) {
-                const arr = obj[key];
-                // Only accept arrays if they contain objects
-                if (arr.length > 0 && typeof arr[0] === 'object' && arr[0] !== null) {
-                  return { array: arr, context: currentContext };
-                }
-              }
-            }
-
-            // 3. Check for Column-Oriented Data (arrays of primitives as fields)
-            const arrayKeys = Object.keys(obj).filter(k => Array.isArray(obj[k]));
-            if (arrayKeys.length > 0) {
-              const lengths = arrayKeys.map(k => obj[k].length);
-              // Check if all found arrays have same length (or we take the max/mode?)
-              // Let's rely on the first array's length as the anchor, or check consistency.
-              const anchorLength = lengths[0];
-              const consistentEntryCount = lengths.every(l => l === anchorLength);
-
-              // Minimum 2 records to be considered columnar? OR just > 0
-              if (consistentEntryCount && anchorLength > 0) {
-                // We have a columnar structure!
-                // Pivot to rows
-                const rows = [];
-                for (let i = 0; i < anchorLength; i++) {
-                  const row = {};
-                  // Copy primitives from parent (context)
-                  Object.assign(row, currentContext);
-
-                  // Add array values for this index
-                  for (const key of arrayKeys) {
-                    row[key] = obj[key][i];
-                  }
-
-                  // Add non-array, non-object properties from THIS object (local context)
-                  for (const key of Object.keys(obj)) {
-                    if (!Array.isArray(obj[key]) && (typeof obj[key] !== 'object' || obj[key] === null)) {
-                      row[key] = obj[key];
-                    }
-                  }
-                  rows.push(row);
-                }
-                // Return as if it was a finding. Context is already merged in.
-                return { array: rows, context: {} };
-              }
-            }
-
-            // 3. Recursive check for nested objects
-            for (const key of Object.keys(obj)) {
-              if (typeof obj[key] === 'object' && !Array.isArray(obj[key]) && obj[key] !== null) {
-                const found = findArrayWithContext(obj[key], currentContext);
-                if (found) return found;
-              }
-            }
-            return null;
-          };
-
-          const result = findArrayWithContext(data);
-
-          if (result) {
-            const { array: recordsArray, context } = result;
-            this.logger.info(`Detected nested array containing ${recordsArray.length} items, attempting to extract records with inherited context.`);
-            if (recordsArray.length > 0) {
-              this.logger.info(`Sample record structure: ${JSON.stringify(recordsArray[0]).substring(0, 200)}`);
-            }
-
-            // Merge context into each record
-            records = recordsArray.map(rec => {
-              if (typeof rec === 'object' && rec !== null) {
-                return { ...context, ...rec };
-              }
-              return rec;
-            });
-          } else {
-            // It failed validation and no array found. Throw the original error.
-            const errorDetails = {
-              schemaId,
-              validationErrors: singleValidation.errors,
-              rawValue: data
-            };
-            this.logger.error(`Validation failed for ${filePath}:`, errorDetails);
-            throw new Error(`Validation failed: ${this.ajv.errorsText(singleValidation.errors)}`);
+        const currentContext = { ...context };
+        for (const key of Object.keys(obj)) {
+          if (typeof obj[key] !== 'object' || obj[key] === null) {
+            currentContext[key] = obj[key];
           }
         }
-      }
 
-      // Validate all extracted records
-      const validRecords = [];
-      for (const [index, rec] of records.entries()) {
-        const cleanedRec = sanitizeRecord(rec, schema.json_schema);
-        const val = validateRecord(cleanedRec);
-        if (val.valid) {
-          validRecords.push(cleanedRec);
-        } else {
-          this.logger.warn(`Record ${index} failed validation, skipping.`, { errors: val.errors });
+        for (const key of Object.keys(obj)) {
+          if (Array.isArray(obj[key])) {
+            const arr = obj[key];
+            if (arr.length > 0 && typeof arr[0] === 'object' && arr[0] !== null) {
+              return { array: arr, context: currentContext };
+            }
+          }
         }
-      }
 
-      if (validRecords.length === 0) {
-        throw new Error('No valid records found in LLM output matching schema.');
-      }
+        const arrayKeys = Object.keys(obj).filter(k => Array.isArray(obj[k]));
+        if (arrayKeys.length > 0) {
+          const lengths = arrayKeys.map(k => obj[k].length);
+          const anchorLength = lengths[0];
+          const consistentEntryCount = lengths.every(l => l === anchorLength);
 
-      this.logger.info(`Found ${validRecords.length} valid records to insert.`);
+          if (consistentEntryCount && anchorLength > 0) {
+            const rows = [];
+            for (let i = 0; i < anchorLength; i++) {
+              const row = {};
+              Object.assign(row, currentContext);
+              for (const key of arrayKeys) {
+                row[key] = obj[key][i];
+              }
+              for (const key of Object.keys(obj)) {
+                if (!Array.isArray(obj[key]) && (typeof obj[key] !== 'object' || obj[key] === null)) {
+                  row[key] = obj[key];
+                }
+              }
+              rows.push(row);
+            }
+            return { array: rows, context: {} };
+          }
+        }
 
-      // 5. Insert
+        for (const key of Object.keys(obj)) {
+          if (typeof obj[key] === 'object' && !Array.isArray(obj[key]) && obj[key] !== null) {
+            const found = findArrayWithContext(obj[key], currentContext);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+
+      // 3. Call LLM with validation retry on parse/schema failure
+      const validateFn = (rawContent) => {
+        let data;
+        if (typeof rawContent === 'object' && rawContent !== null) {
+          data = rawContent;
+        } else {
+          // Handle "```json" blocks if provider returns markdown
+          const cleanJson = rawContent.replace(/```json\n?|```/g, '').trim();
+          data = JSON.parse(cleanJson); // throws SyntaxError on parse failure
+        }
+
+        let records = [];
+
+        if (Array.isArray(data)) {
+          records = data;
+        } else if (typeof data === 'object' && data !== null) {
+          const singleValidation = validateRecord(data);
+          if (singleValidation.valid) {
+            records = [data];
+          } else {
+            const result = findArrayWithContext(data);
+            if (result) {
+              const { array: recordsArray, context } = result;
+              log.info(`Detected nested array containing ${recordsArray.length} items, attempting to extract records with inherited context.`);
+              if (recordsArray.length > 0) {
+                log.info(`Sample record structure: ${JSON.stringify(recordsArray[0]).substring(0, 200)}`);
+              }
+              records = recordsArray.map(rec => {
+                if (typeof rec === 'object' && rec !== null) {
+                  return { ...context, ...rec };
+                }
+                return rec;
+              });
+            } else {
+              const errorDetails = {
+                schemaId,
+                validationErrors: singleValidation.errors,
+                rawValue: data
+              };
+              log.error('Validation failed for record:', errorDetails);
+              throw new Error(`Validation failed: ${this.ajv.errorsText(singleValidation.errors)}`);
+            }
+          }
+        }
+
+        // Validate all extracted records against schema
+        const validRecords = [];
+        for (const [index, rec] of records.entries()) {
+          const cleanedRec = sanitizeRecord(rec, schema.json_schema);
+          const val = validateRecord(cleanedRec);
+          if (val.valid) {
+            validRecords.push(cleanedRec);
+          } else {
+            log.warn(`Record ${index} failed validation, skipping.`, { errors: val.errors });
+          }
+        }
+
+        if (validRecords.length === 0) {
+          throw new Error('Validation failed: No valid records found in LLM output matching schema.');
+        }
+
+        return { records: validRecords };
+      };
+
+      // 4. Process with retry on validation failure
+      const { validationResult, usage } = await processWithValidationRetry(
+        provider,
+        base64Image,
+        userPrompt,
+        { systemPrompt },
+        validateFn,
+        { log }
+      );
+
+      const apiDuration = Date.now() - startTime;
+      const { records: validRecords } = validationResult;
+
+      log.info(`Found ${validRecords.length} valid records to insert.`);
+
+      // Log successful API call to audit log
+      await llmAuditLog.logEntry({
+        processing_id: processingId,
+        provider: providerName,
+        model: modelVersion,
+        system_prompt: systemPrompt,
+        user_prompt: userPrompt,
+        input_tokens: usage.input_tokens,
+        output_tokens: usage.output_tokens,
+        response_time_ms: apiDuration,
+        status: 'success',
+      });
+
+      // 5. Insert records
       const tableName = schema.table_name;
       const safeTableName = tableName.replace(/[^a-z0-9_]/g, '');
 
-      // Metadata columns
+      // Get existing columns so we can gracefully handle old tables that lack new metadata columns
+      const tableColumns = await getTableColumns(safeTableName);
+
+      // Metadata for all records
       const metadata = {
         file_name: path.basename(filePath),
         processed_date: new Date().toISOString(),
         ai_provider: providerName,
         model_version: modelVersion,
-        batch_id: file.batchId || null
+        batch_id: file.batchId || null,
+        processing_id: processingId,
+        needs_review: 0,
       };
+
+      // Inject cost data (input_tokens, output_tokens, estimated_cost_usd)
+      injectCostData(metadata, usage, providerName, modelVersion, config);
 
       let insertedCount = 0;
       let lastID = 0;
 
-      // Use a transaction or Promise.all for multiple inserts
-      // SQLite in Node is usually serial, but let's do sequential to be safe with db.run
-
       for (const record of validRecords) {
         const allData = { ...record, ...metadata };
 
-        // Generate columns based on keys present in this record that match valid schema columns + metadata
-        // Note: This dynamic SQL generation is safe because we controlled table creation, but ideally we'd filter against known columns.
-        // Since we don't have table definition loaded, we trust the valid record keys + metadata.
+        // Filter to only columns that exist in the table (backward compat with old dynamic tables)
+        const filteredData = tableColumns.length > 0
+          ? Object.fromEntries(Object.entries(allData).filter(([k]) => tableColumns.includes(k)))
+          : allData;
 
-        const columns = Object.keys(allData);
-
+        const columns = Object.keys(filteredData);
         const placeholders = columns.map(() => '?').join(', ');
         const values = columns.map(col => {
-          const val = allData[col];
+          const val = filteredData[col];
           return (typeof val === 'object' && val !== null) ? JSON.stringify(val) : val;
         });
 
@@ -347,14 +382,22 @@ class DynamicProcessor {
         data: validRecords // Return the array of extracted data
       };
     } catch (err) {
-      if (err.message.includes('Validation failed')) {
-        // Already logged in validation step
+      // Log failed API call to audit log (best-effort)
+      await llmAuditLog.logEntry({
+        processing_id: processingId,
+        provider: providerName,
+        model: modelVersionForAudit,
+        system_prompt: systemPromptForAudit,
+        user_prompt: userPromptForAudit,
+        response_time_ms: Date.now() - startTime,
+        status: 'error',
+        error_message: err.message,
+      }).catch(() => { /* don't mask original error */ });
+
+      if (err.message && (err.message.includes('SQL') || err.message.includes('Database'))) {
+        this.logger.error('Database insertion failed', { schemaId, error: err });
       } else {
         this.logger.error('Processing failed', { schemaId, error: err });
-        // Specifically for DB errors which might trigger the test expectation
-        if (err.message.includes('SQL') || err.message.includes('Database')) {
-          this.logger.error('Database insertion failed', { schemaId, error: err });
-        }
       }
       throw err;
     } finally {
