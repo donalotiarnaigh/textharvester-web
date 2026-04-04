@@ -1,6 +1,6 @@
 # Issue Tracker — TextHarvester Web
 
-_Last updated: 2026-04-04 · 29 open issues · [21 completed](#completed-issues)_
+_Last updated: 2026-04-04 · 28 open issues · [22 completed](#completed-issues)_
 
 ---
 
@@ -171,8 +171,10 @@ Edge-case name formatting differences between providers; low frequency in practi
 **#23** — UI Inconsistency: Copy Button Visible But Only Works When Modal Expanded
 Minor UX bug; button is visible but non-functional in collapsed state.
 
-**#187** — Cost data (tokens, USD) missing from CSV export and web results UI
+~~**#187** — Cost data (tokens, USD) missing from CSV export and web results UI~~ ✅ Fixed
 Database stores `input_tokens`, `output_tokens`, `estimated_cost_usd` for all records, but these are not visible in CSV exports or the web results table. Users cannot compare cost efficiency across providers or export cost analysis. Discovered during ardmore flash photography test — OpenAI cost $0.31 for 26 files vs Anthropic $0.47.
+
+**Fix (branch `claude/review-next-issue-2CPME`, PR #192):** Added `input_tokens`, `output_tokens`, `estimated_cost_usd` to `MEMORIAL_CSV_COLUMNS`. Added sortable Cost (USD) column to results table header and memorial main row. Added Input Tokens, Output Tokens, Cost (USD) to memorial detail view. Fixed detail row colspan from 9 to 11.
 
 ~~**#188** — Gemini cost tracking returns 0 tokens and $0 cost for all records~~ ✅ Fixed
 Gemini provider showed 0 input_tokens, 0 output_tokens, $0.00 estimated_cost for all successful records.
@@ -183,7 +185,7 @@ Gemini provider showed 0 input_tokens, 0 output_tokens, $0.00 estimated_cost for
 
 ## Completed Issues
 
-_21 issues resolved. Click issue number for full details on GitHub._
+_22 issues resolved. Click issue number for full details on GitHub._
 
 ### P1 Completed (5)
 
@@ -224,6 +226,7 @@ _21 issues resolved. Click issue number for full details on GitHub._
 
 | # | Title | PR | Status |
 |---|-------|----|----|
+| #187 | Cost data (tokens, USD) missing from CSV export and web results UI | [#192](https://github.com/donalotiarnaigh/textharvester-web/pull/192) | ✅ |
 | #143 | Add Gemini as a provider | [#144](https://github.com/donalotiarnaigh/textharvester-web/pull/144) | ✅ |
 | #121 | Evaluation metrics infrastructure | [#137](https://github.com/donalotiarnaigh/textharvester-web/pull/137) | ⏳ Data pending |
 
