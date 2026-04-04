@@ -213,12 +213,14 @@ export function handleSave(detailRow, recordType, recordId, onSuccess) {
   // Submit
   submitEdit(recordType, recordId, changedFields)
     .then(result => {
-      // Call success callback
+      // Call success callback (which handles re-rendering)
       if (onSuccess) {
         onSuccess(result);
+        // Don't call exitEditMode() - the callback has already re-rendered the detail view
+      } else {
+        // If no callback provided, just exit edit mode to show original state
+        exitEditMode(detailRow);
       }
-      // Exit edit mode
-      exitEditMode(detailRow);
     })
     .catch(err => {
       console.error('Save error:', err);
