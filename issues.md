@@ -1,6 +1,6 @@
 # Issue Tracker — TextHarvester Web
 
-_Last updated: 2026-04-04 · 29 open issues · [21 completed](#completed-issues)_
+_Last updated: 2026-04-04 · 27 open issues · [23 completed](#completed-issues)_
 
 ---
 
@@ -91,8 +91,10 @@ Phase 2 of #166. Complete the inline correction feature by adding full edit form
 **#167** — Project/collection model to group uploads
 All records go into flat tables with no project concept. Users processing multiple graveyards or surveys have no way to partition, filter, or export by collection.
 
-**#168** — Custom schemas — integrate with confidence scoring and retry pipeline
-`DynamicProcessor` bypasses the standard pipeline entirely. Custom schemas get no confidence scoring, no validation warnings, no retry logic, no audit logging, no cost tracking. Materially worse experience than built-in types.
+~~**#168** — Custom schemas — integrate with confidence scoring and retry pipeline~~ ✅ Fixed
+`DynamicProcessor` bypassed the standard pipeline entirely. Custom schemas got no confidence scoring, no validation warnings, no retry logic, no audit logging, no cost tracking.
+
+**Fix (branch `claude/review-next-issue-2CPME`):** Fixed critical bug where `provider.processImage` returned `{ content, usage }` but `DynamicProcessor` treated the whole object as LLM data. Refactored to use `processWithValidationRetry` (retry with format-enforcement preamble on parse/validation failure), `injectCostData` (input/output tokens + USD cost), `llmAuditLog.logEntry` (success and error), `processing_id` via `crypto.randomUUID()`, and `needs_review = 0` default. `SchemaDDLGenerator` now includes `processing_id`, `input_tokens`, `output_tokens`, `estimated_cost_usd`, `needs_review` in all new dynamic tables. Old tables handled gracefully via `PRAGMA table_info` column filter. 10 new unit tests + E2E mock fix. 1556 tests passing.
 
 **#169** — Pre-processing cost estimate before batch submission
 No cost visibility before processing. Session cap ($5.00) is buried in config.json. Community groups uploading large batches hit the cap partway through with no prior warning.
@@ -171,8 +173,10 @@ Edge-case name formatting differences between providers; low frequency in practi
 **#23** — UI Inconsistency: Copy Button Visible But Only Works When Modal Expanded
 Minor UX bug; button is visible but non-functional in collapsed state.
 
-**#187** — Cost data (tokens, USD) missing from CSV export and web results UI
+~~**#187** — Cost data (tokens, USD) missing from CSV export and web results UI~~ ✅ Fixed
 Database stores `input_tokens`, `output_tokens`, `estimated_cost_usd` for all records, but these are not visible in CSV exports or the web results table. Users cannot compare cost efficiency across providers or export cost analysis. Discovered during ardmore flash photography test — OpenAI cost $0.31 for 26 files vs Anthropic $0.47.
+
+**Fix (branch `claude/review-next-issue-2CPME`, PR #192):** Added `input_tokens`, `output_tokens`, `estimated_cost_usd` to `MEMORIAL_CSV_COLUMNS`. Added sortable Cost (USD) column to results table header and memorial main row. Added Input Tokens, Output Tokens, Cost (USD) to memorial detail view. Fixed detail row colspan from 9 to 11.
 
 ~~**#188** — Gemini cost tracking returns 0 tokens and $0 cost for all records~~ ✅ Fixed
 Gemini provider showed 0 input_tokens, 0 output_tokens, $0.00 estimated_cost for all successful records.
@@ -183,7 +187,7 @@ Gemini provider showed 0 input_tokens, 0 output_tokens, $0.00 estimated_cost for
 
 ## Completed Issues
 
-_21 issues resolved. Click issue number for full details on GitHub._
+_23 issues resolved. Click issue number for full details on GitHub._
 
 ### P1 Completed (5)
 
@@ -224,6 +228,8 @@ _21 issues resolved. Click issue number for full details on GitHub._
 
 | # | Title | PR | Status |
 |---|-------|----|----|
+| #168 | Custom schemas — integrate with confidence scoring and retry pipeline | — | ✅ |
+| #187 | Cost data (tokens, USD) missing from CSV export and web results UI | [#192](https://github.com/donalotiarnaigh/textharvester-web/pull/192) | ✅ |
 | #143 | Add Gemini as a provider | [#144](https://github.com/donalotiarnaigh/textharvester-web/pull/144) | ✅ |
 | #121 | Evaluation metrics infrastructure | [#137](https://github.com/donalotiarnaigh/textharvester-web/pull/137) | ⏳ Data pending |
 

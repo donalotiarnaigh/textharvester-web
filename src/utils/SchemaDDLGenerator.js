@@ -28,7 +28,12 @@ class SchemaDDLGenerator {
       'processed_date DATETIME',
       'ai_provider TEXT',
       'model_version TEXT',
-      'batch_id TEXT'
+      'batch_id TEXT',
+      'processing_id TEXT',
+      'input_tokens INTEGER',
+      'output_tokens INTEGER',
+      'estimated_cost_usd REAL',
+      'needs_review INTEGER DEFAULT 0'
     ];
 
     schemaDefinition.fields.forEach(field => {

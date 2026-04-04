@@ -121,7 +121,10 @@ const mockExtractionResult = {
   age: 42,
   occupation: 'Farmer'
 };
-const mockProcessImage = jest.fn().mockResolvedValue(JSON.stringify(mockExtractionResult));
+const mockProcessImage = jest.fn().mockResolvedValue({
+  content: JSON.stringify(mockExtractionResult),
+  usage: { input_tokens: 0, output_tokens: 0 },
+});
 
 jest.mock('../../src/utils/modelProviders', () => ({
   createProvider: jest.fn(() => ({
