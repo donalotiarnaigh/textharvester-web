@@ -1,6 +1,6 @@
 # Issue Tracker — TextHarvester Web
 
-_Last updated: 2026-04-04 · 28 open issues · [22 completed](#completed-issues)_
+_Last updated: 2026-04-04 · 27 open issues · [23 completed](#completed-issues)_
 
 ---
 
@@ -91,8 +91,10 @@ Phase 2 of #166. Complete the inline correction feature by adding full edit form
 **#167** — Project/collection model to group uploads
 All records go into flat tables with no project concept. Users processing multiple graveyards or surveys have no way to partition, filter, or export by collection.
 
-**#168** — Custom schemas — integrate with confidence scoring and retry pipeline
-`DynamicProcessor` bypasses the standard pipeline entirely. Custom schemas get no confidence scoring, no validation warnings, no retry logic, no audit logging, no cost tracking. Materially worse experience than built-in types.
+~~**#168** — Custom schemas — integrate with confidence scoring and retry pipeline~~ ✅ Fixed
+`DynamicProcessor` bypassed the standard pipeline entirely. Custom schemas got no confidence scoring, no validation warnings, no retry logic, no audit logging, no cost tracking.
+
+**Fix (branch `claude/review-next-issue-2CPME`):** Fixed critical bug where `provider.processImage` returned `{ content, usage }` but `DynamicProcessor` treated the whole object as LLM data. Refactored to use `processWithValidationRetry` (retry with format-enforcement preamble on parse/validation failure), `injectCostData` (input/output tokens + USD cost), `llmAuditLog.logEntry` (success and error), `processing_id` via `crypto.randomUUID()`, and `needs_review = 0` default. `SchemaDDLGenerator` now includes `processing_id`, `input_tokens`, `output_tokens`, `estimated_cost_usd`, `needs_review` in all new dynamic tables. Old tables handled gracefully via `PRAGMA table_info` column filter. 10 new unit tests + E2E mock fix. 1556 tests passing.
 
 **#169** — Pre-processing cost estimate before batch submission
 No cost visibility before processing. Session cap ($5.00) is buried in config.json. Community groups uploading large batches hit the cap partway through with no prior warning.
@@ -185,7 +187,7 @@ Gemini provider showed 0 input_tokens, 0 output_tokens, $0.00 estimated_cost for
 
 ## Completed Issues
 
-_22 issues resolved. Click issue number for full details on GitHub._
+_23 issues resolved. Click issue number for full details on GitHub._
 
 ### P1 Completed (5)
 
@@ -226,6 +228,7 @@ _22 issues resolved. Click issue number for full details on GitHub._
 
 | # | Title | PR | Status |
 |---|-------|----|----|
+| #168 | Custom schemas — integrate with confidence scoring and retry pipeline | — | ✅ |
 | #187 | Cost data (tokens, USD) missing from CSV export and web results UI | [#192](https://github.com/donalotiarnaigh/textharvester-web/pull/192) | ✅ |
 | #143 | Add Gemini as a provider | [#144](https://github.com/donalotiarnaigh/textharvester-web/pull/144) | ✅ |
 | #121 | Evaluation metrics infrastructure | [#137](https://github.com/donalotiarnaigh/textharvester-web/pull/137) | ⏳ Data pending |
