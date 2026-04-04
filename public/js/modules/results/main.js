@@ -9,6 +9,7 @@ import { formatDateTime as formatDate } from './date.js';
 import { tableEnhancements } from './tableEnhancements.js';
 import { updateModelInfoPanel } from './modelInfoPanel.js';
 import { calculateSummaryStats, getUniqueSections, filterMemorials } from './resultsLogic.js';
+import { enterEditMode, exitEditMode, handleSave } from './inlineEdit.js';
 
 // Error handling utilities
 const ErrorTypes = {
@@ -248,7 +249,7 @@ const SanitizeUtils = {
     const safe = this.sanitizeMemorial(memorial);
 
     return `
-    <td colspan="${colSpan}">
+    <td colspan="${colSpan}" data-record-json="${this.sanitizeAttribute(JSON.stringify(memorial))}">
       <div class="detail-content p-3">
         <div class="row">
           <div class="col-12">
@@ -488,7 +489,7 @@ const SanitizeUtils = {
     }
 
     return `
-    <td colspan="${colSpan}">
+    <td colspan="${colSpan}" data-record-json="${this.sanitizeAttribute(JSON.stringify(card))}">
       <div class="detail-content p-3">
         <div class="row">
           <div class="col-12">
@@ -548,10 +549,10 @@ const SanitizeUtils = {
           <button class="btn btn-sm btn-secondary close-detail" data-memorial="${uniqueId}">
             <i class="fas fa-chevron-up"></i> Close Details
           </button>
-          <button class="btn btn-sm btn-primary edit-record ml-2" data-record-id="${entry.id}" data-record-type="burial-register">
+          <button class="btn btn-sm btn-primary edit-record ml-2" data-record-id="${card.id}" data-record-type="grave-card">
             <i class="fas fa-edit"></i> Edit
           </button>
-          ${entry.needs_review ? `<button class="btn btn-sm btn-warning mark-reviewed ml-2" data-record-id="${entry.id}" data-record-type="burial-register">
+          ${card.needs_review ? `<button class="btn btn-sm btn-warning mark-reviewed ml-2" data-record-id="${card.id}" data-record-type="grave-card">
             <i class="fas fa-check"></i> Mark as Reviewed
           </button>` : ''}
         </div>
@@ -1015,7 +1016,7 @@ function createBurialRegisterDetailHTML(entry, colSpan, uniqueId) {
   }
 
   return `
-  <td colspan="${colSpan}">
+  <td colspan="${colSpan}" data-record-json="${sanitizeAttribute(JSON.stringify(entry))}">
     <div class="detail-content p-3">
       <div class="row">
         <div class="col-12">
@@ -1109,10 +1110,10 @@ function createBurialRegisterDetailHTML(entry, colSpan, uniqueId) {
         <button class="btn btn-sm btn-secondary close-detail" data-memorial="${uniqueId}">
           <i class="fas fa-chevron-up"></i> Close Details
         </button>
-        <button class="btn btn-sm btn-primary edit-record ml-2" data-record-id="${graveCard.id}" data-record-type="grave-card">
+        <button class="btn btn-sm btn-primary edit-record ml-2" data-record-id="${entry.id}" data-record-type="burial-register">
           <i class="fas fa-edit"></i> Edit
         </button>
-        ${graveCard.needs_review ? `<button class="btn btn-sm btn-warning mark-reviewed ml-2" data-record-id="${graveCard.id}" data-record-type="grave-card">
+        ${entry.needs_review ? `<button class="btn btn-sm btn-warning mark-reviewed ml-2" data-record-id="${entry.id}" data-record-type="burial-register">
           <i class="fas fa-check"></i> Mark as Reviewed
         </button>` : ''}
       </div>
@@ -1680,11 +1681,30 @@ document.addEventListener('click', function (event) {
   if (event.target.closest('.edit-record')) {
     event.preventDefault();
     const button = event.target.closest('.edit-record');
-    const recordId = button.getAttribute('data-record-id');
+    const recordId = parseInt(button.getAttribute('data-record-id'));
     const recordType = button.getAttribute('data-record-type');
 
-    // Show a toast that editing requires a reload - simplified implementation
-    alert('Edit functionality will be available in a future update. For now, please mark records as reviewed using the "Mark as Reviewed" button.');
+    // Find the detail row (parent of the clicked button)
+    const detailRow = button.closest('.detail-row');
+    if (!detailRow) return;
+
+    // Get the stored record data from the detail row
+    const recordJsonStr = detailRow.querySelector('[data-record-json]')?.getAttribute('data-record-json');
+    if (!recordJsonStr) {
+      console.error('No record data found on detail row');
+      return;
+    }
+
+    let currentRecord;
+    try {
+      currentRecord = JSON.parse(recordJsonStr);
+    } catch (e) {
+      console.error('Failed to parse record JSON:', e);
+      return;
+    }
+
+    // Enter edit mode
+    enterEditMode(detailRow, recordType, recordId, currentRecord);
   }
 
   // Handle mark as reviewed button clicks
@@ -1754,6 +1774,65 @@ document.addEventListener('click', function (event) {
         button.innerHTML = '<i class="fas fa-check"></i> Mark as Reviewed';
         alert('Failed to mark as reviewed. Please try again.');
       });
+  }
+
+  // Handle inline edit save button clicks
+  if (event.target.closest('.inline-edit-save')) {
+    event.preventDefault();
+    const button = event.target.closest('.inline-edit-save');
+    const form = button.closest('.inline-edit-form');
+    if (!form) return;
+
+    const recordId = parseInt(form.getAttribute('data-record-id'));
+    const recordType = form.getAttribute('data-record-type');
+    const detailRow = form.closest('.detail-row');
+    if (!detailRow) return;
+
+    // Create success callback
+    const onSuccess = (result) => {
+      // Update in-memory array if memorial type
+      if (recordType === 'memorial' && result.memorial && allMemorials.length > 0) {
+        const recordIdx = allMemorials.findIndex(r => r.id === recordId);
+        if (recordIdx >= 0) {
+          allMemorials[recordIdx] = result.memorial;
+        }
+      }
+
+      // Re-render the detail row with updated data
+      const config = result.memorial || result.entry || result.card;
+      if (config) {
+        const detailContent = detailRow.querySelector('.detail-content');
+        if (detailContent) {
+          let newHtml;
+          if (recordType === 'memorial' && result.memorial) {
+            newHtml = SanitizeUtils.createSafeDetailHTML(result.memorial, 6, `memorial-${recordId}`);
+          } else if (recordType === 'burial-register' && result.entry) {
+            newHtml = createBurialRegisterDetailHTML(result.entry, 6, `entry-${recordId}`);
+          } else if (recordType === 'grave-card' && result.card) {
+            newHtml = SanitizeUtils.createGraveCardDetailHTML(result.card, 6, `card-${recordId}`);
+          }
+          if (newHtml) {
+            // Extract just the inner content (skip outer <td> tag)
+            const match = newHtml.match(/<td[^>]*>(.*)<\/td>/s);
+            if (match) {
+              detailContent.parentElement.outerHTML = newHtml;
+            }
+          }
+        }
+      }
+    };
+
+    handleSave(detailRow, recordType, recordId, onSuccess);
+  }
+
+  // Handle inline edit cancel button clicks
+  if (event.target.closest('.inline-edit-cancel')) {
+    event.preventDefault();
+    const button = event.target.closest('.inline-edit-cancel');
+    const detailRow = button.closest('.detail-row');
+    if (detailRow) {
+      exitEditMode(detailRow);
+    }
   }
 });
 
