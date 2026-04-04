@@ -1,6 +1,6 @@
 # Issue Tracker — TextHarvester Web
 
-_Last updated: 2026-04-03 · 30 open issues · [20 completed](#completed-issues)_
+_Last updated: 2026-04-04 · 29 open issues · [21 completed](#completed-issues)_
 
 ---
 
@@ -73,10 +73,20 @@ No way to fix AI errors in the UI. "Needs Review" badge flags problems but offer
 - **Tests**: 9 updateMemorial tests, 9 updateBurialRegisterEntry tests, 9 updateGraveCard tests, 23 API controller tests; all 1528 tests passing
 - **Follow-up for Phase 2**: Full inline edit UI with form fields, save/cancel logic, optimistic updates
 
-**#183** — Inline edit forms for all record types
+~~**#183** — Inline edit forms for all record types~~ ✅ Fixed
 Phase 2 of #166. Complete the inline correction feature by adding full edit form UI with field editing, save/cancel, and optimistic updates. Users can now edit any extracted field directly in the detail view without re-processing.
 
-**Status:** Backlog — Foundation complete (API endpoints, DB functions ready). Frontend UI implementation pending.
+**Fix (branch `fix/issue-183-inline-edit-forms`):** Implemented full inline edit form UI with:
+- **New module** `public/js/modules/results/inlineEdit.js` (150 lines): Field config maps, form HTML generation, value extraction, API submission, edit/cancel/save orchestration
+- **Form generation**: Bootstrap 4 forms with pre-populated, XSS-escaped values; change detection via `data-original` attributes
+- **Edit mode toggle**: `enterEditMode()` stores original HTML, swaps in form; `exitEditMode()` restores original
+- **Save/cancel logic**: `handleSave()` extracts changed fields, submits PATCH, re-renders detail on success; error display on failure
+- **Event delegation**: Edit/Save/Cancel buttons wired in main.js; record JSON stored on detail rows for form population
+- **Data persistence**: Updates in-memory `allMemorials` array and re-renders detail rows with API response data
+- **CSS styling**: `.inline-edit-form` classes, button states, textarea sizing, error alerts
+- **Tests**: 26 unit tests covering field configs, form generation, value extraction, edit mode toggle, cancel/restore
+- **Bug fixes**: Fixed 2 copy-paste bugs in detail view button variable references (grave-card and burial-register types)
+- **All tests passing**: 26 new tests + 3019 existing tests, no regressions
 
 **#167** — Project/collection model to group uploads
 All records go into flat tables with no project concept. Users processing multiple graveyards or surveys have no way to partition, filter, or export by collection.
@@ -173,7 +183,7 @@ Gemini provider showed 0 input_tokens, 0 output_tokens, $0.00 estimated_cost for
 
 ## Completed Issues
 
-_18 issues resolved. Click issue number for full details on GitHub._
+_21 issues resolved. Click issue number for full details on GitHub._
 
 ### P1 Completed (5)
 
@@ -185,10 +195,11 @@ _18 issues resolved. Click issue number for full details on GitHub._
 | #130 | Token and cost tracking | [#140](https://github.com/donalotiarnaigh/textharvester-web/pull/140) | ✅ |
 | #132 | Retry on validation or parse failure | [#145](https://github.com/donalotiarnaigh/textharvester-web/pull/145) | ✅ |
 
-### P2 Completed (13)
+### P2 Completed (14)
 
 | # | Title | PR | Status |
 |---|-------|----|----|
+| #183 | Inline edit forms for all record types | — | ✅ |
 | #136 | Anthropic JSON extraction regex fix | [#146](https://github.com/donalotiarnaigh/textharvester-web/pull/146) | ✅ |
 | #123 | Cross-field validation (impossible dates/ages) | [#138](https://github.com/donalotiarnaigh/textharvester-web/pull/138) | ✅ |
 | #124 | JSON parse failure → needs_review | [#139](https://github.com/donalotiarnaigh/textharvester-web/pull/139) | ✅ |
