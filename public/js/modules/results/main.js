@@ -183,6 +183,9 @@ const SanitizeUtils = {
       ai_provider: this.sanitizeText(memorial.ai_provider),
       prompt_template: this.sanitizeText(memorial.prompt_template),
       prompt_version: this.sanitizeText(memorial.prompt_version),
+      input_tokens: this.sanitizeNumber(memorial.input_tokens),
+      output_tokens: this.sanitizeNumber(memorial.output_tokens),
+      estimated_cost_usd: memorial.estimated_cost_usd != null ? parseFloat(memorial.estimated_cost_usd) : null,
       fileName: this.sanitizeAttribute(memorial.fileName),
       processed_date: memorial.processed_date, // Date objects are safe as they're processed by formatDate
       source_type: memorial.source_type, // Keep original value for logic, will be sanitized in display functions
@@ -281,6 +284,15 @@ const SanitizeUtils = {
 
                 <dt class="col-sm-4">Model:</dt>
                 <dd class="col-sm-8">${safe.ai_provider || 'N/A'}</dd>
+
+                <dt class="col-sm-4">Input Tokens:</dt>
+                <dd class="col-sm-8">${safe.input_tokens !== 'N/A' ? safe.input_tokens : 'N/A'}</dd>
+
+                <dt class="col-sm-4">Output Tokens:</dt>
+                <dd class="col-sm-8">${safe.output_tokens !== 'N/A' ? safe.output_tokens : 'N/A'}</dd>
+
+                <dt class="col-sm-4">Cost (USD):</dt>
+                <dd class="col-sm-8">${safe.estimated_cost_usd != null ? '$' + safe.estimated_cost_usd.toFixed(4) : 'N/A'}</dd>
 
                 <dt class="col-sm-4">Template:</dt>
                 <dd class="col-sm-8">${safe.prompt_template || 'N/A'}</dd>
@@ -388,6 +400,7 @@ const SanitizeUtils = {
       <td>${safe.ai_provider || 'N/A'}</td>
       <td>${safe.prompt_template || 'N/A'}</td>
       <td>${safe.prompt_version || 'N/A'}</td>
+      <td>${safe.estimated_cost_usd != null ? '$' + safe.estimated_cost_usd.toFixed(4) : 'N/A'}</td>
       <td>${formatDate(memorial.processed_date)}</td>
     `;
   },
@@ -596,7 +609,7 @@ function showErrorState(error, canRetry = true) {
 
   tableBody.innerHTML = `
     <tr>
-      <td colspan="8" class="text-center py-5">
+      <td colspan="11" class="text-center py-5">
         <div class="alert alert-danger" role="alert">
           <h5 class="alert-heading">
             <i class="fas fa-exclamation-triangle"></i> ${errorInfo.title}
@@ -803,7 +816,7 @@ function displayMemorials(memorials) {
     tableBody.appendChild(row);
 
     // Create detail row (initially hidden)
-    const detailRow = createDetailRow(memorial, 9); // 9 columns total
+    const detailRow = createDetailRow(memorial, 11); // 11 columns total
     tableBody.appendChild(detailRow);
 
     // Event handling is now done via delegation on tableBody (no individual listeners)
