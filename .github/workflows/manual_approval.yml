@@ -1,28 +1,30 @@
-name: Manual Approval and Production Deployment
+name: Production Deployment
 
 on:
-  workflow_dispatch: # Allows manual triggering of the workflow
+  workflow_dispatch:
 
 jobs:
-  manual-approval:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Await manual approval
-        run: echo "Awaiting manual approval"
-        timeout-minutes: 4320 # Timeout after 3 days
-
   deploy-production:
-    needs: manual-approval
     runs-on: ubuntu-latest
-    if: success()
+    environment: production  # requires a reviewer configured in GitHub repo settings
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Cache Fly CLI
+        id: cache-fly
+        uses: actions/cache@v4
+        with:
+          path: ~/.fly/bin
+          key: fly-cli-${{ runner.os }}
 
       - name: Install Fly CLI
+        if: steps.cache-fly.outputs.cache-hit != 'true'
         run: |
           curl -L https://fly.io/install.sh | sh
-          echo "$HOME/.fly/bin" >> $GITHUB_PATH
+
+      - name: Add Fly CLI to PATH
+        run: echo "$HOME/.fly/bin" >> $GITHUB_PATH
 
       - name: Deploy to Production
         run: fly deploy --config fly.toml
