@@ -1715,13 +1715,37 @@ document.addEventListener('click', function (event) {
         return res.json();
       })
       .then(data => {
-        // Close the detail view
-        const memorialId = button.getAttribute('data-memorial') || document.querySelector('.detail-row')?.id?.replace('detail-', '');
-        if (memorialId) {
-          toggleRow(memorialId);
-        } else {
-          // If we can't find memorialId, just reload
-          window.location.reload();
+        // Find the detail row (parent of the clicked button)
+        const detailRow = button.closest('.detail-row');
+        if (!detailRow) return;
+
+        // Find the main row (previous sibling)
+        const mainRow = detailRow.previousElementSibling;
+
+        // Remove "Needs Review" badge from the source type cell (or first appropriate cell)
+        if (mainRow) {
+          const badge = mainRow.querySelector('[class*="badge-warning"]');
+          if (badge && badge.textContent.includes('Review')) {
+            badge.remove();
+          }
+        }
+
+        // Remove the "Mark as Reviewed" button from detail view
+        button.remove();
+
+        // Remove the "Needs Review" badge from detail view (in confidence scores section)
+        const detailBadge = detailRow.querySelector('[class*="badge-warning"]');
+        if (detailBadge && detailBadge.textContent.includes('Review')) {
+          detailBadge.remove();
+        }
+
+        // Update in-memory record if it exists
+        if (recordType === 'memorial' && allMemorials.length > 0) {
+          const record = allMemorials.find(r => r.id === parseInt(recordId));
+          if (record) {
+            record.needs_review = 0;
+            record.reviewed_at = data.reviewed_at;
+          }
         }
       })
       .catch(err => {
