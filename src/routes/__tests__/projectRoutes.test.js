@@ -19,10 +19,12 @@ describe('Project Routes', () => {
 
   describe('GET /', () => {
     it('should call getAllProjects controller', async () => {
-      projectController.getAllProjects.mockResolvedValue([
-        { id: '1', name: 'Project 1' },
-        { id: '2', name: 'Project 2' }
-      ]);
+      projectController.getAllProjects.mockImplementation((req, res) => {
+        res.json([
+          { id: '1', name: 'Project 1' },
+          { id: '2', name: 'Project 2' }
+        ]);
+      });
 
       await request(app).get('/');
 

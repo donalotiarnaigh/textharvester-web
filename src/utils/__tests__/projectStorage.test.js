@@ -1,17 +1,35 @@
-const sqlite3 = require('sqlite3');
+jest.unmock('fs');
+jest.unmock('sqlite3');
+
+const sqlite3 = require('sqlite3').verbose();
+
+jest.mock('../logger', () => ({
+  error: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  warn: jest.fn(),
+  debugPayload: jest.fn()
+}));
+
+let mockDb;
+
+jest.mock('../database', () => {
+  // Create in-memory SQLite database for testing
+  if (!mockDb) {
+    mockDb = new (require('sqlite3').verbose()).Database(':memory:');
+  }
+  return { db: mockDb };
+});
+
 const projectStorage = require('../projectStorage');
 
 describe('projectStorage', () => {
-  let db;
   let testProjectId;
 
   beforeAll(async () => {
-    // Create in-memory SQLite database for testing
-    db = new sqlite3.Database(':memory:');
-
     // Initialize projects table
-    return new Promise((resolve, reject) => {
-      db.run(`
+    await new Promise((resolve, reject) => {
+      mockDb.run(`
         CREATE TABLE IF NOT EXISTS projects (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL UNIQUE,
@@ -27,13 +45,13 @@ describe('projectStorage', () => {
   });
 
   afterAll((done) => {
-    db.close(done);
+    mockDb.close(done);
   });
 
   describe('initialize', () => {
     it('should create projects table successfully', async () => {
       // Table already created in beforeAll
-      expect(db).toBeDefined();
+      expect(mockDb).toBeDefined();
     });
   });
 
