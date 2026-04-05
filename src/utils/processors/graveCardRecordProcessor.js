@@ -40,6 +40,7 @@ async function graveCardRecordProcessor(context) {
     systemPrompt,
     processingId,
     log,
+    options,
     config,
     sourceType,
   } = context;
