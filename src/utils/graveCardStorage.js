@@ -46,7 +46,8 @@ function initialize() {
           { name: 'needs_review', def: 'INTEGER DEFAULT 0' },
           { name: 'reviewed_at', def: 'DATETIME' },
           { name: 'edited_at', def: 'DATETIME' },
-          { name: 'edited_fields', def: 'TEXT' }
+          { name: 'edited_fields', def: 'TEXT' },
+          { name: 'project_id', def: 'TEXT' }
         ];
         const missing = costMigrations.filter(col => !existingCols.includes(col.name));
         if (missing.length === 0) {
@@ -84,9 +85,18 @@ function initialize() {
         if (this.changes > 0) logger.info(`grave_cards: removed ${this.changes} duplicates`);
 
         db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_grave_cards_file_provider ON grave_cards(file_name, ai_provider)', (idxErr) => {
-          if (idxErr) logger.error('grave_cards unique index failed:', idxErr);
-          else logger.info('grave_cards: unique index on (file_name, ai_provider) ensured');
-          resolve();
+          if (idxErr) {
+            logger.error('grave_cards unique index failed:', idxErr);
+            resolve();
+            return;
+          }
+          logger.info('grave_cards: unique index on (file_name, ai_provider) ensured');
+
+          db.run('CREATE INDEX IF NOT EXISTS idx_grave_cards_project ON grave_cards(project_id)', (projIdxErr) => {
+            if (projIdxErr) logger.error('grave_cards project_id index failed:', projIdxErr);
+            else logger.info('grave_cards: project_id index ensured');
+            resolve();
+          });
         });
       });
     }
@@ -134,6 +144,7 @@ function storeGraveCard(data) {
     const outputTokens = data.output_tokens ?? 0;
     const estimatedCostUsd = data.estimated_cost_usd ?? 0;
     const processingId = data.processing_id || null;
+    const projectId = data.project_id || null;
 
     const sql = `
       INSERT INTO grave_cards (
@@ -145,11 +156,12 @@ function storeGraveCard(data) {
         input_tokens,
         output_tokens,
         estimated_cost_usd,
-        processing_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        processing_id,
+        project_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    db.run(sql, [fileName, section, graveNumber, dataJson, aiProvider, inputTokens, outputTokens, estimatedCostUsd, processingId], function (err) {
+    db.run(sql, [fileName, section, graveNumber, dataJson, aiProvider, inputTokens, outputTokens, estimatedCostUsd, processingId, projectId], function (err) {
       if (err) {
         // Check if this is a unique constraint violation (true duplicate)
         if (err.code === 'SQLITE_CONSTRAINT' && err.message && err.message.includes('UNIQUE constraint failed')) {

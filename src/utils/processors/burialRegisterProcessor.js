@@ -144,6 +144,7 @@ async function burialRegisterProcessor(context) {
         estimated_cost_usd: ((burialUsage.input_tokens / 1_000_000) * (burialCostConfig.inputPerMToken || 0)) +
           ((burialUsage.output_tokens / 1_000_000) * (burialCostConfig.outputPerMToken || 0)),
         processing_id: processingId,
+        ...(options.project_id && { project_id: options.project_id })
       };
 
       // Apply confidence metadata

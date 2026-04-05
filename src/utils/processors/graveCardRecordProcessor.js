@@ -92,6 +92,11 @@ async function graveCardRecordProcessor(context) {
   // Inject cost data
   injectCostData(validatedData, graveCardUsage, providerName, provider.getModelVersion(), config);
 
+  // Include project_id for project grouping
+  if (options.project_id) {
+    validatedData.project_id = options.project_id;
+  }
+
   // Step 3: Store in database
   try {
     await graveCardStorage.storeGraveCard(validatedData);

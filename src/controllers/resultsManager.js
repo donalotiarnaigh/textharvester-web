@@ -63,7 +63,8 @@ const BURIAL_REGISTER_CSV_COLUMNS = [
   'needs_review',
   'reviewed_at',
   'validation_warnings',
-  'processing_id'
+  'processing_id',
+  'project_id'
 ];
 
 // Memorial CSV column order
@@ -96,7 +97,8 @@ const MEMORIAL_CSV_COLUMNS = [
   'needs_review',
   'reviewed_at',
   'validation_warnings',
-  'processing_id'
+  'processing_id',
+  'project_id'
 ];
 
 // Monument Classification CSV column order
@@ -174,6 +176,9 @@ function getProcessingStatus(req, res) {
 
 async function downloadResultsJSON(req, res) {
   try {
+    // Extract projectId from query if provided
+    const projectId = req.query.projectId || null;
+
     // Detect which source type has the most recent data
     const sourceType = await detectSourceType();
 
@@ -202,7 +207,7 @@ async function downloadResultsJSON(req, res) {
       defaultFilename = `burials_${moment().format('YYYYMMDD_HHmmss')}.json`;
     } else if (sourceType === 'grave_record_card') {
       // Get grave cards
-      const { records } = await queryService.list({ sourceType: 'grave_record_card', limit: 1000000 });
+      const { records } = await queryService.list({ sourceType: 'grave_record_card', limit: 1000000, projectId });
       const results = records;
 
       // Transform and parse data_json
@@ -231,7 +236,7 @@ async function downloadResultsJSON(req, res) {
       logger.info(`Exporting grave cards JSON: ${results.length} entries`);
     } else if (sourceType === 'monument_classification') {
       // Get monument classifications
-      const { records } = await queryService.list({ sourceType: 'monument_classification', limit: 1000000 });
+      const { records } = await queryService.list({ sourceType: 'monument_classification', limit: 1000000, projectId });
       const results = records;
 
       // Transform and parse data_json
@@ -260,7 +265,7 @@ async function downloadResultsJSON(req, res) {
       logger.info(`Exporting monument classifications JSON: ${results.length} entries`);
     } else {
       // Get memorials (default)
-      const { records } = await queryService.list({ sourceType: 'memorial', limit: 1000000 });
+      const { records } = await queryService.list({ sourceType: 'memorial', limit: 1000000, projectId });
       const results = records;
 
       // Transform database field names to match frontend expectations
@@ -389,6 +394,9 @@ function flattenObject(obj, prefix = '', res = {}) {
 
 async function downloadResultsCSV(req, res) {
   try {
+    // Extract projectId from query if provided
+    const projectId = req.query.projectId || null;
+
     // Detect which source type has the most recent data
     const sourceType = await detectSourceType();
 
@@ -419,7 +427,7 @@ async function downloadResultsCSV(req, res) {
       defaultFilename = `burials_${moment().format('YYYYMMDD_HHmmss')}.csv`;
     } else if (sourceType === 'grave_record_card') {
       // Get grave cards
-      const { records } = await queryService.list({ sourceType: 'grave_record_card', limit: 1000000 });
+      const { records } = await queryService.list({ sourceType: 'grave_record_card', limit: 1000000, projectId });
       const results = records;
       entryCount = results.length;
 
@@ -514,7 +522,7 @@ async function downloadResultsCSV(req, res) {
       logger.info(`Exporting custom schema CSV (${schema.name}): ${entryCount} entries with ${csvColumns.length} columns`);
     } else if (sourceType === 'monument_classification') {
       // Get monument classifications
-      const { records } = await queryService.list({ sourceType: 'monument_classification', limit: 1000000 });
+      const { records } = await queryService.list({ sourceType: 'monument_classification', limit: 1000000, projectId });
       const results = records;
       entryCount = results.length;
 
@@ -553,7 +561,7 @@ async function downloadResultsCSV(req, res) {
       logger.info(`Exporting monument classifications CSV: ${entryCount} entries`);
     } else {
       // Get memorials (default)
-      const { records } = await queryService.list({ sourceType: 'memorial', limit: 1000000 });
+      const { records } = await queryService.list({ sourceType: 'memorial', limit: 1000000, projectId });
       const results = records;
       entryCount = results.length;
 
@@ -590,6 +598,9 @@ async function downloadResultsCSV(req, res) {
 
 async function getResults(req, res) {
   try {
+    // Extract projectId from query if provided
+    const projectId = req.query.projectId || null;
+
     // Detect which source type has the most recent data
     const sourceType = await detectSourceType();
 
@@ -626,7 +637,7 @@ async function getResults(req, res) {
 
     if (sourceType === 'burial_register') {
       // Get burial register entries
-      const { records } = await queryService.list({ sourceType: 'burial_register', limit: 1000000 });
+      const { records } = await queryService.list({ sourceType: 'burial_register', limit: 1000000, projectId });
       const dbResults = records;
 
       // Transform database field names to match frontend expectations
@@ -643,7 +654,7 @@ async function getResults(req, res) {
       });
     } else if (sourceType === 'grave_record_card') {
       // Get grave cards
-      const { records } = await queryService.list({ sourceType: 'grave_record_card', limit: 1000000 });
+      const { records } = await queryService.list({ sourceType: 'grave_record_card', limit: 1000000, projectId });
       const dbResults = records;
 
       // Transform to match frontend expectations
@@ -662,7 +673,7 @@ async function getResults(req, res) {
       });
     } else if (sourceType === 'monument_classification') {
       // Get monument classifications
-      const { records } = await queryService.list({ sourceType: 'monument_classification', limit: 1000000 });
+      const { records } = await queryService.list({ sourceType: 'monument_classification', limit: 1000000, projectId });
       const dbResults = records;
 
       // Transform to match frontend expectations
@@ -726,7 +737,7 @@ async function getResults(req, res) {
       });
     } else {
       // Get memorials (default)
-      const { records } = await queryService.list({ sourceType: 'memorial', limit: 1000000 });
+      const { records } = await queryService.list({ sourceType: 'memorial', limit: 1000000, projectId });
       const dbResults = records;
 
       // Transform database field names to match frontend expectations
