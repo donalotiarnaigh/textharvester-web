@@ -6,12 +6,14 @@
 import { handleFileUpload } from "./fileUpload.js";
 import { initModelSelection } from "./modelSelection.js";
 import { initSourceTypeSelection, getSelectedSourceType } from "./sourceTypeSelection.js";
+import { initProjectSelection, getSelectedProjectId } from "./projectSelection.js";
 
 // Ensure Dropzone is defined globally
 const initDropzone = () => {
   // Initialize UI components
   initSourceTypeSelection();
   initModelSelection();
+  initProjectSelection();
 
   if (typeof Dropzone === "undefined") {
     console.error(
@@ -35,6 +37,13 @@ const initDropzone = () => {
       handleFileUpload(dropzoneInstance);
 
       // No need to handle file completion for showing conversion status
+    },
+    sending: function (file, xhr, formData) {
+      // Append project_id to form data if selected
+      const projectId = getSelectedProjectId();
+      if (projectId) {
+        formData.append('project_id', projectId);
+      }
     },
     // Custom validation logic
     accept: function (file, done) {

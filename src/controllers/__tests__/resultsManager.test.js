@@ -79,6 +79,11 @@ describe('Enhanced Results Manager with Error Handling', () => {
     };
   });
 
+  // Helper function to create mock request object
+  const createMockRequest = (query = {}) => ({
+    query
+  });
+
   describe('getResults', () => {
     it('should return both memorials and errors', async () => {
       // Mock processed results with both successful and error records
@@ -103,7 +108,7 @@ describe('Enhanced Results Manager with Error Handling', () => {
       mockList.mockResolvedValue({ records: mockRecords, total: 1 });
       getProcessedResults.mockReturnValue(mockResultErrors);
 
-      await getResults({}, mockResponse);
+      await getResults(createMockRequest(), mockResponse);
 
       expect(mockResponse.json).toHaveBeenCalledWith({
         memorials: [{
@@ -138,7 +143,7 @@ describe('Enhanced Results Manager with Error Handling', () => {
       mockList.mockResolvedValue({ records: mockRecords, total: 2 });
       getProcessedResults.mockReturnValue([]);
 
-      await getResults({}, mockResponse);
+      await getResults(createMockRequest(), mockResponse);
 
       expect(mockResponse.json).toHaveBeenCalledWith({
         memorials: [
@@ -182,7 +187,7 @@ describe('Enhanced Results Manager with Error Handling', () => {
       mockList.mockResolvedValue({ records: [], total: 0 });
       getProcessedResults.mockReturnValue(mockResultErrors);
 
-      await getResults({}, mockResponse);
+      await getResults(createMockRequest(), mockResponse);
 
       expect(mockResponse.json).toHaveBeenCalledWith({
         memorials: [],

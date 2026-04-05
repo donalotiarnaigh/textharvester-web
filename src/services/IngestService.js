@@ -82,7 +82,8 @@ class IngestService {
       volumeId,
       provider,
       promptVersion,
-      schemaId
+      schemaId,
+      projectId
     } = options;
 
     const filesToQueue = [];
@@ -102,7 +103,8 @@ class IngestService {
             source_type: sourceType,
             sourceType,
             uploadDir: path.dirname(file.path),
-            ...(schemaId && { schemaId })
+            ...(schemaId && { schemaId }),
+            ...(projectId && { project_id: projectId, projectId })
           });
         } else {
           // For other types, register for background conversion
@@ -118,7 +120,8 @@ class IngestService {
           sourceType,
           ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
           uploadDir: path.dirname(file.path),
-          ...(schemaId && { schemaId })
+          ...(schemaId && { schemaId }),
+          ...(projectId && { project_id: projectId, projectId })
         });
       }
     }
@@ -138,7 +141,8 @@ class IngestService {
         volumeId,
         provider,
         promptVersion,
-        schemaId
+        schemaId,
+        projectId
       );
     }
 
@@ -156,7 +160,7 @@ class IngestService {
    * Start background PDF conversion (fire-and-forget).
    * @private
    */
-  _startBackgroundConversion(pdfsForConversion, sourceType, volumeId, provider, promptVersion, schemaId) {
+  _startBackgroundConversion(pdfsForConversion, sourceType, volumeId, provider, promptVersion, schemaId, projectId) {
     // Use an async IIFE to avoid blocking
     (async () => {
       for (const pdfFile of pdfsForConversion) {
@@ -175,7 +179,8 @@ class IngestService {
             sourceType,
             ...(sourceType === 'burial_register' && { volume_id: volumeId, volumeId }),
             uploadDir: path.dirname(imagePath),
-            ...(schemaId && { schemaId })
+            ...(schemaId && { schemaId }),
+            ...(projectId && { project_id: projectId, projectId })
           }));
 
           // Enqueue converted images

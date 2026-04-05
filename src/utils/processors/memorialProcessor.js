@@ -130,6 +130,11 @@ async function memorialProcessor(context) {
       extractedData.site_code = options.site_code;
     }
 
+    // Include project_id for project grouping
+    if (options.project_id) {
+      extractedData.project_id = options.project_id;
+    }
+
     // Inject cost data
     injectCostData(extractedData, memUsage, providerName, provider.getModelVersion(), config);
 
