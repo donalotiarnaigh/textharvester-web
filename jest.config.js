@@ -5,6 +5,7 @@ export default {
   },
   moduleFileExtensions: ['js', 'json', 'node'],
   testMatch: ['**/__tests__/**/*.js?(x)', '**/?(*.)+(spec|test).js?(x)'],
+  testPathIgnorePatterns: ['/.claude/', '/node_modules/'],
   transformIgnorePatterns: ['/node_modules/'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironmentOptions: {

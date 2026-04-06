@@ -106,6 +106,7 @@ const handleFileUpload = async (req, res) => {
   let sourceType = req.body.source_type || req.body.sourceType || 'record_sheet';
   const volumeId = req.body.volume_id || 'vol1';
   const schemaId = req.body.schemaId; // Extract schemaId
+  const projectId = req.body.project_id || null; // Extract projectId
 
   // Validate and coerce invalid source_type to record_sheet (for backward compatibility)
   if (!validSourceTypes.includes(sourceType)) {
@@ -162,7 +163,8 @@ const handleFileUpload = async (req, res) => {
       volumeId,
       provider: selectedModel,
       promptVersion: promptConfig.version,
-      schemaId // Pass schemaId
+      schemaId, // Pass schemaId
+      projectId // Pass projectId
     };
 
     await ingestService.prepareAndQueue(files, queueOptions);

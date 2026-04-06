@@ -4,9 +4,16 @@ const logger = require('./logger');
 const fs = require('fs');
 const moment = require('moment');
 
-// Database will be stored in the data directory
-const dbDir = path.dirname(path.join(__dirname, '../../data', 'memorials.db'));
-const dbPath = path.join(dbDir, 'memorials.db');
+// Allow dbPath to be overridden via environment variable or default to data directory
+let dbPath;
+if (process.env.DB_PATH) {
+  dbPath = process.env.DB_PATH;
+} else {
+  const defaultDbDir = path.dirname(path.join(__dirname, '../../data', 'memorials.db'));
+  dbPath = path.join(defaultDbDir, 'memorials.db');
+}
+
+const dbDir = path.dirname(dbPath);
 
 // Ensure data directory exists
 if (!fs.existsSync(dbDir)) {
@@ -157,7 +164,8 @@ function initializeDatabase() {
         { name: 'estimated_cost_usd', def: 'REAL DEFAULT 0' },
         { name: 'processing_id', def: 'TEXT' },
         { name: 'edited_at', def: 'DATETIME' },
-        { name: 'edited_fields', def: 'TEXT' }
+        { name: 'edited_fields', def: 'TEXT' },
+        { name: 'project_id', def: 'TEXT' }
       ];
       const missing = migrations.filter(col => !existingCols.includes(col.name));
       runColumnMigration('memorials', missing, 'add_cost_columns_v1');
@@ -176,8 +184,17 @@ function initializeDatabase() {
           if (this && this.changes > 0) logger.info(`memorials: removed ${this.changes} duplicates`);
 
           db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_memorials_file_provider ON memorials(file_name, ai_provider)', (idxErr) => {
-            if (idxErr) logger.error('memorials unique index failed:', idxErr);
-            else logger.info('memorials: unique index on (file_name, ai_provider) ensured');
+            if (idxErr) {
+              logger.error('memorials unique index failed:', idxErr);
+              return;
+            }
+            logger.info('memorials: unique index on (file_name, ai_provider) ensured');
+
+            // Create project_id index for filtering
+            db.run('CREATE INDEX IF NOT EXISTS idx_memorials_project ON memorials(project_id)', (projIdxErr) => {
+              if (projIdxErr) logger.error('memorials project_id index failed:', projIdxErr);
+              else logger.info('memorials: project_id index ensured');
+            });
           });
         });
       }, 100);
@@ -249,7 +266,8 @@ function initializeBurialRegisterTable() {
         { name: 'estimated_cost_usd', def: 'REAL DEFAULT 0' },
         { name: 'processing_id', def: 'TEXT' },
         { name: 'edited_at', def: 'DATETIME' },
-        { name: 'edited_fields', def: 'TEXT' }
+        { name: 'edited_fields', def: 'TEXT' },
+        { name: 'project_id', def: 'TEXT' }
       ];
       const missingBurial = burialMigrations.filter(col => !existingCols.includes(col.name));
       runColumnMigration('burial_register_entries', missingBurial, 'burial_register_add_columns_v1');
@@ -259,7 +277,8 @@ function initializeBurialRegisterTable() {
     const indexes = [
       'CREATE INDEX IF NOT EXISTS idx_burial_provider_volume_page ON burial_register_entries(ai_provider, volume_id, page_number)',
       'CREATE INDEX IF NOT EXISTS idx_burial_entry_id ON burial_register_entries(entry_id)',
-      'CREATE INDEX IF NOT EXISTS idx_burial_volume_page ON burial_register_entries(volume_id, page_number)'
+      'CREATE INDEX IF NOT EXISTS idx_burial_volume_page ON burial_register_entries(volume_id, page_number)',
+      'CREATE INDEX IF NOT EXISTS idx_burial_project ON burial_register_entries(project_id)'
     ];
 
     indexes.forEach((indexSQL) => {
@@ -329,8 +348,9 @@ function storeMemorial(data) {
       input_tokens,
       output_tokens,
       estimated_cost_usd,
-      processing_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      processing_id,
+      project_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   return new Promise((resolve, reject) => {
@@ -371,7 +391,8 @@ function storeMemorial(data) {
         data.input_tokens        ?? 0,
         data.output_tokens       ?? 0,
         data.estimated_cost_usd  ?? 0,
-        data.processing_id || null
+        data.processing_id || null,
+        data.project_id || null
       ];
     } catch (e) {
       logger.error('Error preparing memorial params:', e);

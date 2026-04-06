@@ -26,6 +26,9 @@
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ml-auto">
         <li class="nav-item">
+          <a class="nav-link" href="projects.html">Projects</a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link" href="schemas.html">Schemas</a>
         </li>
         <li class="nav-item">
@@ -38,6 +41,18 @@
   <div class="content-wrap">
     <div class="container">
       <h1 class="mt-4">Results</h1>
+
+      <!-- Project Filter -->
+      <div class="card mb-3" id="projectFilterCard" style="display: none;">
+        <div class="card-body py-3">
+          <div class="form-group mb-0">
+            <label for="projectFilter">Filter by Project</label>
+            <select class="form-control" id="projectFilter">
+              <option value="">All Projects</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
       <!-- Source Type Banner (Hidden by default, shown for custom schemas) -->
       <div id="sourceBanner" class="alert alert-info d-none mb-3">

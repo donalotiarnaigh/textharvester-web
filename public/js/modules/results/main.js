@@ -10,6 +10,7 @@ import { tableEnhancements } from './tableEnhancements.js';
 import { updateModelInfoPanel } from './modelInfoPanel.js';
 import { calculateSummaryStats, getUniqueSections, filterMemorials } from './resultsLogic.js';
 import { enterEditMode, exitEditMode, handleSave } from './inlineEdit.js';
+import { initProjectFilter, getProjectIdFromUrl } from './projectFilter.js';
 
 // Error handling utilities
 const ErrorTypes = {
@@ -1491,7 +1492,10 @@ export async function loadResults() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-    const response = await fetch('/results-data', {
+    // Build query string with optional projectId
+    const projectId = getProjectIdFromUrl();
+    const queryString = projectId ? `?projectId=${encodeURIComponent(projectId)}` : '';
+    const response = await fetch(`/results-data${queryString}`, {
       signal: controller.signal,
       headers: {
         'Accept': 'application/json',
@@ -1628,6 +1632,7 @@ window.downloadCsvResults = function (filenameInput) {
 
 // Initialize on document load
 document.addEventListener('DOMContentLoaded', () => {
+  initProjectFilter();
   loadResults();
 
   // Initialize clipboard functionality

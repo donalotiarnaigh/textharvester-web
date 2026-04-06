@@ -13,11 +13,17 @@ const graveCardRoutes = require('./src/routes/graveCardRoutes');
 const graveCardStorage = require('./src/utils/graveCardStorage');
 const llmAuditLog = require('./src/utils/llmAuditLog');
 const monumentClassificationStorage = require('./src/utils/monumentClassificationStorage');
+const projectStorage = require('./src/utils/projectStorage');
 const { validateApiKeys, getProviderStatus, logValidationResults } = require('./src/utils/apiKeyValidator');
 
 // Initialize grave cards table
 graveCardStorage.initialize().catch(err => {
   logger.error('Error initializing grave cards table:', err);
+});
+
+// Initialize projects table
+projectStorage.initialize().catch(err => {
+  logger.error('Error initializing projects table:', err);
 });
 
 // Initialize LLM audit log table
@@ -77,6 +83,10 @@ app.post('/cancel-processing', (req, res) => {
 
 // Grave Card routes
 app.use('/api/grave-cards', graveCardRoutes);
+
+// Project Management routes
+const projectRoutes = require('./src/routes/projectRoutes');
+app.use('/api/projects', projectRoutes);
 
 // Schema Management routes
 const apiRoutes = require('./src/routes/api');

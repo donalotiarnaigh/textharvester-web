@@ -174,7 +174,8 @@ describe('Database Storage Layer: Typographic Analysis Fields', () => {
       // 22: output_tokens
       // 23: estimated_cost_usd
       // 24: processing_id
-      expect(params).toHaveLength(25);
+      // 25: project_id
+      expect(params).toHaveLength(26);
 
       expect(params[12]).toBe(data.transcription_raw);
       expect(params[13]).toBe(data.stone_condition);
