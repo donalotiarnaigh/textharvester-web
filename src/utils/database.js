@@ -4,9 +4,16 @@ const logger = require('./logger');
 const fs = require('fs');
 const moment = require('moment');
 
-// Database will be stored in the data directory
-const dbDir = path.dirname(path.join(__dirname, '../../data', 'memorials.db'));
-const dbPath = path.join(dbDir, 'memorials.db');
+// Allow dbPath to be overridden via environment variable or default to data directory
+let dbPath;
+if (process.env.DB_PATH) {
+  dbPath = process.env.DB_PATH;
+} else {
+  const defaultDbDir = path.dirname(path.join(__dirname, '../../data', 'memorials.db'));
+  dbPath = path.join(defaultDbDir, 'memorials.db');
+}
+
+const dbDir = path.dirname(dbPath);
 
 // Ensure data directory exists
 if (!fs.existsSync(dbDir)) {

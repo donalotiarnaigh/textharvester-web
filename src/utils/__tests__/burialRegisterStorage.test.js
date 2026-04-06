@@ -73,6 +73,7 @@ describe('burialRegisterStorage', () => {
         output_tokens INTEGER DEFAULT 0,
         estimated_cost_usd REAL DEFAULT 0,
         processing_id TEXT,
+        project_id TEXT,
         UNIQUE(volume_id, file_name, row_index_on_page, ai_provider)
       )
     `, (err) => {

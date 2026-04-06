@@ -22,7 +22,7 @@ const runCLI = (args) => {
     const cliPath = path.resolve(__dirname, '../../bin/textharvester');
     // Split args string into array, handling quotes basic support
     const child = spawn(cliPath, args.match(/(?:[^\s"]+|"[^"]*")+/g).map(s => s.replace(/"/g, '')), {
-      env: { ...process.env, AI_PROVIDER: 'mock', LOG_TO_STDERR: 'true' },
+      env: { ...process.env, AI_PROVIDER: 'mock', LOG_TO_STDERR: 'true', DB_PATH },
       stdio: ['ignore', 'pipe', 'pipe']
     });
 
