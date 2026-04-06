@@ -134,7 +134,10 @@ function initializeDatabase() {
       input_tokens INTEGER DEFAULT 0,
       output_tokens INTEGER DEFAULT 0,
       estimated_cost_usd REAL DEFAULT 0,
-      processing_id TEXT
+      processing_id TEXT,
+      edited_at DATETIME,
+      edited_fields TEXT,
+      project_id TEXT
     )
   `;
 
@@ -237,6 +240,9 @@ function initializeBurialRegisterTable() {
       reviewed_at DATETIME,
       validation_warnings TEXT,
       processing_id TEXT,
+      edited_at DATETIME,
+      edited_fields TEXT,
+      project_id TEXT,
       UNIQUE(volume_id, file_name, row_index_on_page, ai_provider)
     )
   `;
