@@ -95,3 +95,7 @@ test-data/burial-register-test-pages/*
 # Database
 textharvester.db
 *.db
+
+# Claude Code worktrees and temporary files
+.claude/worktrees/
+.claude/**/*.db
