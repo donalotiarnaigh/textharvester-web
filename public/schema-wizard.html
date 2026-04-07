@@ -125,73 +125,97 @@
     </footer>
 
     <script type="module">
-        import { initWizard, handleUpload, saveSchema } from "/js/modules/schemas/wizard.js";
+        import { initWizard, handleUpload, saveSchema, loadSchemaForEdit, updateSchema } from "/js/modules/schemas/wizard.js";
 
         // Initialize Dropzone and bindings
         Dropzone.autoDiscover = false;
 
         document.addEventListener('DOMContentLoaded', () => {
-            const dropzone = new Dropzone("#schemaDropzone", {
-                url: "/dummy-url", // We handle upload manually
-                autoProcessQueue: false,
-                uploadMultiple: true,
-                parallelUploads: 10,
-                maxFiles: 10,
-                acceptedFiles: "image/*,application/pdf",
-                addRemoveLinks: true
-            });
-
-            const btnAnalyze = document.getElementById('btnAnalyze');
-            const btnSave = document.getElementById('btnSaveSchema');
+            const urlParams = new URLSearchParams(window.location.search);
+            const editId = urlParams.get('edit');
             const alertContainer = document.getElementById('alertContainer');
+            const btnSave = document.getElementById('btnSaveSchema');
 
-            dropzone.on("addedfile", () => {
-                if (dropzone.files.length >= 1) btnAnalyze.disabled = false;
-            });
-            dropzone.on("removedfile", () => {
-                if (dropzone.files.length === 0) btnAnalyze.disabled = true;
-            });
-
-            btnAnalyze.addEventListener('click', async () => {
+            // Check if this is edit mode
+            if (editId) {
+                // Edit mode: load existing schema
                 document.getElementById('step-upload').classList.add('d-none');
-                document.getElementById('step-loading').classList.remove('d-none');
-                alertContainer.innerHTML = '';
+                document.querySelector('h2').textContent = 'Edit Document Type';
+                btnSave.innerText = 'Save Changes';
 
-                try {
-                    // Determine logic to call renderEditor which is imported inside wizard.js 
-                    // Wait, wizard.js exports handleUpload which returns data. DOM manipulation is in renderEditor.
-                    // Refactor: wizard.js should probably handle the view switching or expose renderEditor.
-                    // Checking wizard.js exports... yes renderEditor is exported.
+                loadSchemaForEdit(editId).then(() => {
+                    // Wire up save button for update
+                    btnSave.addEventListener('click', async () => {
+                        try {
+                            btnSave.disabled = true;
+                            btnSave.innerText = 'Updating...';
+                            await updateSchema(editId);
+                            window.location.href = 'schemas.html';
+                        } catch (err) {
+                            alertContainer.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+                            btnSave.disabled = false;
+                            btnSave.innerText = 'Save Changes';
+                        }
+                    });
+                }).catch(err => {
+                    alertContainer.innerHTML = `<div class="alert alert-danger">Failed to load schema: ${err.message}</div>`;
+                    document.getElementById('step-editor').classList.remove('d-none');
+                });
 
-                    // Dynamic import to access renderEditor if not exposed in top script block? 
-                    // Actually I can just import it above.
-                    const { renderEditor } = await import("/js/modules/schemas/wizard.js");
+            } else {
+                // Create mode: standard wizard flow
+                const dropzone = new Dropzone("#schemaDropzone", {
+                    url: "/dummy-url", // We handle upload manually
+                    autoProcessQueue: false,
+                    uploadMultiple: true,
+                    parallelUploads: 10,
+                    maxFiles: 10,
+                    acceptedFiles: "image/*,application/pdf",
+                    addRemoveLinks: true
+                });
 
-                    const files = dropzone.files;
-                    const result = await handleUpload(files);
-                    renderEditor(result); // This switches the view to step-editor
+                const btnAnalyze = document.getElementById('btnAnalyze');
 
-                } catch (err) {
-                    document.getElementById('step-loading').classList.add('d-none');
-                    document.getElementById('step-upload').classList.remove('d-none');
-                    alertContainer.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
-                }
-            });
+                dropzone.on("addedfile", () => {
+                    if (dropzone.files.length >= 1) btnAnalyze.disabled = false;
+                });
+                dropzone.on("removedfile", () => {
+                    if (dropzone.files.length === 0) btnAnalyze.disabled = true;
+                });
 
-            btnSave.addEventListener('click', async () => {
-                try {
-                    btnSave.disabled = true;
-                    btnSave.innerText = 'Saving...';
-                    await saveSchema();
-                    window.location.href = 'schemas.html';
-                } catch (err) {
-                    alertContainer.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
-                    btnSave.disabled = false;
-                    btnSave.innerText = 'Save Document Type';
-                }
-            });
+                btnAnalyze.addEventListener('click', async () => {
+                    document.getElementById('step-upload').classList.add('d-none');
+                    document.getElementById('step-loading').classList.remove('d-none');
+                    alertContainer.innerHTML = '';
 
-            // Add Field Handler
+                    try {
+                        const { renderEditor } = await import("/js/modules/schemas/wizard.js");
+                        const files = dropzone.files;
+                        const result = await handleUpload(files);
+                        renderEditor(result); // This switches the view to step-editor
+
+                    } catch (err) {
+                        document.getElementById('step-loading').classList.add('d-none');
+                        document.getElementById('step-upload').classList.remove('d-none');
+                        alertContainer.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+                    }
+                });
+
+                btnSave.addEventListener('click', async () => {
+                    try {
+                        btnSave.disabled = true;
+                        btnSave.innerText = 'Saving...';
+                        await saveSchema();
+                        window.location.href = 'schemas.html';
+                    } catch (err) {
+                        alertContainer.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+                        btnSave.disabled = false;
+                        btnSave.innerText = 'Save Document Type';
+                    }
+                });
+            }
+
+            // Add Field Handler (used in both create and edit modes)
             document.getElementById('btnAddField').addEventListener('click', () => {
                 const tbody = document.getElementById('fieldsTableBody');
                 const tr = document.createElement('tr');
@@ -203,7 +227,7 @@
                         <option value="string">String</option>
                         <option value="number">Number</option>
                         <option value="date">Date</option>
-                         <option value="boolean">Boolean</option>
+                        <option value="boolean">Boolean</option>
                     </select>
                 </td>
                 <td><input type="text" class="form-control field-desc" placeholder="Description"></td>

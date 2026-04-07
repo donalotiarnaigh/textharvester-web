@@ -12,6 +12,25 @@ const RESERVED_KEYWORDS = [
  */
 class SchemaDDLGenerator {
   /**
+   * Maps a JSON Schema type to a SQL type
+   * @param {string} type - The JSON Schema type (string, number, boolean, date)
+   * @returns {string} The SQL type
+   */
+  static mapFieldTypeToSQL(type) {
+    switch (type) {
+    case 'number':
+      return 'REAL';
+    case 'boolean':
+      return 'INTEGER';
+    case 'date':
+      return 'TEXT';
+    case 'string':
+    default:
+      return 'TEXT';
+    }
+  }
+
+  /**
      * Generates a CREATE TABLE SQL statement for the given schema
      * @param {Object} schemaDefinition - The CustomSchema object
      * @returns {string} The SQL CREATE TABLE statement
@@ -38,23 +57,7 @@ class SchemaDDLGenerator {
 
     schemaDefinition.fields.forEach(field => {
       const fieldName = this.sanitizeIdentifier(field.name);
-      let sqlType = 'TEXT';
-
-      switch (field.type) {
-      case 'number':
-        sqlType = 'REAL';
-        break;
-      case 'boolean':
-        sqlType = 'INTEGER';
-        break;
-      case 'date':
-        sqlType = 'TEXT';
-        break;
-      case 'string':
-      default:
-        sqlType = 'TEXT';
-        break;
-      }
+      const sqlType = this.mapFieldTypeToSQL(field.type);
       columns.push(`${fieldName} ${sqlType}`);
     });
 
@@ -62,8 +65,28 @@ class SchemaDDLGenerator {
   }
 
   /**
+   * Generates column definitions for ALTER TABLE ADD COLUMN statements
+   * @param {Array<{name: string, type: string}>} newFields - Fields to add
+   * @returns {Array<{name: string, def: string}>} Column definitions for runColumnMigration
+   */
+  static generateAlterColumns(newFields) {
+    if (!newFields || newFields.length === 0) {
+      return [];
+    }
+
+    return newFields.map(field => {
+      const sanitizedName = this.sanitizeIdentifier(field.name);
+      const sqlType = this.mapFieldTypeToSQL(field.type);
+      return {
+        name: sanitizedName,
+        def: sqlType
+      };
+    });
+  }
+
+  /**
      * Sanitizes a string for use as a SQL identifier
-     * @param {string} name 
+     * @param {string} name
      * @returns {string}
      */
   static sanitizeIdentifier(name) {

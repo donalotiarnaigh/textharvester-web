@@ -82,4 +82,63 @@ describe('SchemaDDLGenerator', () => {
       expect(sql).toContain('drop_table_users'); // Sanitized
     });
   });
+
+  describe('mapFieldTypeToSQL', () => {
+    test('should map string to TEXT', () => {
+      expect(SchemaDDLGenerator.mapFieldTypeToSQL('string')).toBe('TEXT');
+    });
+
+    test('should map number to REAL', () => {
+      expect(SchemaDDLGenerator.mapFieldTypeToSQL('number')).toBe('REAL');
+    });
+
+    test('should map boolean to INTEGER', () => {
+      expect(SchemaDDLGenerator.mapFieldTypeToSQL('boolean')).toBe('INTEGER');
+    });
+
+    test('should map date to TEXT', () => {
+      expect(SchemaDDLGenerator.mapFieldTypeToSQL('date')).toBe('TEXT');
+    });
+
+    test('should default to TEXT for unknown types', () => {
+      expect(SchemaDDLGenerator.mapFieldTypeToSQL('unknown')).toBe('TEXT');
+    });
+  });
+
+  describe('generateAlterColumns', () => {
+    test('should return column definitions for new fields', () => {
+      const newFields = [{ name: 'age', type: 'number' }];
+      const result = SchemaDDLGenerator.generateAlterColumns(newFields);
+      expect(result).toEqual([{ name: 'age', def: 'REAL' }]);
+    });
+
+    test('should sanitize field names', () => {
+      const newFields = [{ name: 'User Name!', type: 'string' }];
+      const result = SchemaDDLGenerator.generateAlterColumns(newFields);
+      expect(result[0].name).toBe('user_name');
+    });
+
+    test('should handle multiple fields', () => {
+      const newFields = [
+        { name: 'age', type: 'number' },
+        { name: 'is_active', type: 'boolean' },
+        { name: 'created', type: 'date' }
+      ];
+      const result = SchemaDDLGenerator.generateAlterColumns(newFields);
+      expect(result).toHaveLength(3);
+      expect(result[0].def).toBe('REAL');
+      expect(result[1].def).toBe('INTEGER');
+      expect(result[2].def).toBe('TEXT');
+    });
+
+    test('should return empty array for no fields', () => {
+      expect(SchemaDDLGenerator.generateAlterColumns([])).toEqual([]);
+    });
+
+    test('should handle reserved keywords in field names', () => {
+      const newFields = [{ name: 'select', type: 'string' }];
+      const result = SchemaDDLGenerator.generateAlterColumns(newFields);
+      expect(result[0].name).toBe('extracted_select');
+    });
+  });
 });

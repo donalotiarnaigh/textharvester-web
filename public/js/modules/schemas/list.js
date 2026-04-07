@@ -28,7 +28,7 @@ export function renderSchemas(schemas) {
 
   if (!schemas || schemas.length === 0) {
     const row = document.createElement('tr');
-    row.innerHTML = '<td colspan="4" class="text-center">No custom schemas found</td>';
+    row.innerHTML = '<td colspan="5" class="text-center">No custom schemas found</td>';
     tableBody.appendChild(row);
     return;
   }
@@ -71,13 +71,16 @@ export function renderSchemas(schemas) {
     const row = document.createElement('tr');
     // Format date nicely if possible, or just raw string
     const dateStr = schema.created_at ? new Date(schema.created_at).toLocaleDateString() : 'N/A';
+    const version = schema.version || 1;
 
     row.innerHTML = `
             <td>${escapeHtml(schema.name)}</td>
             <td><code>${escapeHtml(schema.table_name)}</code></td>
+            <td><span class="badge badge-secondary">v${version}</span></td>
             <td>${dateStr}</td>
             <td>
                 <button class="btn btn-sm btn-info" onclick="viewSchemaDetails(${index})" title="View details">View</button>
+                <a href="schema-wizard.html?edit=${encodeURIComponent(schema.id)}" class="btn btn-sm btn-warning ml-1" title="Edit schema">Edit</a>
             </td>
         `;
     tableBody.appendChild(row);
