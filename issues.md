@@ -204,7 +204,7 @@ _23 issues opened 2026-04-07. Based on VLM digitisation techniques survey coveri
 | [#203](https://github.com/donalotiarnaigh/textharvester-web/issues/203) | Row-level image slicing with two-shot prompting | 8.8× field-level accuracy improvement; two examples optimal for tabular heritage records (arXiv:2510.23066, arXiv:2501.11623) | **Status: Investigated** — see full entry below table |
 | [#204](https://github.com/donalotiarnaigh/textharvester-web/issues/204) | OCR-Agent reflection mechanisms (capability + memory reflection) | Prevents capability hallucination and correction loops; +2.0 on OCRBench v2 (arXiv:2602.21053) | **Status: Investigated** — see full entry below table |
 | [#205](https://github.com/donalotiarnaigh/textharvester-web/issues/205) | Self-consistency sampling with majority voting | Highest-accuracy single technique; Universal Self-Consistency variant reduces to one adjudication call | **Status: Investigated** — see full entry below table |
-| [#206](https://github.com/donalotiarnaigh/textharvester-web/issues/206) | Schema-constrained generation across all providers | 92% error reduction on first retry via PARSE framework; schema field ordering recovers lost reasoning quality (arXiv:2510.08623) |
+| [#206](https://github.com/donalotiarnaigh/textharvester-web/issues/206) | Schema-constrained generation across all providers | 92% error reduction on first retry via PARSE framework; schema field ordering recovers lost reasoning quality (arXiv:2510.08623) | **Status: Investigated** — see full entry below table |
 | [#224](https://github.com/donalotiarnaigh/textharvester-web/issues/224) | Two-step extraction (free-text → structured) | CER 1.8%, WER 3.5% at ~$0.01/page; avoids 10–15% reasoning quality penalty from structured output mode (arXiv:2411.03340) |
 
 ### Multi-Model Ensemble & Confidence
@@ -383,6 +383,49 @@ The technique is architecturally feasible within the existing Node.js/API-based 
 
 ## Recommended next step
 Prototype and evaluate on test corpus first — implement USC with N=3 behind a `config.selfConsistency.enabled` flag, measure actual field agreement rate on a sample of ambiguous inscription images, and compare `needs_review` flag rates before and after enabling it to quantify accuracy improvement before committing to the full cost model rework.
+
+---
+
+### [#206] Schema-constrained generation across all providers
+**Status**: Investigated
+
+## Technique
+Pass a provider-native JSON Schema object to each API call so the model's decoder is grammatically constrained to emit only valid, schema-matching JSON — eliminating parse errors at source rather than repairing them after the fact.
+
+## Research basis
+arXiv:2510.08623 (PARSE framework) reports a 92% reduction in first-retry parse errors when schema-constrained generation is enabled, and notes that deliberate field ordering in the schema recovers the reasoning quality penalty introduced by strict output modes.
+
+## Viability assessment
+The technique is architecturally feasible with no external infrastructure: OpenAI supports `response_format: { type: 'json_schema', json_schema: { strict: true, schema: {...} } }` natively in GPT-4o+ (and GPT-5.x), Gemini supports `responseSchema` in `generationConfig`, and Anthropic supports schema-constrained output via tool-use (`tools` + `tool_choice: { type: 'tool' }`). The custom-schema path (`SchemaManager`, `dynamicProcessing.js`) already stores JSON Schema objects and uses `ajv` (already a dependency) for validation, so the schema representation exists for that path. The primary complication is the per-field confidence envelope (`{ "value": ..., "confidence": ... }`) used across all built-in prompts, which requires a nested JSON Schema representation and is not trivially expressible in Anthropic tool-use `input_schema`.
+
+## Ratings
+- **Effort**: 3/5 — Requires a `getJsonSchema()` method on each built-in prompt template, modifications to all three provider implementations to accept and pass the schema object, schema threading through `providerOptions`, and separate test updates per provider; Anthropic requires a more significant structural change from plain `messages.create` to tool-use.
+- **Impact**: 4/5 — A 92% parse-error reduction would effectively eliminate the validation retry path for schema errors, reducing per-file latency and cost, and is particularly high-value for Anthropic which currently applies the most complex JSON repair logic.
+
+## Relevant existing code
+- `src/utils/modelProviders/openaiProvider.js:99`: Uses `response_format: { type: 'json_object' }` — the direct upgrade target is `{ type: 'json_schema', json_schema: { strict: true, schema: {...} } }`.
+- `src/utils/modelProviders/geminiProvider.js:84-92`: `generationConfig` already has `responseMimeType: 'application/json'`; adding `responseSchema` is a single property addition.
+- `src/utils/modelProviders/anthropicProvider.js:98-119`: Plain `messages.create` with no tool use — switching to tool-use for schema enforcement is the most invasive change.
+- `src/utils/dynamicProcessing.js:129`: Already compiles `schema.json_schema` with `ajv` — the JSON Schema representation exists for the custom-schema path and could be reused directly.
+- `src/utils/prompts/BasePrompt.js`: Field definitions exist but not in JSON Schema format; needs a `getJsonSchema()` method that emits a JSON Schema draft-7 object.
+- `src/utils/processingHelpers.js`: `processWithValidationRetry()` / `VALIDATION_RETRY_PREAMBLE` — with schema-constrained generation, this path should fire far less often for parse errors, but remains necessary for semantic validation failures.
+
+## Implementation sketch
+- **Modified** each built-in prompt template (`MemorialOCRPrompt.js`, `BurialRegisterPrompt.js`, `GraveCardPrompt.js`, `MonumentPhotoOCRPrompt.js`): add a `getJsonSchema()` method that returns a JSON Schema draft-7 object describing the expected output; the confidence envelope means each field property is `{ type: 'object', properties: { value: {...}, confidence: { type: 'number' } }, required: ['value', 'confidence'] }`.
+- **Modified** `openaiProvider.js`: when `options.jsonSchema` is provided, replace `response_format: { type: 'json_object' }` with `response_format: { type: 'json_schema', json_schema: { name: 'extraction', strict: true, schema: options.jsonSchema } }`; note that GPT-5.x `reasoning_effort` and strict JSON schema are compatible.
+- **Modified** `geminiProvider.js`: when `options.jsonSchema` is provided, add `responseSchema: options.jsonSchema` to `generationConfig` alongside the existing `responseMimeType`.
+- **Modified** `anthropicProvider.js`: when `options.jsonSchema` is provided, restructure the API call to pass `tools: [{ name: 'extract', input_schema: options.jsonSchema }]` and `tool_choice: { type: 'tool', name: 'extract' }`; extract the result from `content[0].input` instead of `content[0].text`.
+- **Modified** `src/utils/fileProcessing.js` and `processingHelpers.js`: pass `jsonSchema: promptTemplate.getJsonSchema()` in `providerOptions` for each of the three processing branches; the custom-schema path in `dynamicProcessing.js` can pass `schema.json_schema` directly.
+- **New tests**: provider tests for each of the three providers verifying the schema parameter is included in the API call payload; prompt template tests for `getJsonSchema()` output structure (~10–15 new tests total).
+
+## Risks and gotchas
+- **Confidence envelope complexity**: the `{ value, confidence }` wrapper per field produces a deeply nested JSON Schema; OpenAI strict mode requires `additionalProperties: false` at every level, which means the schema must be exhaustively specified — any undeclared field returned by the model (e.g. `_validation_warnings` transients) will cause a hard rejection.
+- **Anthropic tool-use restructure**: switching from `messages.create` to tool-use changes the response shape (`content[0].input` vs `content[0].text`), affects the audit log `raw_response` capture, and requires updating `isInvalidResponse()` and the `ResponseLengthValidator` path.
+- **Field ordering sensitivity**: the PARSE paper notes that field ordering in the schema affects reasoning quality — the current prompt templates specify fields in a particular order that should be replicated in the schema's `properties` object (JSON object key order is not guaranteed in all environments; use an explicit `required` array to encode ordering intent).
+- **Custom schema path divergence**: custom schemas (`SchemaManager`) don't use confidence envelopes, so they can pass `schema.json_schema` directly with no modification; but built-in prompt schemas with confidence envelopes need a different shape, and the two paths must not be conflated in the provider layer.
+
+## Recommended next step
+Implement as described — start with OpenAI (smallest change: swap `json_object` for `json_schema`) behind a `config.schemaConstrained.enabled` feature flag, measure parse-error rate reduction on a held-out batch, then extend to Gemini before tackling the more invasive Anthropic tool-use change.
 
 ---
 
