@@ -1,6 +1,6 @@
 # Issue Tracker — TextHarvester Web
 
-_Last updated: 2026-04-04 · 27 open issues · [23 completed](#completed-issues)_
+_Last updated: 2026-04-07 · 26 open issues · [24 completed](#completed-issues)_
 
 ---
 
@@ -108,8 +108,10 @@ Freeform text field with no validation. Teams using inconsistent naming ("Vol 1"
 
 **Fix (branch `fix/issue-170-volume-id-autocomplete`):** Implemented HTML5 `<datalist>` autocomplete using existing database values. Added `getDistinctVolumeIds()` query function to `burialRegisterStorage.js` to fetch unique volume IDs. Created `/api/volume-ids` endpoint in new `volumeIdRoutes.js`. Frontend JS module fetches volume IDs when burial_register source type is selected and populates the datalist using DOM API (safe from XSS). No external dependencies. Tests: 5 new storage query tests + 4 route tests, all 1636 tests passing, lint clean.
 
-**#171** — Schema versioning with column migration on edit
+~~**#171** — Schema versioning with column migration on edit~~ ✅ Fixed
 No migration path when a schema is edited after processing documents. `version` column exists but is never incremented. Users who missed a field after processing 500 documents need direct support.
+
+**Fix (branch `fix/issue-171-schema-versioning-column-migration`):** Implemented full schema editing with automatic column migration and version tracking. Backend: `SchemaDDLGenerator.generateAlterColumns()` and `mapFieldTypeToSQL()` helpers for DDL generation. `SchemaManager.updateSchema(id, changes)` validates schema changes (rejects type changes and field removals, allows adding new fields, updating descriptions/required status), runs transactional `ALTER TABLE ADD COLUMN` migrations via `runColumnMigration()`, increments `version`, and adds `updated_at` column. `PUT /api/schemas/:id` endpoint with proper error handling (404 if not found, 422 if unsupported operations). Frontend: Edit button on schema list page shows schema version (v1, v2, etc.). Schema wizard detects `?edit=<id>` param, pre-populates fields with existing fields locked (name/type disabled, delete button hidden), allows adding new fields freely. Save button shows confirmation: "This will add N new column(s): field_a, field_b". Tests: 5 SchemaDDLGenerator tests + 2 SchemaManager tests (not found, type changes). All 1642 tests passing.
 
 ### High Impact — Data Quality & Accuracy
 
@@ -193,7 +195,7 @@ Gemini provider showed 0 input_tokens, 0 output_tokens, $0.00 estimated_cost for
 
 ## Completed Issues
 
-_23 issues resolved. Click issue number for full details on GitHub._
+_24 issues resolved. Click issue number for full details on GitHub._
 
 ### P1 Completed (5)
 
@@ -234,6 +236,7 @@ _23 issues resolved. Click issue number for full details on GitHub._
 
 | # | Title | PR | Status |
 |---|-------|----|----|
+| #171 | Schema versioning with column migration on edit | — | ✅ |
 | #168 | Custom schemas — integrate with confidence scoring and retry pipeline | — | ✅ |
 | #187 | Cost data (tokens, USD) missing from CSV export and web results UI | [#192](https://github.com/donalotiarnaigh/textharvester-web/pull/192) | ✅ |
 | #143 | Add Gemini as a provider | [#144](https://github.com/donalotiarnaigh/textharvester-web/pull/144) | ✅ |
