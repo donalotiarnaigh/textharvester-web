@@ -101,7 +101,7 @@ export async function loadSchemaForEdit(schemaId) {
     const fields = schema.json_schema && schema.json_schema.properties
       ? Object.entries(schema.json_schema.properties).map(([fieldName, prop]) => ({
         name: fieldName,
-        type: prop.format === 'date' ? 'date' : prop.type,  // Recover date type from format
+        type: prop.type,
         description: prop.description,
         required: (schema.json_schema.required || []).includes(fieldName)
       }))
@@ -162,15 +162,10 @@ export async function saveSchema() {
     const isRequired = row.querySelector('.field-required')?.checked ?? true;
 
     if (fieldName) {
-      const fieldDef = {
-        type: normalizeFieldType(fieldType),  // Normalize type for JSON Schema
+      properties[fieldName] = {
+        type: normalizeFieldType(fieldType),
         description: fieldDesc
       };
-      // Preserve "date" semantics using format property
-      if (fieldType === 'date') {
-        fieldDef.format = 'date';
-      }
-      properties[fieldName] = fieldDef;
       if (isRequired) {
         required.push(fieldName);
       }
@@ -236,15 +231,10 @@ export async function updateSchema(schemaId) {
     const isExisting = row.getAttribute('data-existing') === 'true';
 
     if (fieldName) {
-      const fieldDef = {
-        type: normalizeFieldType(fieldType),  // Normalize type for JSON Schema
+      properties[fieldName] = {
+        type: normalizeFieldType(fieldType),
         description: fieldDesc
       };
-      // Preserve "date" semantics using format property
-      if (fieldType === 'date') {
-        fieldDef.format = 'date';
-      }
-      properties[fieldName] = fieldDef;
       if (isRequired) {
         required.push(fieldName);
       }

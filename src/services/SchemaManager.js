@@ -15,8 +15,17 @@ function normalizeJsonSchemaTypes(jsonSchema) {
   const normalized = { ...jsonSchema, properties: { ...jsonSchema.properties } };
   Object.keys(normalized.properties).forEach(key => {
     const prop = normalized.properties[key];
+    // Map legacy "date" type → "string". AJV v8 only accepts standard JSON Schema types.
+    // The field description carries the semantic meaning; format is not set to avoid
+    // AJV v8 rejecting unknown formats.
     if (prop.type === 'date') {
-      normalized.properties[key] = { ...prop, type: 'string', format: 'date' };
+      const { format: _dropped, ...rest } = prop;
+      normalized.properties[key] = { ...rest, type: 'string' };
+    }
+    // Also strip any "date" format stored by earlier code versions
+    if (prop.format === 'date') {
+      const { format: _dropped, ...rest } = prop;
+      normalized.properties[key] = { ...rest };
     }
   });
   return normalized;
