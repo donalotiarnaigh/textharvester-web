@@ -37,7 +37,8 @@ async function getTableColumns(tableName) {
 class DynamicProcessor {
   constructor(logger = defaultLogger) {
     // Allow coerceTypes to cast strings to numbers/booleans, nullable allows null for any type
-    this.ajv = new Ajv({ allErrors: true, coerceTypes: true, nullable: true });
+    // unknownFormats: 'ignore' prevents errors on custom formats like "date"
+    this.ajv = new Ajv({ allErrors: true, coerceTypes: true, nullable: true, unknownFormats: 'ignore' });
     this.logger = logger;
   }
 
