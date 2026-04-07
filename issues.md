@@ -203,7 +203,7 @@ _23 issues opened 2026-04-07. Based on VLM digitisation techniques survey coveri
 |---|-----------|-------------|
 | [#203](https://github.com/donalotiarnaigh/textharvester-web/issues/203) | Row-level image slicing with two-shot prompting | 8.8× field-level accuracy improvement; two examples optimal for tabular heritage records (arXiv:2510.23066, arXiv:2501.11623) | **Status: Investigated** — see full entry below table |
 | [#204](https://github.com/donalotiarnaigh/textharvester-web/issues/204) | OCR-Agent reflection mechanisms (capability + memory reflection) | Prevents capability hallucination and correction loops; +2.0 on OCRBench v2 (arXiv:2602.21053) | **Status: Investigated** — see full entry below table |
-| [#205](https://github.com/donalotiarnaigh/textharvester-web/issues/205) | Self-consistency sampling with majority voting | Highest-accuracy single technique; Universal Self-Consistency variant reduces to one adjudication call |
+| [#205](https://github.com/donalotiarnaigh/textharvester-web/issues/205) | Self-consistency sampling with majority voting | Highest-accuracy single technique; Universal Self-Consistency variant reduces to one adjudication call | **Status: Investigated** — see full entry below table |
 | [#206](https://github.com/donalotiarnaigh/textharvester-web/issues/206) | Schema-constrained generation across all providers | 92% error reduction on first retry via PARSE framework; schema field ordering recovers lost reasoning quality (arXiv:2510.08623) |
 | [#224](https://github.com/donalotiarnaigh/textharvester-web/issues/224) | Two-step extraction (free-text → structured) | CER 1.8%, WER 3.5% at ~$0.01/page; avoids 10–15% reasoning quality penalty from structured output mode (arXiv:2411.03340) |
 
@@ -341,6 +341,48 @@ Both reflection types are pure-prompt techniques requiring no local GPU or new S
 
 ## Recommended next step
 Prototype and evaluate on test corpus first — implement capability reflection only (not memory reflection) as an opt-in flag and measure false-positive rate (readable images incorrectly flagged as illegible) against a sample of known-good graveyard photos before enabling the memory reflection path.
+
+---
+
+### [#205] Self-consistency sampling with majority voting
+**Status**: Investigated
+
+## Technique
+Generate N independent responses to the same prompt+image, then either field-level majority-vote across the N outputs (classic self-consistency) or pass all N raw outputs to a text-only adjudication LLM call that selects the most consistent answer (Universal Self-Consistency — USC).
+
+## Research basis
+Self-consistency (Wang et al., 2023) is consistently reported as the highest-accuracy single prompting technique for structured extraction; the USC variant (Chen et al., 2023) reduces the aggregation step to one additional API call regardless of N, avoiding brittle field-by-field comparison logic.
+
+## Viability assessment
+The technique is architecturally feasible within the existing Node.js/API-based stack: all three providers (OpenAI, Anthropic, Gemini) support a `temperature` parameter that enables stochastic sampling, and N calls to `processImage()` can be orchestrated in a new wrapper in `processingHelpers.js` without touching the database or frontend. The USC adjudication call takes only text (no image), so its token cost is minimal. The primary constraint is cost: N=3 samples triples per-file API spend, which interacts directly with the `$5.00` session cap and the existing `CostEstimator` utility which currently assumes one call per file.
+
+## Ratings
+- **Effort**: 3/5 — Requires a new `selfConsistency.js` module, temperature option threading through all three provider implementations, a cost-aggregation change in `injectCostData`, a USC adjudication prompt, and updated tests; no schema or frontend changes needed.
+- **Impact**: 4/5 — Empirically the highest-accuracy single-pass technique and directly addresses the primary failure mode (inconsistent OCR on ambiguous inscriptions); USC limits extra cost to N+1 calls where the +1 adjudication call is image-free.
+
+## Relevant existing code
+- `src/utils/processingHelpers.js`: `processWithValidationRetry()` is the natural site for a `processWithSelfConsistency()` sibling or wrapper; `VALIDATION_RETRY_PREAMBLE` shows the existing pattern for prompt manipulation.
+- `src/utils/modelProviders/openaiProvider.js`, `anthropicProvider.js`, `geminiProvider.js`: Each calls its respective SDK without exposing `temperature`; all three SDKs accept it natively and it must be threaded through from `providerOptions`.
+- `src/utils/processingHelpers.js` `injectCostData()`: Sums usage for a single call; USC needs usage summed across N+1 calls before storing one record.
+- `src/utils/llmAuditLog.js`: Logs one entry per `processing_id`; N samples + 1 adjudication will generate N+1 entries per file, inflating audit log at scale.
+- `config.json`: `retry` section provides the pattern for a new `"selfConsistency": { "enabled": false, "n": 3, "temperature": 0.7 }` feature flag block.
+
+## Implementation sketch
+- **New module** `src/utils/selfConsistency.js`: exports `runSelfConsistency(provider, base64Image, userPrompt, providerOptions, n, temperature)` that calls `provider.processImage()` N times in parallel (`Promise.all`) with `temperature` injected into `providerOptions`, returning an array of `{ content, usage }` results; also exports `buildUscAdjudicationPrompt(rawResponses)` that formats all N raw responses into a single text prompt for the adjudication call.
+- **Modified** `src/utils/processingHelpers.js`: add `processWithSelfConsistencyRetry()` that, when `config.selfConsistency.enabled`, calls `runSelfConsistency()` to collect N outputs, then makes one text-only adjudication call to the same provider (`processImage` with a null/placeholder image and the USC prompt), validates the adjudicated output, and aggregates total token usage; falls back to existing `processWithValidationRetry()` if disabled.
+- **Modified** provider implementations (`openaiProvider.js`, `anthropicProvider.js`, `geminiProvider.js`): accept `options.temperature` and pass it to the SDK call; default to existing behaviour (temperature omitted) when not present.
+- **Modified** `src/utils/processingHelpers.js` `injectCostData()`: accept an optional `usageArray` (array of usage objects) and sum token counts before computing cost, to correctly attribute N+1 call costs to one stored record.
+- **Modified** `config.json`: add `"selfConsistency": { "enabled": false, "n": 3, "temperature": 0.7, "adjudicationProvider": null }` (null = same provider as extraction).
+- **New tests** `__tests__/utils/selfConsistency.test.js`: parallel call orchestration, USC prompt construction, usage aggregation, and the fallback-disabled path (6–10 tests).
+
+## Risks and gotchas
+- **Cost multiplication**: N=3 triples per-file spend; combined with `maxProviderRetries: 3` and `validationRetries: 1`, worst-case per-file calls become `(3 samples × 8 provider attempts) + 1 adjudication = 25 calls`; the session cap of $5 will fire mid-batch on any large upload and `CostEstimator` will undercount by 3–4×.
+- **Temperature support inconsistency**: Gemini's `GenerationConfig` uses `temperature` while Anthropic uses it in the top-level API call body and OpenAI in the `ChatCompletion` options — the threading is straightforward but requires testing each provider separately; setting temperature=0.7 is a reasonable default but may need tuning per provider.
+- **USC adjudication prompt portability**: The adjudication prompt must be schema-agnostic or schema-aware; for dynamic custom schemas (issue #168) there is no fixed schema to embed, so the adjudicator must infer the target structure from the N sample responses alone, which may reduce reliability on unusual field sets.
+- **Audit log inflation**: A 200-file batch at N=3 generates 800 audit log entries instead of 200; for large-volume deployments this could exhaust SQLite page cache and slow queries on `llm_audit_log`; consider a `selfConsistency` flag in the audit entry to allow filtering or separate aggregation.
+
+## Recommended next step
+Prototype and evaluate on test corpus first — implement USC with N=3 behind a `config.selfConsistency.enabled` flag, measure actual field agreement rate on a sample of ambiguous inscription images, and compare `needs_review` flag rates before and after enabling it to quantify accuracy improvement before committing to the full cost model rework.
 
 ---
 
