@@ -205,7 +205,7 @@ _23 issues opened 2026-04-07. Based on VLM digitisation techniques survey coveri
 | [#204](https://github.com/donalotiarnaigh/textharvester-web/issues/204) | OCR-Agent reflection mechanisms (capability + memory reflection) | Prevents capability hallucination and correction loops; +2.0 on OCRBench v2 (arXiv:2602.21053) | **Status: Investigated** — see full entry below table |
 | [#205](https://github.com/donalotiarnaigh/textharvester-web/issues/205) | Self-consistency sampling with majority voting | Highest-accuracy single technique; Universal Self-Consistency variant reduces to one adjudication call | **Status: Investigated** — see full entry below table |
 | [#206](https://github.com/donalotiarnaigh/textharvester-web/issues/206) | Schema-constrained generation across all providers | 92% error reduction on first retry via PARSE framework; schema field ordering recovers lost reasoning quality (arXiv:2510.08623) | **Status: Investigated** — see full entry below table |
-| [#224](https://github.com/donalotiarnaigh/textharvester-web/issues/224) | Two-step extraction (free-text → structured) | CER 1.8%, WER 3.5% at ~$0.01/page; avoids 10–15% reasoning quality penalty from structured output mode (arXiv:2411.03340) |
+| [#224](https://github.com/donalotiarnaigh/textharvester-web/issues/224) | Two-step extraction (free-text → structured) | CER 1.8%, WER 3.5% at ~$0.01/page; avoids 10–15% reasoning quality penalty from structured output mode (arXiv:2411.03340) | **Status: Investigated** — see full entry below table |
 
 ### Multi-Model Ensemble & Confidence
 
@@ -426,6 +426,49 @@ The technique is architecturally feasible with no external infrastructure: OpenA
 
 ## Recommended next step
 Implement as described — start with OpenAI (smallest change: swap `json_object` for `json_schema`) behind a `config.schemaConstrained.enabled` feature flag, measure parse-error rate reduction on a held-out batch, then extend to Gemini before tackling the more invasive Anthropic tool-use change.
+
+---
+
+### [#224] Two-step extraction (free-text → structured)
+**Status**: Investigated
+
+## Technique
+First call: ask the VLM to transcribe the document image to free-form plain text with no JSON or structured-output constraint; second call: send only the transcription text to a (potentially cheaper) LLM and ask it to parse that text into the structured JSON schema — separating the visual reading task from the formatting task.
+
+## Research basis
+arXiv:2411.03340 reports CER 1.8% and WER 3.5% at approximately $0.01/page on printed historical documents using this decomposition, and attributes 10–15% of that accuracy gain to the removal of the structured-output mode penalty on the transcription step.
+
+## Viability assessment
+The technique is fully compatible with the existing Node.js/API-only architecture: all three providers (OpenAI, Anthropic, Gemini) support text-only calls natively, so step 2 requires no additional dependencies and can reuse the same provider instance with a null/empty image. The main architectural change is conditional — step 1 must not set `response_format: json_object` (OpenAI) or its equivalents in the other providers, which currently hardcode structured-output mode; and step 2 needs a text-only prompt variant on each prompt template class alongside the existing combined prompt. Token costs from both steps must be summed before storage, and audit logging will produce two entries per file instead of one.
+
+## Ratings
+- **Effort**: 3/5 — Requires new `getStep1Prompt()` / `getStep2Prompt(transcription)` methods on each of the four prompt template classes, conditional `response_format` removal in all three providers, a new `processTwoStepExtraction()` wrapper in `processingHelpers.js`, cost aggregation across two calls, and updated tests; no schema, database, or frontend changes are needed.
+- **Impact**: 3/5 — Removing the structured-output reasoning penalty is a well-evidenced improvement for printed text; the benefit for handwritten 19th-century inscriptions and faded burial registers (the primary TextHarvester use cases) is unproven and would need empirical testing, but the change is reversible and gated behind a feature flag.
+
+## Relevant existing code
+- `src/utils/modelProviders/openaiProvider.js:99`: `response_format: { type: 'json_object' }` is unconditionally set — this must become conditional on the processing mode (step 1 omits it; step 2 can keep it for the JSON parsing call).
+- `src/utils/modelProviders/anthropicProvider.js` / `geminiProvider.js`: Both use `extractFirstJsonObject()` from `jsonExtractor.js` to recover JSON from free-form text; step 1 would return raw text handled by the same utility on step 2.
+- `src/utils/processingHelpers.js`: `processWithValidationRetry()` is the existing single-step wrapper; `processTwoStepExtraction()` would sit alongside it as a sibling function following the same usage/error contract.
+- `src/utils/prompts/templates/MemorialOCRPrompt.js` (and `BurialRegisterPrompt.js`, `GraveCardPrompt.js`): `getPromptText()` returns a combined "transcribe + format as JSON" instruction — needs a two-step split into a transcription prompt and a structuring prompt.
+- `src/utils/processingHelpers.js` `injectCostData()`: Handles a single `usage` object; two-step mode requires summing `usage` from both calls before injecting into the stored record.
+- `src/utils/llmAuditLog.js`: Currently logs one entry per `processing_id`; both step calls should log under the same `processing_id`, generating two audit rows per file.
+
+## Implementation sketch
+- **New prompt methods** on `MemorialOCRPrompt`, `BurialRegisterPrompt`, `GraveCardPrompt`, `GraveCardPrompt`, `MonumentPhotoOCRPrompt`: add `getStep1TranscriptionPrompt()` returning a plain-text instruction ("Transcribe exactly what you see on this document. Output plain text only, preserving line breaks with |. Do not add or infer anything.") and `getStep2StructuringPrompt(transcription)` returning the existing JSON schema instructions with the transcription embedded as input.
+- **Modified** `openaiProvider.js`: when `options.twoStepMode === 'transcribe'`, omit `response_format` entirely from the request payload; when `options.twoStepMode === 'structure'`, pass `base64Image` as null and the user message as text-only (no `image_url` content block); default behaviour unchanged when option is absent.
+- **Modified** `anthropicProvider.js` and `geminiProvider.js`: analogous changes — step 1 suppresses any JSON mime-type or tool-use mode; step 2 constructs a text-only message body.
+- **New function** `processTwoStepExtraction()` in `src/utils/processingHelpers.js`: calls `processImage` in transcription mode, then calls `processImage` again in structuring mode with `base64Image = null`, validates the JSON output via the existing `validateFn`, aggregates `usage1 + usage2` into a single usage object, and passes it through the normal `injectCostData` / `attachCommonMetadata` / `llmAuditLog` flow.
+- **Modified** `config.json`: add `"twoStepExtraction": { "enabled": false, "structuringModel": null }` where `null` means use the same model as transcription; setting to `"gpt-4o-mini"` or `"claude-haiku-4-5"` enables the cost-reduction variant.
+- **Modified** `__tests__/utils/fileProcessing.test.js` and provider tests: add step-mode branching tests and verify usage aggregation (≈8–12 new tests).
+
+## Risks and gotchas
+- **Transcription error propagation**: any misread word in step 1 is locked in before step 2 runs — unlike the single-step approach where the model can cross-reference the image and the field schema simultaneously; errors compound rather than cancel.
+- **Cost model invalidation**: `CostEstimator` assumes one provider call per file; two-step mode doubles image-token cost (step 1 sends the image) and adds a text-only call; the displayed estimate will undercount by roughly 2× until `CostEstimator` is updated.
+- **Structured output suppression per provider**: OpenAI's `response_format` is a top-level payload field; Anthropic's equivalent is in `tool_choice`; Gemini's is in `generationConfig.responseMimeType` — all three providers need separate branching, and a missing or incorrect suppression silently degrades step 1 quality.
+- **Session cap interaction**: with `validationRetries: 1`, worst case is 4 provider calls per file (2 step-1 + 2 step-2 on retry) vs the current 2; on a 100-file batch the $5 cap will trigger approximately twice as early as `CostEstimator` predicts.
+
+## Recommended next step
+Prototype and evaluate on test corpus first — implement two-step mode behind `config.twoStepExtraction.enabled` for the memorial branch only, measure CER improvement on a held-out set of graveyard photos with known ground truth, and compare `needs_review` flag rates before concluding whether the gain justifies the doubled API cost.
 
 ---
 
