@@ -202,7 +202,7 @@ _23 issues opened 2026-04-07. Based on VLM digitisation techniques survey coveri
 | # | Technique | Key Finding |
 |---|-----------|-------------|
 | [#203](https://github.com/donalotiarnaigh/textharvester-web/issues/203) | Row-level image slicing with two-shot prompting | 8.8× field-level accuracy improvement; two examples optimal for tabular heritage records (arXiv:2510.23066, arXiv:2501.11623) | **Status: Investigated** — see full entry below table |
-| [#204](https://github.com/donalotiarnaigh/textharvester-web/issues/204) | OCR-Agent reflection mechanisms (capability + memory reflection) | Prevents capability hallucination and correction loops; +2.0 on OCRBench v2 (arXiv:2602.21053) |
+| [#204](https://github.com/donalotiarnaigh/textharvester-web/issues/204) | OCR-Agent reflection mechanisms (capability + memory reflection) | Prevents capability hallucination and correction loops; +2.0 on OCRBench v2 (arXiv:2602.21053) | **Status: Investigated** — see full entry below table |
 | [#205](https://github.com/donalotiarnaigh/textharvester-web/issues/205) | Self-consistency sampling with majority voting | Highest-accuracy single technique; Universal Self-Consistency variant reduces to one adjudication call |
 | [#206](https://github.com/donalotiarnaigh/textharvester-web/issues/206) | Schema-constrained generation across all providers | 92% error reduction on first retry via PARSE framework; schema field ordering recovers lost reasoning quality (arXiv:2510.08623) |
 | [#224](https://github.com/donalotiarnaigh/textharvester-web/issues/224) | Two-step extraction (free-text → structured) | CER 1.8%, WER 3.5% at ~$0.01/page; avoids 10–15% reasoning quality penalty from structured output mode (arXiv:2411.03340) |
@@ -301,6 +301,46 @@ The technique is architecturally feasible within the existing Node.js/API stack:
 
 ## Recommended next step
 Prototype and evaluate on test corpus first — specifically, measure actual field-level accuracy improvement against a gold-standard burial register page with known ground truth before committing to the pipeline restructure.
+
+---
+
+### [#204] OCR-Agent reflection mechanisms (capability + memory reflection)
+**Status**: Investigated
+
+## Technique
+Before and during extraction, the model performs two reflection passes: a capability reflection (assessing whether it can actually read the image) and a memory reflection (reasoning over why a previous attempt failed before retrying), preventing confident hallucinations on illegible images and breaking correction loops.
+
+## Research basis
+arXiv:2602.21053 reports +2.0 on OCRBench v2 by adding capability and memory reflection stages to an OCR agent, preventing the two most common failure modes: capability hallucination (confidently extracting from unreadable images) and oscillating correction loops.
+
+## Viability assessment
+Both reflection types are pure-prompt techniques requiring no local GPU or new SDK; every provider already supports multi-turn or system-prefixed reasoning. Capability reflection fits naturally as a lightweight pre-flight API call before the main extraction call, and memory reflection replaces the existing `VALIDATION_RETRY_PREAMBLE` in `processWithValidationRetry()` with a richer structured reasoning step. The main cost is that capability reflection doubles the number of API calls for every file, and the OCRBench +2.0 is measured on a general benchmark that may not transfer directly to handwritten heritage documents.
+
+## Ratings
+- **Effort**: 3/5 — Requires a new `reflectionHelper.js` module, modifications to `processWithValidationRetry()` in `processingHelpers.js`, a new config flag, and updated tests; no schema, frontend, or provider-layer changes are needed.
+- **Impact**: 3/5 — Capability reflection directly targets the hardest failure mode in heritage OCR (confidently wrong extractions from faded inscriptions), but doubles input API cost per file; benchmark gains on OCRBench v2 may not fully translate to handwritten parish record accuracy.
+
+## Relevant existing code
+- `src/utils/processingHelpers.js`: `processWithValidationRetry()` contains the current retry preamble — memory reflection replaces this with a structured reasoning turn.
+- `src/utils/processingHelpers.js`: `VALIDATION_RETRY_PREAMBLE` constant is the direct predecessor to memory reflection text.
+- `src/utils/retryHelper.js`: `withRetry()` / `classifyError()` — provider-level retry wrapper; reflection operates at the layer above this (validation retry), not inside it.
+- `src/utils/llmAuditLog.js`: Stores raw responses per `processing_id` — the exact data a memory reflection prompt would summarise from.
+- `src/utils/prompts/templates/MemorialOCRPrompt.js`: Prompt structure shows capability check questions (legibility, document type) could be extracted into a separate pre-flight prompt.
+
+## Implementation sketch
+- **New module** `src/utils/reflectionHelper.js`: exports `runCapabilityReflection(provider, base64Image, options)` — sends a minimal system+user prompt ("Is this image legible? What document type is it? Rate readability 0–1.") and returns `{ readable: boolean, readabilityScore: number, documentType: string }`; and `buildMemoryReflectionPreamble(previousError, rawResponse)` — returns a structured reasoning paragraph summarising the prior failure to prepend on retry.
+- **Modified** `src/utils/processingHelpers.js`: when `config.reflection.enabled`, call `runCapabilityReflection()` before `processWithValidationRetry()`; if `readabilityScore < config.reflection.readabilityThreshold` (suggested 0.4), mark result as `needs_review = 1` and short-circuit without a main extraction call; replace `VALIDATION_RETRY_PREAMBLE` with output of `buildMemoryReflectionPreamble()` on validation retries.
+- **Modified** `config.json`: add `"reflection": { "enabled": false, "readabilityThreshold": 0.4 }` feature flag section.
+- **New tests** `__tests__/utils/reflectionHelper.test.js`: unit tests for `runCapabilityReflection()` (mock provider returns legible/illegible responses), `buildMemoryReflectionPreamble()` (output structure), and the short-circuit path in `processWithValidationRetry()` (6–8 tests).
+
+## Risks and gotchas
+- **Cost doubling**: Capability reflection adds one provider API call per file; at scale (200-file batch), this doubles API spend before a single record is extracted — the session cost cap of $5 will trigger earlier and the `CostEstimator` utility will undercount actual cost.
+- **Benchmark transfer gap**: OCRBench v2 is a printed-text benchmark; heritage documents (faded inscriptions, 19th-century handwriting, paper foxing) are significantly harder and the +2.0 improvement may not hold or may be larger in different directions.
+- **Capability reflection reliability**: The model's self-assessment of its own readability is itself subject to hallucination — a model that confidently over-reads faded text may also confidently rate that text as highly readable, defeating the purpose.
+- **Interaction with existing retry logic**: Memory reflection replaces the simple `VALIDATION_RETRY_PREAMBLE` string; both mechanisms must not be concatenated or the retry prompt will grow very long, requiring careful branching in `processWithValidationRetry()`.
+
+## Recommended next step
+Prototype and evaluate on test corpus first — implement capability reflection only (not memory reflection) as an opt-in flag and measure false-positive rate (readable images incorrectly flagged as illegible) against a sample of known-good graveyard photos before enabling the memory reflection path.
 
 ---
 
