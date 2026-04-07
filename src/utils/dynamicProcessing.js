@@ -141,7 +141,18 @@ class DynamicProcessor {
           const type = props[key]?.type;
           let value = clean[key];
 
-          // Handle Booleans (Yes/No, empty strings become null)
+          // Coerce arrays to string when schema expects a string.
+          // LLMs sometimes return arrays for multi-value fields (e.g. names_of_deceased: []).
+          // Join non-empty arrays with "; "; empty arrays become null.
+          if (type === 'string' && Array.isArray(value)) {
+            const filtered = value.filter(v => v !== null && v !== undefined && v !== '');
+            clean[key] = filtered.length > 0 ? filtered.join('; ') : null;
+            value = clean[key];
+          }
+
+          // Handle Booleans (Yes/No, empty strings become null).
+          // Any unrecognised string (e.g. "vacant") also becomes null rather than
+          // leaving an invalid non-boolean value that fails AJV validation.
           if (type === 'boolean') {
             if (typeof value === 'string') {
               const lower = value.toLowerCase().trim();
@@ -149,10 +160,13 @@ class DynamicProcessor {
                 clean[key] = true;
               } else if (['no', 'n', 'false', '0'].includes(lower)) {
                 clean[key] = false;
-              } else if (lower === '' || lower === 'null' || lower === 'n/a' || lower === 'na' || lower === '-') {
+              } else {
+                // Covers '', 'null', 'n/a', 'vacant', and any other non-boolean string
                 clean[key] = null;
               }
             } else if (value === null || value === undefined) {
+              clean[key] = null;
+            } else if (Array.isArray(value)) {
               clean[key] = null;
             }
           }
