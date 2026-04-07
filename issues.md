@@ -248,7 +248,8 @@ Effort exceeds expected impact for the current API-only, low-infrastructure depl
 ---
 
 ### [#216] Extended cross-field validation rules (date arithmetic, age plausibility, ordering)
-**Status**: Investigated
+**Status**: ✅ Implemented — PR pending, merged 2026-04-07
+**Branch**: `fix/issue-216-extended-cross-field-validation`
 
 ## Technique
 After per-field extraction, apply deterministic arithmetic and ordering checks across related fields (e.g. death year vs. inscription age → implied birth year; burial date must be after death date; year_of_death within a plausible historical range) to flag logically inconsistent records without making any additional API calls.
