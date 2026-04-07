@@ -37,8 +37,7 @@ async function getTableColumns(tableName) {
 class DynamicProcessor {
   constructor(logger = defaultLogger) {
     // Allow coerceTypes to cast strings to numbers/booleans, nullable allows null for any type
-    // unknownFormats: 'ignore' prevents errors on custom formats like "date"
-    this.ajv = new Ajv({ allErrors: true, coerceTypes: true, nullable: true, unknownFormats: 'ignore' });
+    this.ajv = new Ajv({ allErrors: true, coerceTypes: true, nullable: true });
     this.logger = logger;
   }
 
@@ -125,24 +124,9 @@ class DynamicProcessor {
 
       log.info(`Processing ${path.basename(filePath)} with schema ${schema.name} (${schemaId})`);
 
-      // Helper to normalize custom schema types for AJV (date -> string)
-      const normalizeSchemaForValidation = (jsonSchema) => {
-        const normalized = JSON.parse(JSON.stringify(jsonSchema)); // Deep clone
-        if (normalized.properties) {
-          Object.keys(normalized.properties).forEach(key => {
-            if (normalized.properties[key].type === 'date') {
-              normalized.properties[key].type = 'string';
-              normalized.properties[key].format = 'date';
-            }
-          });
-        }
-        return normalized;
-      };
-
       // Helper to validate a single record against schema
       const validateRecord = (record) => {
-        const normalizedSchema = normalizeSchemaForValidation(schema.json_schema);
-        const validate = this.ajv.compile(normalizedSchema);
+        const validate = this.ajv.compile(schema.json_schema);
         const valid = validate(record);
         if (!valid) return { valid: false, errors: validate.errors };
         return { valid: true };

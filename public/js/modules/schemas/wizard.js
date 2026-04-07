@@ -97,10 +97,11 @@ export async function loadSchemaForEdit(schemaId) {
     const schema = await response.json();
 
     // Extract fields from json_schema.properties
+    // Map string fields with format: "date" back to "date" type for UI
     const fields = schema.json_schema && schema.json_schema.properties
       ? Object.entries(schema.json_schema.properties).map(([fieldName, prop]) => ({
         name: fieldName,
-        type: prop.type,
+        type: prop.format === 'date' ? 'date' : prop.type,  // Recover date type from format
         description: prop.description,
         required: (schema.json_schema.required || []).includes(fieldName)
       }))
@@ -127,6 +128,23 @@ export async function loadSchemaForEdit(schemaId) {
 }
 
 /**
+ * Normalizes field types for JSON Schema storage.
+ * Maps UI types (date) to JSON Schema standard types (string).
+ * @param {string} fieldType - The UI field type
+ * @returns {string} The JSON Schema compatible type
+ */
+function normalizeFieldType(fieldType) {
+  // Map UI types to JSON Schema standard types
+  const typeMap = {
+    'date': 'string',  // Date is stored as string in JSON Schema
+    'string': 'string',
+    'number': 'number',
+    'boolean': 'boolean'
+  };
+  return typeMap[fieldType] || fieldType;
+}
+
+/**
  * Collects form data and saves the schema
  */
 export async function saveSchema() {
@@ -144,10 +162,15 @@ export async function saveSchema() {
     const isRequired = row.querySelector('.field-required')?.checked ?? true;
 
     if (fieldName) {
-      properties[fieldName] = {
-        type: fieldType,
+      const fieldDef = {
+        type: normalizeFieldType(fieldType),  // Normalize type for JSON Schema
         description: fieldDesc
       };
+      // Preserve "date" semantics using format property
+      if (fieldType === 'date') {
+        fieldDef.format = 'date';
+      }
+      properties[fieldName] = fieldDef;
       if (isRequired) {
         required.push(fieldName);
       }
@@ -213,10 +236,15 @@ export async function updateSchema(schemaId) {
     const isExisting = row.getAttribute('data-existing') === 'true';
 
     if (fieldName) {
-      properties[fieldName] = {
-        type: fieldType,
+      const fieldDef = {
+        type: normalizeFieldType(fieldType),  // Normalize type for JSON Schema
         description: fieldDesc
       };
+      // Preserve "date" semantics using format property
+      if (fieldType === 'date') {
+        fieldDef.format = 'date';
+      }
+      properties[fieldName] = fieldDef;
       if (isRequired) {
         required.push(fieldName);
       }
