@@ -99,3 +99,4 @@ textharvester.db
 # Claude Code worktrees and temporary files
 .claude/worktrees/
 .claude/**/*.db
+RESEARCH_PROMPT.md

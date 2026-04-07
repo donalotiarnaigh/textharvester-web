@@ -1,6 +1,6 @@
 # Issue Tracker — TextHarvester Web
 
-_Last updated: 2026-04-07 · 26 open issues · [24 completed](#completed-issues)_
+_Last updated: 2026-04-07 · 49 open issues · [24 completed](#completed-issues)_
 
 ---
 
@@ -190,6 +190,75 @@ Database stores `input_tokens`, `output_tokens`, `estimated_cost_usd` for all re
 Gemini provider showed 0 input_tokens, 0 output_tokens, $0.00 estimated_cost for all successful records.
 
 **Fix (branch `claude/next-issue-qoTF5`):** `usageMetadata` is nested under `response.response` in the Google Generative AI SDK, but `geminiProvider.js` was reading `response.usageMetadata` (top level) — always `undefined`, always defaulting to 0. Changed lines 132-133 to `response.response.usageMetadata?.promptTokenCount` / `candidatesTokenCount`. Updated all 11 test mocks to reflect the real SDK structure. 26 tests passing.
+
+---
+
+## Research Issues
+
+_23 issues opened 2026-04-07. Based on VLM digitisation techniques survey covering 30+ papers (2024–2026). No implementation plan — findings and supposed benefits only._
+
+### Prompting & Extraction
+
+| # | Technique | Key Finding |
+|---|-----------|-------------|
+| [#203](https://github.com/donalotiarnaigh/textharvester-web/issues/203) | Row-level image slicing with two-shot prompting | 8.8× field-level accuracy improvement; two examples optimal for tabular heritage records (arXiv:2510.23066, arXiv:2501.11623) |
+| [#204](https://github.com/donalotiarnaigh/textharvester-web/issues/204) | OCR-Agent reflection mechanisms (capability + memory reflection) | Prevents capability hallucination and correction loops; +2.0 on OCRBench v2 (arXiv:2602.21053) |
+| [#205](https://github.com/donalotiarnaigh/textharvester-web/issues/205) | Self-consistency sampling with majority voting | Highest-accuracy single technique; Universal Self-Consistency variant reduces to one adjudication call |
+| [#206](https://github.com/donalotiarnaigh/textharvester-web/issues/206) | Schema-constrained generation across all providers | 92% error reduction on first retry via PARSE framework; schema field ordering recovers lost reasoning quality (arXiv:2510.08623) |
+| [#224](https://github.com/donalotiarnaigh/textharvester-web/issues/224) | Two-step extraction (free-text → structured) | CER 1.8%, WER 3.5% at ~$0.01/page; avoids 10–15% reasoning quality penalty from structured output mode (arXiv:2411.03340) |
+
+### Multi-Model Ensemble & Confidence
+
+| # | Technique | Key Finding |
+|---|-----------|-------------|
+| [#207](https://github.com/donalotiarnaigh/textharvester-web/issues/207) | Field-level multi-model ensemble voting (RAGsemble / Guardian Pipeline) | Outperforms every single-model baseline; field-level voting more powerful than document-level (arXiv:2601.05266, arXiv:2603.08954) |
+| [#208](https://github.com/donalotiarnaigh/textharvester-web/issues/208) | Composite confidence scoring (cross-model + logprobs + self-consistency + doc quality) | Cross-model disagreement = epistemic uncertainty; self-consistency = aleatoric uncertainty (MUSE, EMNLP 2025; ICLR 2026) |
+
+### Image Pre-processing
+
+| # | Technique | Key Finding |
+|---|-----------|-------------|
+| [#209](https://github.com/donalotiarnaigh/textharvester-web/issues/209) | Minimal pre-processing pipeline with CLAHE via Sharp.js | Binarisation hurts VLM performance; CLAHE most impactful single enhancement for faded historical ink |
+| [#210](https://github.com/donalotiarnaigh/textharvester-web/issues/210) | Region/row cropping before VLM inference | 5–10× token cost reduction; two-pass layout detection eliminates need for separate ML model |
+| [#211](https://github.com/donalotiarnaigh/textharvester-web/issues/211) | Perspective correction for monument photographs | Addresses angled headstone shots via OpenCV.js `getPerspectiveTransform` + `warpPerspective` |
+
+### Post-processing & Validation
+
+| # | Technique | Key Finding |
+|---|-----------|-------------|
+| [#212](https://github.com/donalotiarnaigh/textharvester-web/issues/212) | Multimodal correction pass (image + OCR → second VLM) | <1% CER on printed historical documents without fine-tuning; >60% CER reduction with socio-cultural context (arXiv:2504.00414, arXiv:2408.17428) |
+| [#213](https://github.com/donalotiarnaigh/textharvester-web/issues/213) | Degenerate output detection (CCR metric, length ratio, entropy) | VLM hallucinations are fluent and undetectable without algorithmic checks; CCR threshold ~40% (FedCSIS 2025) |
+| [#214](https://github.com/donalotiarnaigh/textharvester-web/issues/214) | Retrieval-augmented grounding for place/person names | World Historical Gazetteer, Vision of Britain, FreeBMD; Rose's Act (post-1813) structure as hallucination constraint |
+| [#215](https://github.com/donalotiarnaigh/textharvester-web/issues/215) | Historical date format parsing (Latin months, Old Style/New Style) | "7ber"–"Xber" for Sep–Dec; dual dating "1723/4"; silent errors on all pre-1752 English parish records |
+| [#216](https://github.com/donalotiarnaigh/textharvester-web/issues/216) | Extended cross-field validation rules (date arithmetic, age plausibility, ordering) | Deterministic; no additional API calls; integrates directly with existing `needs_review` flag |
+
+### Agentic Orchestration
+
+| # | Technique | Key Finding |
+|---|-----------|-------------|
+| [#217](https://github.com/donalotiarnaigh/textharvester-web/issues/217) | LangGraph.js agentic pipeline | Architecture alone accounts for 66–77% → 93–98% accuracy improvement in PLANET AI 2025 IDP benchmarks |
+| [#218](https://github.com/donalotiarnaigh/textharvester-web/issues/218) | LLM-as-judge / Panel of LLM Judges (PoLL) | Scales automated review beyond human capacity; PoLL reduces single-model evaluation bias |
+| [#219](https://github.com/donalotiarnaigh/textharvester-web/issues/219) | Active learning loop with Langfuse trace logging | <1% error rate achievable with 1,000 training lines; disagreement score identifies highest-value annotation targets (arXiv:1802.10038) |
+
+### Alternative Models
+
+| # | Technique | Key Finding |
+|---|-----------|-------------|
+| [#220](https://github.com/donalotiarnaigh/textharvester-web/issues/220) | CHURRO open-source OCR model (Stanford, EMNLP 2025) | 82.3% printed / 70.1% handwritten normalised Levenshtein; 15.5× cheaper than Gemini Pro; trained on 155 heritage corpora |
+
+### Cost Engineering
+
+| # | Technique | Key Finding |
+|---|-----------|-------------|
+| [#221](https://github.com/donalotiarnaigh/textharvester-web/issues/221) | Batch API usage (OpenAI + Anthropic, 50% flat discount) | Flat 50% cost reduction; up to 50,000 requests/batch; compatible with existing async pipeline |
+| [#222](https://github.com/donalotiarnaigh/textharvester-web/issues/222) | Prompt caching for repeated system prompts and schemas | Up to 90% reduction on non-image prompt tokens; automatic in Claude since Feb 2026 |
+| [#223](https://github.com/donalotiarnaigh/textharvester-web/issues/223) | Cascading model strategy (cheap first-pass → confident escalation) | <20% of full ensemble cost; ≤2–10% accuracy gap (C3PO framework, arXiv:2511.07396) |
+
+### Community & Feedback
+
+| # | Technique | Key Finding |
+|---|-----------|-------------|
+| [#225](https://github.com/donalotiarnaigh/textharvester-web/issues/225) | Community-driven transcription correction (FamilySearch model) | Genealogist volunteers correct uncertain AI transcriptions; proven at 2 billion records scale |
 
 ---
 
