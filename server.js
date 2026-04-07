@@ -92,6 +92,10 @@ app.use('/api/projects', projectRoutes);
 const costEstimateRoutes = require('./src/routes/costEstimateRoutes');
 app.use('/api/cost-estimate', costEstimateRoutes);
 
+// Volume ID autocomplete routes
+const volumeIdRoutes = require('./src/routes/volumeIdRoutes');
+app.use('/api/volume-ids', volumeIdRoutes);
+
 // Schema Management routes
 const apiRoutes = require('./src/routes/api');
 app.use('/api/schemas', apiRoutes);

@@ -144,6 +144,30 @@ export const initSourceTypeSelection = () => {
 };
 
 /**
+ * Fetch distinct volume IDs from the API and populate the datalist
+ */
+async function fetchAndPopulateVolumeIds() {
+  const datalist = document.getElementById("volumeIdList");
+  if (!datalist) return;
+
+  try {
+    const response = await fetch('/api/volume-ids');
+    const data = await response.json();
+    const volumeIds = data.volumeIds || [];
+
+    datalist.innerHTML = '';
+    volumeIds.forEach(id => {
+      const option = document.createElement('option');
+      option.value = id;
+      datalist.appendChild(option);
+    });
+  } catch (err) {
+    console.error('Failed to fetch volume IDs:', err);
+    // Graceful degradation: datalist stays empty, user types freely
+  }
+}
+
+/**
  * Show or hide the volume ID input based on source type
  * @param {string} sourceType - Selected source type
  * @param {HTMLElement} volumeIdGroup - Container for the volume ID field
@@ -151,6 +175,7 @@ export const initSourceTypeSelection = () => {
 function toggleVolumeIdVisibility(sourceType, volumeIdGroup) {
   if (sourceType === "burial_register") {
     volumeIdGroup.classList.remove("d-none");
+    fetchAndPopulateVolumeIds();
   } else {
     volumeIdGroup.classList.add("d-none");
   }

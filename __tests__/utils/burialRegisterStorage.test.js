@@ -197,3 +197,69 @@ describe('Burial Register Storage: updateBurialRegisterEntry()', () => {
     expect(error).toBe(dbError);
   });
 });
+
+describe('Burial Register Storage: getDistinctVolumeIds()', () => {
+  let getDistinctVolumeIds;
+
+  beforeEach(() => {
+    jest.resetModules();
+    jest.clearAllMocks();
+    const storage = require('../../src/utils/burialRegisterStorage');
+    getDistinctVolumeIds = storage.getDistinctVolumeIds;
+  });
+
+  it('should return array of distinct volume IDs ordered alphabetically', async () => {
+    const mockRows = [
+      { volume_id: 'vol1' },
+      { volume_id: 'vol2' },
+      { volume_id: 'vol3' }
+    ];
+
+    mockAll.mockImplementationOnce((sql, params, cb) => {
+      expect(sql).toContain('SELECT DISTINCT volume_id');
+      expect(sql).toContain('ORDER BY volume_id');
+      cb(null, mockRows);
+    });
+
+    const result = await getDistinctVolumeIds();
+    expect(result).toEqual(['vol1', 'vol2', 'vol3']);
+  });
+
+  it('should return empty array when no entries exist', async () => {
+    mockAll.mockImplementationOnce((sql, params, cb) => {
+      cb(null, null);
+    });
+
+    const result = await getDistinctVolumeIds();
+    expect(result).toEqual([]);
+  });
+
+  it('should return empty array when database returns empty result set', async () => {
+    mockAll.mockImplementationOnce((sql, params, cb) => {
+      cb(null, []);
+    });
+
+    const result = await getDistinctVolumeIds();
+    expect(result).toEqual([]);
+  });
+
+  it('should reject promise on database error', async () => {
+    const dbError = new Error('Database connection failed');
+
+    mockAll.mockImplementationOnce((sql, params, cb) => {
+      cb(dbError);
+    });
+
+    const error = await getDistinctVolumeIds().catch(e => e);
+    expect(error).toBe(dbError);
+  });
+
+  it('should pass empty params array to db.all()', async () => {
+    mockAll.mockImplementationOnce((sql, params, cb) => {
+      expect(params).toEqual([]);
+      cb(null, []);
+    });
+
+    await getDistinctVolumeIds();
+  });
+});
