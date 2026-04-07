@@ -258,4 +258,68 @@ describe('BurialRegisterPrompt validation', () => {
       expect(validationWarnings.length).toBe(0);
     });
   });
+
+  describe('historical date parsing integration', () => {
+    it('normalizes Latin month abbreviation in burial_date_raw', () => {
+      const entry = {
+        ...samplePageData.entries[0],
+        burial_date_raw: '7ber 1712'
+      };
+
+      const { data, validationWarnings } = prompt.validateAndConvertEntry(entry);
+
+      expect(data.burial_date_normalized).toBe('Sep 1712');
+      expect(data.burial_date_year).toBe(1712);
+      expect(validationWarnings.length).toBe(0);
+    });
+
+    it('sets OLD_STYLE_YEAR_CORRECTED warning for dual-dated year', () => {
+      const entry = {
+        ...samplePageData.entries[0],
+        burial_date_raw: 'Jan 1723/4'
+      };
+
+      const { data, validationWarnings } = prompt.validateAndConvertEntry(entry);
+
+      expect(data.burial_date_normalized).toBe('Jan 1724');
+      expect(data.burial_date_year).toBe(1724);
+      expect(validationWarnings.some(w => w.includes('OLD_STYLE_YEAR_CORRECTED'))).toBe(true);
+    });
+
+    it('corrects pre-1752 January date year-start', () => {
+      const entry = {
+        ...samplePageData.entries[0],
+        burial_date_raw: '15 Feb 1720'
+      };
+
+      const { data, validationWarnings } = prompt.validateAndConvertEntry(entry);
+
+      expect(data.burial_date_year).toBe(1721);
+      expect(validationWarnings.some(w => w.includes('OLD_STYLE_YEAR_CORRECTED'))).toBe(true);
+    });
+
+    it('does not modify burial_date_raw on the result object', () => {
+      const entry = {
+        ...samplePageData.entries[0],
+        burial_date_raw: '7ber 1712'
+      };
+
+      const { data } = prompt.validateAndConvertEntry(entry);
+
+      expect(data.burial_date_raw).toBe('7ber 1712');
+    });
+
+    it('does not add normalized fields when burial_date_raw is null', () => {
+      const entry = {
+        ...samplePageData.entries[0],
+        burial_date_raw: null
+      };
+
+      const { data, validationWarnings } = prompt.validateAndConvertEntry(entry);
+
+      expect(data.burial_date_normalized).toBeUndefined();
+      expect(data.burial_date_year).toBeUndefined();
+      expect(validationWarnings.length).toBe(0);
+    });
+  });
 });

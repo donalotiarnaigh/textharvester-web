@@ -161,7 +161,9 @@ function buildBurialEntryParams(entry) {
     entry.output_tokens       ?? 0,
     entry.estimated_cost_usd  ?? 0,
     entry.processing_id || null,
-    entry.project_id || null
+    entry.project_id || null,
+    entry.burial_date_normalized || null,
+    entry.burial_date_year ?? null
   ];
 }
 
@@ -229,8 +231,10 @@ async function storeBurialRegisterEntry(entry) {
       output_tokens,
       estimated_cost_usd,
       processing_id,
-      project_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      project_id,
+      burial_date_normalized,
+      burial_date_year
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const params = buildBurialEntryParams(entry);

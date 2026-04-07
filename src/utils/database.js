@@ -273,7 +273,9 @@ function initializeBurialRegisterTable() {
         { name: 'processing_id', def: 'TEXT' },
         { name: 'edited_at', def: 'DATETIME' },
         { name: 'edited_fields', def: 'TEXT' },
-        { name: 'project_id', def: 'TEXT' }
+        { name: 'project_id', def: 'TEXT' },
+        { name: 'burial_date_normalized', def: 'TEXT' },
+        { name: 'burial_date_year', def: 'INTEGER' }
       ];
       const missingBurial = burialMigrations.filter(col => !existingCols.includes(col.name));
       runColumnMigration('burial_register_entries', missingBurial, 'burial_register_add_columns_v1');
