@@ -257,6 +257,76 @@ describe('BurialRegisterPrompt validation', () => {
 
       expect(validationWarnings.length).toBe(0);
     });
+
+    it('flags DATE_ORDER_ANOMALY when burial year exceeds header year by more than 2', () => {
+      const entry = {
+        ...samplePageData.entries[0],
+        burial_date_raw: '15 March 1860',
+        year_header_raw: '1850'
+      };
+
+      const { validationWarnings } = prompt.validateAndConvertEntry(entry);
+
+      expect(validationWarnings.some(w => w.includes('DATE_ORDER_ANOMALY'))).toBe(true);
+    });
+
+    it('does not flag DATE_ORDER_ANOMALY within ±2 year tolerance', () => {
+      const entry = {
+        ...samplePageData.entries[0],
+        burial_date_raw: '15 March 1852',
+        year_header_raw: '1850'
+      };
+
+      const { validationWarnings } = prompt.validateAndConvertEntry(entry);
+
+      expect(validationWarnings.some(w => w.includes('DATE_ORDER_ANOMALY'))).toBe(false);
+    });
+
+    it('does not flag DATE_ORDER_ANOMALY when year_header_raw is missing', () => {
+      const entry = {
+        ...samplePageData.entries[0],
+        burial_date_raw: '15 March 1860',
+        year_header_raw: null
+      };
+
+      const { validationWarnings } = prompt.validateAndConvertEntry(entry);
+
+      expect(validationWarnings.some(w => w.includes('DATE_ORDER_ANOMALY'))).toBe(false);
+    });
+
+    it('flags BURIAL_YEAR_IMPLAUSIBLE when burial year is before 1500', () => {
+      const entry = {
+        ...samplePageData.entries[0],
+        burial_date_raw: '15 March 1300'
+      };
+
+      const { validationWarnings } = prompt.validateAndConvertEntry(entry);
+
+      expect(validationWarnings.some(w => w.includes('BURIAL_YEAR_IMPLAUSIBLE'))).toBe(true);
+    });
+
+    it('flags BURIAL_YEAR_IMPLAUSIBLE when burial year is in the future', () => {
+      const futureYear = new Date().getFullYear() + 5;
+      const entry = {
+        ...samplePageData.entries[0],
+        burial_date_raw: `15 March ${futureYear}`
+      };
+
+      const { validationWarnings } = prompt.validateAndConvertEntry(entry);
+
+      expect(validationWarnings.some(w => w.includes('BURIAL_YEAR_IMPLAUSIBLE'))).toBe(true);
+    });
+
+    it('caps burial_date_raw confidence for BURIAL_YEAR_IMPLAUSIBLE', () => {
+      const entry = {
+        ...samplePageData.entries[0],
+        burial_date_raw: { value: '15 March 1300', confidence: 0.99 }
+      };
+
+      const { confidenceScores } = prompt.validateAndConvertEntry(entry);
+
+      expect(confidenceScores.burial_date_raw).toBeLessThanOrEqual(0.4);
+    });
   });
 
   describe('historical date parsing integration', () => {

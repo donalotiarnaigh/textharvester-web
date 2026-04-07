@@ -177,6 +177,7 @@ CRITICAL VALIDATION RULES:
     }
 
     // 5. Validate Interments items
+    const intermentWarnings = [];
     interments.forEach((interment, index) => {
       if (!interment.name) {
         throw new Error(`Interment at index ${index} missing required field: name`);
@@ -188,11 +189,40 @@ CRITICAL VALIDATION RULES:
           throw new Error(`Invalid ISO date format for interment ${index}: ${interment.date_of_death.iso}`);
         }
       }
+
+      // Cross-field plausibility checks per interment
+      if (interment.date_of_death && interment.date_of_death.iso &&
+          interment.date_of_burial && interment.date_of_burial.iso) {
+        if (Date.parse(interment.date_of_burial.iso) < Date.parse(interment.date_of_death.iso)) {
+          intermentWarnings.push(
+            `BURIAL_BEFORE_DEATH: interment ${index} burial date ${interment.date_of_burial.iso} is before death date ${interment.date_of_death.iso}`
+          );
+        }
+      }
+
+      if (interment.age_at_death != null) {
+        const age = Number(interment.age_at_death);
+        if (!isNaN(age)) {
+          if (age > 150 || age < 0) {
+            intermentWarnings.push(
+              `AGE_IMPLAUSIBLE: interment ${index} age_at_death ${age} is outside plausible range (0–150)`
+            );
+          }
+          if (interment.date_of_death && interment.date_of_death.iso) {
+            const deathYear = new Date(interment.date_of_death.iso).getFullYear();
+            if (deathYear - age < 1400) {
+              intermentWarnings.push(
+                `AGE_DEATH_MISMATCH: interment ${index} implied birth year ${deathYear - age} (death ${deathYear} - age ${age}) is before 1400`
+              );
+            }
+          }
+        }
+      }
     });
 
     // If we passed all checks, return the data
     // We could do deep cleaning/trimming here if needed, but for now return as-is
-    return { data: rawData, confidenceScores: {}, validationWarnings: [] };
+    return { data: rawData, confidenceScores: {}, validationWarnings: intermentWarnings };
   }
 
   _isValidDate(dateString) {

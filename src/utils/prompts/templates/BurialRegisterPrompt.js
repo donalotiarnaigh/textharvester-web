@@ -343,6 +343,36 @@ For every field shown as { "value": ..., "confidence": ... }, return that envelo
       crossFieldWarnings.push(...parsed.warnings);
     }
 
+    // DATE_ORDER_ANOMALY / BURIAL_YEAR_IMPLAUSIBLE: check burial year against header year and range
+    const burialYear = result.burial_date_year ||
+      (result.burial_date_raw && (result.burial_date_raw.match(/(\d{4})/) || [])[1]
+        ? parseInt((result.burial_date_raw.match(/(\d{4})/) || [])[1], 10)
+        : null);
+
+    if (burialYear != null) {
+      const currentYear = new Date().getFullYear();
+      if (burialYear < 1500 || burialYear > currentYear) {
+        crossFieldWarnings.push(
+          `BURIAL_YEAR_IMPLAUSIBLE: burial year ${burialYear} is outside the plausible range (1500–${currentYear})`
+        );
+        confidenceScores.burial_date_raw = Math.min(confidenceScores.burial_date_raw ?? 1, 0.4);
+      }
+
+      // year_header_raw is a page-level field, not in entryFields — read from the raw input
+      const yearHeaderRaw = entryRaw.year_header_raw !== undefined ? entryRaw.year_header_raw : null;
+      if (yearHeaderRaw) {
+        const headerMatch = String(yearHeaderRaw).match(/(\d{4})/);
+        if (headerMatch) {
+          const headerYear = parseInt(headerMatch[1], 10);
+          if (burialYear > headerYear + 2) {
+            crossFieldWarnings.push(
+              `DATE_ORDER_ANOMALY: burial year ${burialYear} is more than 2 years after page header year ${headerYear}`
+            );
+          }
+        }
+      }
+    }
+
     return { data: result, confidenceScores, validationWarnings: crossFieldWarnings };
   }
 

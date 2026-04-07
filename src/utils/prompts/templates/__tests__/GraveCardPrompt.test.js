@@ -157,4 +157,95 @@ describe('GraveCardPrompt', () => {
         .toThrow(/Invalid ISO date format/);
     });
   });
+
+  describe('cross-field validation', () => {
+    const baseRecord = {
+      card_metadata: { source_reference: 'FILE_123.pdf', card_version: 'v1', notes: '' },
+      location: { section: 'A', grave_number: 1, plot_identifier: 'Row 1' },
+      grave: { number_buried: 1, status: 'occupied', description_of_grave: 'Headstone', dimensions: { length_ft: 8, width_ft: 4, unit: 'ft' } },
+      inscription: { text: '' },
+      sketch: { present: false }
+    };
+
+    test('flags BURIAL_BEFORE_DEATH when burial ISO is before death ISO', () => {
+      const record = {
+        ...baseRecord,
+        interments: [{
+          sequence_number: 1,
+          name: { full_name: 'JOHN DOE' },
+          date_of_death: { iso: '1920-06-15', certainty: 'certain' },
+          date_of_burial: { iso: '1920-06-10', certainty: 'certain' }
+        }]
+      };
+
+      const { validationWarnings } = prompt.validateAndConvert(record);
+
+      expect(validationWarnings.some(w => w.includes('BURIAL_BEFORE_DEATH'))).toBe(true);
+    });
+
+    test('does not flag BURIAL_BEFORE_DEATH when burial is after death', () => {
+      const record = {
+        ...baseRecord,
+        interments: [{
+          sequence_number: 1,
+          name: { full_name: 'JOHN DOE' },
+          date_of_death: { iso: '1920-06-15', certainty: 'certain' },
+          date_of_burial: { iso: '1920-06-18', certainty: 'certain' }
+        }]
+      };
+
+      const { validationWarnings } = prompt.validateAndConvert(record);
+
+      expect(validationWarnings.some(w => w.includes('BURIAL_BEFORE_DEATH'))).toBe(false);
+    });
+
+    test('flags AGE_IMPLAUSIBLE when age_at_death exceeds 150', () => {
+      const record = {
+        ...baseRecord,
+        interments: [{
+          sequence_number: 1,
+          name: { full_name: 'JOHN DOE' },
+          date_of_death: { iso: '1920-06-15', certainty: 'certain' },
+          age_at_death: 200
+        }]
+      };
+
+      const { validationWarnings } = prompt.validateAndConvert(record);
+
+      expect(validationWarnings.some(w => w.includes('AGE_IMPLAUSIBLE'))).toBe(true);
+    });
+
+    test('flags AGE_DEATH_MISMATCH when death year minus age is before 1400', () => {
+      const record = {
+        ...baseRecord,
+        interments: [{
+          sequence_number: 1,
+          name: { full_name: 'JOHN DOE' },
+          date_of_death: { iso: '1800-06-15', certainty: 'certain' },
+          age_at_death: 450  // 1800 - 450 = 1350, before 1400; age itself is > 150 but AGE_DEATH_MISMATCH is more specific
+        }]
+      };
+
+      const { validationWarnings } = prompt.validateAndConvert(record);
+
+      expect(validationWarnings.some(w => w.includes('AGE_DEATH_MISMATCH'))).toBe(true);
+    });
+
+    test('does not flag valid interment data', () => {
+      const record = {
+        ...baseRecord,
+        interments: [{
+          sequence_number: 1,
+          name: { full_name: 'JOHN DOE' },
+          date_of_death: { iso: '1920-06-15', certainty: 'certain' },
+          date_of_burial: { iso: '1920-06-18', certainty: 'certain' },
+          age_at_death: 72
+        }]
+      };
+
+      const { validationWarnings } = prompt.validateAndConvert(record);
+
+      expect(validationWarnings.length).toBe(0);
+    });
+  });
 });

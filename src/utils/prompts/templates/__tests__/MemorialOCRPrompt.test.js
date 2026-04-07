@@ -250,5 +250,44 @@ describe('MemorialOCRPrompt', () => {
 
       expect(validationWarnings.length).toBe(0);
     });
+
+    it('flags DEATH_YEAR_IMPLAUSIBLE when year_of_death is before 1400', () => {
+      const data = {
+        memorial_number: '1',
+        first_name: 'JOHN',
+        last_name: 'SMITH',
+        year_of_death: 1200
+      };
+
+      const { validationWarnings } = prompt.validateAndConvert(data);
+
+      expect(validationWarnings.some(w => w.includes('DEATH_YEAR_IMPLAUSIBLE'))).toBe(true);
+    });
+
+    it('caps year_of_death confidence for DEATH_YEAR_IMPLAUSIBLE', () => {
+      const data = {
+        memorial_number: { value: '1', confidence: 0.99 },
+        first_name: { value: 'JOHN', confidence: 0.95 },
+        last_name: { value: 'SMITH', confidence: 0.95 },
+        year_of_death: { value: 1200, confidence: 0.99 }
+      };
+
+      const { confidenceScores } = prompt.validateAndConvert(data);
+
+      expect(confidenceScores.year_of_death).toBeLessThanOrEqual(0.4);
+    });
+
+    it('does not flag valid year_of_death within plausible range', () => {
+      const data = {
+        memorial_number: '1',
+        first_name: 'JOHN',
+        last_name: 'SMITH',
+        year_of_death: 1850
+      };
+
+      const { validationWarnings } = prompt.validateAndConvert(data);
+
+      expect(validationWarnings.some(w => w.includes('DEATH_YEAR'))).toBe(false);
+    });
   });
 }); 

@@ -228,6 +228,15 @@ For inscription, also include: "uncertain_segments": ["word1", "word2"] for ambi
       }
     }
 
+    // DEATH_YEAR_IMPLAUSIBLE: flag years before reliable historical records (pre-1400)
+    // Note: future years are already rejected by the year_of_death field validator (max: currentYear)
+    if (result.year_of_death != null && result.year_of_death < 1400) {
+      crossFieldWarnings.push(
+        `DEATH_YEAR_IMPLAUSIBLE: year_of_death ${result.year_of_death} is before 1400`
+      );
+      confidenceScores.year_of_death = Math.min(confidenceScores.year_of_death ?? 1, 0.4);
+    }
+
     logger.info('[MemorialOCRPrompt] Final result:', JSON.stringify(result, null, 2));
     return { data: result, confidenceScores, validationWarnings: crossFieldWarnings };
   }
