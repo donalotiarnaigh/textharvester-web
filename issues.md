@@ -103,8 +103,10 @@ No cost visibility before processing. Session cap ($5.00) is buried in config.js
 
 **Fix (branch `fix/issue-169-cost-estimate-before-batch`):** Implemented full cost estimation system: `CostEstimator` utility queries historical average token usage per file from database, falls back to conservative source-type defaults when no history exists. Handles complex cases: burial registers (multiple entries per file) grouped and averaged, PDF multiplier (3x pages for non-grave-cards), and provider-to-model mapping. New `GET /api/cost-estimate` endpoint validates params and returns detailed estimate. Frontend `costEstimate.js` module fetches estimates on file add/remove and selector changes (debounced), renders Bootstrap card with total cost, per-file cost, session cap ($5.00) with percentage bar (green/yellow/red), warning if exceeds cap, and disclaimer. HTML panel in index.html between "Replace existing" checkbox and dropzone. Wired in dropzone.js init. 19 unit tests (CostEstimator), 12 route tests, all 1621 tests passing.
 
-**#170** — Volume ID autocomplete from existing values
+~~**#170** — Volume ID autocomplete from existing values~~ ✅ Fixed
 Freeform text field with no validation. Teams using inconsistent naming ("Vol 1", "volume_1", "vol-1") fragment their data with no way to merge or reconcile.
+
+**Fix (branch `fix/issue-170-volume-id-autocomplete`):** Implemented HTML5 `<datalist>` autocomplete using existing database values. Added `getDistinctVolumeIds()` query function to `burialRegisterStorage.js` to fetch unique volume IDs. Created `/api/volume-ids` endpoint in new `volumeIdRoutes.js`. Frontend JS module fetches volume IDs when burial_register source type is selected and populates the datalist using DOM API (safe from XSS). No external dependencies. Tests: 5 new storage query tests + 4 route tests, all 1636 tests passing, lint clean.
 
 **#171** — Schema versioning with column migration on edit
 No migration path when a schema is edited after processing documents. `version` column exists but is never incremented. Users who missed a field after processing 500 documents need direct support.

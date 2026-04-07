@@ -320,6 +320,23 @@ function getAllBurialRegisterEntries() {
 }
 
 /**
+ * Retrieve all distinct volume IDs from the database, ordered alphabetically.
+ * @returns {Promise<Array>} Resolves with array of volume ID strings
+ */
+function getDistinctVolumeIds() {
+  return new Promise((resolve, reject) => {
+    db.all('SELECT DISTINCT volume_id FROM burial_register_entries ORDER BY volume_id', [], (err, rows) => {
+      if (err) {
+        logger.error('Error retrieving distinct volume IDs:', err);
+        reject(err);
+        return;
+      }
+      resolve((rows || []).map(r => r.volume_id));
+    });
+  });
+}
+
+/**
  * Retrieve a single burial register entry by ID.
  * @param {number|string} id
  * @returns {Promise<Object|null>}
@@ -413,6 +430,7 @@ module.exports = {
   getBurialRegisterBaseDir,
   clearAllBurialRegisterEntries,
   getAllBurialRegisterEntries,
+  getDistinctVolumeIds,
   getBurialRegisterEntryById,
   updateBurialRegisterEntry,
   BURIAL_EDITABLE_FIELDS,
