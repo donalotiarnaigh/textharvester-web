@@ -259,9 +259,14 @@ class DynamicProcessor {
         if (Array.isArray(data)) {
           records = data;
         } else if (typeof data === 'object' && data !== null) {
-          const singleValidation = validateRecord(data);
+          // Sanitize before validating so type coercions (array→string, boolean normalisation)
+          // are applied before AJV sees the values. If the sanitized record passes, use it
+          // directly. If it still fails, fall back to looking for a nested array in the
+          // original (unsanitized) response.
+          const sanitizedSingle = sanitizeRecord(data, schema.json_schema);
+          const singleValidation = validateRecord(sanitizedSingle);
           if (singleValidation.valid) {
-            records = [data];
+            records = [sanitizedSingle];
           } else {
             const result = findArrayWithContext(data);
             if (result) {
