@@ -201,7 +201,7 @@ _23 issues opened 2026-04-07. Based on VLM digitisation techniques survey coveri
 
 | # | Technique | Key Finding |
 |---|-----------|-------------|
-| [#203](https://github.com/donalotiarnaigh/textharvester-web/issues/203) | Row-level image slicing with two-shot prompting | 8.8× field-level accuracy improvement; two examples optimal for tabular heritage records (arXiv:2510.23066, arXiv:2501.11623) |
+| [#203](https://github.com/donalotiarnaigh/textharvester-web/issues/203) | Row-level image slicing with two-shot prompting | 8.8× field-level accuracy improvement; two examples optimal for tabular heritage records (arXiv:2510.23066, arXiv:2501.11623) | **Status: Investigated** — see full entry below table |
 | [#204](https://github.com/donalotiarnaigh/textharvester-web/issues/204) | OCR-Agent reflection mechanisms (capability + memory reflection) | Prevents capability hallucination and correction loops; +2.0 on OCRBench v2 (arXiv:2602.21053) |
 | [#205](https://github.com/donalotiarnaigh/textharvester-web/issues/205) | Self-consistency sampling with majority voting | Highest-accuracy single technique; Universal Self-Consistency variant reduces to one adjudication call |
 | [#206](https://github.com/donalotiarnaigh/textharvester-web/issues/206) | Schema-constrained generation across all providers | 92% error reduction on first retry via PARSE framework; schema field ordering recovers lost reasoning quality (arXiv:2510.08623) |
@@ -259,6 +259,48 @@ _23 issues opened 2026-04-07. Based on VLM digitisation techniques survey coveri
 | # | Technique | Key Finding |
 |---|-----------|-------------|
 | [#225](https://github.com/donalotiarnaigh/textharvester-web/issues/225) | Community-driven transcription correction (FamilySearch model) | Genealogist volunteers correct uncertain AI transcriptions; proven at 2 billion records scale |
+
+---
+
+### [#203] Row-level image slicing with two-shot prompting
+**Status**: Investigated
+
+## Technique
+Physically crop each row of a tabular document (e.g. burial register page) into a separate image before sending to the VLM, and include two labeled example row images + expected JSON in the prompt to anchor the model's output format.
+
+## Research basis
+arXiv:2510.23066 and arXiv:2501.11623 report 8.8× improvement in field-level accuracy on heritage tabular records; two examples found to be the optimal few-shot count for this document type.
+
+## Viability assessment
+The technique is architecturally feasible within the existing Node.js/API stack: `sharp` is already a production dependency and can slice rows via its `extract()` API, no GPU or external service is required. However, it fundamentally restructures the burial register pipeline from one API call per page to N calls per row (typically 20–40 rows per page), multiplying API cost and audit log volume by the same factor. Automatic row boundary detection without a layout-detection ML model is fragile for faded or irregular registers, making the slicing step the highest-risk component.
+
+## Ratings
+- **Effort**: 4/5 — Requires a new row-detection module (non-trivial with pure Sharp pixel projection), a breaking change to `burialRegisterProcessor.js`, a curated two-shot example fixture set, and updated cost-tracking logic to aggregate per-row token usage back to the page record.
+- **Impact**: 4/5 — An 8.8× field-level accuracy improvement on burial registers would be transformative for that document type, but the technique only applies to tabular records and adds substantial per-page API cost.
+
+## Relevant existing code
+- `src/utils/imageProcessor.js`: Sharp already imported and used for image optimisation; `sharp(input).extract()` is the natural slicing primitive.
+- `src/utils/processors/burialRegisterProcessor.js`: Current pipeline sends a full page image in one call; this is the file that would be restructured.
+- `src/utils/prompts/templates/BurialRegisterPrompt.js`: Prompt text would need a `getTwoShotPrompt(exampleRows)` variant that embeds base64 example images + expected JSON before the main extraction request.
+- `src/utils/processingHelpers.js`: `processWithValidationRetry` wraps each provider call; would need to be invoked N times per page with per-row images.
+- `config.json`: Provides the pattern for adding a new feature flag section (e.g. `"rowSlicing": { "enabled": false }`).
+
+## Implementation sketch
+- **New module** `src/utils/imageProcessing/rowSlicer.js`: use `sharp(path).raw()` to produce a grayscale pixel buffer, compute horizontal intensity projections to locate whitespace gaps between rows, return an array of `{top, height}` crop coordinates; fall back to uniform division by `row_count` if gap detection yields implausible results.
+- **New fixtures dir** `eval/row-examples/`: 2–3 manually selected row images (`.jpg`) with paired ground-truth JSON files; loaded at startup or lazily by `BurialRegisterPrompt`.
+- **Modified** `BurialRegisterPrompt.js`: add `getTwoShotUserPrompt(exampleImageBase64s)` that prepends two `[Image: <base64>] → <expected JSON>\n\n` blocks before the main prompt.
+- **Modified** `burialRegisterProcessor.js`: when `config.rowSlicing.enabled`, call `rowSlicer.detectRows(filePath)`, loop over row crops, call `processWithValidationRetry` per row with the two-shot prompt, then reassemble the results into the existing `entries` array structure.
+- **Modified** `config.json`: add `"rowSlicing": { "enabled": false, "examplesPath": "eval/row-examples/", "maxRowsPerPage": 50 }`.
+- **Modified** `__tests__/utils/imageProcessing/rowSlicer.test.js`: unit tests for projection-based row detection with synthetic images (5–8 tests).
+
+## Risks and gotchas
+- **Cost explosion**: a 30-row page with `maxProviderRetries: 3` and `validationRetries: 1` generates up to 240 provider calls versus the current 8 — session cost cap of $5 will trigger mid-batch on any large upload.
+- **Row detection reliability**: historical registers with merged cells, handwritten headers spanning two rows, or faded ruling lines will produce mis-aligned crops; a fallback to uniform slicing reduces but does not eliminate this.
+- **Two-shot example portability**: example rows must visually match the register being processed; a single fixture set trained on one register format may degrade accuracy on a different format, requiring per-volume example management.
+- **Audit log volume**: each row generates its own `llm_audit_log` entry; a 200-page volume processed in row-slicing mode could produce 6,000+ audit rows, inflating the database significantly.
+
+## Recommended next step
+Prototype and evaluate on test corpus first — specifically, measure actual field-level accuracy improvement against a gold-standard burial register page with known ground truth before committing to the pipeline restructure.
 
 ---
 
