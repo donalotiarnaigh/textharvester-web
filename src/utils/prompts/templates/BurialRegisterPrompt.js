@@ -1,5 +1,6 @@
 const BasePrompt = require('../BasePrompt');
 const { StringType, IntegerType, validateValue } = require('../types/dataTypes');
+const { parseBurialDate } = require('../../historicalDateParser');
 
 const PAGE_FIELDS = {
   volume_id: {
@@ -332,6 +333,14 @@ For every field shown as { "value": ..., "confidence": ... }, return that envelo
           confidenceScores.age_raw = Math.min(confidenceScores.age_raw ?? 1, 0.4);
         }
       }
+    }
+
+    // Historical date parsing — normalize burial_date_raw and detect OS/NS ambiguities
+    if (result.burial_date_raw) {
+      const parsed = parseBurialDate(result.burial_date_raw);
+      if (parsed.normalizedDate !== null) result.burial_date_normalized = parsed.normalizedDate;
+      if (parsed.normalizedYear !== null) result.burial_date_year = parsed.normalizedYear;
+      crossFieldWarnings.push(...parsed.warnings);
     }
 
     return { data: result, confidenceScores, validationWarnings: crossFieldWarnings };

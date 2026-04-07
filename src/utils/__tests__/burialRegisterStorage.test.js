@@ -74,6 +74,8 @@ describe('burialRegisterStorage', () => {
         estimated_cost_usd REAL DEFAULT 0,
         processing_id TEXT,
         project_id TEXT,
+        burial_date_normalized TEXT,
+        burial_date_year INTEGER,
         UNIQUE(volume_id, file_name, row_index_on_page, ai_provider)
       )
     `, (err) => {
