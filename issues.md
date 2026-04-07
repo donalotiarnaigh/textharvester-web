@@ -98,8 +98,10 @@ All records go into flat tables with no project concept. Users processing multip
 
 **Fix (branch `claude/review-next-issue-2CPME`):** Fixed critical bug where `provider.processImage` returned `{ content, usage }` but `DynamicProcessor` treated the whole object as LLM data. Refactored to use `processWithValidationRetry` (retry with format-enforcement preamble on parse/validation failure), `injectCostData` (input/output tokens + USD cost), `llmAuditLog.logEntry` (success and error), `processing_id` via `crypto.randomUUID()`, and `needs_review = 0` default. `SchemaDDLGenerator` now includes `processing_id`, `input_tokens`, `output_tokens`, `estimated_cost_usd`, `needs_review` in all new dynamic tables. Old tables handled gracefully via `PRAGMA table_info` column filter. 10 new unit tests + E2E mock fix. 1556 tests passing.
 
-**#169** — Pre-processing cost estimate before batch submission
+~~**#169** — Pre-processing cost estimate before batch submission~~ ✅ Fixed
 No cost visibility before processing. Session cap ($5.00) is buried in config.json. Community groups uploading large batches hit the cap partway through with no prior warning.
+
+**Fix (branch `fix/issue-169-cost-estimate-before-batch`):** Implemented full cost estimation system: `CostEstimator` utility queries historical average token usage per file from database, falls back to conservative source-type defaults when no history exists. Handles complex cases: burial registers (multiple entries per file) grouped and averaged, PDF multiplier (3x pages for non-grave-cards), and provider-to-model mapping. New `GET /api/cost-estimate` endpoint validates params and returns detailed estimate. Frontend `costEstimate.js` module fetches estimates on file add/remove and selector changes (debounced), renders Bootstrap card with total cost, per-file cost, session cap ($5.00) with percentage bar (green/yellow/red), warning if exceeds cap, and disclaimer. HTML panel in index.html between "Replace existing" checkbox and dropzone. Wired in dropzone.js init. 19 unit tests (CostEstimator), 12 route tests, all 1621 tests passing.
 
 **#170** — Volume ID autocomplete from existing values
 Freeform text field with no validation. Teams using inconsistent naming ("Vol 1", "volume_1", "vol-1") fragment their data with no way to merge or reconcile.
