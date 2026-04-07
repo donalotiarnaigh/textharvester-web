@@ -318,6 +318,19 @@ function initializeCustomSchemasTable() {
       return;
     }
     logger.info('Custom schemas table initialized');
+
+    // Add updated_at column if missing
+    db.all('PRAGMA table_info(custom_schemas)', (err, rows) => {
+      if (err || !rows) return;
+      const existingCols = rows.map(r => r.name);
+      const missing = [
+        { name: 'updated_at', def: 'DATETIME' }
+      ].filter(col => !existingCols.includes(col.name));
+
+      if (missing.length > 0) {
+        runColumnMigration('custom_schemas', missing, 'custom_schemas_add_updated_at_v1');
+      }
+    });
   });
 }
 function storeMemorial(data) {

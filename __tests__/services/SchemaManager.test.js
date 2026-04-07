@@ -9,7 +9,8 @@ jest.mock('../../src/utils/database', () => ({
     get: jest.fn(),
     all: jest.fn(),
     serialize: jest.fn(cb => cb()) // Mock serialize to execute callback immediately
-  }
+  },
+  runColumnMigration: jest.fn()
 }));
 
 jest.mock('../../src/utils/SchemaDDLGenerator');
@@ -125,6 +126,271 @@ describe('SchemaManager', () => {
       const results = await SchemaManager.listSchemas();
       expect(results).toHaveLength(2);
       expect(results[0]).toHaveProperty('name', 'A');
+    });
+  });
+
+  describe('updateSchema', () => {
+    const existingSchema = {
+      id: 'schema-123',
+      version: 1,
+      name: 'Test Schema',
+      table_name: 'custom_test_schema',
+      json_schema: JSON.stringify({
+        type: 'object',
+        properties: {
+          field1: { type: 'string', description: 'Field 1' },
+          field2: { type: 'number', description: 'Field 2' }
+        },
+        required: ['field1']
+      })
+    };
+
+    beforeEach(() => {
+      // Reset all mocks before each updateSchema test
+      jest.clearAllMocks();
+      db.serialize.mockImplementation(cb => cb());
+    });
+
+    test('should reject if schema not found', async () => {
+      db.get.mockImplementation((sql, params, cb) => {
+        cb(null, undefined);
+      });
+
+      await expect(SchemaManager.updateSchema('nonexistent', {})).rejects.toThrow('not found');
+    });
+
+    test('should reject type changes', async () => {
+      db.get.mockImplementation((sql, params, cb) => {
+        cb(null, existingSchema);
+      });
+
+      const changes = {
+        jsonSchema: {
+          type: 'object',
+          properties: {
+            field1: { type: 'number' }, // Changed from string to number
+            field2: { type: 'number' }
+          },
+          required: ['field1']
+        }
+      };
+
+      await expect(SchemaManager.updateSchema('schema-123', changes)).rejects.toThrow(/not supported|type/i);
+    });
+
+    test('should reject field removal', async () => {
+      db.get.mockImplementation((sql, params, cb) => {
+        cb(null, existingSchema);
+      });
+
+      const changes = {
+        jsonSchema: {
+          type: 'object',
+          properties: {
+            field1: { type: 'string' }
+            // field2 removed
+          },
+          required: ['field1']
+        }
+      };
+
+      await expect(SchemaManager.updateSchema('schema-123', changes)).rejects.toThrow(/removing/i);
+    });
+
+    test('should allow adding new fields', async () => {
+      let getCallCount = 0;
+      db.get.mockImplementation((sql, params, cb) => {
+        getCallCount++;
+        if (getCallCount === 1) {
+          // First call: fetch existing schema
+          cb(null, existingSchema);
+        } else {
+          // Second call: fetch after update (return with new schema version)
+          const updated = {
+            ...existingSchema,
+            version: 2,
+            json_schema: JSON.stringify({
+              type: 'object',
+              properties: {
+                field1: { type: 'string' },
+                field2: { type: 'number' },
+                field3: { type: 'boolean' }
+              },
+              required: ['field1']
+            })
+          };
+          cb(null, updated);
+        }
+      });
+
+      db.run.mockImplementation((sql, params, cb) => {
+        if (typeof params === 'function') cb = params;
+        cb(null);
+      });
+
+      db.serialize.mockImplementation(cb => cb());
+
+      const changes = {
+        jsonSchema: {
+          type: 'object',
+          properties: {
+            field1: { type: 'string' },
+            field2: { type: 'number' },
+            field3: { type: 'boolean' } // New field
+          },
+          required: ['field1']
+        }
+      };
+
+      const result = await SchemaManager.updateSchema('schema-123', changes);
+
+      expect(result).toBeDefined();
+      expect(result.id).toBe('schema-123');
+      expect(result.migration).toBeDefined();
+      expect(result.migration.addedColumns).toContain('field3');
+    });
+
+    test('should increment version on update', async () => {
+      let getCallCount = 0;
+      db.get.mockImplementation((sql, params, cb) => {
+        getCallCount++;
+        if (getCallCount === 1) {
+          cb(null, existingSchema);
+        } else {
+          const updated = {
+            ...existingSchema,
+            version: 2,
+            json_schema: JSON.stringify({
+              type: 'object',
+              properties: {
+                field1: { type: 'string' },
+                field2: { type: 'number' },
+                field3: { type: 'string' }
+              },
+              required: ['field1']
+            })
+          };
+          cb(null, updated);
+        }
+      });
+
+      db.run.mockImplementation((sql, params, cb) => {
+        if (typeof params === 'function') cb = params;
+        // Verify UPDATE sets version = version + 1
+        if (sql && sql.includes('UPDATE') && sql.includes('version')) {
+          expect(sql).toContain('version = version + 1');
+        }
+        cb(null);
+      });
+
+      db.serialize.mockImplementation(cb => cb());
+
+      const changes = {
+        jsonSchema: {
+          type: 'object',
+          properties: {
+            field1: { type: 'string' },
+            field2: { type: 'number' },
+            field3: { type: 'string' } // New field
+          },
+          required: ['field1']
+        }
+      };
+
+      await SchemaManager.updateSchema('schema-123', changes);
+      expect(db.run).toHaveBeenCalled();
+    });
+
+    test('should allow description-only changes (no migration)', async () => {
+      let getCallCount = 0;
+      db.get.mockImplementation((sql, params, cb) => {
+        getCallCount++;
+        if (getCallCount === 1) {
+          cb(null, existingSchema);
+        } else {
+          const updated = {
+            ...existingSchema,
+            json_schema: JSON.stringify({
+              type: 'object',
+              properties: {
+                field1: { type: 'string', description: 'Updated description' },
+                field2: { type: 'number', description: 'Different description' }
+              },
+              required: ['field1']
+            })
+          };
+          cb(null, updated);
+        }
+      });
+
+      db.run.mockImplementation((sql, params, cb) => {
+        if (typeof params === 'function') cb = params;
+        cb(null);
+      });
+
+      db.serialize.mockImplementation(cb => cb());
+
+      const changes = {
+        jsonSchema: {
+          type: 'object',
+          properties: {
+            field1: { type: 'string', description: 'Updated description' },
+            field2: { type: 'number', description: 'Different description' }
+          },
+          required: ['field1']
+        }
+      };
+
+      const result = await SchemaManager.updateSchema('schema-123', changes);
+
+      // Should return migration with empty addedColumns
+      expect(result.migration.addedColumns).toHaveLength(0);
+    });
+
+    test('should allow required status changes', async () => {
+      let getCallCount = 0;
+      db.get.mockImplementation((sql, params, cb) => {
+        getCallCount++;
+        if (getCallCount === 1) {
+          cb(null, existingSchema);
+        } else {
+          const updated = {
+            ...existingSchema,
+            json_schema: JSON.stringify({
+              type: 'object',
+              properties: {
+                field1: { type: 'string' },
+                field2: { type: 'number' }
+              },
+              required: ['field1', 'field2']
+            })
+          };
+          cb(null, updated);
+        }
+      });
+
+      db.run.mockImplementation((sql, params, cb) => {
+        if (typeof params === 'function') cb = params;
+        cb(null);
+      });
+
+      db.serialize.mockImplementation(cb => cb());
+
+      const changes = {
+        jsonSchema: {
+          type: 'object',
+          properties: {
+            field1: { type: 'string' },
+            field2: { type: 'number' }
+          },
+          required: ['field1', 'field2'] // field2 now required
+        }
+      };
+
+      const result = await SchemaManager.updateSchema('schema-123', changes);
+
+      expect(result).toBeDefined();
+      expect(result.migration.addedColumns).toHaveLength(0);
     });
   });
 });
