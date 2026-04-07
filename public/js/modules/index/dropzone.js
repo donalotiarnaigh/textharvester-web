@@ -7,6 +7,7 @@ import { handleFileUpload } from "./fileUpload.js";
 import { initModelSelection } from "./modelSelection.js";
 import { initSourceTypeSelection, getSelectedSourceType } from "./sourceTypeSelection.js";
 import { initProjectSelection, getSelectedProjectId } from "./projectSelection.js";
+import { initCostEstimate } from "./costEstimate.js";
 
 // Ensure Dropzone is defined globally
 const initDropzone = () => {
@@ -35,6 +36,7 @@ const initDropzone = () => {
     init: function () {
       var dropzoneInstance = this;
       handleFileUpload(dropzoneInstance);
+      initCostEstimate(dropzoneInstance);
 
       // No need to handle file completion for showing conversion status
     },
