@@ -88,6 +88,10 @@ app.use('/api/grave-cards', graveCardRoutes);
 const projectRoutes = require('./src/routes/projectRoutes');
 app.use('/api/projects', projectRoutes);
 
+// Cost Estimate routes
+const costEstimateRoutes = require('./src/routes/costEstimateRoutes');
+app.use('/api/cost-estimate', costEstimateRoutes);
+
 // Schema Management routes
 const apiRoutes = require('./src/routes/api');
 app.use('/api/schemas', apiRoutes);

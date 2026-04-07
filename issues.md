@@ -88,8 +88,10 @@ Phase 2 of #166. Complete the inline correction feature by adding full edit form
 - **Bug fixes**: Fixed 2 copy-paste bugs in detail view button variable references (grave-card and burial-register types)
 - **All tests passing**: 26 new tests + 3019 existing tests, no regressions
 
-**#167** — Project/collection model to group uploads
+~~**#167** — Project/collection model to group uploads~~ ✅ Fixed
 All records go into flat tables with no project concept. Users processing multiple graveyards or surveys have no way to partition, filter, or export by collection.
+
+**Fix (branch `fix/issue-167-project-collection-model`, PR #195):** Implemented full project/collection model with projects table (UUID primary key, unique names), project_id columns in all three data tables (memorials, burial_register_entries, grave_cards), indexes for fast filtering. Updated IngestService to thread project_id through upload→queue→processing→storage pipeline. Added project management UI (public/projects.html) with CRUD operations, upload form project selector, and results filtering by project. Frontend modules: projectSelection.js, projectFilter.js. Backend: projectStorage.js CRUD, projectController.js routes, projectRoutes.js. QueryService filters by projectId. Backward compatible — existing records have project_id = NULL. Deletion protected if project has associated records. 10 new unit tests (projectStorage, projectRoutes), 343-line E2E test suite, all 1596 tests passing.
 
 ~~**#168** — Custom schemas — integrate with confidence scoring and retry pipeline~~ ✅ Fixed
 `DynamicProcessor` bypassed the standard pipeline entirely. Custom schemas got no confidence scoring, no validation warnings, no retry logic, no audit logging, no cost tracking.
