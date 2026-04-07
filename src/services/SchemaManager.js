@@ -3,6 +3,25 @@ const SchemaDDLGenerator = require('../utils/SchemaDDLGenerator');
 const crypto = require('crypto');
 const logger = require('../utils/logger');
 
+/**
+ * Normalizes a parsed json_schema object so all field types are
+ * valid JSON Schema types. Maps the legacy "date" type (not a JSON Schema
+ * standard) to "string" with format:"date".
+ * @param {Object} jsonSchema - Parsed JSON schema object
+ * @returns {Object} Normalized schema
+ */
+function normalizeJsonSchemaTypes(jsonSchema) {
+  if (!jsonSchema || !jsonSchema.properties) return jsonSchema;
+  const normalized = { ...jsonSchema, properties: { ...jsonSchema.properties } };
+  Object.keys(normalized.properties).forEach(key => {
+    const prop = normalized.properties[key];
+    if (prop.type === 'date') {
+      normalized.properties[key] = { ...prop, type: 'string', format: 'date' };
+    }
+  });
+  return normalized;
+}
+
 class SchemaManager {
   /**
      * Creates a new custom schema and the corresponding database table
@@ -87,7 +106,7 @@ class SchemaManager {
 
         try {
           if (row.json_schema) {
-            row.json_schema = JSON.parse(row.json_schema);
+            row.json_schema = normalizeJsonSchemaTypes(JSON.parse(row.json_schema));
           }
           resolve(row);
         } catch (parseErr) {
@@ -111,7 +130,7 @@ class SchemaManager {
 
         try {
           if (row.json_schema) {
-            row.json_schema = JSON.parse(row.json_schema);
+            row.json_schema = normalizeJsonSchemaTypes(JSON.parse(row.json_schema));
           }
           resolve(row);
         } catch (parseErr) {
@@ -135,7 +154,7 @@ class SchemaManager {
           try {
             return {
               ...row,
-              json_schema: row.json_schema ? JSON.parse(row.json_schema) : {}
+              json_schema: row.json_schema ? normalizeJsonSchemaTypes(JSON.parse(row.json_schema)) : {}
             };
           } catch {
             return row;
