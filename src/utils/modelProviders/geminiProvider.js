@@ -81,12 +81,14 @@ class GeminiProvider extends BaseVisionProvider {
     logger.info(`[GeminiProvider] Prompt length: ${userPrompt.length} characters`);
 
     // Get the Gemini model
+    // Gemini's responseSchema uses a restricted JSON Schema subset — strip unsupported keywords
+    const geminiSchema = options.jsonSchema ? this._stripGeminiUnsupported(options.jsonSchema) : null;
     const geminiModel = this.client.getGenerativeModel({
       model: this.model,
       systemInstruction: systemPrompt,
       generationConfig: {
         responseMimeType: 'application/json',
-        ...(options.jsonSchema ? { responseSchema: options.jsonSchema } : {}),
+        ...(geminiSchema ? { responseSchema: geminiSchema } : {}),
         maxOutputTokens: this.maxTokens,
         temperature: this.temperature
       }
@@ -273,6 +275,36 @@ class GeminiProvider extends BaseVisionProvider {
 
       throw new Error(`Gemini processing failed: ${error.message}`);
     }
+  }
+
+  /**
+   * Strip JSON Schema keywords unsupported by Gemini's responseSchema (e.g. additionalProperties).
+   * Recursively cleans nested objects and array item schemas.
+   * @param {Object} schema - JSON Schema object
+   * @returns {Object} Cleaned schema safe for Gemini
+   */
+  _stripGeminiUnsupported(schema) {
+    if (!schema || typeof schema !== 'object') return schema;
+    const UNSUPPORTED = new Set(['additionalProperties', '$schema', '$id', 'definitions', '$defs']);
+    const result = {};
+    for (const [key, value] of Object.entries(schema)) {
+      if (UNSUPPORTED.has(key)) continue;
+      if (key === 'type' && Array.isArray(value)) {
+        // Gemini doesn't support type arrays — convert ['string', 'null'] → type:'string', nullable:true
+        const nonNull = value.filter(t => t !== 'null');
+        result.type = nonNull.length === 1 ? nonNull[0] : 'string';
+        if (value.includes('null')) result.nullable = true;
+      } else if (key === 'properties' && value && typeof value === 'object') {
+        result[key] = Object.fromEntries(
+          Object.entries(value).map(([k, v]) => [k, this._stripGeminiUnsupported(v)])
+        );
+      } else if (key === 'items') {
+        result[key] = this._stripGeminiUnsupported(value);
+      } else {
+        result[key] = value;
+      }
+    }
+    return result;
   }
 
   /**

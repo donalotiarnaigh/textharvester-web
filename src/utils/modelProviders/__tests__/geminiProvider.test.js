@@ -350,5 +350,26 @@ describe('GeminiProvider', () => {
       const callArgs = gmock.mock.calls[0][0];
       expect(callArgs.generationConfig.responseSchema).toEqual(testSchema);
     });
+
+    it('should strip additionalProperties from responseSchema before sending to Gemini', async () => {
+      const schemaWithExtras = {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          name: {
+            type: 'object',
+            additionalProperties: false,
+            properties: { value: { type: 'string' } }
+          }
+        }
+      };
+      const gmock = provider.client.getGenerativeModel;
+      await provider.processImage(testImage, testPrompt, { jsonSchema: schemaWithExtras });
+      const callArgs = gmock.mock.calls[0][0];
+      const sent = callArgs.generationConfig.responseSchema;
+      expect(sent.additionalProperties).toBeUndefined();
+      expect(sent.properties.name.additionalProperties).toBeUndefined();
+      expect(sent.type).toBe('object');
+    });
   });
 });
