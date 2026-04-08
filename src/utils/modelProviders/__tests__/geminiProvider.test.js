@@ -325,4 +325,30 @@ describe('GeminiProvider', () => {
         .toThrow('Invalid model specified. Must be a Gemini model.');
     });
   });
+
+  describe('schema-constrained generation', () => {
+    const testImage = 'base64-image-data';
+    const testPrompt = 'Test prompt';
+    const testSchema = {
+      type: 'object',
+      properties: {
+        first_name: { type: 'string' }
+      },
+      required: ['first_name']
+    };
+
+    it('should not include responseSchema when no jsonSchema option', async () => {
+      const gmock = provider.client.getGenerativeModel;
+      await provider.processImage(testImage, testPrompt);
+      const callArgs = gmock.mock.calls[0][0];
+      expect(callArgs.generationConfig.responseSchema).toBeUndefined();
+    });
+
+    it('should include responseSchema when jsonSchema option provided', async () => {
+      const gmock = provider.client.getGenerativeModel;
+      await provider.processImage(testImage, testPrompt, { jsonSchema: testSchema });
+      const callArgs = gmock.mock.calls[0][0];
+      expect(callArgs.generationConfig.responseSchema).toEqual(testSchema);
+    });
+  });
 });

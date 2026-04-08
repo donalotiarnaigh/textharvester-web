@@ -207,7 +207,7 @@ Deterministic accuracy wins and cost reductions with well-defined implementation
 | [#213](https://github.com/donalotiarnaigh/textharvester-web/issues/213) | Degenerate output detection (CCR metric, length ratio, entropy) | 2 | 3 | ✅ Implemented locally — PR pending |
 | [#215](https://github.com/donalotiarnaigh/textharvester-web/issues/215) | Historical date format parsing (Latin months, Old Style/New Style) | 2 | 3 | ✅ Implemented — PR #226 |
 | [#222](https://github.com/donalotiarnaigh/textharvester-web/issues/222) | Prompt caching for repeated system prompts and schemas | 2 | 3 |
-| [#206](https://github.com/donalotiarnaigh/textharvester-web/issues/206) | Schema-constrained generation across all providers | 3 | 4 |
+| [#206](https://github.com/donalotiarnaigh/textharvester-web/issues/206) | Schema-constrained generation across all providers | 3 | 4 | ✅ Implemented — PR pending |
 | [#219](https://github.com/donalotiarnaigh/textharvester-web/issues/219) | Active learning loop with Langfuse trace logging | 3 | 3 |
 
 ### Prototype & Evaluate — Backlog — 15 issues
@@ -413,7 +413,8 @@ Implement as described — the Anthropic change is low-risk and targeted, with i
 ---
 
 ### [#206] Schema-constrained generation across all providers
-**Status**: Investigated
+**Status**: ✅ Implemented — PR pending, merged 2026-04-08
+**Branch**: `fix/issue-206-schema-constraints`
 
 ## Technique
 Pass a provider-native JSON Schema object to each API call so the model's decoder is grammatically constrained to emit only valid, schema-matching JSON — eliminating parse errors at source rather than repairing them after the fact.

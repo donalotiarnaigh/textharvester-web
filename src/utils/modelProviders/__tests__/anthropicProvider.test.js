@@ -281,4 +281,66 @@ describe('AnthropicProvider', () => {
         .toThrow('Invalid model specified. Must be a vision-capable model.');
     });
   });
-}); 
+
+  describe('schema-constrained generation (tool-use)', () => {
+    const testImage = 'base64-image-data';
+    const testPrompt = 'Test prompt';
+    const testSchema = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        first_name: { type: ['string', 'null'] }
+      },
+      required: ['first_name']
+    };
+    const toolUseResponse = {
+      content: [
+        {
+          type: 'tool_use',
+          name: 'extract',
+          input: { first_name: 'John' }
+        }
+      ],
+      usage: { input_tokens: 100, output_tokens: 50 }
+    };
+
+    it('should use plain messages.create when no jsonSchema option', async () => {
+      await provider.processImage(testImage, testPrompt);
+      const callArgs = provider.client.messages.create.mock.calls[0][0];
+      expect(callArgs.tools).toBeUndefined();
+      expect(callArgs.tool_choice).toBeUndefined();
+    });
+
+    it('should use tool-use when jsonSchema option provided', async () => {
+      provider.client.messages.create.mockResolvedValue(toolUseResponse);
+      await provider.processImage(testImage, testPrompt, { jsonSchema: testSchema });
+      const callArgs = provider.client.messages.create.mock.calls[0][0];
+      expect(callArgs.tools).toEqual([
+        expect.objectContaining({
+          name: 'extract',
+          input_schema: testSchema
+        })
+      ]);
+      expect(callArgs.tool_choice).toEqual({ type: 'tool', name: 'extract' });
+    });
+
+    it('should extract content from tool_use input block', async () => {
+      provider.client.messages.create.mockResolvedValue(toolUseResponse);
+      const result = await provider.processImage(testImage, testPrompt, { jsonSchema: testSchema });
+      expect(result.content).toEqual({ first_name: 'John' });
+    });
+
+    it('should stringify tool_use input for audit log raw_response', async () => {
+      const llmAuditLog = require('../../llmAuditLog');
+      jest.spyOn(llmAuditLog, 'logEntry').mockResolvedValue(undefined);
+      provider.client.messages.create.mockResolvedValue(toolUseResponse);
+      await provider.processImage(testImage, testPrompt, { jsonSchema: testSchema, processingId: 'test-pid' });
+      expect(llmAuditLog.logEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          raw_response: JSON.stringify({ first_name: 'John' })
+        })
+      );
+      llmAuditLog.logEntry.mockRestore();
+    });
+  });
+});

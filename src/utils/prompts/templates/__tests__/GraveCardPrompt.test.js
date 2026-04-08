@@ -248,4 +248,31 @@ describe('GraveCardPrompt', () => {
       expect(validationWarnings.length).toBe(0);
     });
   });
+
+  describe('getJsonSchema', () => {
+    it('should return a JSON Schema object', () => {
+      const schema = prompt.getJsonSchema();
+      expect(schema).not.toBeNull();
+      expect(typeof schema).toBe('object');
+    });
+
+    it('should have type object with properties', () => {
+      const schema = prompt.getJsonSchema();
+      expect(schema.type).toBe('object');
+      expect(schema.properties).toBeDefined();
+    });
+
+    it('should include location, grave, and interments fields', () => {
+      const schema = prompt.getJsonSchema();
+      expect(schema.properties.location).toBeDefined();
+      expect(schema.properties.grave).toBeDefined();
+      expect(schema.properties.interments).toBeDefined();
+    });
+
+    it('should define interments as an array', () => {
+      const schema = prompt.getJsonSchema();
+      expect(schema.properties.interments.type).toBe('array');
+      expect(schema.properties.interments.items).toBeDefined();
+    });
+  });
 });

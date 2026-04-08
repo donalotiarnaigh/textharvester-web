@@ -272,4 +272,36 @@ describe('OpenAIProvider', () => {
         .toThrow('Invalid model specified. Must be a vision-capable model');
     });
   });
+
+  describe('schema-constrained generation', () => {
+    const testImage = 'base64-image-data';
+    const testPrompt = 'Test prompt';
+    const testSchema = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        first_name: { type: ['string', 'null'] }
+      },
+      required: ['first_name']
+    };
+
+    it('should use json_object response_format when no jsonSchema option', async () => {
+      await provider.processImage(testImage, testPrompt);
+      const callArgs = provider.client.chat.completions.create.mock.calls[0][0];
+      expect(callArgs.response_format).toEqual({ type: 'json_object' });
+    });
+
+    it('should use json_schema response_format when jsonSchema option provided', async () => {
+      await provider.processImage(testImage, testPrompt, { jsonSchema: testSchema });
+      const callArgs = provider.client.chat.completions.create.mock.calls[0][0];
+      expect(callArgs.response_format).toEqual({
+        type: 'json_schema',
+        json_schema: {
+          name: 'extraction',
+          strict: true,
+          schema: testSchema
+        }
+      });
+    });
+  });
 }); 
