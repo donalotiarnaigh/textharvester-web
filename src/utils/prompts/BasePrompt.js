@@ -299,6 +299,10 @@ class BasePrompt {
    * @param {string} provider AI provider name
    * @returns {Object} Provider-specific prompt configuration
    */
+  getJsonSchema() {
+    return null;
+  }
+
   getProviderPrompt(provider) {
     this.validateProvider(provider);
     const config = createProviderConfig(provider);

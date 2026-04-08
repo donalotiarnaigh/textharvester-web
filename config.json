@@ -117,5 +117,8 @@
   },
   "audit": {
     "enabled": true
+  },
+  "schemaConstrained": {
+    "enabled": false
   }
 }
