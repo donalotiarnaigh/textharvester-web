@@ -5,6 +5,7 @@ const { getMemorialNumberForMonument } = require('../filenameParser');
 const { isEmptySheetError } = require('../errorTypes');
 const {
   applyConfidenceMetadata,
+  applyDegenerateDetection,
   applyValidationWarnings,
   injectCostData,
   attachCommonMetadata,
@@ -59,7 +60,7 @@ async function memorialProcessor(context) {
 
   try {
     // Process image + validate with retry
-    const { validationResult, usage: memUsage } = await processWithValidationRetry(
+    const { validationResult, usage: memUsage, rawResponse } = await processWithValidationRetry(
       provider,
       base64Image,
       userPrompt,
@@ -108,8 +109,14 @@ async function memorialProcessor(context) {
     // Apply confidence metadata
     applyConfidenceMetadata(extractedData, memConfidenceScores, config);
 
+    // Detect fluent hallucinations from the raw provider response before final warning application.
+    applyDegenerateDetection(extractedData, rawResponse, sourceType, config);
+
     // Apply validation warnings
-    applyValidationWarnings(extractedData, memValidationWarnings);
+    applyValidationWarnings(
+      extractedData,
+      [...(memValidationWarnings || []), ...(extractedData._validation_warnings || [])]
+    );
 
     log.info(`${providerName} API response processed successfully for ${filename}`);
     log.debugPayload(`Processed ${providerName} data for ${filename}:`, extractedData);

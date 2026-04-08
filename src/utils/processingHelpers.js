@@ -1,5 +1,6 @@
 const logger = require('./logger');
 const { isEmptySheetError, FatalError, isFatalError } = require('./errorTypes');
+const { detectDegenerate } = require('./degenerateOutputDetector');
 const config = require('../../config.json');
 
 const VALIDATION_RETRY_PREAMBLE =
@@ -38,6 +39,36 @@ function applyValidationWarnings(data, validationWarnings) {
 
   data.validation_warnings = validationWarnings;
   data.needs_review = 1; // force flag even if confidence disabled
+}
+
+/**
+ * Run degenerate-output checks on the raw model response and append validation warnings.
+ * Metrics are attached for debugging even when detection is disabled or not triggered.
+ *
+ * @param {Object} data - The data object to enhance
+ * @param {string} rawResponse - Raw provider response before validation/parsing
+ * @param {string} sourceType - Record source type
+ * @param {Object} config - Configuration object with degenerateDetection settings
+ */
+function applyDegenerateDetection(data, rawResponse, sourceType, config) {
+  if (typeof rawResponse !== 'string' || rawResponse.trim().length === 0) {
+    return;
+  }
+
+  const result = detectDegenerate(rawResponse, sourceType, config.degenerateDetection);
+  data.degenerate_output_metrics = result.metrics;
+
+  if (!result.isDegenerate) {
+    return;
+  }
+
+  if (!data._validation_warnings) {
+    data._validation_warnings = [];
+  }
+
+  data._validation_warnings.push(
+    `DEGENERATE_OUTPUT: ${result.reasons.join(', ')} (ccr=${result.metrics.ccr.toFixed(2)}, entropy=${result.metrics.entropy.toFixed(2)}, length_ratio=${result.metrics.lengthRatio.toFixed(2)})`
+  );
 }
 
 /**
@@ -145,7 +176,7 @@ function scopedLogger(processingId) {
  * @param {Object} [retryOptions] - retry configuration
  * @param {number} [retryOptions.maxRetries=1] - max validation retries
  * @param {Object} [retryOptions.log] - optional scoped logger (defaults to module logger)
- * @returns {Promise<{ validationResult: Object, usage: Object }>}
+ * @returns {Promise<{ validationResult: Object, usage: Object, rawResponse: string }>}
  */
 async function processWithValidationRetry(
   provider,
@@ -171,7 +202,7 @@ async function processWithValidationRetry(
 
     try {
       const validationResult = validateFn(rawData);
-      return { validationResult, usage };
+      return { validationResult, usage, rawResponse: rawData };
     } catch (validationError) {
       lastError = validationError;
 
@@ -202,6 +233,7 @@ async function processWithValidationRetry(
 module.exports = {
   VALIDATION_RETRY_PREAMBLE,
   applyConfidenceMetadata,
+  applyDegenerateDetection,
   applyValidationWarnings,
   injectCostData,
   attachCommonMetadata,

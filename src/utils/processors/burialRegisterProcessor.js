@@ -5,6 +5,7 @@ const burialRegisterStorage = require('../burialRegisterStorage');
 const { extractPageNumberFromFilename } = require('../burialRegisterStorage');
 const {
   applyConfidenceMetadata,
+  applyDegenerateDetection,
   applyValidationWarnings,
   injectCostData,
   attachCommonMetadata,
@@ -59,7 +60,7 @@ async function burialRegisterProcessor(context) {
 
   const volumeId = options.volume_id || options.volumeId || config.burialRegister?.volumeId || 'vol1';
 
-  const { validationResult, usage: burialUsage } = await processWithValidationRetry(
+  const { validationResult, usage: burialUsage, rawResponse } = await processWithValidationRetry(
     provider,
     base64Image,
     userPrompt,
@@ -73,6 +74,8 @@ async function burialRegisterProcessor(context) {
   );
 
   const pageData = validationResult.data;
+
+  applyDegenerateDetection(pageData, rawResponse, sourceType, config);
 
   const apiDuration = Date.now() - startTime;
   log.info(`Burial register API call completed in ${apiDuration}ms for ${filePath}`);
@@ -151,7 +154,10 @@ async function burialRegisterProcessor(context) {
       applyConfidenceMetadata(entryWithMetadata, entryConfidenceScores, config);
 
       // Apply validation warnings
-      applyValidationWarnings(entryWithMetadata, entryValidationWarnings);
+      applyValidationWarnings(
+        entryWithMetadata,
+        [...(entryValidationWarnings || []), ...(pageData._validation_warnings || [])]
+      );
 
       await burialRegisterStorage.storeBurialRegisterEntry(entryWithMetadata);
 

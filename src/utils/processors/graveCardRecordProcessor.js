@@ -3,6 +3,7 @@ const graveCardProcessor = require('../imageProcessing/graveCardProcessor');
 const graveCardStorage = require('../graveCardStorage');
 const {
   applyConfidenceMetadata,
+  applyDegenerateDetection,
   applyValidationWarnings,
   injectCostData,
   attachCommonMetadata,
@@ -55,7 +56,7 @@ async function graveCardRecordProcessor(context) {
   log.info(`Grave card PDF processed and stitched successfully for ${filePath}`);
 
   // Step 2: Process through AI provider + validate (with retry)
-  const { validationResult, usage: graveCardUsage } = await processWithValidationRetry(
+  const { validationResult, usage: graveCardUsage, rawResponse } = await processWithValidationRetry(
     provider,
     base64Image,
     userPrompt,
@@ -73,8 +74,13 @@ async function graveCardRecordProcessor(context) {
   // Apply confidence metadata
   applyConfidenceMetadata(validatedData, graveCardConfidenceScores, config);
 
+  applyDegenerateDetection(validatedData, rawResponse, sourceType, config);
+
   // Apply validation warnings
-  applyValidationWarnings(validatedData, graveCardValidationWarnings);
+  applyValidationWarnings(
+    validatedData,
+    [...(graveCardValidationWarnings || []), ...(validatedData._validation_warnings || [])]
+  );
 
   log.info(`${providerName} grave card response validated successfully for ${filePath}`);
 

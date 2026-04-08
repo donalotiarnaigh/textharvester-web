@@ -1,6 +1,6 @@
 # Issue Tracker — TextHarvester Web
 
-_Last updated: 2026-04-07 · 49 open issues · [24 completed](#completed-issues)_
+_Last updated: 2026-04-08 · 49 open issues · [24 completed](#completed-issues)_
 
 ---
 
@@ -201,10 +201,10 @@ _23 issues opened 2026-04-07. Based on VLM digitisation techniques survey coveri
 
 Deterministic accuracy wins and cost reductions with well-defined implementation paths.
 
-| # | Technique | E | I |
-|---|-----------|---|---|
+| # | Technique | E | I | Status |
+|---|-----------|---|---|--------|
 | [#216](https://github.com/donalotiarnaigh/textharvester-web/issues/216) | Extended cross-field validation rules (date arithmetic, age plausibility, ordering) | 2 | 3 |
-| [#213](https://github.com/donalotiarnaigh/textharvester-web/issues/213) | Degenerate output detection (CCR metric, length ratio, entropy) | 2 | 3 |
+| [#213](https://github.com/donalotiarnaigh/textharvester-web/issues/213) | Degenerate output detection (CCR metric, length ratio, entropy) | 2 | 3 | ✅ Implemented locally — PR pending |
 | [#215](https://github.com/donalotiarnaigh/textharvester-web/issues/215) | Historical date format parsing (Latin months, Old Style/New Style) | 2 | 3 | ✅ Implemented — PR #226 |
 | [#222](https://github.com/donalotiarnaigh/textharvester-web/issues/222) | Prompt caching for repeated system prompts and schemas | 2 | 3 |
 | [#206](https://github.com/donalotiarnaigh/textharvester-web/issues/206) | Schema-constrained generation across all providers | 3 | 4 |
@@ -289,7 +289,8 @@ Implement as described — the checks are deterministic, the integration pattern
 ---
 
 ### [#213] Degenerate output detection (CCR metric, length ratio, entropy)
-**Status**: Investigated
+**Status**: ✅ Implemented locally — PR pending, 2026-04-08
+**Branch**: `fix/issue-213-degenerate-output-detection`
 
 ## Technique
 After a successful VLM extraction, apply three lightweight algorithmic checks — Character Confusion Rate (CCR), output-to-image length ratio, and Shannon entropy of the output text — to detect fluent hallucinations that pass JSON validation but contain invented content.
@@ -1254,4 +1255,3 @@ _24 issues resolved. Click issue number for full details on GitHub._
 | #187 | Cost data (tokens, USD) missing from CSV export and web results UI | [#192](https://github.com/donalotiarnaigh/textharvester-web/pull/192) | ✅ |
 | #143 | Add Gemini as a provider | [#144](https://github.com/donalotiarnaigh/textharvester-web/pull/144) | ✅ |
 | #121 | Evaluation metrics infrastructure | [#137](https://github.com/donalotiarnaigh/textharvester-web/pull/137) | ⏳ Data pending |
-
