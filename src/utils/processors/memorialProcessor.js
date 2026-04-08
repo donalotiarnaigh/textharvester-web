@@ -64,7 +64,15 @@ async function memorialProcessor(context) {
       provider,
       base64Image,
       userPrompt,
-      { systemPrompt, promptTemplate: promptInstance, log, processingId },
+      {
+        systemPrompt,
+        promptTemplate: promptInstance,
+        log,
+        processingId,
+        ...(config.schemaConstrained?.enabled && promptInstance.getJsonSchema
+          ? { jsonSchema: promptInstance.getJsonSchema() }
+          : {})
+      },
       (rawExtractedData) => {
         // For monument photos, inject memorial number from filename if not provided by OCR
         let enhancedData = { ...rawExtractedData };

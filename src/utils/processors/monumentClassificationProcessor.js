@@ -55,7 +55,15 @@ async function monumentClassificationProcessor(context) {
     provider,
     base64Image,
     userPrompt,
-    { systemPrompt, promptTemplate: promptInstance, log, processingId },
+    {
+      systemPrompt,
+      promptTemplate: promptInstance,
+      log,
+      processingId,
+      ...(config.schemaConstrained?.enabled && promptInstance.getJsonSchema
+        ? { jsonSchema: promptInstance.getJsonSchema() }
+        : {})
+    },
     (raw) => promptInstance.validateAndConvert(raw)
   );
 
