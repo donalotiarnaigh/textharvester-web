@@ -114,14 +114,14 @@ describe('AnthropicProvider', () => {
           {
             role: 'user',
             content: [
-              { type: 'text', text: testPrompt },
-              { 
-                type: 'image', 
-                source: { 
-                  type: 'base64', 
-                  media_type: 'image/jpeg', 
-                  data: testImage 
-                } 
+              { type: 'text', text: testPrompt, cache_control: { type: 'ephemeral' } },
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: 'image/jpeg',
+                  data: testImage
+                }
               }
             ]
           }
@@ -131,16 +131,14 @@ describe('AnthropicProvider', () => {
 
     it('should return { content, usage } with parsed JSON content', async () => {
       const result = await provider.processImage(testImage, testPrompt);
-      expect(result).toEqual({
-        content: {
-          memorial_number: '123',
-          first_name: 'John',
-          last_name: 'Doe',
-          year_of_death: 1923,
-          inscription: 'Test inscription'
-        },
-        usage: { input_tokens: 100, output_tokens: 50 }
+      expect(result.content).toEqual({
+        memorial_number: '123',
+        first_name: 'John',
+        last_name: 'Doe',
+        year_of_death: 1923,
+        inscription: 'Test inscription'
       });
+      expect(result.usage).toMatchObject({ input_tokens: 100, output_tokens: 50 });
     });
 
     it('should extract usage tokens from API response', async () => {
@@ -149,7 +147,7 @@ describe('AnthropicProvider', () => {
         usage: { input_tokens: 100, output_tokens: 50 }
       });
       const result = await provider.processImage(testImage, testPrompt);
-      expect(result.usage).toEqual({ input_tokens: 100, output_tokens: 50 });
+      expect(result.usage).toMatchObject({ input_tokens: 100, output_tokens: 50 });
     });
 
     it('should default usage tokens to 0 when usage is absent', async () => {
@@ -158,7 +156,47 @@ describe('AnthropicProvider', () => {
         usage: undefined
       });
       const result = await provider.processImage(testImage, testPrompt);
-      expect(result.usage).toEqual({ input_tokens: 0, output_tokens: 0 });
+      expect(result.usage).toMatchObject({ input_tokens: 0, output_tokens: 0 });
+    });
+
+    it('should extract cache tokens from API response', async () => {
+      provider.client.messages.create.mockResolvedValue({
+        ...mockAnthropicResponse,
+        usage: {
+          input_tokens: 100,
+          output_tokens: 50,
+          cache_creation_input_tokens: 300,
+          cache_read_input_tokens: 200
+        }
+      });
+      const result = await provider.processImage(testImage, testPrompt);
+      expect(result.usage).toEqual({
+        input_tokens: 100,
+        output_tokens: 50,
+        cache_creation_input_tokens: 300,
+        cache_read_input_tokens: 200
+      });
+    });
+
+    it('should default cache tokens to 0 when absent from API response', async () => {
+      provider.client.messages.create.mockResolvedValue({
+        ...mockAnthropicResponse,
+        usage: { input_tokens: 100, output_tokens: 50 }
+      });
+      const result = await provider.processImage(testImage, testPrompt);
+      expect(result.usage.cache_creation_input_tokens).toBe(0);
+      expect(result.usage.cache_read_input_tokens).toBe(0);
+    });
+
+    it('should attach cache_control to user text content block', async () => {
+      await provider.processImage(testImage, testPrompt);
+      const callArgs = provider.client.messages.create.mock.calls[0][0];
+      const userContent = callArgs.messages[0].content;
+      const textBlock = userContent.find(b => b.type === 'text');
+      expect(textBlock).toMatchObject({
+        type: 'text',
+        cache_control: { type: 'ephemeral' }
+      });
     });
 
     it('should return raw response when raw option is true', async () => {

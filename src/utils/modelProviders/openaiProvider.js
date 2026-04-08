@@ -141,8 +141,9 @@ class OpenAIProvider extends BaseVisionProvider {
 
           const rawContent = apiResult.choices[0].message.content;
           const usage = {
-            input_tokens:  apiResult.usage?.prompt_tokens     ?? 0,
-            output_tokens: apiResult.usage?.completion_tokens ?? 0
+            input_tokens:           apiResult.usage?.prompt_tokens     ?? 0,
+            output_tokens:          apiResult.usage?.completion_tokens ?? 0,
+            cache_read_input_tokens: apiResult.usage?.prompt_tokens_details?.cached_tokens ?? 0,
           };
 
           // Log to audit trail

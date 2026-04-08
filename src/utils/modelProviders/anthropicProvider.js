@@ -110,7 +110,9 @@ class AnthropicProvider extends BaseVisionProvider {
 
           const usage = {
             input_tokens:  apiResult.usage?.input_tokens  ?? 0,
-            output_tokens: apiResult.usage?.output_tokens ?? 0
+            output_tokens: apiResult.usage?.output_tokens ?? 0,
+            cache_creation_input_tokens: apiResult.usage?.cache_creation_input_tokens ?? 0,
+            cache_read_input_tokens:     apiResult.usage?.cache_read_input_tokens     ?? 0,
           };
 
           // Tool-use path: content[0].input is already a parsed object
@@ -134,6 +136,8 @@ class AnthropicProvider extends BaseVisionProvider {
                 raw_response: rawContent,
                 input_tokens: usage.input_tokens,
                 output_tokens: usage.output_tokens,
+                cache_creation_tokens: usage.cache_creation_input_tokens,
+                cache_read_tokens: usage.cache_read_input_tokens,
                 response_time_ms: responseTimeMs,
                 status: 'success'
               });
@@ -305,8 +309,12 @@ class AnthropicProvider extends BaseVisionProvider {
    * Build Anthropic API call params: tool-use when jsonSchema present, plain messages otherwise.
    */
   _buildApiCallParams(systemPrompt, userPrompt, base64Image, jsonSchema) {
+    // cache_control on the user TEXT block marks the end of the static cacheable prefix:
+    // system prompt (~33t) + tools/schema (~750t) + instruction text (~750t) ≈ 1533 tokens
+    // exceeding Anthropic's 1024-token minimum. The image content block is dynamic and
+    // excluded from the cache, so only the text instruction is marked as the cache boundary.
     const userContent = [
-      { type: 'text', text: userPrompt },
+      { type: 'text', text: userPrompt, cache_control: { type: 'ephemeral' } },
       { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64Image } }
     ];
     if (jsonSchema) {
