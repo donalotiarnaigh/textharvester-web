@@ -372,7 +372,8 @@ Implement as described — the parsing rules are well-defined, the module is sel
 ---
 
 ### [#222] Prompt caching for repeated system prompts and schemas
-**Status**: Investigated
+**Status**: ✅ Implemented — PR pending, implemented 2026-04-08
+**Branch**: `fix/issue-222-prompt-caching`
 
 ## Technique
 Attach provider-native cache markers to static system prompts so that subsequent API calls within a session reuse the cached version rather than re-charging for the same tokens on every request.

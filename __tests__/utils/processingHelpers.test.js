@@ -241,6 +241,70 @@ describe('processingHelpers', () => {
 
       expect(cost).toBe(0);
     });
+
+    it('should apply cache write and cache read rates for Anthropic cache tokens', () => {
+      const usage = {
+        input_tokens: 500,
+        output_tokens: 200,
+        cache_creation_input_tokens: 300,
+        cache_read_input_tokens: 400,
+      };
+      const costConfig = {
+        inputPerMToken: 5.00,
+        outputPerMToken: 25.00,
+        cacheWritePerMToken: 6.25,
+        cacheReadPerMToken: 0.50,
+      };
+
+      const cost = calculateCost(usage, costConfig);
+
+      const expected =
+        (500 / 1_000_000) * 5.00 +
+        (300 / 1_000_000) * 6.25 +
+        (400 / 1_000_000) * 0.50 +
+        (200 / 1_000_000) * 25.00;
+      expect(cost).toBeCloseTo(expected);
+    });
+
+    it('should apply cachedInputPerMToken for OpenAI cached tokens', () => {
+      const usage = {
+        input_tokens: 800,
+        output_tokens: 100,
+        cache_read_input_tokens: 600,
+      };
+      const costConfig = {
+        inputPerMToken: 2.50,
+        outputPerMToken: 20.00,
+        cachedInputPerMToken: 1.25,
+      };
+
+      const cost = calculateCost(usage, costConfig);
+
+      const expected =
+        (800 / 1_000_000) * 2.50 +
+        (600 / 1_000_000) * 1.25 +
+        (100 / 1_000_000) * 20.00;
+      expect(cost).toBeCloseTo(expected);
+    });
+
+    it('should fall back to inputPerMToken when no cache-specific rates are set', () => {
+      const usage = {
+        input_tokens: 1000,
+        output_tokens: 500,
+        cache_creation_input_tokens: 200,
+        cache_read_input_tokens: 300,
+      };
+      const costConfig = { inputPerMToken: 2.50, outputPerMToken: 20.00 };
+
+      const cost = calculateCost(usage, costConfig);
+
+      const expected =
+        (1000 / 1_000_000) * 2.50 +
+        (200 / 1_000_000) * 2.50 +
+        (300 / 1_000_000) * 2.50 +
+        (500 / 1_000_000) * 20.00;
+      expect(cost).toBeCloseTo(expected);
+    });
   });
 
   describe('scopedLogger', () => {

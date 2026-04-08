@@ -75,20 +75,34 @@ describe('LLM Audit Log Storage', () => {
   });
 
   test('should call db.run when initializing', async () => {
+    // First call: CREATE TABLE (1-arg callback). Subsequent calls: migrations (1-arg callback).
     mockDb.run.mockImplementation((sql, callback) => {
-      expect(sql).toContain('CREATE TABLE IF NOT EXISTS llm_audit_log');
       setImmediate(() => callback(null));
     });
 
     await llmAuditLog.initialize();
 
     expect(mockDb.run).toHaveBeenCalled();
+    const firstCall = mockDb.run.mock.calls[0][0];
+    expect(firstCall).toContain('CREATE TABLE IF NOT EXISTS llm_audit_log');
+  });
+
+  test('should run cache column migrations on initialize', async () => {
+    mockDb.run.mockImplementation((sql, callback) => {
+      setImmediate(() => callback(null));
+    });
+
+    await llmAuditLog.initialize();
+
+    const sqlCalls = mockDb.run.mock.calls.map(c => c[0]);
+    expect(sqlCalls.some(sql => sql.includes('cache_creation_tokens'))).toBe(true);
+    expect(sqlCalls.some(sql => sql.includes('cache_read_tokens'))).toBe(true);
   });
 
   test('should call db.run with INSERT when logging an entry', async () => {
     mockDb.run.mockImplementation((sql, params, callback) => {
       expect(sql).toContain('INSERT INTO llm_audit_log');
-      expect(params).toHaveLength(12);
+      expect(params).toHaveLength(14);
       expect(params[0]).toBe('test-proc-001');
       expect(params[1]).toBe('openai');
       setImmediate(() => {
@@ -209,9 +223,39 @@ describe('LLM Audit Log Storage', () => {
       'Raw response text',
       250,
       150,
+      0,   // cache_creation_tokens default
+      0,   // cache_read_tokens default
       2500,
       'success',
       null
     ]);
+  });
+
+  test('should store cache_creation_tokens and cache_read_tokens when provided', async () => {
+    let capturedParams;
+    mockDb.run.mockImplementation((sql, params, callback) => {
+      capturedParams = params;
+      setImmediate(() => {
+        callback.call({ lastID: 1 }, null);
+      });
+    });
+
+    await llmAuditLog.logEntry({
+      processing_id: 'cache-test',
+      provider: 'anthropic',
+      model: 'claude-opus-4-6',
+      input_tokens: 100,
+      output_tokens: 50,
+      cache_creation_tokens: 300,
+      cache_read_tokens: 200,
+      response_time_ms: 1000,
+      status: 'success'
+    });
+
+    const cacheCreationIdx = capturedParams.indexOf(300);
+    const cacheReadIdx = capturedParams.indexOf(200);
+    expect(cacheCreationIdx).toBeGreaterThan(-1);
+    expect(cacheReadIdx).toBeGreaterThan(-1);
+    expect(cacheReadIdx).toBe(cacheCreationIdx + 1);
   });
 });

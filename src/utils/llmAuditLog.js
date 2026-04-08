@@ -25,6 +25,11 @@ function initialize() {
     )
   `;
 
+  const cacheMigrations = [
+    'ALTER TABLE llm_audit_log ADD COLUMN cache_creation_tokens INTEGER DEFAULT 0',
+    'ALTER TABLE llm_audit_log ADD COLUMN cache_read_tokens INTEGER DEFAULT 0',
+  ];
+
   return new Promise((resolve, reject) => {
     db.run(createTableSQL, (err) => {
       if (err) {
@@ -32,8 +37,22 @@ function initialize() {
         reject(err);
         return;
       }
-      logger.info('llm_audit_log table initialized');
-      resolve();
+
+      // Run migrations sequentially; ignore "duplicate column" errors (column already exists)
+      const runMigrations = (migrations, index) => {
+        if (index >= migrations.length) {
+          logger.info('llm_audit_log table initialized');
+          resolve();
+          return;
+        }
+        db.run(migrations[index], (migErr) => {
+          if (migErr && !migErr.message.includes('duplicate column name')) {
+            logger.error('Error running llm_audit_log migration:', migErr);
+          }
+          runMigrations(migrations, index + 1);
+        });
+      };
+      runMigrations(cacheMigrations, 0);
     });
   });
 }
@@ -74,6 +93,8 @@ async function logEntry(entry) {
       raw_response = null,
       input_tokens = 0,
       output_tokens = 0,
+      cache_creation_tokens = 0,
+      cache_read_tokens = 0,
       response_time_ms = 0,
       status = 'success',
       error_message = null
@@ -90,10 +111,12 @@ async function logEntry(entry) {
         raw_response,
         input_tokens,
         output_tokens,
+        cache_creation_tokens,
+        cache_read_tokens,
         response_time_ms,
         status,
         error_message
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.run(
@@ -108,6 +131,8 @@ async function logEntry(entry) {
         raw_response,
         input_tokens,
         output_tokens,
+        cache_creation_tokens,
+        cache_read_tokens,
         response_time_ms,
         status,
         error_message

@@ -141,10 +141,13 @@ function buildErrorResult(filePath, errorInfo) {
  * @returns {number} Estimated cost in USD
  */
 function calculateCost(usage, costConfig) {
-  return (
-    ((usage.input_tokens / 1_000_000) * (costConfig.inputPerMToken || 0)) +
-    ((usage.output_tokens / 1_000_000) * (costConfig.outputPerMToken || 0))
-  );
+  const regularInput = (usage.input_tokens / 1_000_000) * (costConfig.inputPerMToken || 0);
+  const cacheWrite = ((usage.cache_creation_input_tokens || 0) / 1_000_000) *
+    (costConfig.cacheWritePerMToken || costConfig.inputPerMToken || 0);
+  const cacheRead = ((usage.cache_read_input_tokens || 0) / 1_000_000) *
+    (costConfig.cacheReadPerMToken || costConfig.cachedInputPerMToken || costConfig.inputPerMToken || 0);
+  const output = (usage.output_tokens / 1_000_000) * (costConfig.outputPerMToken || 0);
+  return regularInput + cacheWrite + cacheRead + output;
 }
 
 /**

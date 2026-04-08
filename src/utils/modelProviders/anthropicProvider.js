@@ -110,7 +110,9 @@ class AnthropicProvider extends BaseVisionProvider {
 
           const usage = {
             input_tokens:  apiResult.usage?.input_tokens  ?? 0,
-            output_tokens: apiResult.usage?.output_tokens ?? 0
+            output_tokens: apiResult.usage?.output_tokens ?? 0,
+            cache_creation_input_tokens: apiResult.usage?.cache_creation_input_tokens ?? 0,
+            cache_read_input_tokens:     apiResult.usage?.cache_read_input_tokens     ?? 0,
           };
 
           // Tool-use path: content[0].input is already a parsed object
@@ -134,6 +136,8 @@ class AnthropicProvider extends BaseVisionProvider {
                 raw_response: rawContent,
                 input_tokens: usage.input_tokens,
                 output_tokens: usage.output_tokens,
+                cache_creation_tokens: usage.cache_creation_input_tokens,
+                cache_read_tokens: usage.cache_read_input_tokens,
                 response_time_ms: responseTimeMs,
                 status: 'success'
               });
@@ -314,7 +318,7 @@ class AnthropicProvider extends BaseVisionProvider {
         model: this.model,
         max_tokens: this.maxTokens,
         temperature: this.temperature,
-        system: systemPrompt,
+        system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
         tools: [{ name: 'extract', description: 'Extract structured data from the image.', input_schema: jsonSchema }],
         tool_choice: { type: 'tool', name: 'extract' },
         messages: [{ role: 'user', content: userContent }]
@@ -324,7 +328,7 @@ class AnthropicProvider extends BaseVisionProvider {
       model: this.model,
       max_tokens: this.maxTokens,
       temperature: this.temperature,
-      system: systemPrompt,
+      system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: userContent }]
     };
   }

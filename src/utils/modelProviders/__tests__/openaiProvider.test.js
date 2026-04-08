@@ -180,16 +180,14 @@ describe('OpenAIProvider', () => {
 
     it('should return { content, usage } with parsed JSON content', async () => {
       const result = await provider.processImage(testImage, testPrompt);
-      expect(result).toEqual({
-        content: {
-          memorial_number: '123',
-          first_name: 'John',
-          last_name: 'Doe',
-          year_of_death: 1923,
-          inscription: 'Test inscription'
-        },
-        usage: { input_tokens: 100, output_tokens: 50 }
+      expect(result.content).toEqual({
+        memorial_number: '123',
+        first_name: 'John',
+        last_name: 'Doe',
+        year_of_death: 1923,
+        inscription: 'Test inscription'
       });
+      expect(result.usage).toMatchObject({ input_tokens: 100, output_tokens: 50 });
     });
 
     it('should extract usage tokens from API response', async () => {
@@ -198,7 +196,7 @@ describe('OpenAIProvider', () => {
         usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 }
       });
       const result = await provider.processImage(testImage, testPrompt);
-      expect(result.usage).toEqual({ input_tokens: 100, output_tokens: 50 });
+      expect(result.usage).toMatchObject({ input_tokens: 100, output_tokens: 50 });
     });
 
     it('should default usage tokens to 0 when usage is absent', async () => {
@@ -207,7 +205,30 @@ describe('OpenAIProvider', () => {
         usage: undefined
       });
       const result = await provider.processImage(testImage, testPrompt);
-      expect(result.usage).toEqual({ input_tokens: 0, output_tokens: 0 });
+      expect(result.usage).toMatchObject({ input_tokens: 0, output_tokens: 0 });
+    });
+
+    it('should extract cached_tokens from prompt_tokens_details as cache_read_input_tokens', async () => {
+      provider.client.chat.completions.create.mockResolvedValue({
+        ...mockOpenAIResponse,
+        usage: {
+          prompt_tokens: 100,
+          completion_tokens: 50,
+          total_tokens: 150,
+          prompt_tokens_details: { cached_tokens: 80 }
+        }
+      });
+      const result = await provider.processImage(testImage, testPrompt);
+      expect(result.usage.cache_read_input_tokens).toBe(80);
+    });
+
+    it('should default cache_read_input_tokens to 0 when prompt_tokens_details absent', async () => {
+      provider.client.chat.completions.create.mockResolvedValue({
+        ...mockOpenAIResponse,
+        usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 }
+      });
+      const result = await provider.processImage(testImage, testPrompt);
+      expect(result.usage.cache_read_input_tokens).toBe(0);
     });
 
     it('should return raw response when raw option is true', async () => {
