@@ -14,7 +14,7 @@ Analysis and recommended sequencing of 6 research issues ready for immediate imp
 | #213 | Degenerate output detection (CCR, entropy, length ratio) | 2 | 3 | ✅ COMPLETED — PR pending, implemented 2026-04-08 |
 | #215 | Historical date format parsing (Latin months, Old Style/New Style) | 2 | 3 | ✅ COMPLETED — PR #226, merged 2026-04-07 |
 | #222 | Prompt caching (Anthropic cache_control, OpenAI cached_tokens) | 2 | 3 |
-| #206 | Schema-constrained generation across all providers | 3 | 4 | ✅ COMPLETED — PR pending, implemented 2026-04-08 |
+| #206 | Schema-constrained generation across all providers | 3 | 4 | ✅ COMPLETED — PR #229, merged 2026-04-08 |
 | #219 | Active learning loop with disagreement scoring | 3 | 3 |
 
 *E = Effort (1–5), I = Impact (1–5)*
