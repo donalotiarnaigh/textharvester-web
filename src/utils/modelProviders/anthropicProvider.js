@@ -309,8 +309,12 @@ class AnthropicProvider extends BaseVisionProvider {
    * Build Anthropic API call params: tool-use when jsonSchema present, plain messages otherwise.
    */
   _buildApiCallParams(systemPrompt, userPrompt, base64Image, jsonSchema) {
+    // cache_control on the user TEXT block marks the end of the static cacheable prefix:
+    // system prompt (~33t) + tools/schema (~750t) + instruction text (~750t) ≈ 1533 tokens
+    // exceeding Anthropic's 1024-token minimum. The image content block is dynamic and
+    // excluded from the cache, so only the text instruction is marked as the cache boundary.
     const userContent = [
-      { type: 'text', text: userPrompt },
+      { type: 'text', text: userPrompt, cache_control: { type: 'ephemeral' } },
       { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64Image } }
     ];
     if (jsonSchema) {
@@ -319,9 +323,7 @@ class AnthropicProvider extends BaseVisionProvider {
         max_tokens: this.maxTokens,
         temperature: this.temperature,
         system: systemPrompt,
-        // cache_control on the tool definition caches the full static prefix
-        // (system prompt + tool schema) as a single ~1700-token cache entry
-        tools: [{ name: 'extract', description: 'Extract structured data from the image.', input_schema: jsonSchema, cache_control: { type: 'ephemeral' } }],
+        tools: [{ name: 'extract', description: 'Extract structured data from the image.', input_schema: jsonSchema }],
         tool_choice: { type: 'tool', name: 'extract' },
         messages: [{ role: 'user', content: userContent }]
       };
@@ -330,7 +332,7 @@ class AnthropicProvider extends BaseVisionProvider {
       model: this.model,
       max_tokens: this.maxTokens,
       temperature: this.temperature,
-      system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
+      system: systemPrompt,
       messages: [{ role: 'user', content: userContent }]
     };
   }

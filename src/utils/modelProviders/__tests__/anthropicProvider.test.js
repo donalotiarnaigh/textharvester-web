@@ -109,19 +109,19 @@ describe('AnthropicProvider', () => {
         model: 'claude-4-sonnet-20250514',
         max_tokens: 4000,
         temperature: 0.2,
-        system: [{ type: 'text', text: 'Return a JSON object with the extracted text details.', cache_control: { type: 'ephemeral' } }],
+        system: 'Return a JSON object with the extracted text details.',
         messages: [
           {
             role: 'user',
             content: [
-              { type: 'text', text: testPrompt },
-              { 
-                type: 'image', 
-                source: { 
-                  type: 'base64', 
-                  media_type: 'image/jpeg', 
-                  data: testImage 
-                } 
+              { type: 'text', text: testPrompt, cache_control: { type: 'ephemeral' } },
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: 'image/jpeg',
+                  data: testImage
+                }
               }
             ]
           }
@@ -188,11 +188,12 @@ describe('AnthropicProvider', () => {
       expect(result.usage.cache_read_input_tokens).toBe(0);
     });
 
-    it('should pass system prompt as content block array with cache_control', async () => {
+    it('should attach cache_control to user text content block', async () => {
       await provider.processImage(testImage, testPrompt);
       const callArgs = provider.client.messages.create.mock.calls[0][0];
-      expect(Array.isArray(callArgs.system)).toBe(true);
-      expect(callArgs.system[0]).toMatchObject({
+      const userContent = callArgs.messages[0].content;
+      const textBlock = userContent.find(b => b.type === 'text');
+      expect(textBlock).toMatchObject({
         type: 'text',
         cache_control: { type: 'ephemeral' }
       });
