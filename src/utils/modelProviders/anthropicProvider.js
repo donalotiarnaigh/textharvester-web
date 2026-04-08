@@ -318,8 +318,10 @@ class AnthropicProvider extends BaseVisionProvider {
         model: this.model,
         max_tokens: this.maxTokens,
         temperature: this.temperature,
-        system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
-        tools: [{ name: 'extract', description: 'Extract structured data from the image.', input_schema: jsonSchema }],
+        system: systemPrompt,
+        // cache_control on the tool definition caches the full static prefix
+        // (system prompt + tool schema) as a single ~1700-token cache entry
+        tools: [{ name: 'extract', description: 'Extract structured data from the image.', input_schema: jsonSchema, cache_control: { type: 'ephemeral' } }],
         tool_choice: { type: 'tool', name: 'extract' },
         messages: [{ role: 'user', content: userContent }]
       };
