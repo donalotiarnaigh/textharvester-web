@@ -86,6 +86,7 @@ class GeminiProvider extends BaseVisionProvider {
       systemInstruction: systemPrompt,
       generationConfig: {
         responseMimeType: 'application/json',
+        ...(options.jsonSchema ? { responseSchema: options.jsonSchema } : {}),
         maxOutputTokens: this.maxTokens,
         temperature: this.temperature
       }
