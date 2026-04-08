@@ -206,7 +206,7 @@ Deterministic accuracy wins and cost reductions with well-defined implementation
 | [#216](https://github.com/donalotiarnaigh/textharvester-web/issues/216) | Extended cross-field validation rules (date arithmetic, age plausibility, ordering) | 2 | 3 |
 | [#213](https://github.com/donalotiarnaigh/textharvester-web/issues/213) | Degenerate output detection (CCR metric, length ratio, entropy) | 2 | 3 | ✅ Implemented locally — PR pending |
 | [#215](https://github.com/donalotiarnaigh/textharvester-web/issues/215) | Historical date format parsing (Latin months, Old Style/New Style) | 2 | 3 | ✅ Implemented — PR #226 |
-| [#222](https://github.com/donalotiarnaigh/textharvester-web/issues/222) | Prompt caching for repeated system prompts and schemas | 2 | 3 |
+| [#222](https://github.com/donalotiarnaigh/textharvester-web/issues/222) | Prompt caching for repeated system prompts and schemas | 2 | 3 | ✅ Implemented — PR #230, merged 2026-04-08 |
 | [#206](https://github.com/donalotiarnaigh/textharvester-web/issues/206) | Schema-constrained generation across all providers | 3 | 4 | ✅ Implemented — PR #229 |
 | [#219](https://github.com/donalotiarnaigh/textharvester-web/issues/219) | Active learning loop with Langfuse trace logging | 3 | 3 |
 
@@ -372,7 +372,7 @@ Implement as described — the parsing rules are well-defined, the module is sel
 ---
 
 ### [#222] Prompt caching for repeated system prompts and schemas
-**Status**: ✅ Implemented — PR pending, implemented 2026-04-08
+**Status**: ✅ Implemented — PR #230, merged 2026-04-08
 **Branch**: `fix/issue-222-prompt-caching`
 
 ## Technique
