@@ -2,16 +2,16 @@
 
 Analysis and recommended sequencing of 6 research issues ready for immediate implementation.
 
-**Date**: 2026-04-07
+**Date**: 2026-04-08
 
 ---
 
 ## The 6 Issues
 
-| # | Technique | E | I |
-|---|-----------|---|---|
+| # | Technique | E | I | Status |
+|---|-----------|---|---|--------|
 | #216 | Extended cross-field validation (date arithmetic, age plausibility) | 2 | 3 | ✅ COMPLETED — PR pending, merged 2026-04-07 |
-| #213 | Degenerate output detection (CCR, entropy, length ratio) | 2 | 3 |
+| #213 | Degenerate output detection (CCR, entropy, length ratio) | 2 | 3 | ✅ COMPLETED — PR pending, implemented 2026-04-08 |
 | #215 | Historical date format parsing (Latin months, Old Style/New Style) | 2 | 3 | ✅ COMPLETED — PR #226, merged 2026-04-07 |
 | #222 | Prompt caching (Anthropic cache_control, OpenAI cached_tokens) | 2 | 3 |
 | #206 | Schema-constrained generation across all providers | 3 | 4 |

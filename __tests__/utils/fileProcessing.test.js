@@ -56,7 +56,18 @@ jest.mock('../../src/utils/monumentClassificationStorage', () => ({
 }));
 jest.mock('../../config.json', () => ({
   dbPath: 'test/db',
-  uploadPath: 'test/uploads'
+  uploadPath: 'test/uploads',
+  degenerateDetection: {
+    enabled: true,
+    ccrThreshold: 0.4,
+    minEntropy: 1.5,
+    lengthRatioMin: 0.2,
+    minLengthForEntropy: 20,
+    minLengthForLengthRatio: 20,
+    minExpectedBySourceType: {
+      memorial: 40
+    }
+  }
 }), { virtual: true });
 
 const { processFile } = require('../../src/utils/fileProcessing.js');
@@ -221,6 +232,25 @@ describe('File Processing Module', () => {
 
       expect(getPrompt).toHaveBeenCalled();
       expect(mockValidateAndConvert).toHaveBeenCalledWith(mockRawData);
+    });
+
+    test('adds degenerate output warning when raw response is hallucination-like', async () => {
+      mockProcessImage.mockResolvedValue({
+        content: '@@@@ #### $$$$ %%%%',
+        usage: { input_tokens: 0, output_tokens: 0 }
+      });
+      mockValidateAndConvert.mockReturnValue({
+        data: { ...mockExtractedData },
+        confidenceScores: {},
+        validationWarnings: []
+      });
+
+      const result = await processFile(mockFilePath);
+
+      expect(result.validation_warnings).toEqual(
+        expect.arrayContaining([expect.stringContaining('DEGENERATE_OUTPUT')])
+      );
+      expect(result.needs_review).toBe(1);
     });
   });
 

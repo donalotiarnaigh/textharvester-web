@@ -11,6 +11,7 @@ const mockLogger = require('../../src/utils/logger');
 
 const {
   applyConfidenceMetadata,
+  applyDegenerateDetection,
   applyValidationWarnings,
   injectCostData,
   attachCommonMetadata,
@@ -291,6 +292,7 @@ describe('processingHelpers', () => {
       );
 
       expect(result.validationResult.data.field).toBe('value');
+      expect(result.rawResponse).toBe(JSON.stringify({ field: 'value' }));
       expect(mockProvider.processImage).toHaveBeenCalledTimes(1);
       expect(validateFn).toHaveBeenCalledTimes(1);
     });
@@ -390,6 +392,47 @@ describe('processingHelpers', () => {
           { maxRetries: 0 }
         )
       ).rejects.toThrow(FatalError);
+    });
+  });
+
+  describe('applyDegenerateDetection', () => {
+    const detectorConfig = {
+      degenerateDetection: {
+        enabled: true,
+        ccrThreshold: 0.4,
+        minEntropy: 1.5,
+        lengthRatioMin: 0.2,
+        minLengthForEntropy: 20,
+        minLengthForLengthRatio: 20,
+        minExpectedBySourceType: {
+          memorial: 40,
+        },
+      },
+    };
+
+    it('adds warning strings when degenerate output is detected', () => {
+      const data = {};
+
+      applyDegenerateDetection(data, '@@@@ #### $$$$ %%%%', 'memorial', detectorConfig);
+
+      expect(data._validation_warnings).toHaveLength(1);
+      expect(data._validation_warnings[0]).toContain('DEGENERATE_OUTPUT');
+      expect(data._validation_warnings[0]).toContain('HIGH_CCR');
+      expect(data.degenerate_output_metrics.ccr).toBeGreaterThan(0.4);
+    });
+
+    it('does not add warnings for normal text', () => {
+      const data = {};
+
+      applyDegenerateDetection(
+        data,
+        'In loving memory of John Smith who died 12 March 1901 aged 76 years.',
+        'memorial',
+        detectorConfig
+      );
+
+      expect(data._validation_warnings).toBeUndefined();
+      expect(data.degenerate_output_metrics).toBeDefined();
     });
   });
 });
