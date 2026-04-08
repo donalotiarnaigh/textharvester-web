@@ -392,4 +392,32 @@ describe('BurialRegisterPrompt validation', () => {
       expect(validationWarnings.length).toBe(0);
     });
   });
+
+  describe('getJsonSchema', () => {
+    it('should return a JSON Schema object', () => {
+      const schema = prompt.getJsonSchema();
+      expect(schema).not.toBeNull();
+      expect(typeof schema).toBe('object');
+    });
+
+    it('should have type object with properties', () => {
+      const schema = prompt.getJsonSchema();
+      expect(schema.type).toBe('object');
+      expect(schema.properties).toBeDefined();
+    });
+
+    it('should include volume_id, page_number, and entries fields', () => {
+      const schema = prompt.getJsonSchema();
+      expect(schema.properties.volume_id).toBeDefined();
+      expect(schema.properties.page_number).toBeDefined();
+      expect(schema.properties.entries).toBeDefined();
+    });
+
+    it('should define entries as an array of objects', () => {
+      const schema = prompt.getJsonSchema();
+      expect(schema.properties.entries.type).toBe('array');
+      expect(schema.properties.entries.items).toBeDefined();
+      expect(schema.properties.entries.items.type).toBe('object');
+    });
+  });
 });

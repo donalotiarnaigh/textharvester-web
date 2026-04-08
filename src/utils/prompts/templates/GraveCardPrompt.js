@@ -24,6 +24,70 @@ class GraveCardPrompt extends BasePrompt {
      * @param {string} provider - The AI provider name
      * @returns {Object} Provider prompt config
      */
+  getJsonSchema() {
+    const dateSchema = {
+      type: ['object', 'null'],
+      properties: {
+        iso:       { type: ['string', 'null'] },
+        certainty: { type: ['string', 'null'] }
+      }
+    };
+    const nameSchema = {
+      type: 'object',
+      properties: {
+        full_name:    { type: ['string', 'null'] },
+        given_names:  { type: ['string', 'null'] },
+        surname:      { type: ['string', 'null'] },
+        title_prefix: { type: ['string', 'null'] }
+      }
+    };
+    const intermentSchema = {
+      type: 'object',
+      properties: {
+        sequence_number: { type: ['integer', 'null'] },
+        name:            nameSchema,
+        date_of_death:   dateSchema,
+        date_of_burial:  dateSchema,
+        age_at_death:    { type: ['integer', 'null'] },
+        notes:           { type: ['string', 'null'] }
+      },
+      required: ['name']
+    };
+    return {
+      type: 'object',
+      properties: {
+        location: {
+          type: 'object',
+          properties: {
+            section:          { type: ['string', 'null'] },
+            grave_number:     { type: ['integer', 'null'] },
+            plot_identifier:  { type: ['string', 'null'] }
+          },
+          required: ['section', 'grave_number']
+        },
+        grave: {
+          type: 'object',
+          properties: {
+            number_buried: { type: ['integer', 'null'] },
+            status:        { type: ['string', 'null'] },
+            description:   { type: ['string', 'null'] }
+          },
+          required: ['status']
+        },
+        interments: { type: 'array', items: intermentSchema },
+        inscription: {
+          type: ['object', 'null'],
+          properties: {
+            text:                   { type: ['string', 'null'] },
+            scripture_or_quote_refs: { type: ['string', 'null'] },
+            notes:                  { type: ['string', 'null'] }
+          }
+        }
+      },
+      required: ['location', 'grave', 'interments']
+    };
+  }
+
   getProviderPrompt(provider) {
     this.validateProvider(provider);
 

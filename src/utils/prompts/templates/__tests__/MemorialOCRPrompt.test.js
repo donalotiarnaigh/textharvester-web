@@ -290,4 +290,35 @@ describe('MemorialOCRPrompt', () => {
       expect(validationWarnings.some(w => w.includes('DEATH_YEAR'))).toBe(false);
     });
   });
+
+  describe('getJsonSchema', () => {
+    it('should return a JSON Schema object', () => {
+      const schema = prompt.getJsonSchema();
+      expect(schema).not.toBeNull();
+      expect(typeof schema).toBe('object');
+    });
+
+    it('should have type object with properties', () => {
+      const schema = prompt.getJsonSchema();
+      expect(schema.type).toBe('object');
+      expect(schema.properties).toBeDefined();
+    });
+
+    it('should include all five memorial fields', () => {
+      const schema = prompt.getJsonSchema();
+      const fields = Object.keys(schema.properties);
+      expect(fields).toEqual(expect.arrayContaining([
+        'memorial_number', 'first_name', 'last_name', 'year_of_death', 'inscription'
+      ]));
+    });
+
+    it('should wrap each field in a confidence envelope with value and confidence', () => {
+      const schema = prompt.getJsonSchema();
+      for (const field of Object.values(schema.properties)) {
+        expect(field.type).toBe('object');
+        expect(field.properties.value).toBeDefined();
+        expect(field.properties.confidence).toBeDefined();
+      }
+    });
+  });
 }); 

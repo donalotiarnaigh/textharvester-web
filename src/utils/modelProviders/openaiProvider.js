@@ -96,7 +96,9 @@ class OpenAIProvider extends BaseVisionProvider {
                 ],
               },
             ],
-            response_format: { type: 'json_object' },
+            response_format: options.jsonSchema
+              ? { type: 'json_schema', json_schema: { name: 'extraction', strict: true, schema: options.jsonSchema } }
+              : { type: 'json_object' },
             max_completion_tokens: this.maxTokens
           };
 

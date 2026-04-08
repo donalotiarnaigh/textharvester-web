@@ -176,6 +176,54 @@ For every field shown as { "value": ..., "confidence": ... }, return that envelo
    * @param {string} provider Provider name
    * @returns {Object} Provider-specific prompt configuration
    */
+  getJsonSchema() {
+    const envelope = (valueSchema) => ({
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        value: valueSchema,
+        confidence: { type: 'number' }
+      },
+      required: ['value', 'confidence']
+    });
+    const entrySchema = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        row_index_on_page: { type: 'integer' },
+        entry_id:          { type: ['string', 'null'] },
+        entry_no_raw:      envelope({ type: ['string', 'null'] }),
+        name_raw:          envelope({ type: ['string', 'null'] }),
+        abode_raw:         envelope({ type: ['string', 'null'] }),
+        burial_date_raw:   envelope({ type: ['string', 'null'] }),
+        age_raw:           envelope({ type: ['string', 'null'] }),
+        officiant_raw:     envelope({ type: ['string', 'null'] }),
+        marginalia_raw:    envelope({ type: ['string', 'null'] }),
+        extra_notes_raw:   envelope({ type: ['string', 'null'] }),
+        row_ocr_raw:       envelope({ type: ['string', 'null'] }),
+        uncertainty_flags: { type: 'array', items: { type: 'string' } }
+      },
+      required: ['row_index_on_page', 'entry_id', 'entry_no_raw', 'name_raw', 'abode_raw',
+        'burial_date_raw', 'age_raw', 'officiant_raw', 'marginalia_raw',
+        'extra_notes_raw', 'row_ocr_raw', 'uncertainty_flags']
+    };
+    return {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        volume_id:           { type: 'string' },
+        page_number:         { type: 'integer' },
+        parish_header_raw:   envelope({ type: ['string', 'null'] }),
+        county_header_raw:   envelope({ type: ['string', 'null'] }),
+        year_header_raw:     envelope({ type: ['string', 'null'] }),
+        page_marginalia_raw: envelope({ type: ['string', 'null'] }),
+        entries:             { type: 'array', items: entrySchema }
+      },
+      required: ['volume_id', 'page_number', 'parish_header_raw', 'county_header_raw',
+        'year_header_raw', 'page_marginalia_raw', 'entries']
+    };
+  }
+
   getProviderPrompt(provider) {
     this.validateProvider(provider);
     const basePrompt = this.getPromptText();

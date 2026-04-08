@@ -80,6 +80,30 @@ For inscription, also include: "uncertain_segments": ["word1", "word2"] for ambi
    * @param {string} provider Provider name
    * @returns {Object} Provider-specific prompt configuration
    */
+  getJsonSchema() {
+    const envelope = (valueSchema) => ({
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        value: valueSchema,
+        confidence: { type: 'number' }
+      },
+      required: ['value', 'confidence']
+    });
+    return {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        memorial_number: envelope({ type: ['integer', 'null'] }),
+        first_name:      envelope({ type: ['string',  'null'] }),
+        last_name:       envelope({ type: ['string',  'null'] }),
+        year_of_death:   envelope({ type: ['integer', 'null'] }),
+        inscription:     envelope({ type: ['string',  'null'] })
+      },
+      required: ['memorial_number', 'first_name', 'last_name', 'year_of_death', 'inscription']
+    };
+  }
+
   getProviderPrompt(provider) {
     this.validateProvider(provider);
     const basePrompt = this.getPromptText();

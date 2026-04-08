@@ -89,35 +89,15 @@ class AnthropicProvider extends BaseVisionProvider {
     try {
       const result = await withRetry(
         async (attempt) => {
+          // Build API call params: tool-use when jsonSchema present, plain messages otherwise
+          const apiParams = this._buildApiCallParams(systemPrompt, userPrompt, base64Image, options.jsonSchema);
+
           // Track API performance
           const apiResult = await PerformanceTracker.trackAPICall(
             'anthropic',
             this.model,
             'processImage',
-            async () => {
-              return await this.client.messages.create({
-                model: this.model,
-                max_tokens: this.maxTokens,
-                temperature: this.temperature,
-                system: systemPrompt,
-                messages: [
-                  {
-                    role: 'user',
-                    content: [
-                      { type: 'text', text: userPrompt },
-                      {
-                        type: 'image',
-                        source: {
-                          type: 'base64',
-                          media_type: 'image/jpeg',
-                          data: base64Image
-                        }
-                      }
-                    ]
-                  }
-                ]
-              });
-            },
+            async () => this.client.messages.create(apiParams),
             {
               imageSize: imageSizeBytes,
               promptLength: userPrompt ? userPrompt.length : 0,
@@ -128,12 +108,51 @@ class AnthropicProvider extends BaseVisionProvider {
             }
           );
 
-          // Extract the text content from the response
-          const rawContent = apiResult.content.find(item => item.type === 'text')?.text;
           const usage = {
             input_tokens:  apiResult.usage?.input_tokens  ?? 0,
             output_tokens: apiResult.usage?.output_tokens ?? 0
           };
+
+          // Tool-use path: content[0].input is already a parsed object
+          if (options.jsonSchema) {
+            const toolBlock = apiResult.content.find(item => item.type === 'tool_use');
+            if (!toolBlock) {
+              throw new Error('No tool_use block in response');
+            }
+            const parsedContent = toolBlock.input;
+            const rawContent = JSON.stringify(parsedContent);
+
+            const responseTimeMs = Date.now() - startTime;
+            if (processingId) {
+              await llmAuditLog.logEntry({
+                processing_id: processingId,
+                provider: 'anthropic',
+                model: this.model,
+                system_prompt: systemPrompt,
+                user_prompt: userPrompt,
+                image_size_bytes: imageSizeBytes,
+                raw_response: rawContent,
+                input_tokens: usage.input_tokens,
+                output_tokens: usage.output_tokens,
+                response_time_ms: responseTimeMs,
+                status: 'success'
+              });
+            }
+
+            if (options.raw) {
+              return { content: rawContent, usage };
+            }
+
+            if (this.isInvalidResponse(parsedContent)) {
+              logger.warn('[AnthropicProvider] Tool-use response appears to contain invalid data');
+              throw new Error('Invalid response: Claude returned dashes instead of actual text. This may indicate image quality issues or prompt confusion.');
+            }
+
+            return { content: parsedContent, usage };
+          }
+
+          // Plain text path (existing logic unchanged)
+          const rawContent = apiResult.content.find(item => item.type === 'text')?.text;
 
           if (!rawContent) {
             throw new Error('No text content in response');
@@ -280,6 +299,34 @@ class AnthropicProvider extends BaseVisionProvider {
 
       throw new Error(`Anthropic processing failed: ${error.message}`);
     }
+  }
+
+  /**
+   * Build Anthropic API call params: tool-use when jsonSchema present, plain messages otherwise.
+   */
+  _buildApiCallParams(systemPrompt, userPrompt, base64Image, jsonSchema) {
+    const userContent = [
+      { type: 'text', text: userPrompt },
+      { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64Image } }
+    ];
+    if (jsonSchema) {
+      return {
+        model: this.model,
+        max_tokens: this.maxTokens,
+        temperature: this.temperature,
+        system: systemPrompt,
+        tools: [{ name: 'extract', description: 'Extract structured data from the image.', input_schema: jsonSchema }],
+        tool_choice: { type: 'tool', name: 'extract' },
+        messages: [{ role: 'user', content: userContent }]
+      };
+    }
+    return {
+      model: this.model,
+      max_tokens: this.maxTokens,
+      temperature: this.temperature,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userContent }]
+    };
   }
 
   /**

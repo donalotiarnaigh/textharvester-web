@@ -64,7 +64,16 @@ async function burialRegisterProcessor(context) {
     provider,
     base64Image,
     userPrompt,
-    { systemPrompt, promptTemplate: promptInstance, timeout: burialRegisterTimeout, log, processingId },
+    {
+      systemPrompt,
+      promptTemplate: promptInstance,
+      timeout: burialRegisterTimeout,
+      log,
+      processingId,
+      ...(config.schemaConstrained?.enabled && promptInstance.getJsonSchema
+        ? { jsonSchema: promptInstance.getJsonSchema() }
+        : {})
+    },
     (raw) => {
       if (raw && typeof raw === 'object') {
         raw.volume_id = volumeId;
