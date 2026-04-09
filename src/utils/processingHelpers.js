@@ -1,6 +1,7 @@
 const logger = require('./logger');
 const { isEmptySheetError, FatalError, isFatalError } = require('./errorTypes');
 const { detectDegenerate } = require('./degenerateOutputDetector');
+const { computeDisagreementScore } = require('./disagreementScore');
 const config = require('../../config.json');
 
 const VALIDATION_RETRY_PREAMBLE =
@@ -39,6 +40,21 @@ function applyValidationWarnings(data, validationWarnings) {
 
   data.validation_warnings = validationWarnings;
   data.needs_review = 1; // force flag even if confidence disabled
+}
+
+/**
+ * Compute and attach a disagreement score to the data object.
+ * @param {Object} data - The data object to enhance (must already have confidence_scores / validation_warnings)
+ * @param {Object} config - Configuration object with activeLearning settings
+ */
+function applyDisagreementScore(data, config) {
+  if (config.activeLearning?.enabled === false) {
+    return;
+  }
+  data.disagreement_score = computeDisagreementScore(
+    data.confidence_scores,
+    data.validation_warnings
+  );
 }
 
 /**
@@ -237,6 +253,7 @@ module.exports = {
   VALIDATION_RETRY_PREAMBLE,
   applyConfidenceMetadata,
   applyDegenerateDetection,
+  applyDisagreementScore,
   applyValidationWarnings,
   injectCostData,
   attachCommonMetadata,

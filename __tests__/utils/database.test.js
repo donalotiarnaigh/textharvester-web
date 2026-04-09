@@ -168,14 +168,15 @@ describe('Database Storage Layer: Typographic Analysis Fields', () => {
       // 16: structural_observations
       // 17: confidence_scores (JSON)
       // 18: confidence_coverage
-      // 19: needs_review
-      // 20: validation_warnings (JSON)
-      // 21: input_tokens
-      // 22: output_tokens
-      // 23: estimated_cost_usd
-      // 24: processing_id
-      // 25: project_id
-      expect(params).toHaveLength(26);
+      // 19: disagreement_score
+      // 20: needs_review
+      // 21: validation_warnings (JSON)
+      // 22: input_tokens
+      // 23: output_tokens
+      // 24: estimated_cost_usd
+      // 25: processing_id
+      // 26: project_id
+      expect(params).toHaveLength(27);
 
       expect(params[12]).toBe(data.transcription_raw);
       expect(params[13]).toBe(data.stone_condition);
@@ -184,12 +185,13 @@ describe('Database Storage Layer: Typographic Analysis Fields', () => {
       expect(params[16]).toBe(data.structural_observations);
       // 17: confidence_scores
       // 18: confidence_coverage
-      // 19: needs_review
-      // 20: validation_warnings
-      // 21-23: Cost columns
-      expect(typeof params[21]).toBe('number'); // input_tokens
-      expect(typeof params[22]).toBe('number'); // output_tokens
-      expect(typeof params[23]).toBe('number'); // estimated_cost_usd
+      // 19: disagreement_score
+      // 20: needs_review
+      // 21: validation_warnings
+      // 22-24: Cost columns
+      expect(typeof params[22]).toBe('number'); // input_tokens
+      expect(typeof params[23]).toBe('number'); // output_tokens
+      expect(typeof params[24]).toBe('number'); // estimated_cost_usd
     });
 
     /**

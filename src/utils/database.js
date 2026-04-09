@@ -159,6 +159,7 @@ function initializeDatabase() {
         { name: 'site_code', def: 'TEXT' },
         { name: 'confidence_scores', def: 'TEXT' },
         { name: 'confidence_coverage', def: 'REAL DEFAULT NULL' },
+        { name: 'disagreement_score', def: 'REAL DEFAULT NULL' },
         { name: 'needs_review', def: 'INTEGER DEFAULT 0' },
         { name: 'reviewed_at', def: 'DATETIME' },
         { name: 'validation_warnings', def: 'TEXT' },
@@ -264,6 +265,7 @@ function initializeBurialRegisterTable() {
       const burialMigrations = [
         { name: 'confidence_scores', def: 'TEXT' },
         { name: 'confidence_coverage', def: 'REAL DEFAULT NULL' },
+        { name: 'disagreement_score', def: 'REAL DEFAULT NULL' },
         { name: 'needs_review', def: 'INTEGER DEFAULT 0' },
         { name: 'reviewed_at', def: 'DATETIME' },
         { name: 'validation_warnings', def: 'TEXT' },
@@ -364,6 +366,7 @@ function storeMemorial(data) {
       structural_observations,
       confidence_scores,
       confidence_coverage,
+      disagreement_score,
       needs_review,
       validation_warnings,
       input_tokens,
@@ -371,7 +374,7 @@ function storeMemorial(data) {
       estimated_cost_usd,
       processing_id,
       project_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   return new Promise((resolve, reject) => {
@@ -407,6 +410,7 @@ function storeMemorial(data) {
         data.structural_observations || null,
         safeStringify(data.confidence_scores),
         data.confidence_coverage ?? null,
+        data.disagreement_score ?? null,
         data.needs_review ?? 0,
         safeStringify(data.validation_warnings),
         data.input_tokens        ?? 0,

@@ -6,6 +6,7 @@ const { extractPageNumberFromFilename } = require('../burialRegisterStorage');
 const {
   applyConfidenceMetadata,
   applyDegenerateDetection,
+  applyDisagreementScore,
   applyValidationWarnings,
   injectCostData,
   attachCommonMetadata,
@@ -167,6 +168,8 @@ async function burialRegisterProcessor(context) {
         entryWithMetadata,
         [...(entryValidationWarnings || []), ...(pageData._validation_warnings || [])]
       );
+
+      applyDisagreementScore(entryWithMetadata, config);
 
       await burialRegisterStorage.storeBurialRegisterEntry(entryWithMetadata);
 

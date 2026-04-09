@@ -155,6 +155,7 @@ function buildBurialEntryParams(entry) {
     entry.prompt_version || null,
     confidenceScores,
     entry.confidence_coverage ?? null,
+    entry.disagreement_score ?? null,
     entry.needs_review ?? 0,
     entry.validation_warnings ? JSON.stringify(entry.validation_warnings) : null,
     entry.input_tokens        ?? 0,
@@ -225,6 +226,7 @@ async function storeBurialRegisterEntry(entry) {
       prompt_version,
       confidence_scores,
       confidence_coverage,
+      disagreement_score,
       needs_review,
       validation_warnings,
       input_tokens,
@@ -234,7 +236,7 @@ async function storeBurialRegisterEntry(entry) {
       project_id,
       burial_date_normalized,
       burial_date_year
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const params = buildBurialEntryParams(entry);

@@ -40,11 +40,12 @@ program.addCommand(require('../src/cli/commands/query'));
 program.addCommand(require('../src/cli/commands/export'));
 program.addCommand(require('../src/cli/commands/system'));
 program.addCommand(require('../src/cli/commands/schema'));
+program.addCommand(require('../src/cli/commands/eval'));
 
 // Handle unknown commands
 program.on('command:*', (operands) => {
   console.error(`error: unknown command '${operands[0]}'`);
-  console.error('Available commands: ingest, query, export, system');
+  console.error('Available commands: ingest, query, export, system, eval');
   process.exit(1);
 });
 

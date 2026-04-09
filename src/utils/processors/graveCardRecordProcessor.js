@@ -4,6 +4,7 @@ const graveCardStorage = require('../graveCardStorage');
 const {
   applyConfidenceMetadata,
   applyDegenerateDetection,
+  applyDisagreementScore,
   applyValidationWarnings,
   injectCostData,
   attachCommonMetadata,
@@ -89,6 +90,8 @@ async function graveCardRecordProcessor(context) {
     validatedData,
     [...(graveCardValidationWarnings || []), ...(validatedData._validation_warnings || [])]
   );
+
+  applyDisagreementScore(validatedData, config);
 
   log.info(`${providerName} grave card response validated successfully for ${filePath}`);
 
