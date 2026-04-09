@@ -6,6 +6,7 @@ const { isEmptySheetError } = require('../errorTypes');
 const {
   applyConfidenceMetadata,
   applyDegenerateDetection,
+  applyDisagreementScore,
   applyValidationWarnings,
   injectCostData,
   attachCommonMetadata,
@@ -125,6 +126,8 @@ async function memorialProcessor(context) {
       extractedData,
       [...(memValidationWarnings || []), ...(extractedData._validation_warnings || [])]
     );
+
+    applyDisagreementScore(extractedData, config);
 
     log.info(`${providerName} API response processed successfully for ${filename}`);
     log.debugPayload(`Processed ${providerName} data for ${filename}:`, extractedData);

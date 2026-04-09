@@ -50,7 +50,8 @@ function initialize() {
           { name: 'reviewed_at', def: 'DATETIME' },
           { name: 'edited_at', def: 'DATETIME' },
           { name: 'edited_fields', def: 'TEXT' },
-          { name: 'project_id', def: 'TEXT' }
+          { name: 'project_id', def: 'TEXT' },
+          { name: 'disagreement_score', def: 'REAL DEFAULT NULL' }
         ];
         const missing = costMigrations.filter(col => !existingCols.includes(col.name));
         if (missing.length === 0) {
@@ -148,6 +149,7 @@ function storeGraveCard(data) {
     const estimatedCostUsd = data.estimated_cost_usd ?? 0;
     const processingId = data.processing_id || null;
     const projectId = data.project_id || null;
+    const disagreementScore = data.disagreement_score ?? null;
 
     const sql = `
       INSERT INTO grave_cards (
@@ -160,11 +162,12 @@ function storeGraveCard(data) {
         output_tokens,
         estimated_cost_usd,
         processing_id,
-        project_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        project_id,
+        disagreement_score
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    db.run(sql, [fileName, section, graveNumber, dataJson, aiProvider, inputTokens, outputTokens, estimatedCostUsd, processingId, projectId], function (err) {
+    db.run(sql, [fileName, section, graveNumber, dataJson, aiProvider, inputTokens, outputTokens, estimatedCostUsd, processingId, projectId, disagreementScore], function (err) {
       if (err) {
         // Check if this is a unique constraint violation (true duplicate)
         if (err.code === 'SQLITE_CONSTRAINT' && err.message && err.message.includes('UNIQUE constraint failed')) {

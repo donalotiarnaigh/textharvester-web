@@ -12,6 +12,7 @@ const mockLogger = require('../../src/utils/logger');
 const {
   applyConfidenceMetadata,
   applyDegenerateDetection,
+  applyDisagreementScore,
   applyValidationWarnings,
   injectCostData,
   attachCommonMetadata,
@@ -497,6 +498,39 @@ describe('processingHelpers', () => {
 
       expect(data._validation_warnings).toBeUndefined();
       expect(data.degenerate_output_metrics).toBeDefined();
+    });
+  });
+
+  describe('applyDisagreementScore', () => {
+    const enabledConfig = { activeLearning: { enabled: true } };
+    const disabledConfig = { activeLearning: { enabled: false } };
+
+    it('sets disagreement_score based on confidence scores and warnings', () => {
+      const data = {
+        confidence_scores: { a: 0.9, b: 0.6 },
+        validation_warnings: ['WARN1'],
+      };
+      applyDisagreementScore(data, enabledConfig);
+      // minConf = 0.6, 1 warning → 0.6 * 0.8 = 0.48
+      expect(data.disagreement_score).toBeCloseTo(0.48, 5);
+    });
+
+    it('sets disagreement_score to null when no scores and no warnings', () => {
+      const data = {};
+      applyDisagreementScore(data, enabledConfig);
+      expect(data.disagreement_score).toBeNull();
+    });
+
+    it('does not set disagreement_score when activeLearning is disabled', () => {
+      const data = { confidence_scores: { a: 0.5 }, validation_warnings: [] };
+      applyDisagreementScore(data, disabledConfig);
+      expect(data.disagreement_score).toBeUndefined();
+    });
+
+    it('sets disagreement_score when no warnings, only scores', () => {
+      const data = { confidence_scores: { a: 0.75, b: 0.95 } };
+      applyDisagreementScore(data, enabledConfig);
+      expect(data.disagreement_score).toBe(0.75);
     });
   });
 });

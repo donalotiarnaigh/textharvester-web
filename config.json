@@ -120,5 +120,10 @@
   },
   "schemaConstrained": {
     "enabled": false
+  },
+  "activeLearning": {
+    "enabled": true,
+    "disagreeThreshold": 0.5,
+    "langfuseEnabled": false
   }
 }
