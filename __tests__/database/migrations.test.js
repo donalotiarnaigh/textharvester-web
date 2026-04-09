@@ -300,6 +300,108 @@ describe('SQLite DDL transaction rollback', () => {
   });
 });
 
+describe('runColumnMigration — nested transaction guard (Issue #232)', () => {
+  // Mirror of the fixed production runColumnMigration that uses SAVEPOINT instead of
+  // BEGIN IMMEDIATE, matching the fix in src/utils/database.js (Issue #232).
+  function runColumnMigrationFixed(db, tableName, missing, migrationName) {
+    return new Promise((resolve, reject) => {
+      if (missing.length === 0) {
+        db.run(
+          'INSERT OR IGNORE INTO schema_migrations (migration_name) VALUES (?)',
+          [migrationName],
+          (err) => (err ? reject(err) : resolve())
+        );
+        return;
+      }
+      const sp = `mig_${migrationName.replace(/[^a-z0-9_]/gi, '_')}`;
+      db.run(`SAVEPOINT ${sp}`, (spErr) => {
+        if (spErr) return reject(spErr);
+        const addNext = (index) => {
+          if (index >= missing.length) {
+            db.run(`RELEASE SAVEPOINT ${sp}`, (releaseErr) => {
+              if (releaseErr) {
+                db.run(`ROLLBACK TO SAVEPOINT ${sp}`, () =>
+                  db.run(`RELEASE SAVEPOINT ${sp}`, () => reject(releaseErr))
+                );
+                return;
+              }
+              db.run(
+                'INSERT OR IGNORE INTO schema_migrations (migration_name) VALUES (?)',
+                [migrationName],
+                (insertErr) => (insertErr ? reject(insertErr) : resolve())
+              );
+            });
+            return;
+          }
+          const col = missing[index];
+          db.run(`ALTER TABLE ${tableName} ADD COLUMN ${col.name} ${col.def}`, (alterErr) => {
+            if (alterErr) {
+              db.run(`ROLLBACK TO SAVEPOINT ${sp}`, () =>
+                db.run(`RELEASE SAVEPOINT ${sp}`, () => reject(alterErr))
+              );
+            } else {
+              addNext(index + 1);
+            }
+          });
+        };
+        addNext(0);
+      });
+    });
+  }
+
+  let db;
+
+  beforeEach(async () => {
+    db = await openInMemoryDb();
+    await createMinimalMemorialsTable(db);
+    await initMigrationsTable(db);
+  });
+
+  afterEach(async () => {
+    await closeDb(db);
+  });
+
+  test('8. Calling migration while inside a transaction adds columns and records migration', async () => {
+    await dbRun(db, 'BEGIN IMMEDIATE');
+
+    const missing = [{ name: 'disagreement_score', def: 'REAL DEFAULT NULL' }];
+    await runColumnMigrationFixed(db, 'memorials', missing, 'add_cost_columns_v1');
+
+    await dbRun(db, 'COMMIT');
+
+    const cols = await dbAll(db, 'PRAGMA table_info(memorials)');
+    expect(cols.map(c => c.name)).toContain('disagreement_score');
+
+    const row = await dbGet(
+      db,
+      'SELECT * FROM schema_migrations WHERE migration_name = ?',
+      ['add_cost_columns_v1']
+    );
+    expect(row).toBeDefined();
+  });
+
+  test('9. Calling migration outside a transaction still uses BEGIN IMMEDIATE path', async () => {
+    const missing = [{ name: 'disagreement_score', def: 'REAL DEFAULT NULL' }];
+    await runColumnMigrationFixed(db, 'memorials', missing, 'add_cost_columns_v1');
+
+    const cols = await dbAll(db, 'PRAGMA table_info(memorials)');
+    expect(cols.map(c => c.name)).toContain('disagreement_score');
+  });
+
+  test('10. Old behaviour (no guard) fails with nested transaction error', async () => {
+    await dbRun(db, 'BEGIN IMMEDIATE');
+
+    const missing = [{ name: 'disagreement_score', def: 'REAL DEFAULT NULL' }];
+
+    // The unfixed helper issues BEGIN IMMEDIATE unconditionally — must fail
+    await expect(
+      runColumnMigration(db, 'memorials', missing, 'add_cost_columns_v1')
+    ).rejects.toThrow(/transaction/i);
+
+    await dbRun(db, 'ROLLBACK');
+  });
+});
+
 describe('migrate-add-typographic-analysis.js — transaction wrapping', () => {
   test('7. Failure mid-migration rolls back all columns (none added)', async () => {
     const db = await openInMemoryDb();

@@ -55,17 +55,24 @@ function runColumnMigration(tableName, missing, migrationName) {
     );
     return;
   }
-  db.run('BEGIN IMMEDIATE', (beginErr) => {
-    if (beginErr) {
-      logger.error(`Migration ${migrationName}: BEGIN IMMEDIATE failed:`, beginErr);
+  // Use SAVEPOINT instead of BEGIN IMMEDIATE so the migration is safe to call
+  // both inside an existing transaction (nested savepoint) and outside one
+  // (implicit transaction), avoiding "cannot start a transaction within a
+  // transaction" errors (Issue #232).
+  const sp = `mig_${migrationName.replace(/[^a-z0-9_]/gi, '_')}`;
+  db.run(`SAVEPOINT ${sp}`, (spErr) => {
+    if (spErr) {
+      logger.error(`Migration ${migrationName}: SAVEPOINT failed:`, spErr);
       return;
     }
     const addNext = (index) => {
       if (index >= missing.length) {
-        db.run('COMMIT', (commitErr) => {
-          if (commitErr) {
-            db.run('ROLLBACK', () =>
-              logger.error(`Migration ${migrationName}: COMMIT failed, rolled back:`, commitErr)
+        db.run(`RELEASE SAVEPOINT ${sp}`, (releaseErr) => {
+          if (releaseErr) {
+            db.run(`ROLLBACK TO SAVEPOINT ${sp}`, () =>
+              db.run(`RELEASE SAVEPOINT ${sp}`, () =>
+                logger.error(`Migration ${migrationName}: RELEASE failed, rolled back:`, releaseErr)
+              )
             );
             return;
           }
@@ -85,8 +92,10 @@ function runColumnMigration(tableName, missing, migrationName) {
       const col = missing[index];
       db.run(`ALTER TABLE ${tableName} ADD COLUMN ${col.name} ${col.def}`, (alterErr) => {
         if (alterErr) {
-          db.run('ROLLBACK', () =>
-            logger.error(`Migration ${migrationName}: failed on ${col.name}, rolled back:`, alterErr)
+          db.run(`ROLLBACK TO SAVEPOINT ${sp}`, () =>
+            db.run(`RELEASE SAVEPOINT ${sp}`, () =>
+              logger.error(`Migration ${migrationName}: failed on ${col.name}, rolled back:`, alterErr)
+            )
           );
         } else {
           logger.info(`Migration ${migrationName}: added ${col.name}`);
