@@ -5,13 +5,13 @@ const { db } = require('../../utils/database');
 
 const EXPORT_TARGETS = [
   {
-    sql: 'SELECT id, file_name, edited_fields, needs_review FROM memorials WHERE edited_at IS NOT NULL',
+    sql: 'SELECT id, file_name, edited_fields, needs_review, first_name, last_name, year_of_death, inscription, memorial_number, site_code FROM memorials WHERE edited_at IS NOT NULL',
     fileName: 'memorials.json',
     sourceType: 'memorial_ocr',
     idPrefix: 'gs-m',
   },
   {
-    sql: 'SELECT id, file_name, edited_fields, needs_review FROM burial_register_entries WHERE edited_at IS NOT NULL',
+    sql: 'SELECT id, file_name, edited_fields, needs_review, name_raw, age_raw, burial_date_raw, abode_raw, officiant_raw, entry_no_raw FROM burial_register_entries WHERE edited_at IS NOT NULL',
     fileName: 'burial-register.json',
     sourceType: 'burial_register',
     idPrefix: 'gs-b',
@@ -27,7 +27,7 @@ evalCmd
   .option(
     '--output-dir <dir>',
     'Directory for gold-standard JSON files',
-    path.resolve(__dirname, '../../../../eval/gold-standard')
+    path.resolve(__dirname, '../../../eval/gold-standard')
   )
   .action(async (options) => {
     try {
