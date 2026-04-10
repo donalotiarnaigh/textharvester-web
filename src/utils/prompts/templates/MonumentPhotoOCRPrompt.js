@@ -18,7 +18,7 @@ class MonumentPhotoOCRPrompt extends BasePrompt {
       version: '1.0.0',
       description: 'OCR prompt for extracting memorial data from monument photos with weathered stone considerations',
       fields: MEMORIAL_FIELDS,
-      providers: ['openai', 'anthropic', 'gemini', 'mock'],
+      providers: ['openai', 'anthropic', 'gemini', 'mistral', 'mock'],
       ...config
     });
   }
@@ -142,6 +142,11 @@ Follow genealogical transcription standards - transcribe exactly what is visible
     } else if (provider === 'gemini') {
       return {
         systemPrompt: 'You are Gemini, an expert OCR system created by Google, specializing in reading weathered stone monuments and headstones for genealogical records. You follow genealogical transcription standards, transcribing exactly what is visible without interpretation or guessing. You excel at extracting structured data from monument photos, handling challenges like weathered stone, carved text at angles, and partially obscured inscriptions. CRITICAL: Use single dashes (-) for illegible characters, never use brackets like [?] or [WEATHERED]. Use | for line breaks, never \\n.',
+        userPrompt: `${basePrompt}\n\nCRITICAL FORMATTING REQUIREMENTS:\n- Use ONLY single dashes (-) for illegible text, NEVER [?], [WEATHERED], [5?]\n- Use ONLY | for line breaks, NEVER \\n\n- Return valid JSON only\n- year_of_death can be integer (1500-2030) OR string with dashes for illegible portions (e.g., "19--")\n- All text fields must be properly formatted strings\n- Follow genealogical transcription standards exactly\n- Do not include any explanatory text, only return the JSON object`
+      };
+    } else if (provider === 'mistral') {
+      return {
+        systemPrompt: 'You are an expert OCR system specializing in reading weathered stone monuments and headstones for genealogical records. You follow genealogical transcription standards, transcribing exactly what is visible without interpretation or guessing. CRITICAL: Use single dashes (-) for illegible characters, never use brackets like [?] or [WEATHERED]. Use | for line breaks, never \\n.',
         userPrompt: `${basePrompt}\n\nCRITICAL FORMATTING REQUIREMENTS:\n- Use ONLY single dashes (-) for illegible text, NEVER [?], [WEATHERED], [5?]\n- Use ONLY | for line breaks, NEVER \\n\n- Return valid JSON only\n- year_of_death can be integer (1500-2030) OR string with dashes for illegible portions (e.g., "19--")\n- All text fields must be properly formatted strings\n- Follow genealogical transcription standards exactly\n- Do not include any explanatory text, only return the JSON object`
       };
     }

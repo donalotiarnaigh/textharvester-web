@@ -163,7 +163,9 @@ function calculateCost(usage, costConfig) {
   const cacheRead = ((usage.cache_read_input_tokens || 0) / 1_000_000) *
     (costConfig.cacheReadPerMToken || costConfig.cachedInputPerMToken || costConfig.inputPerMToken || 0);
   const output = (usage.output_tokens / 1_000_000) * (costConfig.outputPerMToken || 0);
-  return regularInput + cacheWrite + cacheRead + output;
+  // Page-based providers (e.g. Mistral OCR) include pages_processed in usage
+  const ocrPages = (usage.pages_processed || 0) * (costConfig.perPageCost || 0);
+  return regularInput + cacheWrite + cacheRead + output + ocrPages;
 }
 
 /**

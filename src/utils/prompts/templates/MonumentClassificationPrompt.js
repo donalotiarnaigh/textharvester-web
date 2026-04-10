@@ -12,7 +12,7 @@ class MonumentClassificationPrompt extends BasePrompt {
       version: '1.0.0',
       description: 'Prompt for classifying monument physical characteristics against DEBS V3 schema',
       fields: {},
-      providers: ['openai', 'anthropic', 'gemini', 'mock'],
+      providers: ['openai', 'anthropic', 'gemini', 'mistral', 'mock'],
       ...config
     });
   }

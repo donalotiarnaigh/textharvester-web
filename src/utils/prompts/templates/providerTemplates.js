@@ -128,6 +128,11 @@ const memorialOCRTemplates = {
     provider: 'gemini',
     fields: MEMORIAL_FIELDS
   }),
+  mistral: new MemorialOCRPrompt({
+    version: '2.0.0',
+    provider: 'mistral',
+    fields: MEMORIAL_FIELDS
+  }),
   mock: new MemorialOCRPrompt({
     version: '1.0.0',
     provider: 'mock',
@@ -147,6 +152,10 @@ const burialRegisterTemplates = {
   gemini: new BurialRegisterPrompt({
     version: '1.0.0',
     provider: 'gemini'
+  }),
+  mistral: new BurialRegisterPrompt({
+    version: '1.0.0',
+    provider: 'mistral'
   }),
   mock: new BurialRegisterPrompt({
     version: '1.0.0',
@@ -170,6 +179,11 @@ const monumentPhotoOCRTemplates = {
     provider: 'gemini',
     fields: MEMORIAL_FIELDS
   }),
+  mistral: new MonumentPhotoOCRPrompt({
+    version: '1.0.0',
+    provider: 'mistral',
+    fields: MEMORIAL_FIELDS
+  }),
   mock: new MonumentPhotoOCRPrompt({
     version: '1.0.0',
     provider: 'mock',
@@ -189,6 +203,10 @@ const graveCardTemplates = {
   gemini: new GraveCardPrompt({
     version: '1.0.0',
     provider: 'gemini'
+  }),
+  mistral: new GraveCardPrompt({
+    version: '1.0.0',
+    provider: 'mistral'
   }),
   mock: new GraveCardPrompt({
     version: '1.0.0',
@@ -212,6 +230,11 @@ const typographicAnalysisTemplates = {
     provider: 'gemini',
     fields: MEMORIAL_FIELDS
   }),
+  mistral: new TypographicAnalysisPrompt({
+    version: '2.3.0',
+    provider: 'mistral',
+    fields: MEMORIAL_FIELDS
+  }),
   mock: new TypographicAnalysisPrompt({
     version: '1.0.0',
     provider: 'mock',
@@ -231,6 +254,10 @@ const monumentClassificationTemplates = {
   gemini: new MonumentClassificationPrompt({
     version: '1.0.0',
     provider: 'gemini'
+  }),
+  mistral: new MonumentClassificationPrompt({
+    version: '1.0.0',
+    provider: 'mistral'
   }),
   mock: new MonumentClassificationPrompt({
     version: '1.0.0',

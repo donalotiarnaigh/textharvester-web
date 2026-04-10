@@ -85,7 +85,7 @@ For inscription, also include: "uncertain_segments": ["word1", "word2"] for ambi
     // Get the base prompt components
     const baseComponents = super.getProviderPrompt(provider);
 
-    if (provider === 'anthropic' || provider === 'gemini') {
+    if (provider === 'anthropic' || provider === 'gemini' || provider === 'mistral') {
       // Override for Anthropic and Gemini to return 'messages' array format
       return {
         systemPrompt: baseComponents.systemPrompt,
