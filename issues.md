@@ -137,6 +137,11 @@ Affects batch processing capacity and result delivery speed.
 **#39** — Paginate results and stream exports (CSV/JSONL)
 Large result sets cause memory pressure and slow UI; pagination is essential as data grows.
 
+~~**#234** — Add Mistral OCR provider~~ ✅ Fixed
+Integrates `mistral-ocr-latest` (specialist historical-document OCR) via a two-step pipeline: OCR extraction → `mistral-large-latest` chat structuring. New `MistralProvider` class; `getProviderPrompt('mistral')` cases in all three prompt templates; backward-compatible `perPageCost` extension to `calculateCost()`. See [implementation plan comment](https://github.com/donalotiarnaigh/textharvester-web/issues/234#issuecomment-4224939683).
+
+**Fix (branch `fix/issue-234-mistral-ocr-provider`):** Two-step pipeline: `client.ocr.process()` (mistral-ocr-latest) extracts markdown from the image, then `client.chat.complete()` (mistral-large-latest) structures it into JSON using the standard prompt templates. New `MistralProvider` class with full `withRetry`, `llmAuditLog.logEntry`, and `PerformanceTracker` integration. Registered in provider factory. `getProviderPrompt('mistral')` cases added to all six prompt classes; `'mistral'` template instances added to all six maps in `providerTemplates.js`. `calculateCost()` extended with backward-compatible `pages_processed * perPageCost` branch. Mistral config block and `costs.mistral` pricing added to `config.json`. Manual Jest mock at `__mocks__/@mistralai/mistralai.js` resolves ESM-only SDK incompatibility with CJS test runner. 23 new unit tests, all 1766 existing tests passing.
+
 **#96** — Enable simultaneous GPT and Claude processing for burial registers
 Run two providers in parallel and compare/merge; improves throughput and enables consensus quality checks.
 
