@@ -75,7 +75,7 @@ The Text Harvester is a web application for OCR processing of handwritten text a
 - `src/utils/dataConversion.js` - Data processing utilities
 - `public/results.html` - Results page template
 - `public/css/styles.css` - Styling including model badges
-- `jest.config.js` - Test configuration
+- `jest.config.cjs` - Test configuration
 
 ## Environment Setup
 1. Clone the repository
