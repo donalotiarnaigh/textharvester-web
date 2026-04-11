@@ -16,8 +16,6 @@
     "migrate:add-model-columns": "node scripts/migrate-add-model-columns.js",
     "migrate:add-source-type": "node scripts/migrate-add-source-type.js",
     "init-db": "node scripts/init-db.js",
-    "stress-test": "node scripts/stress-test.js",
-    "create-test-images": "node scripts/create-test-images.js",
     "th": "node bin/textharvester",
     "th:ingest": "node bin/textharvester ingest",
     "th:query": "node bin/textharvester query",
