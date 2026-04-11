@@ -6,7 +6,7 @@ class TypographicAnalysisPrompt extends BasePrompt {
     super({
       version: config.version || '1.0.0',
       description: 'Generates comprehensive typographic and iconographic analysis of gravestones.',
-      providers: ['openai', 'anthropic', 'gemini'],
+      providers: ['openai', 'anthropic', 'gemini', 'mistral'],
       fields: {
         memorial_number: { type: 'integer', description: 'Unique identifier for the memorial if visible', metadata: { required: false } },
         first_name: { type: 'string', description: 'First name of the deceased', metadata: { required: false } },

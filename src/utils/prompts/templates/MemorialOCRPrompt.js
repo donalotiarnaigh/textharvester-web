@@ -18,7 +18,7 @@ class MemorialOCRPrompt extends BasePrompt {
       version: '2.0.0',
       description: 'Standard OCR prompt for extracting basic memorial inscription data with type validation',
       fields: MEMORIAL_FIELDS,
-      providers: ['openai', 'anthropic', 'gemini', 'mock'],
+      providers: ['openai', 'anthropic', 'gemini', 'mistral', 'mock'],
       ...config
     });
   }
