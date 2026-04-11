@@ -9,6 +9,7 @@ This directory contains comprehensive documentation for the Text Harvester web a
 - [Configuration Reference](./CONFIG.md) — every `config.json` key explained
 - [Implementation Roadmap](./IMPLEMENTATION_ROADMAP.md) — research issue sequencing and phases
 - [Issue Tracker](./issues.md) — 49 open issues, 24 completed
+- [Testing Guide](./TESTING.md) — two-tier test convention, where to put new tests, running tests
 
 ## Documentation Structure
 
