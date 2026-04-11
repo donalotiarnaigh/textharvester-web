@@ -88,9 +88,7 @@ sample_data/
 .Trashes
 ehthumbs.db
 Thumbs.db
-.DS_Store
 test-data/burial-register-test-pages/*
-.DS_Store
 
 # Database
 textharvester.db
@@ -99,4 +97,10 @@ textharvester.db
 # Claude Code worktrees and temporary files
 .claude/worktrees/
 .claude/**/*.db
-RESEARCH_PROMPT.md
+
+# Python virtualenv
+venv/
+pyvenv.cfg
+
+# Local dev scripts
+scripts/ralph/
