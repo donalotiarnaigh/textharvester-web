@@ -8,6 +8,7 @@ This directory contains comprehensive documentation for the Text Harvester web a
 - [API Reference](./API.md) — all ~40 endpoints with request/response schemas
 - [Configuration Reference](./CONFIG.md) — every `config.json` key explained
 - [Implementation Roadmap](./IMPLEMENTATION_ROADMAP.md) — research issue sequencing and phases
+- [Issue Tracker](./issues.md) — 49 open issues, 24 completed
 
 ## Documentation Structure
 

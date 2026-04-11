@@ -25,7 +25,9 @@
     "eval": "node scripts/eval.js",
     "eval:check": "node scripts/eval.js --floor 0.85",
     "verify:migrations": "node scripts/verify-migration-transactions.js",
-    "test:audit-e2e": "node scripts/test-audit-logging-e2e.js"
+    "test:audit-e2e": "node scripts/test-audit-logging-e2e.js",
+    "test:e2e": "node scripts/e2e-test.js",
+    "test:e2e-upload": "node scripts/e2e-test-upload.js"
   },
   "keywords": [],
   "author": "Daniel Tierney",
