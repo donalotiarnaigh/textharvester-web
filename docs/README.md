@@ -2,55 +2,49 @@
 
 This directory contains comprehensive documentation for the Text Harvester web application.
 
-## 📁 Documentation Structure
+## Core Reference
+
+- [Architecture Overview](./ARCHITECTURE.md) — system diagram, data flow, module map
+- [API Reference](./API.md) — all ~40 endpoints with request/response schemas
+- [Configuration Reference](./CONFIG.md) — every `config.json` key explained
+- [Implementation Roadmap](./IMPLEMENTATION_ROADMAP.md) — research issue sequencing and phases
+
+## Documentation Structure
 
 ### **Features** (`/features/`)
-Current and completed features of the application:
+User-facing feature documentation:
 - [Monument Photo OCR](./features/monument-photo-ocr.md) - Dual processing modes for record sheets and monument photos
 - [Model Selection](./features/model-selection.md) - AI provider selection (OpenAI, Anthropic Claude, Google Gemini, Mistral OCR)
 - [Mistral OCR Provider](./features/mistral-ocr-provider.md) - Two-step OCR pipeline using mistral-ocr-latest
 - [Tabular Results](./features/tabular-results.md) - Enhanced results display and export functionality
-
-### **Implementation** (`/implementation/`)
-Technical implementation details and work breakdown structures:
-- [Monument Photo OCR Phase 0](./implementation/monument-photo-ocr-phase0-wbs.md) - Complete implementation guide
-- [Prompt Management](./implementation/prompt-management.md) - Prompt system architecture
-- [Current State Analysis](./implementation/current-state-analysis.md) - System architecture overview
+- [Prompt Caching](./features/prompt-caching.md) - Caching optimisations for cost reduction
 
 ### **Operations** (`/operations/`)
-Operational documentation for deployment and maintenance:
-- [Performance Monitoring](./operations/performance-monitoring.md) - System monitoring and alerting
-- [Handover Guide](./operations/handover.md) - Project handover and maintenance information
+Deployment and maintenance:
+- [Runbook](./operations/RUNBOOK.md) - Deployment, monitoring, and incident response
+- [Performance Monitoring](./operations/performance-monitoring.md) - Alert thresholds and log configuration
+- [Handover Guide](./operations/handover.md) - Project handover information
 
-### **Troubleshooting** (`/rca/`)
-Root cause analysis and issue documentation:
-- [Issue #28 - Progress Bar System](./rca/issue-28-progress-bar-system.md) - Progress tracking bug analysis
+### **Implementation** (`/implementation/`)
+Technical design and work breakdown structures:
+- [Current State Analysis](./implementation/current-state-analysis.md) - Detailed system analysis
+- [Monument Photo OCR Phase 0](./implementation/monument-photo-ocr-phase0-wbs.md) - Implementation guide
 
 ### **Testing** (`/testing/`)
-Testing documentation and known issues:
+Test reports and procedures:
+- [E2E Test Report](./testing/E2E_TEST_REPORT.md) - Project/Collection model E2E results
 - [Testing Issues](./testing/issues.md) - Known testing problems and solutions
 
-## 🚀 Quick Start
+### **Troubleshooting** (`/rca/`)
+Root cause analysis:
+- [Issue #28 - Progress Bar System](./rca/issue-28-progress-bar-system.md) - Progress tracking bug analysis
 
-1. **For Users**: See [Monument Photo OCR](./features/monument-photo-ocr.md) for feature overview
-2. **For Developers**: See [Current State Analysis](./implementation/current-state-analysis.md) for system architecture
-3. **For Operations**: See [Performance Monitoring](./performance-monitoring.md) for monitoring setup
+### **Research**
+- [Research Prompt Guide](./RESEARCH_PROMPT.md) - Methodology for investigation tasks
 
-## 📝 Documentation Standards
+## Quick Start
 
-- **Feature Docs**: User-focused, high-level feature descriptions
-- **Implementation Docs**: Technical details, WBS, and implementation guides
-- **Operations Docs**: Deployment, monitoring, and maintenance procedures
-- **RCA Docs**: Root cause analysis and issue resolution
-
-## 🔄 Maintenance
-
-This documentation is maintained alongside the codebase. When adding new features:
-1. Create feature documentation in `/features/`
-2. Add implementation details in `/implementation/`
-3. Update this index if needed
-4. Archive outdated documentation
-
----
-
-*Last updated: January 2025*
+1. **New to the codebase?** Start with [Architecture Overview](./ARCHITECTURE.md)
+2. **Building against the API?** See [API Reference](./API.md)
+3. **Deploying or operating?** See the [Runbook](./operations/RUNBOOK.md)
+4. **Configuring?** See [Configuration Reference](./CONFIG.md)

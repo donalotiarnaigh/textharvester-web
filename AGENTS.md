@@ -10,6 +10,8 @@
 |---------|---------------|--------|
 | Typographic Analysis | `docs/typographic-analysis/` | `feature/typographic-analysis` |
 
+**System context:** Before starting, read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the system overview, module map, and data flow.
+
 * * *
 
 ## Agent Persona & Role

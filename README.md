@@ -389,3 +389,16 @@ The application includes utilities to test and compare different AI providers:
    ```
 
 3. **Switch the default provider** by changing the `AI_PROVIDER` environment variable in your `.env` file.
+
+---
+
+## Extended Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Architecture Overview](docs/ARCHITECTURE.md) | System diagram, data flow, module responsibilities |
+| [API Reference](docs/API.md) | All endpoints with request/response schemas |
+| [Configuration Reference](docs/CONFIG.md) | Every `config.json` key explained |
+| [Operations Runbook](docs/operations/RUNBOOK.md) | Deployment, monitoring, incident response |
+| [Feature Docs](docs/features/) | In-depth feature documentation |
+| [Full Docs Index](docs/README.md) | All documentation in one place |
