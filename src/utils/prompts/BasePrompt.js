@@ -18,7 +18,7 @@ class BasePrompt {
     this.version = config.version || '1.0.0';
     this.description = config.description || '';
     this.fields = this._validateFields(config.fields || {});
-    this.providers = config.providers || ['openai', 'anthropic', 'gemini', 'mock'];
+    this.providers = config.providers || ['openai', 'anthropic', 'gemini', 'mistral', 'mock'];
   }
 
   /**

@@ -7,7 +7,8 @@ This directory contains comprehensive documentation for the Text Harvester web a
 ### **Features** (`/features/`)
 Current and completed features of the application:
 - [Monument Photo OCR](./features/monument-photo-ocr.md) - Dual processing modes for record sheets and monument photos
-- [Model Selection](./features/model-selection.md) - AI provider selection (OpenAI GPT-4o, Anthropic Claude)
+- [Model Selection](./features/model-selection.md) - AI provider selection (OpenAI, Anthropic Claude, Google Gemini, Mistral OCR)
+- [Mistral OCR Provider](./features/mistral-ocr-provider.md) - Two-step OCR pipeline using mistral-ocr-latest
 - [Tabular Results](./features/tabular-results.md) - Enhanced results display and export functionality
 
 ### **Implementation** (`/implementation/`)
