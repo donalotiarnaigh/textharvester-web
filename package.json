@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "jest --config jest.config.cjs",
+    "coverage": "jest --config jest.config.cjs --coverage",
     "start": "node server.js",
     "dev": "nodemon server.js",
     "local-start": "NODE_ENV=development nodemon server.js --ignore 'data/*' --ignore 'uploads/*'",
@@ -27,9 +28,25 @@
     "test:e2e": "node scripts/e2e-test.js",
     "test:e2e-upload": "node scripts/e2e-test-upload.js"
   },
-  "keywords": [],
+  "keywords": [
+    "ocr",
+    "heritage",
+    "genealogy",
+    "text-extraction",
+    "handwriting-recognition",
+    "burial-records",
+    "memorials",
+    "graveyard",
+    "archival",
+    "cli"
+  ],
   "author": "Daniel Tierney",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/donalotiarnaigh/textharvester-web.git"
+  },
+  "homepage": "https://github.com/donalotiarnaigh/textharvester-web#readme",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@google/generative-ai": "^0.24.1",
@@ -54,7 +71,7 @@
     "openai": "^4.24.0",
     "pdf-poppler": "^0.2.1",
     "sharp": "^0.32.6",
-    "sqlite3": "^5.1.7",
+    "sqlite3": "^6.0.1",
     "winston": "^3.12.0"
   },
   "devDependencies": {

@@ -17,5 +17,13 @@ module.exports = {
     '^/js/(.*)$': '<rootDir>/public/js/$1'
   },
   testRunner: 'jest-circus/runner',
-  verbose: true
+  verbose: true,
+  coverageThreshold: {
+    global: {
+      statements: 68,
+      branches: 59,
+      functions: 71,
+      lines: 69
+    }
+  }
 }; 
