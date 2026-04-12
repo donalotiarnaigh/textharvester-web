@@ -32,6 +32,9 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: npm test
 
+      - name: Check coverage
+        run: npm run coverage
+
   deploy-staging:
     needs: test
     runs-on: ubuntu-latest

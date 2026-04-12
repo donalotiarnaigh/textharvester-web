@@ -1,5 +1,9 @@
 # Text Harvester
 
+[![CI](https://github.com/donalotiarnaigh/textharvester-web/actions/workflows/ci.yml/badge.svg)](https://github.com/donalotiarnaigh/textharvester-web/actions/workflows/ci.yml)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20.13.1-brightgreen)](https://nodejs.org)
+
 Welcome to the Text Harvester, a community-driven web application designed to process and analyse handwritten text and optimised for record sheets used in the heritage sector. Utilising advanced Optical Character Recognition (OCR) technology, the app extracts handwritten inscriptions from record sheets, making historical data more accessible and preserving valuable information for future generations.
 
 ## Features
