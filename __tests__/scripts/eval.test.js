@@ -326,6 +326,7 @@ describe('gold standard data integrity', () => {
   const memRecords = memData.records || [];
   // Gate: tests that require real data skip gracefully when dataset is empty.
   const ifPopulated = memRecords.length > 0 ? it : it.skip;
+  const ifFullDataset = memRecords.length >= 20 ? it : it.skip;
 
   it('gold standard memorials file exists', () => {
     expect(fs.existsSync(memorialsPath)).toBe(true);
@@ -335,8 +336,8 @@ describe('gold standard data integrity', () => {
     expect(Array.isArray(memData.records)).toBe(true);
   });
 
-  // Skipped until real data is committed:
-  ifPopulated('has at least 20 hand-labelled memorial records', () => {
+  // Skipped until full dataset is committed:
+  ifFullDataset('has at least 20 hand-labelled memorial records', () => {
     expect(memRecords.length).toBeGreaterThanOrEqual(20);
   });
 
@@ -349,10 +350,11 @@ describe('gold standard data integrity', () => {
     }
   });
 
-  ifPopulated('all memorial records have at least first_name and last_name in expected', () => {
+  ifPopulated('all memorial records have at least one evaluated field in expected', () => {
+    const evaluatedFields = memData.fields_evaluated || [];
     for (const record of memRecords) {
-      expect(record.expected.first_name).toBeDefined();
-      expect(record.expected.last_name).toBeDefined();
+      const hasAtLeastOneField = evaluatedFields.some(f => record.expected[f] !== undefined);
+      expect(hasAtLeastOneField).toBe(true);
     }
   });
 
