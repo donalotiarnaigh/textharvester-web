@@ -284,6 +284,9 @@ curl -X POST http://localhost:3000/api/performance/cleanup
 | `npm test` | `jest` | Full test suite |
 | `npm run init-db` | `node scripts/init-db.js` | Initialize fresh database |
 | `npm run verify:migrations` | `node scripts/verify-migration-transactions.js` | Check migration integrity |
+| `npm run eval` | `node eval/scripts/score.js` | Run extraction accuracy evaluation |
+| `npm run eval:check` | `node eval/scripts/score.js --check --floor 0.85` | Eval with 0.85 accuracy floor (CI gate) |
+| `npm run eval:export` | `node eval/scripts/export-for-annotation.js` | Generate GT stub from a source image |
 | `npm run stress-test` | `node scripts/stress-test.js` | Load testing |
 
 ---
