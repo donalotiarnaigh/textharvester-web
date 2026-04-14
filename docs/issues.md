@@ -6,27 +6,6 @@ _Last updated: 2026-04-08 · 49 open issues · [24 completed](#completed-issues)
 
 ## Open & Blocked Issues
 
-### [#121](https://github.com/donalotiarnaigh/textharvester-web/issues/121) No extraction accuracy measurement — impossible to detect quality regression
-
-**Labels:** enhancement, data, high-priority
-**Status:** Infrastructure complete — **blocked on real dataset** from community group
-
-**Completed infrastructure:**
-- `scripts/eval.js` — evaluation CLI with `computeCER`, `computeFieldAccuracy`, `evaluateNeedsReview`, `runEvaluation`
-- `eval/gold-standard/` and `eval/fixtures/` skeleton with documented schema
-- `__tests__/scripts/eval.test.js` — 36 passing unit tests; 5 data-dependent tests auto-skip when empty
-- `docs/evaluation.md` — full documentation with `reviewThreshold = 0.70` rationale
-- `npm run eval` / `npm run eval:check` scripts in `package.json`
-
-**Remaining:**
-1. Receive hand-labelled records (≥20 memorials) from local community group
-2. Populate `eval/gold-standard/memorials.json` with real records
-3. Generate CI baseline fixture from model outputs
-4. Re-enable CI gate in `.github/workflows/ci.yml`
-5. Verify field-level accuracy ≥ 0.85
-
----
-
 ## Backlog — Open Issues by Impact
 
 **27 unstarted issues. Ordered by impact (highest first):**
@@ -482,12 +461,12 @@ Active learning is feasible within the existing stack: the confidence scoring sy
 - `src/utils/fileProcessing.js`: generates `processing_id` via `crypto.randomUUID()` and threads it through all three processing branches — the natural Langfuse trace root.
 - `src/prompts/BasePrompt.js`: `_extractValueAndConfidence()` and `result._confidence_scores` produce per-field confidence — the raw material for a disagreement score.
 - `public/js/modules/results/inlineEdit.js` + PATCH API endpoints: existing human correction workflow; corrected fields logged in `edited_fields` column — the annotation capture point.
-- `scripts/eval.js`: gold-standard evaluation harness; active learning feeds labelled records into `eval/gold-standard/memorials.json` that this script consumes.
+- ~~`scripts/eval.js`~~: evaluation harness removed; ground truth dataset will be rebuilt from scratch.
 - `config.json` `"confidence": { "reviewThreshold": 0.70 }`: threshold that already gates `needs_review`; disagreement score thresholding would live alongside this.
 
 ## Implementation sketch
 - **New utility** `src/utils/disagreementScore.js`: exports `computeDisagreementScore(confidenceScores, validationWarnings)` — returns a 0–1 score based on minimum per-field confidence and warning count; score stored in a new `disagreement_score REAL DEFAULT NULL` column via `runColumnMigration` in `database.js`, `burialRegisterStorage.js`, and `graveCardStorage.js`.
-- **Annotation export CLI command**: `node src/cli/index.js eval export-annotations` — queries records where `edited_at IS NOT NULL`, formats them into gold-standard JSON shape, and appends/merges to `eval/gold-standard/memorials.json`; closes the active learning loop into `scripts/eval.js`.
+- **Annotation export CLI command**: queries records where `edited_at IS NOT NULL`, formats them into gold-standard JSON shape for a future eval pipeline.
 - **Optional Langfuse integration** behind `config.activelearning.langfuseEnabled`: add `langfuse` npm package; create `src/utils/langfuseClient.js` wrapping `Langfuse.trace()` with the existing `processing_id` as trace ID; call in each provider after the API response, matching the existing `llmAuditLog.logEntry()` fire-and-forget pattern.
 - **Langfuse score flush** in the PATCH correction handler (`src/controllers/resultsController.js`): when `edited_fields` is non-empty, call `langfuseClient.score(processingId, fieldName, correctedValue)` to register human feedback against the original trace.
 - **Frontend annotation queue view**: add a `/annotation-queue` page or filter mode in the existing results list, sorted by `disagreement_score DESC`, to surface highest-value records without the Langfuse UI.

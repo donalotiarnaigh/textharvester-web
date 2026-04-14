@@ -297,7 +297,6 @@ textharvester-web/
 │   ├── features/               # User-facing feature docs
 │   ├── implementation/         # Technical design and WBS docs
 │   └── operations/             # Deployment and runbook
-├── eval/                       # Evaluation harness and gold-standard datasets
 ├── scripts/                    # Utility and migration scripts
 ├── sample_data/                # Test fixtures
 ├── data/                       # Runtime data (gitignored)

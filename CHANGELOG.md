@@ -19,4 +19,3 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Two-layer retry logic: provider-level retries with backoff, and validation-level retry with format-enforcement preamble
 - Web UI with drag-and-drop upload, live progress, and results export (CSV)
 - SQLite storage for all three record types with inline schema migrations
-- Evaluation harness (`npm run eval`) for measuring extraction accuracy against gold-standard fixtures
