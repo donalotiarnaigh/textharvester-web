@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "memorial",
+  "image_ref": "eval/source-images/memorials/stjb-0002.jpg",
+  "annotator": "",
+  "annotation_date": "2026-04-15",
+  "blind_transcribed": false,
+  "difficulty": 0,
+  "annotator_notes": "",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "records": [
+    {
+      "record_index": 0,
+      "model_output": {
+        "memorial_number": null,
+        "first_name": "NICHOLAS",
+        "last_name": "TROY",
+        "year_of_death": 1983,
+        "inscription": "TROY|NICHOLAS E. TROY|BORN BALLINAGOUL CO. OF WATERFORD IRELAND|NOV. 13, 1905 MAY 9, 1983|HIS BELOVED WIFE|PAULINE C. KIELY|BORN DUNGARVAN CO. OF WATERFORD IRELAND|JUNE 29, 1914 FEB. 28, 1986"
+      },
+      "corrected": {
+        "memorial_number": null,
+        "first_name": "NICHOLAS",
+        "last_name": "TROY",
+        "year_of_death": 1983,
+        "inscription": "TROY|NICHOLAS E. TROY|BORN BALLINAGOUL CO. OF WATERFORD IRELAND|NOV. 13, 1905 MAY 9, 1983|HIS BELOVED WIFE|PAULINE C. KIELY|BORN DUNGARVAN CO. OF WATERFORD IRELAND|JUNE 29, 1914 FEB. 28, 1986"
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    }
+  ]
+}

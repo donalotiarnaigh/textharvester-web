@@ -107,3 +107,6 @@ scripts/ralph/
 
 # Eval reports (generated output)
 eval/reports/
+
+# Eval source images (client data — not for public repo)
+eval/source-images/

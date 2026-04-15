@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "memorial",
+  "image_ref": "eval/source-images/record-sheets-jpg/stjosephs-s7-p085.jpg",
+  "annotator": "",
+  "annotation_date": "2026-04-15",
+  "blind_transcribed": false,
+  "difficulty": 0,
+  "annotator_notes": "",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "records": [
+    {
+      "record_index": 0,
+      "model_output": {
+        "memorial_number": "80",
+        "first_name": "JEREMIAH",
+        "last_name": "LYONS",
+        "year_of_death": 1877,
+        "inscription": "ERECTED | BY | JOHN LYONS | TO THE MEMORY OF | HIS BELOVED SON | JEREMIAH LYONS | WHO DIED MAR. 22 1877 | AGED 18 YEARS | RIP | JOHN LYONS | DIED OCT 4 1883 | AGED 50 YEARS | BELOVED WIFE MARY DIED APRIL 24 1906 | AGED 67 YEARS | R.I.P."
+      },
+      "corrected": {
+        "memorial_number": "80",
+        "first_name": "JEREMIAH",
+        "last_name": "LYONS",
+        "year_of_death": 1877,
+        "inscription": "ERECTED | BY | JOHN LYONS | TO THE MEMORY OF | HIS BELOVED SON | JEREMIAH LYONS | WHO DIED MAR. 22 1877 | AGED 18 YEARS | RIP | JOHN LYONS | DIED OCT 4 1883 | AGED 50 YEARS | BELOVED WIFE MARY DIED APRIL 24 1906 | AGED 67 YEARS | R.I.P."
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    }
+  ]
+}

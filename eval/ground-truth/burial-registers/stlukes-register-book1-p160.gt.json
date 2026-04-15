@@ -1,0 +1,237 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "burial_register",
+  "image_ref": "eval/source-images/burial-registers-jpg/stlukes-register-book1-p160.jpg",
+  "annotator": "",
+  "annotation_date": "2026-04-15",
+  "blind_transcribed": false,
+  "difficulty": 0,
+  "annotator_notes": "",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "page_level": {
+    "model_output": {
+      "parish_header_raw": "DOUGLAS",
+      "county_header_raw": "CORK",
+      "year_header_raw": "1888",
+      "page_marginalia_raw": null
+    },
+    "corrected": {
+      "parish_header_raw": "DOUGLAS",
+      "county_header_raw": "CORK",
+      "year_header_raw": "1888",
+      "page_marginalia_raw": null
+    },
+    "corrections_made": []
+  },
+  "entries": [
+    {
+      "row_index_on_page": 1,
+      "model_output": {
+        "entry_no_raw": "H. 37",
+        "name_raw": "William Hore",
+        "abode_raw": "Fairholme,|Cork",
+        "burial_date_raw": "April 20th",
+        "age_raw": "Seventeen|Months",
+        "officiant_raw": "Rev. G. P. Quick",
+        "marginalia_raw": "No. 1226. [He died April 18th]",
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "H. 37",
+        "name_raw": "William Hore",
+        "abode_raw": "Fairholme,|Cork",
+        "burial_date_raw": "April 20th",
+        "age_raw": "Seventeen|Months",
+        "officiant_raw": "Rev. G. P. Quick",
+        "marginalia_raw": "No. 1226. [He died April 18th]",
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 2,
+      "model_output": {
+        "entry_no_raw": "A. 88",
+        "name_raw": "Abraham Wolfe",
+        "abode_raw": "16, Lavitts Quay,|Cork",
+        "burial_date_raw": "April 26th",
+        "age_raw": "Forty|Eight",
+        "officiant_raw": "Rev. J. H. Thorpe|Rev. G. P. Quick",
+        "marginalia_raw": "No. 1227. [He died April 23rd]",
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "A. 88",
+        "name_raw": "Abraham Wolfe",
+        "abode_raw": "16, Lavitts Quay,|Cork",
+        "burial_date_raw": "April 26th",
+        "age_raw": "Forty|Eight",
+        "officiant_raw": "Rev. J. H. Thorpe|Rev. G. P. Quick",
+        "marginalia_raw": "No. 1227. [He died April 23rd]",
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 3,
+      "model_output": {
+        "entry_no_raw": "B. 76",
+        "name_raw": "Joseph Macnamara",
+        "abode_raw": "13 Frankfield|Terrace,|Cork",
+        "burial_date_raw": "April 30th",
+        "age_raw": "Eighty|Years",
+        "officiant_raw": "Rev. T. Ainley",
+        "marginalia_raw": "No. 1228 [He died April 27th]",
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "B. 76",
+        "name_raw": "Joseph Macnamara",
+        "abode_raw": "13 Frankfield|Terrace,|Cork",
+        "burial_date_raw": "April 30th",
+        "age_raw": "Eighty|Years",
+        "officiant_raw": "Rev. T. Ainley",
+        "marginalia_raw": "No. 1228 [He died April 27th]",
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 4,
+      "model_output": {
+        "entry_no_raw": null,
+        "name_raw": "Thomas Holmes",
+        "abode_raw": "1 Richmond Terrace,|Gardiners Hill,|Cork",
+        "burial_date_raw": "May 2nd",
+        "age_raw": "Twenty|Seven|Years",
+        "officiant_raw": "Rev. E. Gibbings",
+        "marginalia_raw": "No. 1229 [He died April 30th]",
+        "extra_notes_raw": "Place|Top"
+      },
+      "corrected": {
+        "entry_no_raw": null,
+        "name_raw": "Thomas Holmes",
+        "abode_raw": "1 Richmond Terrace,|Gardiners Hill,|Cork",
+        "burial_date_raw": "May 2nd",
+        "age_raw": "Twenty|Seven|Years",
+        "officiant_raw": "Rev. E. Gibbings",
+        "marginalia_raw": "No. 1229 [He died April 30th]",
+        "extra_notes_raw": "Place|Top"
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 5,
+      "model_output": {
+        "entry_no_raw": "E. 10",
+        "name_raw": "William Shroud Crowley",
+        "abode_raw": "Monfobstown,|Rochestown.",
+        "burial_date_raw": "May 31st",
+        "age_raw": "Seven|Seven|Years",
+        "officiant_raw": "Rev. Canon Smyth",
+        "marginalia_raw": "No. 1230. [He died May 29th]",
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "E. 10",
+        "name_raw": "William Shroud Crowley",
+        "abode_raw": "Monfobstown,|Rochestown.",
+        "burial_date_raw": "May 31st",
+        "age_raw": "Seven|Seven|Years",
+        "officiant_raw": "Rev. Canon Smyth",
+        "marginalia_raw": "No. 1230. [He died May 29th]",
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 6,
+      "model_output": {
+        "entry_no_raw": null,
+        "name_raw": "Thomas Briscoe",
+        "abode_raw": "The Union,|Cork",
+        "burial_date_raw": "June 9th",
+        "age_raw": "Sixty|Eight|Years",
+        "officiant_raw": "Rev Webster|Rev. John Cork Whine",
+        "marginalia_raw": "No. 1231. [He died June 7th]",
+        "extra_notes_raw": "[IN THE OLD CEMETERY]"
+      },
+      "corrected": {
+        "entry_no_raw": null,
+        "name_raw": "Thomas Briscoe",
+        "abode_raw": "The Union,|Cork",
+        "burial_date_raw": "June 9th",
+        "age_raw": "Sixty|Eight|Years",
+        "officiant_raw": "Rev Webster|Rev. John Cork Whine",
+        "marginalia_raw": "No. 1231. [He died June 7th]",
+        "extra_notes_raw": "[IN THE OLD CEMETERY]"
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 7,
+      "model_output": {
+        "entry_no_raw": "H. 21.",
+        "name_raw": "James Carr Somerville",
+        "abode_raw": "St. Stephens|Hospital,|Cork",
+        "burial_date_raw": "June 16th",
+        "age_raw": "Sixty|Seven|Years",
+        "officiant_raw": "Rev D. Webster|Rev. Canon Evans.",
+        "marginalia_raw": "No. 1232. [He died June 13th]",
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "H. 21.",
+        "name_raw": "James Carr Somerville",
+        "abode_raw": "St. Stephens|Hospital,|Cork",
+        "burial_date_raw": "June 16th",
+        "age_raw": "Sixty|Seven|Years",
+        "officiant_raw": "Rev D. Webster|Rev. Canon Evans.",
+        "marginalia_raw": "No. 1232. [He died June 13th]",
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 8,
+      "model_output": {
+        "entry_no_raw": "D. 48.",
+        "name_raw": "Edward Young Haughton",
+        "abode_raw": "Accidentally killed at|Rathcoole, Co. Cork.|Re. Causen Railway Tunnel|Commons Hill,|Cork",
+        "burial_date_raw": "June 23rd",
+        "age_raw": "Thirty|Three|Years",
+        "officiant_raw": "The Archdeacon of Cork,|Rev. G. P. Quick.",
+        "marginalia_raw": "No. 1233. [He died June 20th]",
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "D. 48.",
+        "name_raw": "Edward Young Haughton",
+        "abode_raw": "Accidentally killed at|Rathcoole, Co. Cork.|Re. Causen Railway Tunnel|Commons Hill,|Cork",
+        "burial_date_raw": "June 23rd",
+        "age_raw": "Thirty|Three|Years",
+        "officiant_raw": "The Archdeacon of Cork,|Rev. G. P. Quick.",
+        "marginalia_raw": "No. 1233. [He died June 20th]",
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    }
+  ]
+}

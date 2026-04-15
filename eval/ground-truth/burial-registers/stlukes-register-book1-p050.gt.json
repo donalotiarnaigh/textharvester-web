@@ -1,0 +1,237 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "burial_register",
+  "image_ref": "eval/source-images/burial-registers-jpg/stlukes-register-book1-p050.jpg",
+  "annotator": "",
+  "annotation_date": "2026-04-15",
+  "blind_transcribed": false,
+  "difficulty": 0,
+  "annotator_notes": "",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "page_level": {
+    "model_output": {
+      "parish_header_raw": "Jamaicaine (partly?) of St Georges",
+      "county_header_raw": "Cork",
+      "year_header_raw": "1870",
+      "page_marginalia_raw": "1870"
+    },
+    "corrected": {
+      "parish_header_raw": "Jamaicaine (partly?) of St Georges",
+      "county_header_raw": "Cork",
+      "year_header_raw": "1870",
+      "page_marginalia_raw": "1870"
+    },
+    "corrections_made": []
+  },
+  "entries": [
+    {
+      "row_index_on_page": 1,
+      "model_output": {
+        "entry_no_raw": "351",
+        "name_raw": "Lydia Williams",
+        "abode_raw": "Douglas",
+        "burial_date_raw": "Janry 2nd 1870",
+        "age_raw": "72",
+        "officiant_raw": "D. H. Powell",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "351",
+        "name_raw": "Lydia Williams",
+        "abode_raw": "Douglas",
+        "burial_date_raw": "Janry 2nd 1870",
+        "age_raw": "72",
+        "officiant_raw": "D. H. Powell",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 2,
+      "model_output": {
+        "entry_no_raw": "352",
+        "name_raw": "Margaret Sikes",
+        "abode_raw": "Cork",
+        "burial_date_raw": "Janry 10th",
+        "age_raw": "63",
+        "officiant_raw": "Rev. D. H. Powell & A. Armitage",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "352",
+        "name_raw": "Margaret Sikes",
+        "abode_raw": "Cork",
+        "burial_date_raw": "Janry 10th",
+        "age_raw": "63",
+        "officiant_raw": "Rev. D. H. Powell & A. Armitage",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 3,
+      "model_output": {
+        "entry_no_raw": "353",
+        "name_raw": "Alice Cliff Aden",
+        "abode_raw": "Cork",
+        "burial_date_raw": "Janry 20th",
+        "age_raw": "11",
+        "officiant_raw": "Rev. D. H. Powell",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "353",
+        "name_raw": "Alice Cliff Aden",
+        "abode_raw": "Cork",
+        "burial_date_raw": "Janry 20th",
+        "age_raw": "11",
+        "officiant_raw": "Rev. D. H. Powell",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 4,
+      "model_output": {
+        "entry_no_raw": "354",
+        "name_raw": "Isaac Havel",
+        "abode_raw": "Cork",
+        "burial_date_raw": "Janry 25th",
+        "age_raw": "14",
+        "officiant_raw": "Rev. J. B. Warren",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "354",
+        "name_raw": "Isaac Havel",
+        "abode_raw": "Cork",
+        "burial_date_raw": "Janry 25th",
+        "age_raw": "14",
+        "officiant_raw": "Rev. J. B. Warren",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 5,
+      "model_output": {
+        "entry_no_raw": "355",
+        "name_raw": "Richard Montgomery",
+        "abode_raw": "Cork",
+        "burial_date_raw": "Febry 11th",
+        "age_raw": "85",
+        "officiant_raw": "Rev. D. H. Powell",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "355",
+        "name_raw": "Richard Montgomery",
+        "abode_raw": "Cork",
+        "burial_date_raw": "Febry 11th",
+        "age_raw": "85",
+        "officiant_raw": "Rev. D. H. Powell",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 6,
+      "model_output": {
+        "entry_no_raw": "356",
+        "name_raw": "Nevill Barry",
+        "abode_raw": "Hilltown",
+        "burial_date_raw": "Febry 17th",
+        "age_raw": "64",
+        "officiant_raw": "Rev. D. H. Powell & A. A. Waring",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "356",
+        "name_raw": "Nevill Barry",
+        "abode_raw": "Hilltown",
+        "burial_date_raw": "Febry 17th",
+        "age_raw": "64",
+        "officiant_raw": "Rev. D. H. Powell & A. A. Waring",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 7,
+      "model_output": {
+        "entry_no_raw": "357",
+        "name_raw": "Robert F. Williamson",
+        "abode_raw": "Cork",
+        "burial_date_raw": "Febry 20th",
+        "age_raw": "35",
+        "officiant_raw": "Rev. D. H. Powell",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "357",
+        "name_raw": "Robert F. Williamson",
+        "abode_raw": "Cork",
+        "burial_date_raw": "Febry 20th",
+        "age_raw": "35",
+        "officiant_raw": "Rev. D. H. Powell",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 8,
+      "model_output": {
+        "entry_no_raw": "358",
+        "name_raw": "William Bell",
+        "abode_raw": "Cork",
+        "burial_date_raw": "Febry 26th",
+        "age_raw": "53",
+        "officiant_raw": "Rev. J. Macarthy",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "358",
+        "name_raw": "William Bell",
+        "abode_raw": "Cork",
+        "burial_date_raw": "Febry 26th",
+        "age_raw": "53",
+        "officiant_raw": "Rev. J. Macarthy",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    }
+  ]
+}

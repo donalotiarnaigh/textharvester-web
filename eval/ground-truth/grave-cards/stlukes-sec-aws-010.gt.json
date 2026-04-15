@@ -1,0 +1,109 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "grave_card",
+  "image_ref": "eval/source-images/grave-cards/stlukes-sec-aws-010.pdf",
+  "annotator": "",
+  "annotation_date": "2026-04-15",
+  "blind_transcribed": false,
+  "difficulty": 0,
+  "annotator_notes": "",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "model_output": {
+    "section": "A (WALKSIDE)",
+    "grave_number": "9",
+    "data_json": {
+      "location": {
+        "section": "A (WALKSIDE)",
+        "grave_number": "9"
+      },
+      "grave": {
+        "number_buried": "1",
+        "status": "occupied",
+        "description_of_grave": "KERB & HEADSTONE",
+        "plot_owned_by": "WILLIAM FRANCIS GIBSON",
+        "comments": ""
+      },
+      "interments": [
+        {
+          "sequence_number": 1,
+          "name": {
+            "surname": "GIBSON",
+            "given_names": "NELL (ELEANOR MARY)",
+            "full_name": "NELL (ELEANOR MARY) GIBSON"
+          },
+          "date_of_death": {
+            "iso": "1891-12-31",
+            "raw_text": "31ST DEC. 1891",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1892-01-02",
+            "raw_text": "JAN. 2ND 1892"
+          },
+          "age_at_death": "10 YEARS AND 11 MONTHS",
+          "notes": ""
+        }
+      ],
+      "inscription": {
+        "text": "NELL | DEARLY LOVED DAUGHTER | OF | WILLIAM AND EMMA GIBSON | DIED NEW YEARS EVE 1891 | AGED 10 YEARS AND 11 MONTHS | \"BLESSED ARE THE PURE IN HEART | FOR THEY SHALL SEE GOD\"",
+        "scripture_or_quote_refs": [],
+        "notes": ""
+      },
+      "sketch": {
+        "present": true,
+        "description": "Sketch of headstone and kerb with the name NELL on the headstone."
+      }
+    }
+  },
+  "corrected": {
+    "section": "A (WALKSIDE)",
+    "grave_number": "9",
+    "data_json": {
+      "location": {
+        "section": "A (WALKSIDE)",
+        "grave_number": "9"
+      },
+      "grave": {
+        "number_buried": "1",
+        "status": "occupied",
+        "description_of_grave": "KERB & HEADSTONE",
+        "plot_owned_by": "WILLIAM FRANCIS GIBSON",
+        "comments": ""
+      },
+      "interments": [
+        {
+          "sequence_number": 1,
+          "name": {
+            "surname": "GIBSON",
+            "given_names": "NELL (ELEANOR MARY)",
+            "full_name": "NELL (ELEANOR MARY) GIBSON"
+          },
+          "date_of_death": {
+            "iso": "1891-12-31",
+            "raw_text": "31ST DEC. 1891",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1892-01-02",
+            "raw_text": "JAN. 2ND 1892"
+          },
+          "age_at_death": "10 YEARS AND 11 MONTHS",
+          "notes": ""
+        }
+      ],
+      "inscription": {
+        "text": "NELL | DEARLY LOVED DAUGHTER | OF | WILLIAM AND EMMA GIBSON | DIED NEW YEARS EVE 1891 | AGED 10 YEARS AND 11 MONTHS | \"BLESSED ARE THE PURE IN HEART | FOR THEY SHALL SEE GOD\"",
+        "scripture_or_quote_refs": [],
+        "notes": ""
+      },
+      "sketch": {
+        "present": true,
+        "description": "Sketch of headstone and kerb with the name NELL on the headstone."
+      }
+    }
+  },
+  "corrections_made": [],
+  "needs_review_model": false,
+  "needs_review_actual": false
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "memorial",
+  "image_ref": "eval/source-images/record-sheets-jpg/stjosephs-s7-p020.jpg",
+  "annotator": "",
+  "annotation_date": "2026-04-15",
+  "blind_transcribed": false,
+  "difficulty": 0,
+  "annotator_notes": "",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "records": [
+    {
+      "record_index": 0,
+      "model_output": {
+        "memorial_number": "23",
+        "first_name": "JAMES",
+        "last_name": "WALL",
+        "year_of_death": 1832,
+        "inscription": "ERECTED | in memory of | JAMES WALL | by his beloved wife MARGARET | He departed this life October 26th 1832 | Aged 41 years | He was a kind husband and a fond parent | thro(?) life | May he rest in peace Amen."
+      },
+      "corrected": {
+        "memorial_number": "23",
+        "first_name": "JAMES",
+        "last_name": "WALL",
+        "year_of_death": 1832,
+        "inscription": "ERECTED | in memory of | JAMES WALL | by his beloved wife MARGARET | He departed this life October 26th 1832 | Aged 41 years | He was a kind husband and a fond parent | thro(?) life | May he rest in peace Amen."
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    }
+  ]
+}

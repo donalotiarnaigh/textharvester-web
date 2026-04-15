@@ -1,0 +1,237 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "burial_register",
+  "image_ref": "eval/source-images/burial-registers-jpg/stlukes-register-book1-p025.jpg",
+  "annotator": "",
+  "annotation_date": "2026-04-15",
+  "blind_transcribed": false,
+  "difficulty": 0,
+  "annotator_notes": "",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "page_level": {
+    "model_output": {
+      "parish_header_raw": "Martham Burial Register",
+      "county_header_raw": "Norfolk",
+      "year_header_raw": "1856",
+      "page_marginalia_raw": "1856"
+    },
+    "corrected": {
+      "parish_header_raw": "Martham Burial Register",
+      "county_header_raw": "Norfolk",
+      "year_header_raw": "1856",
+      "page_marginalia_raw": "1856"
+    },
+    "corrections_made": []
+  },
+  "entries": [
+    {
+      "row_index_on_page": 1,
+      "model_output": {
+        "entry_no_raw": "151",
+        "name_raw": "Mary Hoyle",
+        "abode_raw": "Martham",
+        "burial_date_raw": "Aug 3",
+        "age_raw": "25",
+        "officiant_raw": "Fredk W. Beauchamp Curate of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "151",
+        "name_raw": "Mary Hoyle",
+        "abode_raw": "Martham",
+        "burial_date_raw": "Aug 3",
+        "age_raw": "25",
+        "officiant_raw": "Fredk W. Beauchamp Curate of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 2,
+      "model_output": {
+        "entry_no_raw": "152",
+        "name_raw": "Francis Ruston",
+        "abode_raw": "Martham|to East",
+        "burial_date_raw": "Aug 5",
+        "age_raw": "32",
+        "officiant_raw": "Rev. Maurice Wm Hay Gurney|Rector of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "152",
+        "name_raw": "Francis Ruston",
+        "abode_raw": "Martham|to East",
+        "burial_date_raw": "Aug 5",
+        "age_raw": "32",
+        "officiant_raw": "Rev. Maurice Wm Hay Gurney|Rector of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 3,
+      "model_output": {
+        "entry_no_raw": "153",
+        "name_raw": "Sarah Ann Ward",
+        "abode_raw": "Caister|by Yarm",
+        "burial_date_raw": "Sept 25",
+        "age_raw": "29",
+        "officiant_raw": "Rev. Maurice Wm Hay Gurney|Curate of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "153",
+        "name_raw": "Sarah Ann Ward",
+        "abode_raw": "Caister|by Yarm",
+        "burial_date_raw": "Sept 25",
+        "age_raw": "29",
+        "officiant_raw": "Rev. Maurice Wm Hay Gurney|Curate of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 4,
+      "model_output": {
+        "entry_no_raw": "154",
+        "name_raw": "Mary Barnard",
+        "abode_raw": "Potter Heigham|to do",
+        "burial_date_raw": "Sep 29",
+        "age_raw": "117",
+        "officiant_raw": "Rev. J. W. Gurney|Curate of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "154",
+        "name_raw": "Mary Barnard",
+        "abode_raw": "Potter Heigham|to do",
+        "burial_date_raw": "Sep 29",
+        "age_raw": "117",
+        "officiant_raw": "Rev. J. W. Gurney|Curate of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 5,
+      "model_output": {
+        "entry_no_raw": "155",
+        "name_raw": "Jane Allison",
+        "abode_raw": "Ormesby|to do",
+        "burial_date_raw": "Nov 7th 1856",
+        "age_raw": "56",
+        "officiant_raw": "Rev. Wm Maurice Hay Gurney|Rector of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "155",
+        "name_raw": "Jane Allison",
+        "abode_raw": "Ormesby|to do",
+        "burial_date_raw": "Nov 7th 1856",
+        "age_raw": "56",
+        "officiant_raw": "Rev. Wm Maurice Hay Gurney|Rector of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 6,
+      "model_output": {
+        "entry_no_raw": "156",
+        "name_raw": "Anne Belton",
+        "abode_raw": "Cocke",
+        "burial_date_raw": "Nov 17th 1856",
+        "age_raw": "56",
+        "officiant_raw": "Rev. J. W. Gurney|Curate of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "156",
+        "name_raw": "Anne Belton",
+        "abode_raw": "Cocke",
+        "burial_date_raw": "Nov 17th 1856",
+        "age_raw": "56",
+        "officiant_raw": "Rev. J. W. Gurney|Curate of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 7,
+      "model_output": {
+        "entry_no_raw": "157",
+        "name_raw": "William Hayin",
+        "abode_raw": "Ludham",
+        "burial_date_raw": "Nov 19th 1856",
+        "age_raw": "55",
+        "officiant_raw": "Rev. J. W. Gurney|Curate of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "157",
+        "name_raw": "William Hayin",
+        "abode_raw": "Ludham",
+        "burial_date_raw": "Nov 19th 1856",
+        "age_raw": "55",
+        "officiant_raw": "Rev. J. W. Gurney|Curate of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 8,
+      "model_output": {
+        "entry_no_raw": "158",
+        "name_raw": "Ann Mary Ann|Lindsey",
+        "abode_raw": "Smallburgh|Workhouse",
+        "burial_date_raw": "Dec 5th 1856",
+        "age_raw": "39",
+        "officiant_raw": "Rev. W. Maurice Hay Gurney|Rector of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "158",
+        "name_raw": "Ann Mary Ann|Lindsey",
+        "abode_raw": "Smallburgh|Workhouse",
+        "burial_date_raw": "Dec 5th 1856",
+        "age_raw": "39",
+        "officiant_raw": "Rev. W. Maurice Hay Gurney|Rector of Martham",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    }
+  ]
+}

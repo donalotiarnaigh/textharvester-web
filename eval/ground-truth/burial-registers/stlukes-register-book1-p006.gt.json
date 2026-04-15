@@ -1,0 +1,237 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "burial_register",
+  "image_ref": "eval/source-images/burial-registers-jpg/stlukes-register-book1-p006.jpg",
+  "annotator": "",
+  "annotation_date": "2026-04-15",
+  "blind_transcribed": false,
+  "difficulty": 0,
+  "annotator_notes": "",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "page_level": {
+    "model_output": {
+      "parish_header_raw": "St. Mary",
+      "county_header_raw": "Pembroke",
+      "year_header_raw": "1840",
+      "page_marginalia_raw": "1840|1841"
+    },
+    "corrected": {
+      "parish_header_raw": "St. Mary",
+      "county_header_raw": "Pembroke",
+      "year_header_raw": "1840",
+      "page_marginalia_raw": "1840|1841"
+    },
+    "corrections_made": []
+  },
+  "entries": [
+    {
+      "row_index_on_page": 1,
+      "model_output": {
+        "entry_no_raw": "1",
+        "name_raw": "George Price|Journeyman",
+        "abode_raw": "Douglas",
+        "burial_date_raw": "Aug 9",
+        "age_raw": "8|yrs",
+        "officiant_raw": "H. Harding|Curate minister",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "1",
+        "name_raw": "George Price|Journeyman",
+        "abode_raw": "Douglas",
+        "burial_date_raw": "Aug 9",
+        "age_raw": "8|yrs",
+        "officiant_raw": "H. Harding|Curate minister",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 2,
+      "model_output": {
+        "entry_no_raw": "2",
+        "name_raw": "Sarah McDaniel",
+        "abode_raw": "Passenger Train",
+        "burial_date_raw": "Sept 29",
+        "age_raw": null,
+        "officiant_raw": "J. N. Lambert|Vicar",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "2",
+        "name_raw": "Sarah McDaniel",
+        "abode_raw": "Passenger Train",
+        "burial_date_raw": "Sept 29",
+        "age_raw": null,
+        "officiant_raw": "J. N. Lambert|Vicar",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 3,
+      "model_output": {
+        "entry_no_raw": "3",
+        "name_raw": "Ann Smith Lewin|wife of Thomas Lewin",
+        "abode_raw": "Llanion",
+        "burial_date_raw": "October 8",
+        "age_raw": "55",
+        "officiant_raw": "J. N. L. B.|Minister",
+        "marginalia_raw": "1840",
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "3",
+        "name_raw": "Ann Smith Lewin|wife of Thomas Lewin",
+        "abode_raw": "Llanion",
+        "burial_date_raw": "October 8",
+        "age_raw": "55",
+        "officiant_raw": "J. N. L. B.|Minister",
+        "marginalia_raw": "1840",
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 4,
+      "model_output": {
+        "entry_no_raw": "4",
+        "name_raw": "Eliza Cumming|Morton",
+        "abode_raw": "Barracks",
+        "burial_date_raw": "January 10th 1841",
+        "age_raw": "7",
+        "officiant_raw": "J. N. L.|Minister|H. Harding",
+        "marginalia_raw": "1841",
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "4",
+        "name_raw": "Eliza Cumming|Morton",
+        "abode_raw": "Barracks",
+        "burial_date_raw": "January 10th 1841",
+        "age_raw": "7",
+        "officiant_raw": "J. N. L.|Minister|H. Harding",
+        "marginalia_raw": "1841",
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 5,
+      "model_output": {
+        "entry_no_raw": "5",
+        "name_raw": "Margaret Roy|Spinster",
+        "abode_raw": "Dock",
+        "burial_date_raw": "January 12th 1841",
+        "age_raw": "17",
+        "officiant_raw": "H. Harding|Curate minister",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "5",
+        "name_raw": "Margaret Roy|Spinster",
+        "abode_raw": "Dock",
+        "burial_date_raw": "January 12th 1841",
+        "age_raw": "17",
+        "officiant_raw": "H. Harding|Curate minister",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 6,
+      "model_output": {
+        "entry_no_raw": "6",
+        "name_raw": "Eleanor Stokesbury",
+        "abode_raw": "Cosh",
+        "burial_date_raw": "February 28th 1841",
+        "age_raw": "months|15",
+        "officiant_raw": "H. Harding|Curate officiant",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "6",
+        "name_raw": "Eleanor Stokesbury",
+        "abode_raw": "Cosh",
+        "burial_date_raw": "February 28th 1841",
+        "age_raw": "months|15",
+        "officiant_raw": "H. Harding|Curate officiant",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 7,
+      "model_output": {
+        "entry_no_raw": "7",
+        "name_raw": "Catherine R.|Martin",
+        "abode_raw": "Mayfield|farmers",
+        "burial_date_raw": "April 7th 1841",
+        "age_raw": "yrs|42",
+        "officiant_raw": "H. Harding|Curat. Minist.",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "7",
+        "name_raw": "Catherine R.|Martin",
+        "abode_raw": "Mayfield|farmers",
+        "burial_date_raw": "April 7th 1841",
+        "age_raw": "yrs|42",
+        "officiant_raw": "H. Harding|Curat. Minist.",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 8,
+      "model_output": {
+        "entry_no_raw": "8",
+        "name_raw": "Catherine|child of John Atkins",
+        "abode_raw": "Belpery",
+        "burial_date_raw": "April 7",
+        "age_raw": "12|mo.|9",
+        "officiant_raw": "J. Bisset|Curate",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "8",
+        "name_raw": "Catherine|child of John Atkins",
+        "abode_raw": "Belpery",
+        "burial_date_raw": "April 7",
+        "age_raw": "12|mo.|9",
+        "officiant_raw": "J. Bisset|Curate",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    }
+  ]
+}

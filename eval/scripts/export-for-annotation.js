@@ -30,7 +30,7 @@ function parseArgs() {
 
   if (!opts.image) {
     console.error('Usage: node eval/scripts/export-for-annotation.js --image <path> --type <type> [--provider <provider>] [--output-dir <dir>]');
-    console.error('\nTypes: burial_register, grave_card, memorial');
+    console.error('\nTypes: burial_register, grave_card, memorial, monument_photo');
     process.exit(1);
   }
 
@@ -58,6 +58,10 @@ const TYPE_CONFIG = {
   },
   memorial: {
     promptTemplate: 'memorialOCR',
+    outputSubdir: 'memorials',
+  },
+  monument_photo: {
+    promptTemplate: 'monumentPhotoOCR',
     outputSubdir: 'memorials',
   },
 };
@@ -185,6 +189,14 @@ function buildMemorialStub(result, imagePath, relativeImageRef) {
 }
 
 /**
+ * Unwrap a {value, confidence} envelope to its plain value, or return as-is.
+ */
+function unwrap(v) {
+  if (v !== null && typeof v === 'object' && 'value' in v) return v.value ?? null;
+  return v ?? null;
+}
+
+/**
  * Build the GT stub JSON for a burial register page
  */
 function buildBurialRegisterStub(result, imagePath, relativeImageRef) {
@@ -199,16 +211,14 @@ function buildBurialRegisterStub(result, imagePath, relativeImageRef) {
 
   const entries = (data.entries || []).map((entry, idx) => {
     const entryFields = {
-      entry_no_raw: entry.entry_no_raw ?? null,
-      name_raw: entry.name_raw ?? null,
-      abode_raw: entry.abode_raw ?? null,
-      burial_date_raw: entry.burial_date_raw ?? null,
-      age_raw: entry.age_raw ?? null,
-      officiant_raw: entry.officiant_raw ?? null,
-      marginalia_raw: entry.marginalia_raw ?? null,
-      extra_notes_raw: entry.extra_notes_raw ?? null,
-      row_ocr_raw: entry.row_ocr_raw ?? null,
-      uncertainty_flags: entry.uncertainty_flags ?? null,
+      entry_no_raw: unwrap(entry.entry_no_raw),
+      name_raw: unwrap(entry.name_raw),
+      abode_raw: unwrap(entry.abode_raw),
+      burial_date_raw: unwrap(entry.burial_date_raw),
+      age_raw: unwrap(entry.age_raw),
+      officiant_raw: unwrap(entry.officiant_raw),
+      marginalia_raw: unwrap(entry.marginalia_raw),
+      extra_notes_raw: unwrap(entry.extra_notes_raw),
     };
 
     return {
@@ -322,7 +332,7 @@ async function main() {
 }
 
 if (require.main === module) {
-  main().catch(err => {
+  main().then(() => process.exit(0)).catch(err => {
     console.error('Error:', err.message);
     process.exit(1);
   });

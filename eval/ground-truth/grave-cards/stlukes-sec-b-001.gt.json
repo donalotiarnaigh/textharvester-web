@@ -1,0 +1,235 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "grave_card",
+  "image_ref": "eval/source-images/grave-cards/stlukes-sec-b-001.pdf",
+  "annotator": "",
+  "annotation_date": "2026-04-15",
+  "blind_transcribed": false,
+  "difficulty": 0,
+  "annotator_notes": "",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "model_output": {
+    "section": "B",
+    "grave_number": "11",
+    "data_json": {
+      "card_metadata": {
+        "notes": "Two-sided grave record card with inscription and sketch."
+      },
+      "location": {
+        "section": "B",
+        "grave_number": "11",
+        "plot_identifier": "4"
+      },
+      "grave": {
+        "number_buried": 4,
+        "status": "occupied",
+        "description_of_grave": "KERB + HEADSTONE",
+        "dimensions": {
+          "raw_text": "9 X 4'",
+          "length_ft": 9,
+          "width_ft": 4,
+          "unit": "ft"
+        },
+        "plot_owned_by": "KATHLEEN ELEANER RIDGE"
+      },
+      "interments": [
+        {
+          "sequence_number": 1,
+          "name": {
+            "surname": "RIDGE",
+            "given_names": "EDWARD ROBERT",
+            "full_name": "EDWARD ROBERT RIDGE"
+          },
+          "date_of_death": {
+            "iso": "1924-04-21",
+            "raw_text": "21st April 1924",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1924-04-23",
+            "raw_text": "APRIL 23rd 1924"
+          },
+          "age_at_death": "74 years"
+        },
+        {
+          "sequence_number": 2,
+          "name": {
+            "surname": "RIDGE",
+            "given_names": "KATHLEEN",
+            "full_name": "KATHLEEN RIDGE"
+          },
+          "date_of_death": {
+            "iso": "1894-01-04",
+            "raw_text": "4th Jan-y 1894",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1894-01-06",
+            "raw_text": "JAN. 6th 1894"
+          },
+          "age_at_death": "6 yrs"
+        },
+        {
+          "sequence_number": 3,
+          "name": {
+            "surname": "JORDON",
+            "given_names": "ELIZABETH",
+            "full_name": "ELIZABETH JORDON"
+          },
+          "date_of_death": {
+            "iso": "1899-10-10",
+            "raw_text": "10th Oct-r 1899",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1899-10-13",
+            "raw_text": "OCT. 13th 1899"
+          },
+          "age_at_death": "55 yrs"
+        },
+        {
+          "sequence_number": 4,
+          "name": {
+            "surname": "JORDON",
+            "given_names": "MARGARET",
+            "full_name": "MARGARET JORDON"
+          },
+          "date_of_death": {
+            "iso": "1929-07-29",
+            "raw_text": "29th July 1929",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1929-07-31",
+            "raw_text": "JULY 31st 1929"
+          },
+          "age_at_death": "78 years"
+        }
+      ],
+      "inscription": {
+        "text": "IN LOVING MEMORY OF|EDWARD ROBERT RIDGE|DIED APRIL 21ST 1924|AGED 74 YEARS|AND HIS ONLY DAUGHTER|KATHLEEN|DIED JANUARY 4TH 1894|AGED 6 1/2 YEARS|AND THEIR FRIEND|ELIZABETH JORDON|DIED OCTOBER 10TH 1899|AGED 55 YEARS|ALSO OF MARGARET HIS WIFE|DIED JULY 29TH 1929|AGED 78 YEARS|I AM THE RESURRECTION AND|THE LIFE|HE THAT BELIEVETH IN ME|THOUGH HE WERE DEAD|YET SHALL HE LIVE|JOHN XI : 25",
+        "scripture_or_quote_refs": [
+          "JOHN XI : 25"
+        ]
+      },
+      "sketch": {
+        "present": true,
+        "description": "Headstone sketch with pointed arch top and floral motif."
+      }
+    }
+  },
+  "corrected": {
+    "section": "B",
+    "grave_number": "11",
+    "data_json": {
+      "card_metadata": {
+        "notes": "Two-sided grave record card with inscription and sketch."
+      },
+      "location": {
+        "section": "B",
+        "grave_number": "11",
+        "plot_identifier": "4"
+      },
+      "grave": {
+        "number_buried": 4,
+        "status": "occupied",
+        "description_of_grave": "KERB + HEADSTONE",
+        "dimensions": {
+          "raw_text": "9 X 4'",
+          "length_ft": 9,
+          "width_ft": 4,
+          "unit": "ft"
+        },
+        "plot_owned_by": "KATHLEEN ELEANER RIDGE"
+      },
+      "interments": [
+        {
+          "sequence_number": 1,
+          "name": {
+            "surname": "RIDGE",
+            "given_names": "EDWARD ROBERT",
+            "full_name": "EDWARD ROBERT RIDGE"
+          },
+          "date_of_death": {
+            "iso": "1924-04-21",
+            "raw_text": "21st April 1924",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1924-04-23",
+            "raw_text": "APRIL 23rd 1924"
+          },
+          "age_at_death": "74 years"
+        },
+        {
+          "sequence_number": 2,
+          "name": {
+            "surname": "RIDGE",
+            "given_names": "KATHLEEN",
+            "full_name": "KATHLEEN RIDGE"
+          },
+          "date_of_death": {
+            "iso": "1894-01-04",
+            "raw_text": "4th Jan-y 1894",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1894-01-06",
+            "raw_text": "JAN. 6th 1894"
+          },
+          "age_at_death": "6 yrs"
+        },
+        {
+          "sequence_number": 3,
+          "name": {
+            "surname": "JORDON",
+            "given_names": "ELIZABETH",
+            "full_name": "ELIZABETH JORDON"
+          },
+          "date_of_death": {
+            "iso": "1899-10-10",
+            "raw_text": "10th Oct-r 1899",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1899-10-13",
+            "raw_text": "OCT. 13th 1899"
+          },
+          "age_at_death": "55 yrs"
+        },
+        {
+          "sequence_number": 4,
+          "name": {
+            "surname": "JORDON",
+            "given_names": "MARGARET",
+            "full_name": "MARGARET JORDON"
+          },
+          "date_of_death": {
+            "iso": "1929-07-29",
+            "raw_text": "29th July 1929",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1929-07-31",
+            "raw_text": "JULY 31st 1929"
+          },
+          "age_at_death": "78 years"
+        }
+      ],
+      "inscription": {
+        "text": "IN LOVING MEMORY OF|EDWARD ROBERT RIDGE|DIED APRIL 21ST 1924|AGED 74 YEARS|AND HIS ONLY DAUGHTER|KATHLEEN|DIED JANUARY 4TH 1894|AGED 6 1/2 YEARS|AND THEIR FRIEND|ELIZABETH JORDON|DIED OCTOBER 10TH 1899|AGED 55 YEARS|ALSO OF MARGARET HIS WIFE|DIED JULY 29TH 1929|AGED 78 YEARS|I AM THE RESURRECTION AND|THE LIFE|HE THAT BELIEVETH IN ME|THOUGH HE WERE DEAD|YET SHALL HE LIVE|JOHN XI : 25",
+        "scripture_or_quote_refs": [
+          "JOHN XI : 25"
+        ]
+      },
+      "sketch": {
+        "present": true,
+        "description": "Headstone sketch with pointed arch top and floral motif."
+      }
+    }
+  },
+  "corrections_made": [],
+  "needs_review_model": false,
+  "needs_review_actual": false
+}
