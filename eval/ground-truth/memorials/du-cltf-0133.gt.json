@@ -2,11 +2,11 @@
   "schema_version": "1.0.0",
   "document_type": "memorial",
   "image_ref": "eval/source-images/memorials/DU-CLTF-0133.jpg",
-  "annotator": "",
-  "annotation_date": "2026-04-15",
+  "annotator": "Daniel",
+  "annotation_date": "2026-04-16",
   "blind_transcribed": false,
-  "difficulty": 0,
-  "annotator_notes": "",
+  "difficulty": 5,
+  "annotator_notes": "Only very feint inscription visible, but only two letters identifiable and not clear of their position in the text",
   "extraction_provider": "openai",
   "extraction_model": "gpt-5.4",
   "records": [
@@ -28,7 +28,7 @@
       },
       "corrections_made": [],
       "needs_review_model": false,
-      "needs_review_actual": false
+      "needs_review_actual": true
     }
   ]
 }
