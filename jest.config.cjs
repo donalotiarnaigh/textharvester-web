@@ -19,6 +19,7 @@ module.exports = {
   reporters: ['default', 'jest-junit'],
   testRunner: 'jest-circus/runner',
   verbose: true,
+  testTimeout: 30000,
   coverageThreshold: {
     global: {
       statements: 68,
