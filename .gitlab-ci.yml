@@ -17,9 +17,9 @@ test:
   variables:
     JEST_JUNIT_OUTPUT_NAME: junit.xml
   before_script:
-    - apt-get update -qq && apt-get install --no-install-recommends -y build-essential python3 pkg-config
+    - apt-get update -qq && apt-get install --no-install-recommends -y build-essential python3 pkg-config libvips-dev poppler-utils
   script:
-    - npm ci --build-from-source
+    - npm ci
     - npm run coverage -- --coverageReporters=cobertura --coverageReporters=text
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:
