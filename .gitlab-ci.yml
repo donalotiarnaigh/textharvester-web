@@ -35,7 +35,8 @@ deploy-staging:
   script:
     - curl -L https://fly.io/install.sh | sh
     - export PATH="$HOME/.fly/bin:$PATH"
-    - fly deploy --config fly.staging.toml --access-token "$FLY_API_TOKEN"
+    - export FLY_API_TOKEN=$(echo "$FLY_TOKEN_B64" | base64 -d)
+    - fly deploy --config fly.staging.toml
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
@@ -45,7 +46,8 @@ deploy-production:
   script:
     - curl -L https://fly.io/install.sh | sh
     - export PATH="$HOME/.fly/bin:$PATH"
-    - fly deploy --config fly.toml --access-token "$FLY_API_TOKEN"
+    - export FLY_API_TOKEN=$(echo "$FLY_TOKEN_B64" | base64 -d)
+    - fly deploy --config fly.toml
   when: manual
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
