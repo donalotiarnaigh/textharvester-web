@@ -11,9 +11,11 @@ test:
   variables:
     JEST_JUNIT_OUTPUT_NAME: junit.xml
   before_script:
-    - apt-get update -qq && apt-get install --no-install-recommends -y build-essential python3 pkg-config libvips-dev poppler-utils
+    - apt-get update -qq && apt-get install --no-install-recommends -y build-essential python3 pkg-config libvips-dev poppler-utils libsqlite3-dev
   script:
-    - npm ci
+    - npm ci --ignore-scripts
+    - npm_config_build_from_source=true npm rebuild sqlite3
+    - npm rebuild sharp
     - npm run coverage -- --coverageReporters=cobertura --coverageReporters=text
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:
