@@ -3,7 +3,7 @@
   "document_type": "burial_register",
   "image_ref": "eval/source-images/burial-registers-jpg/stlukes-register-book1-p100.jpg",
   "annotator": "",
-  "annotation_date": "2026-04-15",
+  "annotation_date": "2026-04-17",
   "blind_transcribed": false,
   "difficulty": 0,
   "annotator_notes": "",
@@ -13,13 +13,13 @@
     "model_output": {
       "parish_header_raw": "DOUGLAS",
       "county_header_raw": "CORK",
-      "year_header_raw": "1889",
+      "year_header_raw": "1891",
       "page_marginalia_raw": null
     },
     "corrected": {
       "parish_header_raw": "DOUGLAS",
       "county_header_raw": "CORK",
-      "year_header_raw": "1889",
+      "year_header_raw": "1891",
       "page_marginalia_raw": null
     },
     "corrections_made": []
@@ -28,24 +28,24 @@
     {
       "row_index_on_page": 1,
       "model_output": {
-        "entry_no_raw": "No. 746",
-        "name_raw": "Mr. Anne Carroll",
-        "abode_raw": "10 Marlborough Street Cork.",
-        "burial_date_raw": "March 2nd",
-        "age_raw": "80 Years.",
-        "officiant_raw": "Rev. Samuel Hayman, Rector.",
+        "entry_no_raw": "786",
+        "name_raw": "Thomas Hector Taylor",
+        "abode_raw": "East Cliff, Glanmire",
+        "burial_date_raw": "February 23rd",
+        "age_raw": "Two Years & Five Months",
+        "officiant_raw": "Rev. Canon Hayman,|Rev. W. F. Archdall.",
         "marginalia_raw": null,
-        "extra_notes_raw": "She died February 28th"
+        "extra_notes_raw": "He died February 19th"
       },
       "corrected": {
-        "entry_no_raw": "No. 746",
-        "name_raw": "Mr. Anne Carroll",
-        "abode_raw": "10 Marlborough Street Cork.",
-        "burial_date_raw": "March 2nd",
-        "age_raw": "80 Years.",
-        "officiant_raw": "Rev. Samuel Hayman, Rector.",
+        "entry_no_raw": "786",
+        "name_raw": "Thomas Hector Taylor",
+        "abode_raw": "East Cliff, Glanmire",
+        "burial_date_raw": "February 23rd",
+        "age_raw": "Two Years & Five Months",
+        "officiant_raw": "Rev. Canon Hayman,|Rev. W. F. Archdall.",
         "marginalia_raw": null,
-        "extra_notes_raw": "She died February 28th"
+        "extra_notes_raw": "He died February 19th"
       },
       "corrections_made": [],
       "needs_review_model": false,
@@ -54,24 +54,24 @@
     {
       "row_index_on_page": 2,
       "model_output": {
-        "entry_no_raw": "No. 747",
-        "name_raw": "Robert Howe",
-        "abode_raw": "Norfolk.",
-        "burial_date_raw": "March 3rd",
-        "age_raw": "49 Years",
-        "officiant_raw": "Rev. Samuel Hayman, Rector.",
+        "entry_no_raw": "787",
+        "name_raw": "Georgina Mabel McCreadam.",
+        "abode_raw": "Blackpool, Cork.",
+        "burial_date_raw": "March 16th",
+        "age_raw": "Five Weeks.",
+        "officiant_raw": "Rev. Canon Hayman,|Rector.",
         "marginalia_raw": null,
-        "extra_notes_raw": "He died in the Fever hospital Cork, February 24th"
+        "extra_notes_raw": "She died March 15th"
       },
       "corrected": {
-        "entry_no_raw": "No. 747",
-        "name_raw": "Robert Howe",
-        "abode_raw": "Norfolk.",
-        "burial_date_raw": "March 3rd",
-        "age_raw": "49 Years",
-        "officiant_raw": "Rev. Samuel Hayman, Rector.",
+        "entry_no_raw": "787",
+        "name_raw": "Georgina Mabel McCreadam.",
+        "abode_raw": "Blackpool, Cork.",
+        "burial_date_raw": "March 16th",
+        "age_raw": "Five Weeks.",
+        "officiant_raw": "Rev. Canon Hayman,|Rector.",
         "marginalia_raw": null,
-        "extra_notes_raw": "He died in the Fever hospital Cork, February 24th"
+        "extra_notes_raw": "She died March 15th"
       },
       "corrections_made": [],
       "needs_review_model": false,
@@ -80,24 +80,24 @@
     {
       "row_index_on_page": 3,
       "model_output": {
-        "entry_no_raw": "No. 748",
-        "name_raw": "William-Francis Rush",
-        "abode_raw": "Cork",
-        "burial_date_raw": "March 4th",
-        "age_raw": "30 Years",
-        "officiant_raw": "Rev. Samuel Hayman, Rector.",
+        "entry_no_raw": "788",
+        "name_raw": "George Tolerton.",
+        "abode_raw": "Cork.",
+        "burial_date_raw": "March 16th",
+        "age_raw": "66 Years",
+        "officiant_raw": "Rev. Canon Harley:|Rev. S. McConnell.",
         "marginalia_raw": null,
-        "extra_notes_raw": "He died at the union prison, Cork, February 28th"
+        "extra_notes_raw": "He died March 15th"
       },
       "corrected": {
-        "entry_no_raw": "No. 748",
-        "name_raw": "William-Francis Rush",
-        "abode_raw": "Cork",
-        "burial_date_raw": "March 4th",
-        "age_raw": "30 Years",
-        "officiant_raw": "Rev. Samuel Hayman, Rector.",
+        "entry_no_raw": "788",
+        "name_raw": "George Tolerton.",
+        "abode_raw": "Cork.",
+        "burial_date_raw": "March 16th",
+        "age_raw": "66 Years",
+        "officiant_raw": "Rev. Canon Harley:|Rev. S. McConnell.",
         "marginalia_raw": null,
-        "extra_notes_raw": "He died at the union prison, Cork, February 28th"
+        "extra_notes_raw": "He died March 15th"
       },
       "corrections_made": [],
       "needs_review_model": false,
@@ -106,24 +106,24 @@
     {
       "row_index_on_page": 4,
       "model_output": {
-        "entry_no_raw": "No. 749",
-        "name_raw": "JAMES HUGGINS",
-        "abode_raw": "Douglas",
-        "burial_date_raw": "March 9th",
-        "age_raw": "81 Years.",
-        "officiant_raw": "Rev. Samuel Hayman, Rector.",
-        "marginalia_raw": "[The sexton?], Sexton of Douglas, 1840-1878",
-        "extra_notes_raw": "He died Sunday Ev'g March 7"
+        "entry_no_raw": "789",
+        "name_raw": "Richard Coghlan.",
+        "abode_raw": "28 South Terrace,|Cork.",
+        "burial_date_raw": "March 18th",
+        "age_raw": "65 Years",
+        "officiant_raw": "Rev. Canon Hayman,|Rev. Canon Evans",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
       },
       "corrected": {
-        "entry_no_raw": "No. 749",
-        "name_raw": "JAMES HUGGINS",
-        "abode_raw": "Douglas",
-        "burial_date_raw": "March 9th",
-        "age_raw": "81 Years.",
-        "officiant_raw": "Rev. Samuel Hayman, Rector.",
-        "marginalia_raw": "[The sexton?], Sexton of Douglas, 1840-1878",
-        "extra_notes_raw": "He died Sunday Ev'g March 7"
+        "entry_no_raw": "789",
+        "name_raw": "Richard Coghlan.",
+        "abode_raw": "28 South Terrace,|Cork.",
+        "burial_date_raw": "March 18th",
+        "age_raw": "65 Years",
+        "officiant_raw": "Rev. Canon Hayman,|Rev. Canon Evans",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
       },
       "corrections_made": [],
       "needs_review_model": false,
@@ -132,24 +132,24 @@
     {
       "row_index_on_page": 5,
       "model_output": {
-        "entry_no_raw": "No. 750",
-        "name_raw": "Eleanor, daughter of Samuel Martin,",
-        "abode_raw": "10 Cremorneant Cork.",
-        "burial_date_raw": "March 14th",
-        "age_raw": "Seventeen Months",
-        "officiant_raw": "Rev. Samuel Hayman, Rector.",
+        "entry_no_raw": "790",
+        "name_raw": "Alexander Grant.",
+        "abode_raw": "12 Sullivan's Quay,|Cork",
+        "burial_date_raw": "March 21st",
+        "age_raw": "64 Years",
+        "officiant_raw": "Rev. Matthew Kerr,|Presbyterian Minister.",
         "marginalia_raw": null,
-        "extra_notes_raw": "She died March 11th | (IN THE OLD CHURCHYARD)"
+        "extra_notes_raw": "Accidentally drowned at Passage West March 16th"
       },
       "corrected": {
-        "entry_no_raw": "No. 750",
-        "name_raw": "Eleanor, daughter of Samuel Martin,",
-        "abode_raw": "10 Cremorneant Cork.",
-        "burial_date_raw": "March 14th",
-        "age_raw": "Seventeen Months",
-        "officiant_raw": "Rev. Samuel Hayman, Rector.",
+        "entry_no_raw": "790",
+        "name_raw": "Alexander Grant.",
+        "abode_raw": "12 Sullivan's Quay,|Cork",
+        "burial_date_raw": "March 21st",
+        "age_raw": "64 Years",
+        "officiant_raw": "Rev. Matthew Kerr,|Presbyterian Minister.",
         "marginalia_raw": null,
-        "extra_notes_raw": "She died March 11th | (IN THE OLD CHURCHYARD)"
+        "extra_notes_raw": "Accidentally drowned at Passage West March 16th"
       },
       "corrections_made": [],
       "needs_review_model": false,
@@ -158,24 +158,24 @@
     {
       "row_index_on_page": 6,
       "model_output": {
-        "entry_no_raw": "No. 751",
-        "name_raw": "Priscilla-Alice, daughter of Richard Brimish.",
-        "abode_raw": "40 Barrack-Strt Cork.",
-        "burial_date_raw": "March 18th",
-        "age_raw": "Two Years & Nine Months",
-        "officiant_raw": "Rev. Samuel Hayman, Rector.",
+        "entry_no_raw": "791",
+        "name_raw": "Alice Ellard.",
+        "abode_raw": "117 Evergreen Road,|Cork.",
+        "burial_date_raw": "March 21st",
+        "age_raw": "Two Years & One Month.",
+        "officiant_raw": "Rev. Canon Hayman,|Rector.",
         "marginalia_raw": null,
-        "extra_notes_raw": "She died March 14th"
+        "extra_notes_raw": null
       },
       "corrected": {
-        "entry_no_raw": "No. 751",
-        "name_raw": "Priscilla-Alice, daughter of Richard Brimish.",
-        "abode_raw": "40 Barrack-Strt Cork.",
-        "burial_date_raw": "March 18th",
-        "age_raw": "Two Years & Nine Months",
-        "officiant_raw": "Rev. Samuel Hayman, Rector.",
+        "entry_no_raw": "791",
+        "name_raw": "Alice Ellard.",
+        "abode_raw": "117 Evergreen Road,|Cork.",
+        "burial_date_raw": "March 21st",
+        "age_raw": "Two Years & One Month.",
+        "officiant_raw": "Rev. Canon Hayman,|Rector.",
         "marginalia_raw": null,
-        "extra_notes_raw": "She died March 14th"
+        "extra_notes_raw": null
       },
       "corrections_made": [],
       "needs_review_model": false,
@@ -184,24 +184,24 @@
     {
       "row_index_on_page": 7,
       "model_output": {
-        "entry_no_raw": "No. 752",
-        "name_raw": "Mr. James McLennan, son of Major McLennan",
-        "abode_raw": "Anneville old Youghal Road Cork.",
-        "burial_date_raw": "March 19th",
-        "age_raw": "34 Years",
-        "officiant_raw": "Rev. T. C. Abbott and Rev. Samuel Hayman.",
+        "entry_no_raw": "792",
+        "name_raw": "Elizabeth Mabel Hore.",
+        "abode_raw": "Rocklodge,|Blackrock Road|Cork",
+        "burial_date_raw": "March 23rd",
+        "age_raw": "Two Years",
+        "officiant_raw": "Rev. Canon Hayman,|Rector.",
         "marginalia_raw": null,
-        "extra_notes_raw": "He died March 16th"
+        "extra_notes_raw": "She died March 21st"
       },
       "corrected": {
-        "entry_no_raw": "No. 752",
-        "name_raw": "Mr. James McLennan, son of Major McLennan",
-        "abode_raw": "Anneville old Youghal Road Cork.",
-        "burial_date_raw": "March 19th",
-        "age_raw": "34 Years",
-        "officiant_raw": "Rev. T. C. Abbott and Rev. Samuel Hayman.",
+        "entry_no_raw": "792",
+        "name_raw": "Elizabeth Mabel Hore.",
+        "abode_raw": "Rocklodge,|Blackrock Road|Cork",
+        "burial_date_raw": "March 23rd",
+        "age_raw": "Two Years",
+        "officiant_raw": "Rev. Canon Hayman,|Rector.",
         "marginalia_raw": null,
-        "extra_notes_raw": "He died March 16th"
+        "extra_notes_raw": "She died March 21st"
       },
       "corrections_made": [],
       "needs_review_model": false,
@@ -210,24 +210,24 @@
     {
       "row_index_on_page": 8,
       "model_output": {
-        "entry_no_raw": "No. 753",
-        "name_raw": "George-Leaves Nettles",
-        "abode_raw": "58 Grand Parade Cork",
-        "burial_date_raw": "March 27th",
-        "age_raw": "76 Years",
-        "officiant_raw": "Rev. C. B. Harley",
+        "entry_no_raw": "793",
+        "name_raw": "Annie Baker.",
+        "abode_raw": "Dean Street Female|Orphan School,|Cork.",
+        "burial_date_raw": "March 23rd",
+        "age_raw": "16 Years",
+        "officiant_raw": "Rev. Canon Hayman:|Rev. Hexander Knox.",
         "marginalia_raw": null,
-        "extra_notes_raw": "He died March 25th"
+        "extra_notes_raw": "She died March 21st"
       },
       "corrected": {
-        "entry_no_raw": "No. 753",
-        "name_raw": "George-Leaves Nettles",
-        "abode_raw": "58 Grand Parade Cork",
-        "burial_date_raw": "March 27th",
-        "age_raw": "76 Years",
-        "officiant_raw": "Rev. C. B. Harley",
+        "entry_no_raw": "793",
+        "name_raw": "Annie Baker.",
+        "abode_raw": "Dean Street Female|Orphan School,|Cork.",
+        "burial_date_raw": "March 23rd",
+        "age_raw": "16 Years",
+        "officiant_raw": "Rev. Canon Hayman:|Rev. Hexander Knox.",
         "marginalia_raw": null,
-        "extra_notes_raw": "He died March 25th"
+        "extra_notes_raw": "She died March 21st"
       },
       "corrections_made": [],
       "needs_review_model": false,

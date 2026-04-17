@@ -3,7 +3,7 @@
   "document_type": "burial_register",
   "image_ref": "eval/source-images/burial-registers-jpg/stlukes-register-book1-p160.jpg",
   "annotator": "",
-  "annotation_date": "2026-04-15",
+  "annotation_date": "2026-04-17",
   "blind_transcribed": false,
   "difficulty": 0,
   "annotator_notes": "",
@@ -13,13 +13,13 @@
     "model_output": {
       "parish_header_raw": "DOUGLAS",
       "county_header_raw": "CORK",
-      "year_header_raw": "1888",
+      "year_header_raw": "1888 + 9",
       "page_marginalia_raw": null
     },
     "corrected": {
       "parish_header_raw": "DOUGLAS",
       "county_header_raw": "CORK",
-      "year_header_raw": "1888",
+      "year_header_raw": "1888 + 9",
       "page_marginalia_raw": null
     },
     "corrections_made": []
@@ -28,24 +28,24 @@
     {
       "row_index_on_page": 1,
       "model_output": {
-        "entry_no_raw": "H. 37",
-        "name_raw": "William Hore",
-        "abode_raw": "Fairholme,|Cork",
-        "burial_date_raw": "April 20th",
-        "age_raw": "Seventeen|Months",
-        "officiant_raw": "Rev. G. P. Quick",
-        "marginalia_raw": "No. 1226. [He died April 18th]",
-        "extra_notes_raw": null
+        "entry_no_raw": "1266",
+        "name_raw": "D 79c.|Mrs Emma McDonald",
+        "abode_raw": "123, Patrick St,|Cork.",
+        "burial_date_raw": "December 15th",
+        "age_raw": "Eighty Years",
+        "officiant_raw": "Rev. J.C. McCheane",
+        "marginalia_raw": null,
+        "extra_notes_raw": "[She died Dec. 12th]"
       },
       "corrected": {
-        "entry_no_raw": "H. 37",
-        "name_raw": "William Hore",
-        "abode_raw": "Fairholme,|Cork",
-        "burial_date_raw": "April 20th",
-        "age_raw": "Seventeen|Months",
-        "officiant_raw": "Rev. G. P. Quick",
-        "marginalia_raw": "No. 1226. [He died April 18th]",
-        "extra_notes_raw": null
+        "entry_no_raw": "1266",
+        "name_raw": "D 79c.|Mrs Emma McDonald",
+        "abode_raw": "123, Patrick St,|Cork.",
+        "burial_date_raw": "December 15th",
+        "age_raw": "Eighty Years",
+        "officiant_raw": "Rev. J.C. McCheane",
+        "marginalia_raw": null,
+        "extra_notes_raw": "[She died Dec. 12th]"
       },
       "corrections_made": [],
       "needs_review_model": false,
@@ -54,24 +54,24 @@
     {
       "row_index_on_page": 2,
       "model_output": {
-        "entry_no_raw": "A. 88",
-        "name_raw": "Abraham Wolfe",
-        "abode_raw": "16, Lavitts Quay,|Cork",
-        "burial_date_raw": "April 26th",
-        "age_raw": "Forty|Eight",
-        "officiant_raw": "Rev. J. H. Thorpe|Rev. G. P. Quick",
-        "marginalia_raw": "No. 1227. [He died April 23rd]",
-        "extra_notes_raw": null
+        "entry_no_raw": "1267",
+        "name_raw": "D 58.|Frances Tate",
+        "abode_raw": "10 Dean St,|Cork",
+        "burial_date_raw": "December 15th",
+        "age_raw": "Thirty Years",
+        "officiant_raw": "Rev. A. Wilson|Rev. Healy",
+        "marginalia_raw": null,
+        "extra_notes_raw": "[She died Dec. 13th]"
       },
       "corrected": {
-        "entry_no_raw": "A. 88",
-        "name_raw": "Abraham Wolfe",
-        "abode_raw": "16, Lavitts Quay,|Cork",
-        "burial_date_raw": "April 26th",
-        "age_raw": "Forty|Eight",
-        "officiant_raw": "Rev. J. H. Thorpe|Rev. G. P. Quick",
-        "marginalia_raw": "No. 1227. [He died April 23rd]",
-        "extra_notes_raw": null
+        "entry_no_raw": "1267",
+        "name_raw": "D 58.|Frances Tate",
+        "abode_raw": "10 Dean St,|Cork",
+        "burial_date_raw": "December 15th",
+        "age_raw": "Thirty Years",
+        "officiant_raw": "Rev. A. Wilson|Rev. Healy",
+        "marginalia_raw": null,
+        "extra_notes_raw": "[She died Dec. 13th]"
       },
       "corrections_made": [],
       "needs_review_model": false,
@@ -80,24 +80,24 @@
     {
       "row_index_on_page": 3,
       "model_output": {
-        "entry_no_raw": "B. 76",
-        "name_raw": "Joseph Macnamara",
-        "abode_raw": "13 Frankfield|Terrace,|Cork",
-        "burial_date_raw": "April 30th",
-        "age_raw": "Eighty|Years",
-        "officiant_raw": "Rev. T. Ainley",
-        "marginalia_raw": "No. 1228 [He died April 27th]",
-        "extra_notes_raw": null
+        "entry_no_raw": "1268",
+        "name_raw": "F. 20.|Mrs Mary Lee",
+        "abode_raw": "18, Princes St.|Cork.",
+        "burial_date_raw": "December 19th",
+        "age_raw": "Sixty Eight Years",
+        "officiant_raw": "Rev. Canon Harley",
+        "marginalia_raw": null,
+        "extra_notes_raw": "[She died Dec. 17th]"
       },
       "corrected": {
-        "entry_no_raw": "B. 76",
-        "name_raw": "Joseph Macnamara",
-        "abode_raw": "13 Frankfield|Terrace,|Cork",
-        "burial_date_raw": "April 30th",
-        "age_raw": "Eighty|Years",
-        "officiant_raw": "Rev. T. Ainley",
-        "marginalia_raw": "No. 1228 [He died April 27th]",
-        "extra_notes_raw": null
+        "entry_no_raw": "1268",
+        "name_raw": "F. 20.|Mrs Mary Lee",
+        "abode_raw": "18, Princes St.|Cork.",
+        "burial_date_raw": "December 19th",
+        "age_raw": "Sixty Eight Years",
+        "officiant_raw": "Rev. Canon Harley",
+        "marginalia_raw": null,
+        "extra_notes_raw": "[She died Dec. 17th]"
       },
       "corrections_made": [],
       "needs_review_model": false,
@@ -106,24 +106,24 @@
     {
       "row_index_on_page": 4,
       "model_output": {
-        "entry_no_raw": null,
-        "name_raw": "Thomas Holmes",
-        "abode_raw": "1 Richmond Terrace,|Gardiners Hill,|Cork",
-        "burial_date_raw": "May 2nd",
-        "age_raw": "Twenty|Seven|Years",
-        "officiant_raw": "Rev. E. Gibbings",
-        "marginalia_raw": "No. 1229 [He died April 30th]",
-        "extra_notes_raw": "Place|Top"
+        "entry_no_raw": "1269",
+        "name_raw": "B. 100.|James Dreghorn",
+        "abode_raw": "95, Rathmore Place.|Cork",
+        "burial_date_raw": "December 23rd",
+        "age_raw": "Thirty one Years",
+        "officiant_raw": "Rev. M. Kerr",
+        "marginalia_raw": null,
+        "extra_notes_raw": "[He died Dec. 21st]"
       },
       "corrected": {
-        "entry_no_raw": null,
-        "name_raw": "Thomas Holmes",
-        "abode_raw": "1 Richmond Terrace,|Gardiners Hill,|Cork",
-        "burial_date_raw": "May 2nd",
-        "age_raw": "Twenty|Seven|Years",
-        "officiant_raw": "Rev. E. Gibbings",
-        "marginalia_raw": "No. 1229 [He died April 30th]",
-        "extra_notes_raw": "Place|Top"
+        "entry_no_raw": "1269",
+        "name_raw": "B. 100.|James Dreghorn",
+        "abode_raw": "95, Rathmore Place.|Cork",
+        "burial_date_raw": "December 23rd",
+        "age_raw": "Thirty one Years",
+        "officiant_raw": "Rev. M. Kerr",
+        "marginalia_raw": null,
+        "extra_notes_raw": "[He died Dec. 21st]"
       },
       "corrections_made": [],
       "needs_review_model": false,
@@ -132,24 +132,24 @@
     {
       "row_index_on_page": 5,
       "model_output": {
-        "entry_no_raw": "E. 10",
-        "name_raw": "William Shroud Crowley",
-        "abode_raw": "Monfobstown,|Rochestown.",
-        "burial_date_raw": "May 31st",
-        "age_raw": "Seven|Seven|Years",
-        "officiant_raw": "Rev. Canon Smyth",
-        "marginalia_raw": "No. 1230. [He died May 29th]",
-        "extra_notes_raw": null
+        "entry_no_raw": "1270",
+        "name_raw": "A. 13|Margaret Gillespie",
+        "abode_raw": "Glanmire",
+        "burial_date_raw": "December 28th",
+        "age_raw": "Eighty Years",
+        "officiant_raw": "Rev. Canon Archdall.",
+        "marginalia_raw": null,
+        "extra_notes_raw": "[She died Dec. 24th]"
       },
       "corrected": {
-        "entry_no_raw": "E. 10",
-        "name_raw": "William Shroud Crowley",
-        "abode_raw": "Monfobstown,|Rochestown.",
-        "burial_date_raw": "May 31st",
-        "age_raw": "Seven|Seven|Years",
-        "officiant_raw": "Rev. Canon Smyth",
-        "marginalia_raw": "No. 1230. [He died May 29th]",
-        "extra_notes_raw": null
+        "entry_no_raw": "1270",
+        "name_raw": "A. 13|Margaret Gillespie",
+        "abode_raw": "Glanmire",
+        "burial_date_raw": "December 28th",
+        "age_raw": "Eighty Years",
+        "officiant_raw": "Rev. Canon Archdall.",
+        "marginalia_raw": null,
+        "extra_notes_raw": "[She died Dec. 24th]"
       },
       "corrections_made": [],
       "needs_review_model": false,
@@ -158,24 +158,24 @@
     {
       "row_index_on_page": 6,
       "model_output": {
-        "entry_no_raw": null,
-        "name_raw": "Thomas Briscoe",
-        "abode_raw": "The Union,|Cork",
-        "burial_date_raw": "June 9th",
-        "age_raw": "Sixty|Eight|Years",
-        "officiant_raw": "Rev Webster|Rev. John Cork Whine",
-        "marginalia_raw": "No. 1231. [He died June 7th]",
-        "extra_notes_raw": "[IN THE OLD CEMETERY]"
+        "entry_no_raw": "1271",
+        "name_raw": "E. 11a.|Mary Pybourne,|(child of Thomas Pybourne, of Schull)",
+        "abode_raw": "The Home|Ravensdale -|Douglas",
+        "burial_date_raw": "December 28th",
+        "age_raw": "Thirteen Years",
+        "officiant_raw": "Rev. G.P. Quick.",
+        "marginalia_raw": null,
+        "extra_notes_raw": "[She died Dec. 27th]"
       },
       "corrected": {
-        "entry_no_raw": null,
-        "name_raw": "Thomas Briscoe",
-        "abode_raw": "The Union,|Cork",
-        "burial_date_raw": "June 9th",
-        "age_raw": "Sixty|Eight|Years",
-        "officiant_raw": "Rev Webster|Rev. John Cork Whine",
-        "marginalia_raw": "No. 1231. [He died June 7th]",
-        "extra_notes_raw": "[IN THE OLD CEMETERY]"
+        "entry_no_raw": "1271",
+        "name_raw": "E. 11a.|Mary Pybourne,|(child of Thomas Pybourne, of Schull)",
+        "abode_raw": "The Home|Ravensdale -|Douglas",
+        "burial_date_raw": "December 28th",
+        "age_raw": "Thirteen Years",
+        "officiant_raw": "Rev. G.P. Quick.",
+        "marginalia_raw": null,
+        "extra_notes_raw": "[She died Dec. 27th]"
       },
       "corrections_made": [],
       "needs_review_model": false,
@@ -184,24 +184,24 @@
     {
       "row_index_on_page": 7,
       "model_output": {
-        "entry_no_raw": "H. 21.",
-        "name_raw": "James Carr Somerville",
-        "abode_raw": "St. Stephens|Hospital,|Cork",
-        "burial_date_raw": "June 16th",
-        "age_raw": "Sixty|Seven|Years",
-        "officiant_raw": "Rev D. Webster|Rev. Canon Evans.",
-        "marginalia_raw": "No. 1232. [He died June 13th]",
-        "extra_notes_raw": null
+        "entry_no_raw": "1272",
+        "name_raw": "Edward Tisdale",
+        "abode_raw": "The Union,|Cork",
+        "burial_date_raw": "December 31st",
+        "age_raw": "Twenty Eight Years",
+        "officiant_raw": "Rev. G.P. Quick",
+        "marginalia_raw": "[IN THE OLD CEMETERY]",
+        "extra_notes_raw": "[He died Dec. 28th]"
       },
       "corrected": {
-        "entry_no_raw": "H. 21.",
-        "name_raw": "James Carr Somerville",
-        "abode_raw": "St. Stephens|Hospital,|Cork",
-        "burial_date_raw": "June 16th",
-        "age_raw": "Sixty|Seven|Years",
-        "officiant_raw": "Rev D. Webster|Rev. Canon Evans.",
-        "marginalia_raw": "No. 1232. [He died June 13th]",
-        "extra_notes_raw": null
+        "entry_no_raw": "1272",
+        "name_raw": "Edward Tisdale",
+        "abode_raw": "The Union,|Cork",
+        "burial_date_raw": "December 31st",
+        "age_raw": "Twenty Eight Years",
+        "officiant_raw": "Rev. G.P. Quick",
+        "marginalia_raw": "[IN THE OLD CEMETERY]",
+        "extra_notes_raw": "[He died Dec. 28th]"
       },
       "corrections_made": [],
       "needs_review_model": false,
@@ -210,24 +210,24 @@
     {
       "row_index_on_page": 8,
       "model_output": {
-        "entry_no_raw": "D. 48.",
-        "name_raw": "Edward Young Haughton",
-        "abode_raw": "Accidentally killed at|Rathcoole, Co. Cork.|Re. Causen Railway Tunnel|Commons Hill,|Cork",
-        "burial_date_raw": "June 23rd",
-        "age_raw": "Thirty|Three|Years",
-        "officiant_raw": "The Archdeacon of Cork,|Rev. G. P. Quick.",
-        "marginalia_raw": "No. 1233. [He died June 20th]",
-        "extra_notes_raw": null
+        "entry_no_raw": "1273",
+        "name_raw": "E. 5.|Robert Locke.",
+        "abode_raw": "Douglas|Village",
+        "burial_date_raw": "January 1st",
+        "age_raw": "Sixty Years",
+        "officiant_raw": "Rev. G.P. Quick.",
+        "marginalia_raw": "1889.",
+        "extra_notes_raw": "[He died Dec. 30th 1888]"
       },
       "corrected": {
-        "entry_no_raw": "D. 48.",
-        "name_raw": "Edward Young Haughton",
-        "abode_raw": "Accidentally killed at|Rathcoole, Co. Cork.|Re. Causen Railway Tunnel|Commons Hill,|Cork",
-        "burial_date_raw": "June 23rd",
-        "age_raw": "Thirty|Three|Years",
-        "officiant_raw": "The Archdeacon of Cork,|Rev. G. P. Quick.",
-        "marginalia_raw": "No. 1233. [He died June 20th]",
-        "extra_notes_raw": null
+        "entry_no_raw": "1273",
+        "name_raw": "E. 5.|Robert Locke.",
+        "abode_raw": "Douglas|Village",
+        "burial_date_raw": "January 1st",
+        "age_raw": "Sixty Years",
+        "officiant_raw": "Rev. G.P. Quick.",
+        "marginalia_raw": "1889.",
+        "extra_notes_raw": "[He died Dec. 30th 1888]"
       },
       "corrections_made": [],
       "needs_review_model": false,

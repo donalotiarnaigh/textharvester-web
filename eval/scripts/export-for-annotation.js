@@ -92,11 +92,12 @@ async function extractModelOutput(imagePath, sourceType, providerName) {
 
   // Read and optionally optimize image
   let base64Image;
+  let stitchedImageBuffer = null;
   if (sourceType === 'burial_register') {
     base64Image = await fs.readFile(imagePath, { encoding: 'base64' });
   } else if (sourceType === 'grave_card' || sourceType === 'grave_record_card') {
-    const stitchedBuffer = await graveCardProcessor.processPdf(imagePath);
-    base64Image = stitchedBuffer.toString('base64');
+    stitchedImageBuffer = await graveCardProcessor.processPdf(imagePath);
+    base64Image = stitchedImageBuffer.toString('base64');
   } else {
     const analysis = await analyzeImageForProvider(imagePath, providerName);
     if (analysis.needsOptimization) {
@@ -148,6 +149,7 @@ async function extractModelOutput(imagePath, sourceType, providerName) {
     provider: providerName,
     model: provider.getModelVersion(),
     processingId,
+    stitchedImageBuffer,
   };
 }
 
@@ -295,13 +297,26 @@ async function main() {
     ? path.resolve(opts.outputDir)
     : path.join(projectRoot, 'eval', 'ground-truth', typeConfig.outputSubdir);
 
-  // Compute relative image path from project root
-  const relativeImageRef = path.relative(projectRoot, opts.imagePath);
-
   console.log(`Processing: ${opts.imagePath}`);
   console.log(`Type: ${opts.sourceType}, Provider: ${opts.provider}`);
 
   const result = await extractModelOutput(opts.imagePath, opts.sourceType, opts.provider);
+
+  // For grave cards, save the stitched image as the source reference
+  let relativeImageRef;
+  if ((opts.sourceType === 'grave_card' || opts.sourceType === 'grave_record_card') && result.stitchedImageBuffer) {
+    const baseName = path.basename(opts.imagePath, path.extname(opts.imagePath))
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '-');
+    const stitchedDir = path.join(projectRoot, 'eval', 'source-images', 'grave-cards-stitched');
+    await fs.mkdir(stitchedDir, { recursive: true });
+    const stitchedPath = path.join(stitchedDir, `${baseName}-stitched.jpg`);
+    await fs.writeFile(stitchedPath, result.stitchedImageBuffer);
+    relativeImageRef = path.relative(projectRoot, stitchedPath);
+    console.log(`Stitched image saved to: ${stitchedPath}`);
+  } else {
+    relativeImageRef = path.relative(projectRoot, opts.imagePath);
+  }
 
   // Build stub based on document type
   let stub;

@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0.0",
   "document_type": "grave_card",
-  "image_ref": "eval/source-images/grave-cards/stlukes-sec-a-025.pdf",
-  "annotator": "",
-  "annotation_date": "2026-04-15",
+  "image_ref": "eval/source-images/grave-cards-stitched/stlukes-sec-a-025-stitched.jpg",
+  "annotator": "Daniel",
+  "annotation_date": "2026-04-17",
   "blind_transcribed": false,
-  "difficulty": 0,
-  "annotator_notes": "",
+  "difficulty": 2,
+  "annotator_notes": "No corrections",
   "extraction_provider": "openai",
   "extraction_model": "gpt-5.4",
   "model_output": {
@@ -18,7 +18,7 @@
         "grave_number": "24"
       },
       "grave": {
-        "number_buried": 6,
+        "number_buried": "6",
         "status": "occupied",
         "description_of_grave": "KERB & HEADSTONE",
         "dimensions": {
@@ -27,7 +27,8 @@
           "width_ft": 4,
           "unit": "ft"
         },
-        "plot_owned_by": "James Smith"
+        "plot_owned_by": "James Smith",
+        "comments": ""
       },
       "interments": [
         {
@@ -63,8 +64,7 @@
             "iso": "1901-12-28",
             "raw_text": "DEC 28TH 1901"
           },
-          "age_at_death": "85 years",
-          "notes": "Wife of James Smith"
+          "notes": "Inscription: wife of James Smith; aged 85 years"
         },
         {
           "sequence_number": 3,
@@ -82,7 +82,7 @@
             "iso": "1908-02-19",
             "raw_text": "FEBRUARY 19TH 1908"
           },
-          "age_at_death": "87 years"
+          "notes": "Inscription: aged 87 years"
         },
         {
           "sequence_number": 4,
@@ -100,7 +100,7 @@
             "iso": "1909-03-16",
             "raw_text": "MARCH 16TH 1909"
           },
-          "notes": "Principal of Summerhill School; Elder daughter of James and Mary Cairns Smith"
+          "notes": "Inscription: Principal of Summerhill School; elder daughter of James and Mary Cairns Smith"
         },
         {
           "sequence_number": 5,
@@ -122,12 +122,11 @@
       ],
       "inscription": {
         "text": "SACRED|TO THE MEMORY OF|ANNA ELIZA|BELOVED DAUGHTER OF|JAMES AND MARY CAIRNS SMITH|WHO DIED APRIL 10TH 1892|MARY CAIRNS|WIFE OF JAMES SMITH|DIED 25TH DEC 1901 AGED 85 YEARS|JAMES SMITH|DIED 16TH FEBRUARY 1908|AGED 87 YEARS|MARGARET M. SMITH|PRINCIPAL OF SUMMERHILL SCHOOL|ELDER DAUGHTER OF|JAMES AND MARY CAIRNS SMITH|DIED 12TH MARCH 1909|WITH CHRIST WHICH|IS FAR BETTER",
-        "scripture_or_quote_refs": [],
-        "notes": "Additional faint text below quote is illegible."
+        "notes": "Handwritten note below inscription appears to read: I mulchy WHITE SI"
       },
       "sketch": {
         "present": true,
-        "description": "Headstone sketch with floral arch decoration and the surname SMITH on the stone."
+        "description": "Headstone sketch with floral arch motif and the name SMITH on the stone"
       }
     }
   },
@@ -140,7 +139,7 @@
         "grave_number": "24"
       },
       "grave": {
-        "number_buried": 6,
+        "number_buried": "5",
         "status": "occupied",
         "description_of_grave": "KERB & HEADSTONE",
         "dimensions": {
@@ -149,7 +148,8 @@
           "width_ft": 4,
           "unit": "ft"
         },
-        "plot_owned_by": "James Smith"
+        "plot_owned_by": "James Smith",
+        "comments": ""
       },
       "interments": [
         {
@@ -185,8 +185,7 @@
             "iso": "1901-12-28",
             "raw_text": "DEC 28TH 1901"
           },
-          "age_at_death": "85 years",
-          "notes": "Wife of James Smith"
+          "notes": "Inscription: wife of James Smith; aged 85 years"
         },
         {
           "sequence_number": 3,
@@ -204,7 +203,7 @@
             "iso": "1908-02-19",
             "raw_text": "FEBRUARY 19TH 1908"
           },
-          "age_at_death": "87 years"
+          "notes": "Inscription: aged 87 years"
         },
         {
           "sequence_number": 4,
@@ -222,7 +221,7 @@
             "iso": "1909-03-16",
             "raw_text": "MARCH 16TH 1909"
           },
-          "notes": "Principal of Summerhill School; Elder daughter of James and Mary Cairns Smith"
+          "notes": "Inscription: Principal of Summerhill School; elder daughter of James and Mary Cairns Smith"
         },
         {
           "sequence_number": 5,
@@ -244,12 +243,11 @@
       ],
       "inscription": {
         "text": "SACRED|TO THE MEMORY OF|ANNA ELIZA|BELOVED DAUGHTER OF|JAMES AND MARY CAIRNS SMITH|WHO DIED APRIL 10TH 1892|MARY CAIRNS|WIFE OF JAMES SMITH|DIED 25TH DEC 1901 AGED 85 YEARS|JAMES SMITH|DIED 16TH FEBRUARY 1908|AGED 87 YEARS|MARGARET M. SMITH|PRINCIPAL OF SUMMERHILL SCHOOL|ELDER DAUGHTER OF|JAMES AND MARY CAIRNS SMITH|DIED 12TH MARCH 1909|WITH CHRIST WHICH|IS FAR BETTER",
-        "scripture_or_quote_refs": [],
-        "notes": "Additional faint text below quote is illegible."
+        "notes": "Handwritten note below inscription appears to read: I mulchy WHITE SI"
       },
       "sketch": {
         "present": true,
-        "description": "Headstone sketch with floral arch decoration and the surname SMITH on the stone."
+        "description": "Headstone sketch with floral arch motif and the name SMITH on the stone"
       }
     }
   },
