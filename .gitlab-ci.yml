@@ -4,7 +4,7 @@ stages:
   - deploy-production
 
 default:
-  image: node:20
+  image: node:20-bullseye
   cache:
     key:
       files:
@@ -16,9 +16,11 @@ test:
   stage: test
   variables:
     JEST_JUNIT_OUTPUT_NAME: junit.xml
+  before_script:
+    - apt-get update -qq && apt-get install --no-install-recommends -y build-essential python3 pkg-config
   script:
-    - npm ci
-    - npm run coverage
+    - npm ci --build-from-source
+    - npm run coverage -- --coverageReporters=cobertura --coverageReporters=text
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:
     reports:
