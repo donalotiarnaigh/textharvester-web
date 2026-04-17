@@ -1,6 +1,6 @@
 # Text Harvester
 
-[![CI](https://github.com/donalotiarnaigh/textharvester-web/actions/workflows/ci.yml/badge.svg)](https://github.com/donalotiarnaigh/textharvester-web/actions/workflows/ci.yml)
+[![CI](https://gitlab.com/curlew-geospatial-group/textharvester-web/badges/main/pipeline.svg)](https://gitlab.com/curlew-geospatial-group/textharvester-web/-/pipelines)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20.13.1-brightgreen)](https://nodejs.org)
 

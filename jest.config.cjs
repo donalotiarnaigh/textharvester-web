@@ -16,6 +16,7 @@ module.exports = {
     '^../src/utils/logger$': '<rootDir>/__mocks__/logger.js',
     '^/js/(.*)$': '<rootDir>/public/js/$1'
   },
+  reporters: ['default', 'jest-junit'],
   testRunner: 'jest-circus/runner',
   verbose: true,
   coverageThreshold: {
