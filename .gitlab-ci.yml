@@ -1,7 +1,5 @@
 stages:
   - test
-  - deploy-staging
-  - deploy-production
 
 default:
   image: node:20-bullseye
@@ -27,27 +25,4 @@ test:
     expire_in: 7 days
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_COMMIT_BRANCH == "main"'
-
-deploy-staging:
-  stage: deploy-staging
-  needs: [test]
-  script:
-    - curl -L https://fly.io/install.sh | sh
-    - export PATH="$HOME/.fly/bin:$PATH"
-    - export FLY_API_TOKEN=$(echo "$FLY_TOKEN_B64" | base64 -d)
-    - fly deploy --config fly.staging.toml
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-
-deploy-production:
-  stage: deploy-production
-  needs: [deploy-staging]
-  script:
-    - curl -L https://fly.io/install.sh | sh
-    - export PATH="$HOME/.fly/bin:$PATH"
-    - export FLY_API_TOKEN=$(echo "$FLY_TOKEN_B64" | base64 -d)
-    - fly deploy --config fly.toml
-  when: manual
-  rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
