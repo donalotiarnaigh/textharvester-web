@@ -6,7 +6,7 @@
   "annotation_date": "2026-04-17",
   "blind_transcribed": false,
   "difficulty": 3,
-  "annotator_notes": "Text is slightlysquashed in bhut no corrections ",
+  "annotator_notes": "Text is slightlysquashed in but no corrections ",
   "extraction_provider": "openai",
   "extraction_model": "gpt-5.4",
   "model_output": {

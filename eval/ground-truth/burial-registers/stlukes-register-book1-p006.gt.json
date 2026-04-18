@@ -2,11 +2,11 @@
   "schema_version": "1.0.0",
   "document_type": "burial_register",
   "image_ref": "eval/source-images/burial-registers-jpg/stlukes-register-book1-p006.jpg",
-  "annotator": "",
+  "annotator": "Daniel",
   "annotation_date": "2026-04-17",
   "blind_transcribed": false,
-  "difficulty": 0,
-  "annotator_notes": "",
+  "difficulty": 4,
+  "annotator_notes": "Image is clear but handwriting is cursive and smudged in places",
   "extraction_provider": "openai",
   "extraction_model": "gpt-5.4",
   "page_level": {
@@ -17,12 +17,12 @@
       "page_marginalia_raw": null
     },
     "corrected": {
-      "parish_header_raw": "Carrigaline Church of Ireland",
+      "parish_header_raw": "Carrigaline Chapel of Douglas",
       "county_header_raw": "Cork",
       "year_header_raw": "1845",
       "page_marginalia_raw": null
     },
-    "corrections_made": []
+    "corrections_made": ["parish_header_raw"]
   },
   "entries": [
     {
@@ -38,16 +38,16 @@
         "extra_notes_raw": null
       },
       "corrected": {
-        "entry_no_raw": "11",
+        "entry_no_raw": "41",
         "name_raw": "John Callaghan|Infant",
-        "abode_raw": "Korrivoe",
+        "abode_raw": "----",
         "burial_date_raw": "Feby 7th 1845",
         "age_raw": "61 years",
-        "officiant_raw": "Ceremonies were performed by Mr Shaw",
+        "officiant_raw": "---- were ---- --- from Upper Shandon",
         "marginalia_raw": null,
         "extra_notes_raw": null
       },
-      "corrections_made": [],
+      "corrections_made": ["entry_no_raw","abode_raw", "officiant_raw"],
       "needs_review_model": false,
       "needs_review_actual": false
     },
