@@ -111,5 +111,8 @@
     "prebuild-install": {
       "tar-fs": "2.1.4"
     }
+  },
+  "allowScripts": {
+    "sqlite3": true
   }
 }
