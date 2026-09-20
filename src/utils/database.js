@@ -346,6 +346,61 @@ function initializeCustomSchemasTable() {
     });
   });
 }
+/**
+ * JSON-typed columns on the `memorials` table.
+ *
+ * Both write paths (`storeMemorial`, `updateMemorial`) must serialize exactly
+ * this set. If they diverge, one path binds a raw object where the column
+ * expects JSON text; the read path's JSON.parse then fails, silently nulls the
+ * field, and forces needs_review = 1 (see #244).
+ */
+const MEMORIAL_JSON_FIELDS = [
+  'typography_analysis',
+  'iconography',
+  'confidence_scores',
+  'validation_warnings'
+];
+
+/**
+ * Serialize one memorial field for storage in a TEXT column.
+ *
+ * Nullish values stay NULL rather than the string "null" (Requirement 5.1), and
+ * already-serialized strings pass through untouched so re-saving a record read
+ * back from the database does not double-encode it.
+ *
+ * @param {string} field - Column name, used in the error message.
+ * @param {*} value - Raw value from the pipeline, an edit request, or the DB.
+ * @returns {string|null} JSON text ready to bind, or null.
+ * @throws {Error} When the value cannot be serialized (e.g. circular reference).
+ */
+function serializeMemorialField(field, value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string') return value;
+  try {
+    return JSON.stringify(value);
+  } catch (e) {
+    throw new Error(`Serialization error for field: ${e.message}`);
+  }
+}
+
+/**
+ * Serialize every JSON-typed memorial field present on `data`.
+ * Fields absent from `data` are left absent, so this is safe for partial
+ * update payloads as well as full records.
+ *
+ * @param {Object} data - Memorial record or partial edit payload.
+ * @returns {Object} Shallow copy with JSON fields converted to TEXT-ready values.
+ */
+function serializeMemorialFields(data) {
+  const serialized = { ...data };
+  for (const field of MEMORIAL_JSON_FIELDS) {
+    if (field in serialized) {
+      serialized[field] = serializeMemorialField(field, serialized[field]);
+    }
+  }
+  return serialized;
+}
+
 function storeMemorial(data) {
   // Use a safe logger that handles circular references if needed, or try/catch the logging
   try {
@@ -387,18 +442,11 @@ function storeMemorial(data) {
   `;
 
   return new Promise((resolve, reject) => {
-    // Helper to safely stringify JSON fields
-    const safeStringify = (obj) => {
-      if (!obj) return null;
-      try {
-        return JSON.stringify(obj);
-      } catch (e) {
-        throw new Error(`Serialization error for field: ${e.message}`);
-      }
-    };
-
     let params;
     try {
+      // JSON-typed columns are serialized by the same helper updateMemorial()
+      // uses, so the two write paths cannot drift apart (see #244).
+      const jsonFields = serializeMemorialFields(data);
       params = [
         data.memorial_number || null,
         data.first_name || null,
@@ -414,14 +462,14 @@ function storeMemorial(data) {
         data.site_code || null,
         data.transcription_raw || null,
         data.stone_condition || null,
-        safeStringify(data.typography_analysis),
-        safeStringify(data.iconography),
+        jsonFields.typography_analysis ?? null,
+        jsonFields.iconography ?? null,
         data.structural_observations || null,
-        safeStringify(data.confidence_scores),
+        jsonFields.confidence_scores ?? null,
         data.confidence_coverage ?? null,
         data.disagreement_score ?? null,
         data.needs_review ?? 0,
-        safeStringify(data.validation_warnings),
+        jsonFields.validation_warnings ?? null,
         data.input_tokens        ?? 0,
         data.output_tokens       ?? 0,
         data.estimated_cost_usd  ?? 0,
@@ -584,7 +632,11 @@ const updateMemorial = async (id, fields) => {
         throw new Error(`Invalid year_of_death format: ${value}`);
       }
 
-      editableUpdates[key] = value;
+      // JSON-typed editable fields (typography_analysis, iconography) must be
+      // serialized here as well, or the read path cannot JSON.parse them (#244).
+      editableUpdates[key] = MEMORIAL_JSON_FIELDS.includes(key)
+        ? serializeMemorialField(key, value)
+        : value;
       editedFields.push(key);
     }
   }
