@@ -191,14 +191,10 @@ describe('File Processing Module', () => {
       });
       mockProcessImage.mockResolvedValue({ content: 'invalid', usage: { input_tokens: 0, output_tokens: 0 } });
 
-      try {
-        await processFile(mockFilePath);
-        fail('Expected processFile to throw');
-      } catch (error) {
-        expect(error).toBeInstanceOf(FatalError);
-        expect(error.type).toBe('validation_exhausted');
-        expect(error.fatal).toBe(true);
-      }
+      const error = await processFile(mockFilePath).catch((e) => e);
+      expect(error).toBeInstanceOf(FatalError);
+      expect(error.type).toBe('validation_exhausted');
+      expect(error.fatal).toBe(true);
     });
 
     test('empty sheet errors are returned as error result, not fatal', async () => {
