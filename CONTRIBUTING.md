@@ -37,9 +37,24 @@ cp .env.example .env   # then add your API keys
 npm start
 ```
 
+### Node & npm versions
+
+The pinned Node major lives in `.nvmrc` (`22`). With [nvm](https://github.com/nvm-sh/nvm) installed, just run `nvm use`.
+
+| Tool | Supported |
+|------|-----------|
+| Node | `>=22.0.0` — CI and day-to-day development both use Node 22 |
+| npm  | `>=10.0.0` — npm 10 (bundled with Node 22) and npm 12 are both verified working |
+
+`engines` is **advisory**: npm warns on a mismatch but proceeds. We deliberately do not set `engine-strict` or `packageManager`, so Corepack will not intercept `npm` on your machine.
+
+**npm 12 and install scripts.** npm 12 blocks dependency install scripts by default. `sqlite3` needs its install script to fetch or build its native binding, so `package.json` carries an `allowScripts` entry for it. Without that entry a fresh `npm ci` fails with `Could not locate the bindings file`. If you add a dependency that compiles native code, `npm ci` will warn that install scripts were blocked — approve it explicitly with `npm install-scripts approve <pkg>`.
+
+> Heads-up: `npm install-scripts` honours `--dry-run` only partially — it has been observed writing to `package.json` anyway. Read `git diff package.json` after running it.
+
 ## Coding Standards
 
-ESLint is configured and enforced on commit via Husky. Before submitting a PR:
+ESLint and the full test suite are enforced in CI on every pull request. Before submitting a PR:
 
 ```bash
 npm run lint    # check for issues
@@ -67,7 +82,7 @@ npm run coverage     # run with coverage report
 
 ## Commit Messages
 
-No strict convention is enforced. Write clear, descriptive prose — e.g. `add confidence threshold config option` rather than `update config`. Reference the issue number where relevant: `fix burial register date parsing (#45)`.
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/) by convention — `feat: …`, `fix: …`, `docs: …`, `chore: …`, optionally scoped, e.g. `fix(deps): allow sqlite3 install scripts`. This matches the existing history but is **not** enforced by a hook or a CI check. Reference the issue number in the body where relevant.
 
 ## Questions
 
