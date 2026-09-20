@@ -2,7 +2,10 @@ stages:
   - test
 
 default:
-  image: node:20-bullseye
+  # Debian 11 (bullseye) reached LTS end-of-life on 2026-08-31 and its
+  # security archive was withdrawn, so the apt-get install below fails with
+  # 404s against debian-security. bookworm (Debian 12) is still supported.
+  image: node:20-bookworm
 
 test:
   stage: test
