@@ -115,34 +115,18 @@ Only run full tests or implementations when explicitly required.
 
 ### Testing Database-Backed Features
 
-For features that modify the database schema or storage layers (e.g., `processing_id` correlation IDs), use the provided test scripts to safely verify functionality without risking sample data.
-
-**Example: Testing processing_id Feature**
-
-The `processing_id` feature adds request correlation IDs. Test it safely:
-
-```bash
-# Dry run (preview without API calls)
-./test-processing-id.sh --dry-run
-
-# Test with all record types
-./test-processing-id.sh
-
-# Test specific record type
-./test-processing-id.sh --type memorial --provider openai --verbose
-
-# Full documentation
-cat docs/testing-processing-id.md
-```
+For features that modify the database schema or storage layers (e.g., `processing_id` correlation IDs), verify safely without risking sample data.
 
 **Key Points:**
 - Sample data in `sample_data/source_sets/` is never modified
-- Test files are copied to `/tmp/` for processing
+- Copy test files to `/tmp/` before processing
 - Files are auto-deleted after processing (expected behavior)
-- Database storage is verified automatically
 - Original sample data can be regenerated anytime
 
-For details on manually testing database-backed features, see `docs/testing-processing-id.md`.
+> **Stale reference corrected.** The historical `./test-processing-id.sh` helper was
+> removed in `ab9b2b8` ("Remove root-level test scripts") and no longer exists;
+> `docs/testing-processing-id.md` still describes it. Database-backed behaviour is
+> now covered by the suite under `__tests__/` — run `npm test`.
 
 * * *
 

@@ -713,7 +713,7 @@ function handleError(error, command) {
 
 **Environment Compatibility:**
 - macOS, Linux, Windows (WSL)
-- Node.js 18+, 20+
+- Node.js 22+
 - Various terminal emulators (TTY detection)
 
 ---

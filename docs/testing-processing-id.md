@@ -1,5 +1,15 @@
 # Testing the processing_id Feature
 
+> ⚠️ **Stale document — the helper script no longer exists.**
+> `test-processing-id.sh` was **deliberately removed** in commit `ab9b2b8`
+> ("Remove root-level test scripts: test-issue-38.sh, test-processing-id.sh,
+> verify-grave-card-pipeline.js"). Every `./test-processing-id.sh` command below
+> will fail with `command not found`.
+>
+> The `processing_id` feature itself is still in the codebase and is covered by the
+> suite under `__tests__/` — run `npm test`. This document is retained only as a
+> record of the original manual testing approach; treat the commands as historical.
+
 ## Overview
 
 The `processing_id` feature adds UUIDv4-based request correlation IDs to track individual files through the entire OCR processing pipeline. This document explains how to test this feature using the provided test helper script.

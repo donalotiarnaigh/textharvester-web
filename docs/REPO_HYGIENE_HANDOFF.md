@@ -1,11 +1,11 @@
 # Repo Hygiene Handoff — Remaining Tiers
 
-**Status:** Tier 1 complete. **Tier 2 complete.** Tier 4 item 4.3 done. Remainder not started.
+**Status:** Tier 1 complete. **Tier 2 complete. Tier 4 complete.** Tier 3 not started.
 **Baseline commit:** `7cd3d7b` on `main` (PR #258), mirrored to GitLab at the same commit.
 
 ### Progress log
 
-Worked on branch `chore/repo-hygiene-tier2-plus` (not yet pushed).
+Tier 2 shipped as PR #262 (squash commit `91132a9`); the GitLab mirror was synced to the same commit. Tier 4 worked on branch `chore/repo-hygiene-tier4`.
 
 | Item | State | Notes |
 |---|---|---|
@@ -13,12 +13,18 @@ Worked on branch `chore/repo-hygiene-tier2-plus` (not yet pushed).
 | 2.2 Version pinning | **done** | `.nvmrc` = `22`, `engines.npm` = `>=10.0.0`. Deliberately **no** `packageManager`/Corepack and **no** `engine-strict` (both would surprise contributors). `CONTRIBUTING.md` documents the toolchain. |
 | 2.3 Husky dead config | **done (deleted)** | Removed the legacy `husky.hooks` key, the `lint-staged` config block, and both devDependencies. Nothing referenced them anywhere. Local hooks are gone; CI remains the gate. To bring them back, `npx husky init` plus a `prepare` script. |
 | 3.x Branch hygiene | not started | |
+| 4.1 Fly.io artifacts | **done** | Deleted `fly.toml` and `fly.staging.toml`; removed the Fly deploy/secrets sections from `RUNBOOK.md`. **Kept the `Dockerfile` and `.dockerignore`** (useful independently of Fly) and stripped the `LABEL fly_launch_runtime` line. Also fixed a stale "deployed on Fly.io" claim in `scripts/ralph/CLAUDE.md`. |
+| 4.2 Duplicate roadmap | **done** | Kept `docs/IMPLEMENTATION_ROADMAP.md` — it is the copy `docs/README.md` links to — and deleted the root copy. Fixed 4 references in `docs/research-issues-kickoff.md` and 1 machine-specific absolute path in the issue-213 plan. |
 | 4.3 `AGENTS.md` staleness | **done** | Active Feature table replaced with an accurate status section; persona, permissions, scope rule and workflow generalised off the finished feature. |
+| 4.4 Duplicate handover | **done** | Deleted `docs/handover.md` (the stale `jest.config.js` copy). `docs/operations/handover.md` is retained and is the one `docs/README.md` links to. |
+| 4.5 Stale Node refs | **done** | `docs/test-data-setup.md` node-version `18` → `22`; `docs/cli/design.md` "Node.js 18+, 20+" → "Node.js 22+". Left the historical `pilot_run_preparation.md` run record untouched, as instructed. |
 
 **Corrections to this document, found while working:**
 - `npm install-scripts approve --dry-run` has been observed **writing to `package.json` anyway**. Always `git diff package.json` afterwards.
-- A stale reference not listed here: **`test-processing-id.sh` does not exist**, yet both `AGENTS.md` and `docs/testing-processing-id.md` instruct readers to run it. Not fixed.
+- **`test-processing-id.sh` does not exist.** It was deliberately deleted in `ab9b2b8` ("Remove root-level test scripts"), but `AGENTS.md` and `docs/testing-processing-id.md` still told readers to run it. Both corrected; the doc now carries a staleness banner and its ~30 command examples are explicitly marked historical.
 - `CONTRIBUTING.md` claimed ESLint was "enforced on commit via Husky" — the dead-hooks problem (2.3) in doc form. Corrected to say CI enforces it.
+- **4.1 under-reported the Fly footprint.** `scripts/ralph/CLAUDE.md` claimed the app "is deployed on Fly.io" (fixed), and **`@flydotio/dockerfile` is still a devDependency** — a Fly-branded Dockerfile generator referenced by no script. Left in place pending a decision; see the note under 4.1.
+- `docs/test-data-setup.md` also pins `actions/checkout@v2` / `actions/setup-node@v2`, both long deprecated. Left alone — only the Node version was in scope.
 
 **Written:** 2026-09-20. Every number and path below was verified against the live repos at this commit — re-verify before acting if `main` has moved.
 
@@ -244,6 +250,12 @@ Currently `false`, alongside `allow_update_branch: false`. Turning on `delete_br
 
 ### 4.1 Fly.io deploy artifacts (deploy target is gone)
 
+> **RESOLVED.** `fly.toml` and `fly.staging.toml` deleted; the Fly deploy and `fly secrets` sections removed from `RUNBOOK.md`, which now has a "Container Build" section plus a note that no production deployment target is configured. The `Dockerfile` and `.dockerignore` were **kept** as independently useful, with the `fly_launch_runtime` label stripped.
+>
+> **Still outstanding:** `@flydotio/dockerfile` (`^0.5.0`) remains in `devDependencies` — a Fly-branded Dockerfile generator referenced by no script, and now without a Fly target. Not removed, because dependency changes require explicit human approval. Recommend dropping it.
+>
+> The inventory below is retained as the historical record.
+
 All still present:
 
 | Path | Detail |
@@ -260,6 +272,8 @@ All still present:
 
 ### 4.2 `IMPLEMENTATION_ROADMAP.md` is duplicated byte-for-byte
 
+> **RESOLVED.** Kept `docs/IMPLEMENTATION_ROADMAP.md` and deleted the root copy — `docs/README.md` already linked to the `docs/` copy, so this minimised link churn. Fixed 4 references in `docs/research-issues-kickoff.md` and one machine-specific absolute path in `docs/research-issues/plans/issue-213-degenerate-output-detection.md`. Verified no remaining reference resolves to the deleted root file.
+
 Root copy and `docs/IMPLEMENTATION_ROADMAP.md` are **identical** (`md5 42a135275c2665520b29cdea156dfcc3`). Keep one, delete the other, and fix any inbound links.
 
 ### 4.3 `AGENTS.md` is stale in the way that matters most
@@ -274,6 +288,8 @@ Meanwhile `docs/typographic-analysis/tasks.md` is **34 done / 0 open**, and that
 
 ### 4.4 Divergent duplicate handover docs
 
+> **RESOLVED.** Deleted `docs/handover.md` (the stale `jest.config.js` copy). `docs/operations/handover.md` is retained, and it is the one `docs/README.md` links to — so no inbound links needed changing.
+
 `docs/handover.md` and `docs/operations/handover.md` are both 115 lines and differ by **one line**:
 
 ```
@@ -286,6 +302,8 @@ docs/operations/handover.md: jest.config.cjs   <- correct
 (Note: other duplicate basenames exist under `docs/` — `design.md`, `issues.md`, `requirements.md`, `tasks.md`, `README.md`, `performance-monitoring.md` — but those live in **different feature subdirectories** and are legitimately distinct. Only `handover.md` and `IMPLEMENTATION_ROADMAP.md` are true duplicates.)
 
 ### 4.5 Stale Node version references
+
+> **RESOLVED.** `docs/test-data-setup.md` node-version `18` → `22`; `docs/cli/design.md` "Node.js 18+, 20+" → "Node.js 22+". The historical pilot run record was left untouched, as instructed below.
 
 Two live references need updating:
 

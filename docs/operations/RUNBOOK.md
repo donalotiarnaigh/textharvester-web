@@ -42,46 +42,19 @@ The dev server starts at `http://localhost:3000` and opens a browser automatical
 
 ---
 
-## Production Deployment (Fly.io)
-
-**App name:** `hg-textharvest-v2`
-**Region:** Amsterdam (`ams`)
-**Spec:** 1 shared CPU, 1GB RAM, HTTPS enforced
-
-### Deploy
-
-```bash
-# Deploy latest main branch
-fly deploy
-
-# Check deployment status
-fly status
-
-# View live logs
-fly logs
-
-# SSH into running machine (debugging)
-fly ssh console
-```
-
-### Environment Variables on Fly.io
-
-Set secrets via CLI (not in fly.toml or committed files):
-
-```bash
-fly secrets set OPENAI_API_KEY=sk-proj-...
-fly secrets set ANTHROPIC_API_KEY=sk-ant-...
-fly secrets set GEMINI_API_KEY=AIzaSy...
-fly secrets set MISTRAL_API_KEY=W1tp...
-```
-
-### Docker Build
+## Container Build
 
 The `Dockerfile` uses a multi-stage build. Key details:
 - Base image: `node:22.23.2-bookworm-slim`
 - Installs `poppler-utils` at runtime for PDF processing
 - Uses `npm ci` (locked dependencies)
 - Sets `NODE_ENV=production`
+
+> **No production deployment target is currently configured.** The former Fly.io
+> deployment was removed along with `fly.toml`, `fly.staging.toml`, and the
+> `FLY_API_TOKEN` repository secret. The `Dockerfile` is retained for local or
+> self-hosted container use; supply API keys via environment variables as listed
+> under [Prerequisites](#prerequisites).
 
 ---
 

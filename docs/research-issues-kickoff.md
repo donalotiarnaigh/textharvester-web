@@ -2,13 +2,13 @@
 
 Use this prompt to start a new unit of work for any of the 6 research issues in the implementation roadmap.
 
-Reference: **IMPLEMENTATION_ROADMAP.md**, **AGENTS.md**, and **issues.md**.
+Reference: **docs/IMPLEMENTATION_ROADMAP.md**, **AGENTS.md**, and **issues.md**.
 
 ---
 
 ## 1. Identify the Next Issue
 
-- Read **IMPLEMENTATION_ROADMAP.md** to understand the 6 issues, dependencies, and recommended sequencing.
+- Read **docs/IMPLEMENTATION_ROADMAP.md** to understand the 6 issues, dependencies, and recommended sequencing.
 - Pick the **next issue** in the current phase (consult the roadmap's "Recommended Implementation Order").
 - Look up the **full issue details** in **issues.md** (search for `# Issue #NNN` or the issue number).
 - Restate the issue in one sentence: what are we building and why?
@@ -88,7 +88,7 @@ For each issue, draft a plan covering:
 
 ## 5. Update Documentation
 
-- Mark the issue as **completed** in **IMPLEMENTATION_ROADMAP.md** — update the status column in the issues table and note the PR number and merge date.
+- Mark the issue as **completed** in **docs/IMPLEMENTATION_ROADMAP.md** — update the status column in the issues table and note the PR number and merge date.
 - Update **issues.md** entry for the issue — change `**Status**: Investigated` to `**Status**: ✅ Implemented — PR #NNN, merged YYYY-MM-DD` and add a `**Branch**:` line. Also update the summary table row if one exists.
 - Update any relevant **AGENTS.md** sections (provider patterns, validation pipeline, etc.).
 - Update **MEMORY.md** with new patterns or patterns that deviate from earlier issues.
@@ -105,7 +105,7 @@ For each issue, draft a plan covering:
 
 ## Constraints
 
-- Do **not** implement out of order (check dependencies in IMPLEMENTATION_ROADMAP.md).
+- Do **not** implement out of order (check dependencies in docs/IMPLEMENTATION_ROADMAP.md).
 - Do **not** run destructive commands without asking.
 - Do **not** touch files unrelated to the specific issue.
 - Always use **absolute paths** for file operations.
