@@ -1,6 +1,6 @@
 # Repo Hygiene Handoff — Remaining Tiers
 
-**Status:** Tier 1 complete. Tier 2 items 2.1–2.2 done, 2.3 open. Tier 4 item 4.3 done. Remainder not started.
+**Status:** Tier 1 complete. **Tier 2 complete.** Tier 4 item 4.3 done. Remainder not started.
 **Baseline commit:** `7cd3d7b` on `main` (PR #258), mirrored to GitLab at the same commit.
 
 ### Progress log
@@ -11,7 +11,7 @@ Worked on branch `chore/repo-hygiene-tier2-plus` (not yet pushed).
 |---|---|---|
 | 2.1 `sqlite3` `allowScripts` | **done** | Approved **by package name**, not `pkg@version`, so routine Dependabot bumps cannot silently reintroduce the failure. Verified by throwaway install: the control (no `allowScripts`, npm 12) fails with `Could not locate the bindings file`; with the entry, `sqlite3` loads and executes SQL on **both npm 12 and npm 10**. `fsevents` is still blocked — harmless, macOS-only optional watcher dep. |
 | 2.2 Version pinning | **done** | `.nvmrc` = `22`, `engines.npm` = `>=10.0.0`. Deliberately **no** `packageManager`/Corepack and **no** `engine-strict` (both would surprise contributors). `CONTRIBUTING.md` documents the toolchain. |
-| 2.3 Husky dead config | open | Still needs a human decision. Recommendation: delete the dead `husky` key rather than migrate — CI gates lint and tests already, and a `pre-push: npm test` hook would cost ~1728 tests on every push. |
+| 2.3 Husky dead config | **done (deleted)** | Removed the legacy `husky.hooks` key, the `lint-staged` config block, and both devDependencies. Nothing referenced them anywhere. Local hooks are gone; CI remains the gate. To bring them back, `npx husky init` plus a `prepare` script. |
 | 3.x Branch hygiene | not started | |
 | 4.3 `AGENTS.md` staleness | **done** | Active Feature table replaced with an accurate status section; persona, permissions, scope rule and workflow generalised off the finished feature. |
 
@@ -101,6 +101,8 @@ All of the following are **absent**: `.nvmrc`, `.node-version`, `.tool-versions`
 **Acceptance check:** a fresh clone on a machine with no global npm override should install the pinned toolchain and produce a working `sqlite3`.
 
 ### 2.3 Husky hooks are dead config
+
+> **RESOLVED — deleted.** Option "remove the dead config" chosen. Removed the `husky.hooks` key, the `lint-staged` config block, and the `husky` + `lint-staged` devDependencies. Verified nothing else referenced either package (no `.husky/`, no `prepare` script, empty `core.hooksPath`, no live hooks in `.git/hooks/`, no CI usage). Re-verified after removal: fresh `npm ci` OK, `sqlite3` binding OK, lint 0 errors / 47 warnings, 1728 tests passing. The analysis below is retained as the rationale.
 
 `package.json` contains a **legacy husky v4-style** key:
 
