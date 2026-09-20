@@ -1,7 +1,25 @@
 # Repo Hygiene Handoff — Remaining Tiers
 
-**Status:** Tier 1 complete. Tiers 2–4 not started.
+**Status:** Tier 1 complete. Tier 2 items 2.1–2.2 done, 2.3 open. Tier 4 item 4.3 done. Remainder not started.
 **Baseline commit:** `7cd3d7b` on `main` (PR #258), mirrored to GitLab at the same commit.
+
+### Progress log
+
+Worked on branch `chore/repo-hygiene-tier2-plus` (not yet pushed).
+
+| Item | State | Notes |
+|---|---|---|
+| 2.1 `sqlite3` `allowScripts` | **done** | Approved **by package name**, not `pkg@version`, so routine Dependabot bumps cannot silently reintroduce the failure. Verified by throwaway install: the control (no `allowScripts`, npm 12) fails with `Could not locate the bindings file`; with the entry, `sqlite3` loads and executes SQL on **both npm 12 and npm 10**. `fsevents` is still blocked — harmless, macOS-only optional watcher dep. |
+| 2.2 Version pinning | **done** | `.nvmrc` = `22`, `engines.npm` = `>=10.0.0`. Deliberately **no** `packageManager`/Corepack and **no** `engine-strict` (both would surprise contributors). `CONTRIBUTING.md` documents the toolchain. |
+| 2.3 Husky dead config | open | Still needs a human decision. Recommendation: delete the dead `husky` key rather than migrate — CI gates lint and tests already, and a `pre-push: npm test` hook would cost ~1728 tests on every push. |
+| 3.x Branch hygiene | not started | |
+| 4.3 `AGENTS.md` staleness | **done** | Active Feature table replaced with an accurate status section; persona, permissions, scope rule and workflow generalised off the finished feature. |
+
+**Corrections to this document, found while working:**
+- `npm install-scripts approve --dry-run` has been observed **writing to `package.json` anyway**. Always `git diff package.json` afterwards.
+- A stale reference not listed here: **`test-processing-id.sh` does not exist**, yet both `AGENTS.md` and `docs/testing-processing-id.md` instruct readers to run it. Not fixed.
+- `CONTRIBUTING.md` claimed ESLint was "enforced on commit via Husky" — the dead-hooks problem (2.3) in doc form. Corrected to say CI enforces it.
+
 **Written:** 2026-09-20. Every number and path below was verified against the live repos at this commit — re-verify before acting if `main` has moved.
 
 ---
