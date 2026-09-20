@@ -17,6 +17,7 @@ test:
     - npm ci --ignore-scripts
     - npm_config_build_from_source=true npm rebuild sqlite3
     - npm rebuild sharp
+    - npm run lint
     - npm run coverage -- --coverageReporters=cobertura --coverageReporters=text
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:

@@ -1,0 +1,67 @@
+# Dependabot configuration
+#
+# Docs: https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+#
+# Dependabot *security* updates are configured separately (repo Settings -> Code
+# security) and are already enabled. This file adds *scheduled version updates*,
+# grouped so that routine bumps arrive as a small number of reviewable PRs
+# instead of one PR per package.
+#
+# Rationale: 84 security alerts accumulated unnoticed before this file existed,
+# because nothing was opening regular dependency PRs. Weekly updates keep
+# packages close to current so security alerts stay rare and small.
+
+version: 2
+updates:
+  # ---------------------------------------------------------------- npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "Europe/Dublin"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+    labels:
+      - "dependencies"
+    groups:
+      # Order matters: first matching group wins.
+      # Routine production bumps -> one PR.
+      production-minor-patch:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      # Routine dev-tooling bumps -> one PR.
+      development-minor-patch:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      # Major bumps are grouped too, so they stay visible without flooding the
+      # queue. These need a human read: majors are never auto-merged here.
+      major-updates:
+        update-types:
+          - "major"
+
+  # -------------------------------------------------------- github-actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "Europe/Dublin"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
