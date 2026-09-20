@@ -134,7 +134,7 @@ async function testUploadWithProject() {
     if (csvResponse.status !== 200) {
       throw new Error(`CSV export failed: ${csvResponse.status}`);
     }
-    log(`✓ CSV export successful`, 'green');
+    log('✓ CSV export successful', 'green');
     log(`  Content-Type: ${csvResponse.headers['content-type']}`, 'green');
 
     // Step 7: Summary

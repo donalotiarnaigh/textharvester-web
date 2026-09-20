@@ -1,4 +1,3 @@
-/* eslint-disable quotes */
 // costEstimate.js
 
 let debounceTimer = null;

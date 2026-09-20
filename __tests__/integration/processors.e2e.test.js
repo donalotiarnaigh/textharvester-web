@@ -420,9 +420,8 @@ describe('Processor Strategy Pattern — E2E Tests (Issue #99)', () => {
       expect(burial.entries).toBeDefined();
       expect(burial.pageData).toBeDefined();
       // Check that entries have processing_id
-      if (burial.entries.length > 0) {
-        expect(burial.entries[0].processing_id).toBeDefined();
-      }
+      expect(burial.entries.length).toBeGreaterThan(0);
+      expect(burial.entries[0].processing_id).toBeDefined();
     });
   });
 

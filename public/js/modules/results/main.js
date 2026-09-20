@@ -1030,7 +1030,7 @@ function createBurialRegisterDetailHTML(entry, colSpan, uniqueId) {
   }
 
   return `
-  <td colspan="${colSpan}" data-record-json="${sanitizeAttribute(JSON.stringify(entry))}">
+  <td colspan="${colSpan}" data-record-json="${SanitizeUtils.sanitizeAttribute(JSON.stringify(entry))}">
     <div class="detail-content p-3">
       <div class="row">
         <div class="col-12">

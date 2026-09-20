@@ -44,9 +44,12 @@ describe('projectStorage', () => {
     });
   });
 
-  afterAll((done) => {
-    mockDb.close(done);
-  });
+  afterAll(() => new Promise((resolve, reject) => {
+    mockDb.close((err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  }));
 
   describe('initialize', () => {
     it('should create projects table successfully', async () => {
@@ -99,9 +102,8 @@ describe('projectStorage', () => {
     it('should return projects ordered by created_at DESC', async () => {
       const projects = await projectStorage.getAllProjects();
 
-      if (projects.length > 1) {
-        expect(new Date(projects[0].created_at) >= new Date(projects[1].created_at)).toBe(true);
-      }
+      expect(projects.length).toBeGreaterThanOrEqual(2);
+      expect(new Date(projects[0].created_at) >= new Date(projects[1].created_at)).toBe(true);
     });
   });
 
@@ -194,11 +196,11 @@ describe('projectStorage', () => {
 
     it('should return object with all count properties', async () => {
       const projects = await projectStorage.getAllProjects();
-      if (projects.length > 0) {
-        const counts = await projectStorage.getProjectRecordCounts(projects[0].id);
 
-        expect(Object.keys(counts)).toEqual(['memorials', 'burialRegister', 'graveCards']);
-      }
+      expect(projects.length).toBeGreaterThan(0);
+      const counts = await projectStorage.getProjectRecordCounts(projects[0].id);
+
+      expect(Object.keys(counts)).toEqual(['memorials', 'burialRegister', 'graveCards']);
     });
   });
 });

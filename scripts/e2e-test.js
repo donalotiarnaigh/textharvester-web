@@ -72,7 +72,7 @@ async function testProjectCreation() {
     }
 
     testProjectId = response.body.id;
-    log(`✓ Project created successfully`, 'green');
+    log('✓ Project created successfully', 'green');
     log(`  ID: ${testProjectId}`, 'green');
     log(`  Name: ${response.body.name}`, 'green');
     return true;
@@ -97,7 +97,7 @@ async function testGetProjects() {
       throw new Error('Created project not found in list');
     }
 
-    log(`✓ Projects fetched successfully`, 'green');
+    log('✓ Projects fetched successfully', 'green');
     log(`  Total projects: ${response.body.length}`, 'green');
     log(`  Our project found: ${projectExists}`, 'green');
     return true;
@@ -121,7 +121,7 @@ async function testGetProjectById() {
       throw new Error('Project ID mismatch');
     }
 
-    log(`✓ Project retrieved successfully`, 'green');
+    log('✓ Project retrieved successfully', 'green');
     log(`  Name: ${response.body.name}`, 'green');
     log(`  Description: ${response.body.description}`, 'green');
     return true;
@@ -147,7 +147,7 @@ async function testUpdateProject() {
       throw new Error('Description not updated');
     }
 
-    log(`✓ Project updated successfully`, 'green');
+    log('✓ Project updated successfully', 'green');
     log(`  Updated description: ${response.body.description}`, 'green');
     return true;
   } catch (error) {
@@ -166,7 +166,7 @@ async function testQueryWithoutProject() {
       throw new Error(`Expected 200, got ${response.status}`);
     }
 
-    log(`✓ Results fetched successfully`, 'green');
+    log('✓ Results fetched successfully', 'green');
     log(`  Total records: ${response.body.records ? response.body.records.length : 0}`, 'green');
     return true;
   } catch (error) {
@@ -185,7 +185,7 @@ async function testQueryWithProject() {
       throw new Error(`Expected 200, got ${response.status}`);
     }
 
-    log(`✓ Filtered results fetched successfully`, 'green');
+    log('✓ Filtered results fetched successfully', 'green');
     log(`  Records for this project: ${response.body.records ? response.body.records.length : 0}`, 'green');
     return true;
   } catch (error) {
@@ -217,7 +217,7 @@ async function testDeleteProject() {
       throw new Error(`Expected 204, got ${deleteResponse.status}`);
     }
 
-    log(`✓ Project deleted successfully`, 'green');
+    log('✓ Project deleted successfully', 'green');
     log(`  Temp project ID deleted: ${tempProjectId}`, 'green');
     return true;
   } catch (error) {
@@ -248,7 +248,7 @@ async function testProjectValidation() {
     });
 
     if (dupResponse.status === 400) {
-      log(`✓ Duplicate project name validation works`, 'green');
+      log('✓ Duplicate project name validation works', 'green');
       return true;
     } else {
       throw new Error(`Expected 400 for duplicate name, got ${dupResponse.status}`);
@@ -269,7 +269,7 @@ async function testCSVExportWithProjectFilter() {
       throw new Error(`Expected 200, got ${response.status}`);
     }
 
-    log(`✓ CSV export with project filter works`, 'green');
+    log('✓ CSV export with project filter works', 'green');
     log(`  Content-Type: ${response.headers['content-type']}`, 'green');
     log(`  Content received: ${typeof response.body === 'string' ? 'Yes' : 'Parsed'}`, 'green');
     return true;
@@ -288,7 +288,7 @@ async function testAPIErrorHandling() {
     // Test 404 on get non-existent project
     const notFound = await makeRequest('GET', '/api/projects/non-existent-id');
     if (notFound.status === 404) {
-      log(`✓ 404 handling for non-existent project`, 'green');
+      log('✓ 404 handling for non-existent project', 'green');
       passedTests++;
     } else {
       log(`✗ Expected 404, got ${notFound.status}`, 'red');
@@ -299,7 +299,7 @@ async function testAPIErrorHandling() {
       description: 'No name provided'
     });
     if (badRequest.status === 400) {
-      log(`✓ 400 handling for missing name`, 'green');
+      log('✓ 400 handling for missing name', 'green');
       passedTests++;
     } else {
       log(`✗ Expected 400, got ${badRequest.status}`, 'red');
