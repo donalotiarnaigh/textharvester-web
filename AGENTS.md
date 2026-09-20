@@ -1,14 +1,14 @@
 # AGENTS.md
 
-**Guidance for AI coding agents working on textharvester-web (Typographic Analysis Feature)**
+**Guidance for AI coding agents working on textharvester-web**
 
 * * *
 
-## Active Feature
+## Current Status
 
-| Feature | Documentation | Branch |
-|---------|---------------|--------|
-| Typographic Analysis | `docs/typographic-analysis/` | `feature/typographic-analysis` |
+There is **no active feature branch**. Work from the issue or task you have been given — do not go looking for preset feature work.
+
+**Completed (do not redo):** Typographic Analysis is shipped and merged on `main`. All 34 tasks in `docs/typographic-analysis/tasks.md` are done and the `feature/typographic-analysis` branch is a stale leftover, not pending work. Its documentation under `docs/typographic-analysis/` is retained as a reference for the shipped implementation.
 
 **System context:** Before starting, read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the system overview, module map, and data flow.
 
@@ -18,40 +18,38 @@
 
 You are an **autonomous coding agent**, acting as a _junior developer_ under human supervision.  
 
-Your job: Implement the **Typographic Analysis** feature in `textharvester-web` **strictly according to the specification and implementation plan.**
-
-This feature adds a new source type that produces comprehensive transcriptions with detailed typography, iconography, and stone condition analysis — following the client's "Gravestone OCR V2.3" approach.
+Your job: implement the task you have been given **strictly according to its specification and implementation plan.**
 
 -   You must follow the existing architecture, style, and coding conventions.
 -   You must **not** refactor, generalise, or re-architect unrelated parts of the system.
--   You may extend the codebase **only** in files/modules explicitly allowed (see "File Scope & Permissions" below).
+-   You may extend the codebase **only** within the scope of the task you were given (see "What Agents Must Ask for Permission" below).
 
 * * *
 
 ## What Agents Are Allowed (Autonomous)
 
 -   Read all existing source code, documentation (`docs/`), config, and test files.
--   Create new files under the allowed paths when required by tasks.
--   Modify or extend code under allowed modules (see below).
+-   Create new files when the task requires them.
+-   Modify or extend code within the task's scope.
 -   Add new tests (unit, integration) under `__tests__/` or appropriate test directories.
 -   Run file-scoped commands for validation & local checks (lint, test, build) — see "Preferred Commands".
--   Update documentation under `docs/typographic-analysis/` when completing tasks.
+-   Update the documentation covering the code you changed.
 
 * * *
 
 ## What Agents Must Ask for Permission (Human Oversight Required)
 
 -   Modifying or removing `server.js`, core Express setup, or route structure (unless implementing approved API routes).
--   Changing database schema except via the approved migration script (`scripts/migrate-add-typographic-analysis.js`).
--   Altering dependencies (adding/removing packages in `package.json`).
--   Rearranging project structure (renaming/moving files outside allowed paths).
+-   Changing database schema except via an approved migration script.
+-   Altering dependencies (adding/removing packages in `package.json`) — including `allowScripts` entries.
+-   Rearranging project structure (renaming/moving files).
 -   Changing configuration that affects deployment, secrets, environment variables, `.gitignore`, or production settings.
 
 * * *
 
 ## What Agents Must Never Do (Hard Prohibitions)
 
--   Delete or rewrite existing functionality unrelated to Typographic Analysis feature.
+-   Delete or rewrite existing functionality unrelated to the task you were given.
 -   Remove or alter existing prompt templates (MemorialOCRPrompt, MonumentPhotoOCRPrompt, etc.).
 -   Skip tests, linting, or documentation when adding/modifying code.
 -   Commit changes that break existing workflows (e.g., standard memorial OCR, burial register processing).
@@ -65,52 +63,30 @@ This feature adds a new source type that produces comprehensive transcriptions w
 textharvester-web/
 ├── src/
 │   ├── controllers/
-│   │   ├── uploadHandler.js      # (MODIFY) Add typographic_analysis routing
-│   │   └── resultsManager.js     # (MODIFY) Include new fields in API response
+│   │   ├── uploadHandler.js      # Request intake and source-type routing
+│   │   └── resultsManager.js     # API response shaping
 │   ├── utils/
-│   │   ├── database.js           # (MODIFY) Add JSON serialization for new fields
-│   │   ├── fileProcessing.js     # (MODIFY) Add case for typographic_analysis
+│   │   ├── database.js           # DB access and JSON field serialization
+│   │   ├── fileProcessing.js     # Per-source-type processing dispatch
 │   │   └── prompts/
 │   │       └── templates/
-│   │           ├── TypographicAnalysisPrompt.js  # (NEW) Main prompt template
-│   │           └── providerTemplates.js          # (MODIFY) Register new template
+│   │           ├── TypographicAnalysisPrompt.js  # Typographic Analysis template
+│   │           └── providerTemplates.js          # Template registry
 │   └── ...
-├── scripts/
-│   └── migrate-add-typographic-analysis.js  # (NEW) Database migration
-├── __tests__/
-│   ├── utils/prompts/templates/
-│   │   └── TypographicAnalysisPrompt.test.js  # (NEW) Prompt tests
-│   ├── scripts/
-│   │   └── migrate-typographic-analysis.test.js  # (NEW) Migration tests
-│   └── ...
+├── bin/textharvester             # CLI entry point
+├── scripts/                      # Migration and maintenance scripts
+├── __tests__/                    # Unit and integration tests
 ├── docs/
-│   └── typographic-analysis/     # Feature docs
-│       ├── requirements.md       # 5 Requirements with acceptance criteria
-│       ├── design.md             # Architecture, components, test specs
-│       └── tasks.md              # Implementation plan (TDD)
+│   ├── ARCHITECTURE.md           # System overview — read this first
+│   └── typographic-analysis/     # Shipped feature reference (requirements, design, tasks)
 ├── public/
-│   └── index.html                # (MODIFY) Add source type option
+│   └── index.html                # Web UI, including the source-type dropdown
 └── data/                         # Uploaded files & generated outputs
 ```
 
-### Files & Modules Agents May Create / Modify
+### Scope Rule
 
-**New Files:**
--   `src/utils/prompts/templates/TypographicAnalysisPrompt.js`
--   `scripts/migrate-add-typographic-analysis.js`
--   `__tests__/utils/prompts/templates/TypographicAnalysisPrompt.test.js`
--   `__tests__/scripts/migrate-typographic-analysis.test.js`
-
-**Modifications (as specified in tasks.md):**
--   `src/utils/database.js` — Add new columns handling and JSON serialization
--   `src/utils/fileProcessing.js` — Add routing for `typographic_analysis` source type
--   `src/utils/prompts/templates/providerTemplates.js` — Register new template
--   `src/controllers/resultsManager.js` — Include new fields in API response
--   `src/controllers/uploadHandler.js` — Route new source type
--   `public/index.html` — Add "Typographic Analysis" to source type dropdown
--   `docs/typographic-analysis/*` — Update as tasks are completed
-
-Do **not** create modules outside these, or alter existing files outside their Typographic Analysis-specific parts.
+Work within the files the task calls for. Do **not** create modules outside the task's scope, or alter existing files outside the parts the task covers. Anything in the permission categories above needs a human first.
 
 * * *
 
@@ -123,14 +99,12 @@ To avoid expensive full builds or unnecessary CI runs, use **file-scoped command
 npm run lint
 npm test
 
-# Run specific tests
-npm test __tests__/utils/prompts/templates/TypographicAnalysisPrompt.test.js
-npm test __tests__/scripts/migrate-typographic-analysis.test.js
+# Run a single test file (much faster than the full suite)
 npm test __tests__/utils/database.test.js
 npm test __tests__/controllers/resultsManager.test.js
 
-# Run migration
-node scripts/migrate-add-typographic-analysis.js
+# Run a migration or maintenance script
+node scripts/<script-name>.js
 ```
 
 Only run full tests or implementations when explicitly required.
@@ -187,10 +161,10 @@ For details on manually testing database-backed features, see `docs/testing-proc
 
 ## Workflow for Task Execution
 
-Tasks in `docs/typographic-analysis/tasks.md` are your primary guide.
+The issue or task description you were given is your primary guide. Do **not** go looking for work in `docs/typographic-analysis/tasks.md` — that plan is fully complete.
 
-1.  **Read the task description** in `docs/typographic-analysis/tasks.md`.
-2.  **Read relevant part of Design** in `docs/typographic-analysis/design.md`.
+1.  **Read the task description** and any linked specification or design notes.
+2.  **Read the relevant code before changing it.** Follow the existing patterns.
 3.  **Test-Driven Development (TDD)**:
     -   Write tests first (RED) — include **both happy and unhappy paths**.
     -   Implement strict minimum to pass (GREEN).
@@ -201,11 +175,11 @@ Tasks in `docs/typographic-analysis/tasks.md` are your primary guide.
     npm test
     ```
 5.  **Run a quick manual verification** if possible (e.g., via local server upload).
-6.  **Update `tasks.md`** to mark task as completed with `[x]`.
 
 **Branch Naming:**
-- Feature Branch: `feature/typographic-analysis`
-- Commit: `feat: {brief description} (task X.Y)`
+- Feature branch: `feature/{short-description}`; bug fix: `fix/{issue-number}-{short-description}`
+- Commit: Conventional Commits — `feat: …`, `fix: …`, `docs: …`, `chore: …`
+- `main` requires the `lint` and `test` checks to pass; PRs are squash-merged.
 
 * * *
 
@@ -234,9 +208,9 @@ When writing prompts and validation logic, use these conventions:
 
 * * *
 
-**Last Updated:** 2026-03-09
+**Last Updated:** 2026-09-20
 
-**Purpose:** Provide a robust, clear, and minimal-risk instruction set for AI coding agents working on the Typographic Analysis feature and other backend enhancements.
+**Purpose:** Provide a robust, clear, and minimal-risk instruction set for AI coding agents working on this repository.
 
 ## Testing Guidelines
 
