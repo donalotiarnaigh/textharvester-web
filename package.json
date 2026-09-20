@@ -42,9 +42,9 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://gitlab.com/curlew-geospatial-group/textharvester-web.git"
+    "url": "https://github.com/donalotiarnaigh/textharvester-web.git"
   },
-  "homepage": "https://gitlab.com/curlew-geospatial-group/textharvester-web#readme",
+  "homepage": "https://github.com/donalotiarnaigh/textharvester-web#readme",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@google/generative-ai": "^0.24.1",
