@@ -1,6 +1,6 @@
 # Repo Hygiene Handoff — Remaining Tiers
 
-**Status:** Tier 1 complete. **Tier 2 complete. Tier 4 complete.** Tier 3 not started.
+**Status:** **All tiers complete** — Tier 1, Tier 2, Tier 3, Tier 4.
 **Baseline commit:** `7cd3d7b` on `main` (PR #258), mirrored to GitLab at the same commit.
 
 ### Progress log
@@ -12,7 +12,8 @@ Tier 2 shipped as PR #262 (squash commit `91132a9`); the GitLab mirror was synce
 | 2.1 `sqlite3` `allowScripts` | **done** | Approved **by package name**, not `pkg@version`, so routine Dependabot bumps cannot silently reintroduce the failure. Verified by throwaway install: the control (no `allowScripts`, npm 12) fails with `Could not locate the bindings file`; with the entry, `sqlite3` loads and executes SQL on **both npm 12 and npm 10**. `fsevents` is still blocked — harmless, macOS-only optional watcher dep. |
 | 2.2 Version pinning | **done** | `.nvmrc` = `22`, `engines.npm` = `>=10.0.0`. Deliberately **no** `packageManager`/Corepack and **no** `engine-strict` (both would surprise contributors). `CONTRIBUTING.md` documents the toolchain. |
 | 2.3 Husky dead config | **done (deleted)** | Removed the legacy `husky.hooks` key, the `lint-staged` config block, and both devDependencies. Nothing referenced them anywhere. Local hooks are gone; CI remains the gate. To bring them back, `npx husky init` plus a `prepare` script. |
-| 3.x Branch hygiene | not started | |
+| 3.x Branch hygiene | **done** | **GitLab 46 → 2 non-main** (44 deleted: 36 provably-safe ancestors + 8 stale non-ancestors). **GitHub 20 → 5 non-main** (15 stale deleted). **Local 10 → 2** (8 stale deleted). All 5 open-PR branches preserved on both remotes. Every deleted branch is captured in the Tier 3 backup bundle. See the banner under Tier 3 for evidence. |
+| 3.5 `delete_branch_on_merge` | **done** | Enabled (`true`, confirmed by re-read). Merged PR branches now self-clean, so the backlog cannot rebuild. `allow_update_branch` left `false`. |
 | 4.1 Fly.io artifacts | **done** | Deleted `fly.toml` and `fly.staging.toml`; removed the Fly deploy/secrets sections from `RUNBOOK.md`. **Kept the `Dockerfile` and `.dockerignore`** (useful independently of Fly) and stripped the `LABEL fly_launch_runtime` line. Also fixed a stale "deployed on Fly.io" claim in `scripts/ralph/CLAUDE.md`. |
 | 4.2 Duplicate roadmap | **done** | Kept `docs/IMPLEMENTATION_ROADMAP.md` — it is the copy `docs/README.md` links to — and deleted the root copy. Fixed 4 references in `docs/research-issues-kickoff.md` and 1 machine-specific absolute path in the issue-213 plan. |
 | 4.3 `AGENTS.md` staleness | **done** | Active Feature table replaced with an accurate status section; persona, permissions, scope rule and workflow generalised off the finished feature. |
@@ -136,6 +137,16 @@ Decide deliberately: with lint + full tests now gating `main`, the marginal valu
 
 ## Tier 3 — Branch hygiene
 
+> **RESOLVED — 44 GitLab + 15 GitHub + 8 local branches deleted.** `main` was verified byte-identical on both remotes throughout (`6806522`, matching tree hashes, `0 0` divergence).
+>
+> **A bug in this document's method:** the `grep -v '/HEAD$'` filter in the command reference below does **not** exclude `refs/remotes/<remote>/HEAD`, because `%(refname:short)` renders it as the bare remote name (`gitlab`, `origin`) — so it lands in the SAFE bucket and inflates the count by one. Use `grep -vE '^gitlab$|^gitlab/main$'`. With that corrected the counts here are exact: GitLab 46 non-main / 36 safe / 10 check, GitHub 20 non-main / 0 safe.
+>
+> **Scope decision:** branches backing **open PRs were excluded** from deletion (#255 `feat/ground-truth-eval-framework`, #256 `fix/244-json-serialization`, and the three Dependabot PRs #259/#260/#264). Deleting those would have closed live PRs, which is a different action from tidying stale leftovers. Note Dependabot recreated the major sweep as PR #264 on branch `major-updates-3b4bd52011`, replacing the `52354dbb34` branch named below.
+>
+> **Nothing of value was lost.** Every identifiable fix on a deleted branch is already in `main` via squash-merge: #51, #136 (#146), #142 (#153), #184 (**both** #185 and #190), #187 (#192), #188 (#189). The two `#184` branches differ only in a `docs/issues.md` line. The remainder were abandoned experiments (Cursor GPT-5 model migrations, a Copilot "Initial plan", a Codex draft).
+>
+> **Recovery:** `/Users/danieltierney/projects/textharvester-web-backups/20260920-tier3/` — `all-refs.bundle` (116 MB, 81 refs, includes the `gitlab/` refs the earlier 084403 bundle lacked) plus `pre-state.txt` with every pre-deletion SHA.
+
 All counts verified at `7cd3d7b`.
 
 ### 3.0 Method — read this before writing any deletion script
@@ -242,6 +253,8 @@ Two things to resolve here specifically:
 
 ### 3.5 Consider enabling `delete_branch_on_merge`
 
+> **DONE — enabled.** PATCHed to `true` and confirmed by re-reading the repo settings (`allow_update_branch` remains `false`).
+
 Currently `false`, alongside `allow_update_branch: false`. Turning on `delete_branch_on_merge` prevents this exact backlog from re-accumulating — merged PR branches will clean themselves up. Low risk, one API call (or a settings toggle).
 
 ---
@@ -324,7 +337,7 @@ These were assessed and consciously deferred. Do not treat them as oversights.
 | **47 lint warnings** | Non-blocking by design (gate is errors-only). Mostly `no-unused-vars` in tests. Burn down opportunistically. |
 | **58 open issues** | Untriaged. Separate workstream. |
 | **0 git tags** | No releases have ever been cut. Not urgent. |
-| **`delete_branch_on_merge: false`** | Revisit — see 3.5. |
+| **`delete_branch_on_merge`** | **Now `true`** — see 3.5. Was the cause of the backlog re-accumulating. |
 | **`allow_update_branch: false`** | Fine for a solo maintainer. |
 | **No `CODE_OF_CONDUCT.md`** | Irrelevant for a single-maintainer repo. |
 | **No `.github/ISSUE_TEMPLATE/config.yml`** | Cosmetic; existing templates work. |
@@ -381,7 +394,9 @@ git push gitlab main:main
 git merge-base --is-ancestor <branch> origin/main && echo SAFE
 
 # --- Classify every branch on a remote
-for b in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | grep -v '/HEAD$' | grep -v '^origin/main$'); do
+# NOTE: filter the remote name exactly. %(refname:short) renders refs/remotes/origin/HEAD
+# as the bare word "origin", so a '/HEAD$' grep misses it and miscounts it as SAFE.
+for b in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | grep -vE '^origin$|^origin/main$'); do
   if git merge-base --is-ancestor "$b" origin/main 2>/dev/null; then echo "SAFE     $b"
   else echo "CHECK    $b  ($(git rev-list --count origin/main.."$b") commits)"; fi
 done
