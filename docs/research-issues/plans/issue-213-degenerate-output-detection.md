@@ -27,7 +27,7 @@ Implement deterministic post-extraction degenerate-output detection so fluent ha
 - `/Users/danieltierney/projects/textharvester-web/__tests__/utils/processingHelpers.test.js`
 - `/Users/danieltierney/projects/textharvester-web/__tests__/utils/fileProcessing.test.js`
 - Docs
-- `/Users/danieltierney/projects/textharvester-web/IMPLEMENTATION_ROADMAP.md`
+- `docs/IMPLEMENTATION_ROADMAP.md`
 - `/Users/danieltierney/projects/textharvester-web/issues.md`
 - `/Users/danieltierney/projects/textharvester-web/AGENTS.md` only if a reusable provider or validation pattern needs to be documented
 - `/Users/danieltierney/projects/textharvester-web/MEMORY.md` only if the repo already contains it and the implementation introduces a reusable pattern
