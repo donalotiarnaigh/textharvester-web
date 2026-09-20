@@ -7,7 +7,7 @@ Deployment, monitoring, and incident response for TextHarvester.
 ## Prerequisites
 
 **System dependencies:**
-- Node.js ≥20.13.1
+- Node.js ≥22.0.0
 - `poppler-utils` — required for PDF→JPEG conversion (`apt-get install poppler-utils` or `brew install poppler`)
 
 **API keys** (at least one provider required):
@@ -78,7 +78,7 @@ fly secrets set MISTRAL_API_KEY=W1tp...
 ### Docker Build
 
 The `Dockerfile` uses a multi-stage build. Key details:
-- Base image: `node:20.18.1-slim`
+- Base image: `node:22.23.2-bookworm-slim`
 - Installs `poppler-utils` at runtime for PDF processing
 - Uses `npm ci` (locked dependencies)
 - Sets `NODE_ENV=production`

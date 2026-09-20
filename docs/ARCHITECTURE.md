@@ -8,7 +8,7 @@ This document describes the overall structure, data flow, and key modules of Tex
 
 | Layer | Technology |
 |-------|-----------|
-| Runtime | Node.js ≥20.13.1 |
+| Runtime | Node.js ≥22.0.0 |
 | Web framework | Express 4.x |
 | Database | SQLite (via `sqlite3`) |
 | Image processing | Sharp, pdf-poppler |
