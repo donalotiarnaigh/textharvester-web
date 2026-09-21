@@ -565,6 +565,71 @@ describe('Database Storage Layer: Typographic Analysis Fields', () => {
         expect(error).toBeInstanceOf(Error);
       }
     });
+
+    /**
+     * Regression #244: updateMemorial() bound JSON-typed editable fields raw, so
+     * an inline edit wrote an object where the column expects JSON text. The read
+     * path then failed JSON.parse, nulled the field, and forced needs_review = 1.
+     */
+    it('should JSON-serialize typography_analysis and iconography objects (#244)', async () => {
+      const typography = {
+        serif_style: 'Roman serif with bracketed terminals',
+        superscript_usage: ['TH']
+      };
+      const iconography = {
+        visual_motifs: ['ribbed volutes'],
+        style_technique: { carving_depth: 'High relief' }
+      };
+
+      let capturedParams;
+      mockRun.mockImplementationOnce((sql, params, cb) => {
+        capturedParams = params;
+        cb(null);
+      });
+      mockGet.mockImplementationOnce((sql, params, cb) => cb(null, { id: 1 }));
+
+      await updateMemorial(1, {
+        typography_analysis: typography,
+        iconography
+      });
+
+      expect(typeof capturedParams[0]).toBe('string');
+      expect(typeof capturedParams[1]).toBe('string');
+      expect(JSON.parse(capturedParams[0])).toEqual(typography);
+      expect(JSON.parse(capturedParams[1])).toEqual(iconography);
+    });
+
+    it('should reject when a JSON field cannot be serialized (#244)', async () => {
+      const circular = { visual_motifs: [] };
+      circular.self = circular;
+
+      const error = await updateMemorial(1, { iconography: circular }).catch(e => e);
+
+      expect(error).toBeInstanceOf(Error);
+      expect(error.message).toMatch(/^Serialization error for field:/);
+      // The failure must happen before any UPDATE is issued, so the row is untouched.
+      const updateCalls = mockRun.mock.calls.filter(call => call[0].includes('UPDATE memorials'));
+      expect(updateCalls).toHaveLength(0);
+    });
+
+    it('should leave pre-serialized string and null JSON fields unchanged (#244)', async () => {
+      const preSerialized = '{"serif_style":"gothic"}';
+
+      let capturedParams;
+      mockRun.mockImplementationOnce((sql, params, cb) => {
+        capturedParams = params;
+        cb(null);
+      });
+      mockGet.mockImplementationOnce((sql, params, cb) => cb(null, { id: 1 }));
+
+      await updateMemorial(1, {
+        typography_analysis: preSerialized,
+        iconography: null
+      });
+
+      expect(capturedParams[0]).toBe(preSerialized);
+      expect(capturedParams[1]).toBeNull();
+    });
   });
 
   describe('Update Operations: markAsReviewed()', () => {
