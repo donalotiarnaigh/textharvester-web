@@ -1,0 +1,237 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "burial_register",
+  "image_ref": "eval/source-images/burial-registers-jpg/stlukes-register-book1-p025.jpg",
+  "annotator": "",
+  "annotation_date": "2026-04-17",
+  "blind_transcribed": false,
+  "difficulty": 0,
+  "annotator_notes": "",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "page_level": {
+    "model_output": {
+      "parish_header_raw": "Kirk Braddan, (Chapelry of Douglas)",
+      "county_header_raw": "fork",
+      "year_header_raw": "1859 & 60",
+      "page_marginalia_raw": "1860"
+    },
+    "corrected": {
+      "parish_header_raw": "Kirk Braddan, (Chapelry of Douglas)",
+      "county_header_raw": "fork",
+      "year_header_raw": "1859 & 60",
+      "page_marginalia_raw": "1860"
+    },
+    "corrections_made": []
+  },
+  "entries": [
+    {
+      "row_index_on_page": 1,
+      "model_output": {
+        "entry_no_raw": "191",
+        "name_raw": "Elizabeth Ainsworth|Hardy",
+        "abode_raw": "near|fork",
+        "burial_date_raw": "Novr 3rd 1859",
+        "age_raw": "76",
+        "officiant_raw": "Revd|J. W. C. Kenny|R. S. Kenn-|J. G. Beu-",
+        "marginalia_raw": null,
+        "extra_notes_raw": "yrs"
+      },
+      "corrected": {
+        "entry_no_raw": "191",
+        "name_raw": "Elizabeth Ainsworth|Hardy",
+        "abode_raw": "near|fork",
+        "burial_date_raw": "Novr 3rd 1859",
+        "age_raw": "76",
+        "officiant_raw": "Revd|J. W. C. Kenny|R. S. Kenn-|J. G. Beu-",
+        "marginalia_raw": null,
+        "extra_notes_raw": "yrs"
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 2,
+      "model_output": {
+        "entry_no_raw": "192",
+        "name_raw": "Isabella de Vere|Lloyd",
+        "abode_raw": "fork",
+        "burial_date_raw": "Novr 23 1859",
+        "age_raw": "14",
+        "officiant_raw": "Revd|J. W. C. Kenny|R. S. Kenn-|J. G. Beu-",
+        "marginalia_raw": null,
+        "extra_notes_raw": "yrs"
+      },
+      "corrected": {
+        "entry_no_raw": "192",
+        "name_raw": "Isabella de Vere|Lloyd",
+        "abode_raw": "fork",
+        "burial_date_raw": "Novr 23 1859",
+        "age_raw": "14",
+        "officiant_raw": "Revd|J. W. C. Kenny|R. S. Kenn-|J. G. Beu-",
+        "marginalia_raw": null,
+        "extra_notes_raw": "yrs"
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 3,
+      "model_output": {
+        "entry_no_raw": "193",
+        "name_raw": "Wm. Henry Curtin",
+        "abode_raw": "Blackrock",
+        "burial_date_raw": "Jan. 17 1860.",
+        "age_raw": "mos. 8.",
+        "officiant_raw": "Revd E. Brown|Curate",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "193",
+        "name_raw": "Wm. Henry Curtin",
+        "abode_raw": "Blackrock",
+        "burial_date_raw": "Jan. 17 1860.",
+        "age_raw": "mos. 8.",
+        "officiant_raw": "Revd E. Brown|Curate",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 4,
+      "model_output": {
+        "entry_no_raw": "194",
+        "name_raw": "Thomas Lineham",
+        "abode_raw": "fork",
+        "burial_date_raw": "Jan. 20. 1860.",
+        "age_raw": "years 60",
+        "officiant_raw": "Rev W. Mayile|Asst. Priest",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "194",
+        "name_raw": "Thomas Lineham",
+        "abode_raw": "fork",
+        "burial_date_raw": "Jan. 20. 1860.",
+        "age_raw": "years 60",
+        "officiant_raw": "Rev W. Mayile|Asst. Priest",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 5,
+      "model_output": {
+        "entry_no_raw": "195",
+        "name_raw": "Flora R. H. Jermyn",
+        "abode_raw": "Douglas",
+        "burial_date_raw": "Jan. 30. 1860",
+        "age_raw": "years 20",
+        "officiant_raw": "J. W. Beu- Rector|J. E. Brown Cur-",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "195",
+        "name_raw": "Flora R. H. Jermyn",
+        "abode_raw": "Douglas",
+        "burial_date_raw": "Jan. 30. 1860",
+        "age_raw": "years 20",
+        "officiant_raw": "J. W. Beu- Rector|J. E. Brown Cur-",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 6,
+      "model_output": {
+        "entry_no_raw": "196",
+        "name_raw": "George Crofts",
+        "abode_raw": "Ballintuyple",
+        "burial_date_raw": "Feb 27. 1860",
+        "age_raw": "years 54",
+        "officiant_raw": "J. W. Beu-|J. Wm. -ick",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "196",
+        "name_raw": "George Crofts",
+        "abode_raw": "Ballintuyple",
+        "burial_date_raw": "Feb 27. 1860",
+        "age_raw": "years 54",
+        "officiant_raw": "J. W. Beu-|J. Wm. -ick",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 7,
+      "model_output": {
+        "entry_no_raw": "197",
+        "name_raw": "Charlotte Elizabeth Adams",
+        "abode_raw": "fork",
+        "burial_date_raw": "Mar 12 1860",
+        "age_raw": "years 7.",
+        "officiant_raw": "J. W. Beu-|Rector",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "197",
+        "name_raw": "Charlotte Elizabeth Adams",
+        "abode_raw": "fork",
+        "burial_date_raw": "Mar 12 1860",
+        "age_raw": "years 7.",
+        "officiant_raw": "J. W. Beu-|Rector",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 8,
+      "model_output": {
+        "entry_no_raw": "198",
+        "name_raw": "Daniel McCarthy",
+        "abode_raw": "fork",
+        "burial_date_raw": "Mar. 22 1860",
+        "age_raw": "years 57.",
+        "officiant_raw": "J. W. Beu-|J. E. Brown|J. Gormoly|Cathol-",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "198",
+        "name_raw": "Daniel McCarthy",
+        "abode_raw": "fork",
+        "burial_date_raw": "Mar. 22 1860",
+        "age_raw": "years 57.",
+        "officiant_raw": "J. W. Beu-|J. E. Brown|J. Gormoly|Cathol-",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    }
+  ]
+}

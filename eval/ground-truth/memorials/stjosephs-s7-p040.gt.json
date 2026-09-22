@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "memorial",
+  "image_ref": "eval/source-images/record-sheets-jpg/stjosephs-s7-p040.jpg",
+  "annotator": "Daniel",
+  "annotation_date": "2026-04-16",
+  "blind_transcribed": false,
+  "difficulty": 3,
+  "annotator_notes": "Record sheet filled in with pencil, quite feint on the scan.",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "records": [
+    {
+      "record_index": 0,
+      "model_output": {
+        "memorial_number": "41",
+        "first_name": "MARGE",
+        "last_name": "WISEMAN",
+        "year_of_death": 1839,
+        "inscription": "TO | IN MEMORY OF | MRS MARGE WISEMAN | who died on the 11 March 1839 | in the 20th year of her Age | May she rest in peace amen | Also | of Jn Wiseman | who died feb 1 1833 | aged 37 years | May god have mercy | on his Soul amen | Mary Downey | died 7 may 1920 | William Downey | died 4 July 1929 | PTO ->"
+      },
+      "corrected": {
+        "memorial_number": "41",
+        "first_name": "MARG'T",
+        "last_name": "WISEMAN",
+        "year_of_death": 1839,
+        "inscription": "TO | THE MEMORY OF | MRS MARG'T WISEMAN | who died on the 11 March 1839 | in the 20th year of her Age | May she rest in peace amen | Also | of John Wiseman | who died feb 1 1833 | aged 37 years | May god have mercy | on his Soul amen | Mary Downey | died 7 may 1920 | William Downey | died 4 July 1929 | PTO ->"
+      },
+      "corrections_made": ["first_name", "inscription"],
+      "needs_review_model": false,
+      "needs_review_actual": true
+    }
+  ]
+}

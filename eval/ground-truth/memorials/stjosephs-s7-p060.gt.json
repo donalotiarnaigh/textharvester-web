@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "memorial",
+  "image_ref": "eval/source-images/record-sheets-jpg/stjosephs-s7-p060.jpg",
+  "annotator": "Daniel",
+  "annotation_date": "2026-04-15",
+  "blind_transcribed": false,
+  "difficulty": 2,
+  "annotator_notes": "Handwriting untidy but otherwise clear image. Part of word scribbled out for accuracy and another word seemingly recorded as illegible (---)",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "records": [
+    {
+      "record_index": 0,
+      "model_output": {
+        "memorial_number": "59",
+        "first_name": "MICHAEL",
+        "last_name": "GLYNN",
+        "year_of_death": 1832,
+        "inscription": "MICHAEL GLYNN | DIED NOVE--- 25 | 1832 | RIP"
+      },
+      "corrected": {
+        "memorial_number": "59",
+        "first_name": "MICHAEL",
+        "last_name": "GLYNN",
+        "year_of_death": 1832,
+        "inscription": "MICHAEL GLYNN | DIED NOV 25 | 1832 | ---- RIP"
+      },
+      "corrections_made": ["inscription"],
+      "needs_review_model": false,
+      "needs_review_actual": true
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "grave_card",
+  "image_ref": "eval/source-images/grave-cards-stitched/stlukes-sec-b-001-stitched.jpg",
+  "annotator": "Daniel",
+  "annotation_date": "2026-04-17",
+  "blind_transcribed": false,
+  "difficulty": 2,
+  "annotator_notes": "2 due to handwriting but otherwise very clear. No corrections",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "model_output": {
+    "section": "B",
+    "grave_number": "1",
+    "data_json": {
+      "location": {
+        "section": "B",
+        "grave_number": "1"
+      },
+      "grave": {
+        "number_buried": "1",
+        "status": "occupied",
+        "description_of_grave": "Railed in and monument",
+        "dimensions": {
+          "raw_text": "9' x 8'.",
+          "length_ft": 9,
+          "width_ft": 8,
+          "unit": "ft"
+        },
+        "plot_owned_by": "Thomas Hewitt"
+      },
+      "interments": [
+        {
+          "sequence_number": 1,
+          "name": {
+            "surname": "Hewitt",
+            "given_names": "Thomas Frances",
+            "full_name": "Thomas Frances Hewitt"
+          },
+          "date_of_death": {
+            "iso": "1884-03-10",
+            "raw_text": "10th March 1884.",
+            "certainty": "certain"
+          },
+          "age_at_death": "2 years + 10 months",
+          "notes": "Eldest son of Thomas and Aulia Hewitt; who died at Rockenham Passage."
+        }
+      ],
+      "inscription": {
+        "text": "In loving|Memory of|Thomas Francis|Eldest son of|Thomas and Aulia|Hewitt|who died at|Rockenham|Passage.|on the 10th march 1884,|Aged 2 years +|10 months.|\"Better with christ|Than with us\"."
+      },
+      "sketch": {
+        "present": true,
+        "description": "Sketch of a cross monument with floral decoration on a base."
+      }
+    }
+  },
+  "corrected": {
+    "section": "B",
+    "grave_number": "1",
+    "data_json": {
+      "location": {
+        "section": "B",
+        "grave_number": "1"
+      },
+      "grave": {
+        "number_buried": "1",
+        "status": "occupied",
+        "description_of_grave": "Railed in and monument",
+        "dimensions": {
+          "raw_text": "9' x 8'.",
+          "length_ft": 9,
+          "width_ft": 8,
+          "unit": "ft"
+        },
+        "plot_owned_by": "Thomas Hewitt"
+      },
+      "interments": [
+        {
+          "sequence_number": 1,
+          "name": {
+            "surname": "Hewitt",
+            "given_names": "Thomas Frances",
+            "full_name": "Thomas Frances Hewitt"
+          },
+          "date_of_death": {
+            "iso": "1884-03-10",
+            "raw_text": "10th March 1884.",
+            "certainty": "certain"
+          },
+          "age_at_death": "2 years + 10 months",
+          "notes": "Eldest son of Thomas and Aulia Hewitt; who died at Rockenham Passage."
+        }
+      ],
+      "inscription": {
+        "text": "In loving|Memory of|Thomas Francis|Eldest son of|Thomas and Aulia|Hewitt|who died at|Rockenham|Passage.|on the 10th march 1884,|Aged 2 years +|10 months.|\"Better with christ|Than with us\"."
+      },
+      "sketch": {
+        "present": true,
+        "description": "Sketch of a cross monument with floral decoration on a base."
+      }
+    }
+  },
+  "corrections_made": [],
+  "needs_review_model": false,
+  "needs_review_actual": false
+}

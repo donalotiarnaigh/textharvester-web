@@ -297,6 +297,10 @@ textharvester-web/
 │   ├── features/               # User-facing feature docs
 │   ├── implementation/         # Technical design and WBS docs
 │   └── operations/             # Deployment and runbook
+├── eval/                       # Ground truth dataset and scoring tools
+│   ├── ground-truth/           # Annotated .gt.json files per source image
+│   ├── scripts/                # export-for-annotation.js, score.js
+│   └── reports/                # Generated eval reports (gitignored)
 ├── scripts/                    # Utility and migration scripts
 ├── sample_data/                # Test fixtures
 ├── data/                       # Runtime data (gitignored)

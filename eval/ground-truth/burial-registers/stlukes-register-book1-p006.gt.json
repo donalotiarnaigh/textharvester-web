@@ -1,0 +1,237 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "burial_register",
+  "image_ref": "eval/source-images/burial-registers-jpg/stlukes-register-book1-p006.jpg",
+  "annotator": "Daniel",
+  "annotation_date": "2026-04-17",
+  "blind_transcribed": false,
+  "difficulty": 4,
+  "annotator_notes": "Image is clear but handwriting is cursive and smudged in places",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "page_level": {
+    "model_output": {
+      "parish_header_raw": "Carrigaline Church of Ireland",
+      "county_header_raw": "Cork",
+      "year_header_raw": "1845",
+      "page_marginalia_raw": null
+    },
+    "corrected": {
+      "parish_header_raw": "Carrigaline Chapel of Douglas",
+      "county_header_raw": "Cork",
+      "year_header_raw": "1845",
+      "page_marginalia_raw": null
+    },
+    "corrections_made": ["parish_header_raw"]
+  },
+  "entries": [
+    {
+      "row_index_on_page": 1,
+      "model_output": {
+        "entry_no_raw": "11",
+        "name_raw": "John Callaghan|Infant",
+        "abode_raw": "Korrivoe",
+        "burial_date_raw": "Feby 7th 1845",
+        "age_raw": "61 years",
+        "officiant_raw": "Ceremonies were performed by Mr Shaw",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "41",
+        "name_raw": "John Callaghan|Infant",
+        "abode_raw": "----",
+        "burial_date_raw": "Feby 7th 1845",
+        "age_raw": "61 years",
+        "officiant_raw": "---- were ---- --- from Upper Shandon",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": ["entry_no_raw","abode_raw", "officiant_raw"],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 2,
+      "model_output": {
+        "entry_no_raw": "12",
+        "name_raw": "Hannah Buckley",
+        "abode_raw": "Scart",
+        "burial_date_raw": "Feby 14th 1845",
+        "age_raw": "4 years",
+        "officiant_raw": "Stb. lead",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "12",
+        "name_raw": "Hannah Buckley",
+        "abode_raw": "Scart",
+        "burial_date_raw": "Feby 14th 1845",
+        "age_raw": "4 years",
+        "officiant_raw": "Stb. lead",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 3,
+      "model_output": {
+        "entry_no_raw": "13",
+        "name_raw": "Eliza Allen",
+        "abode_raw": "Garryduff",
+        "burial_date_raw": "Feby 28th 1845",
+        "age_raw": null,
+        "officiant_raw": "Wm Wmston|Minister",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "13",
+        "name_raw": "Eliza Allen",
+        "abode_raw": "Garryduff",
+        "burial_date_raw": "Feby 28th 1845",
+        "age_raw": null,
+        "officiant_raw": "Wm Wmston|Minister",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 4,
+      "model_output": {
+        "entry_no_raw": "44",
+        "name_raw": "Mary Downey",
+        "abode_raw": "Cork",
+        "burial_date_raw": "March 21th 1845",
+        "age_raw": "54 years",
+        "officiant_raw": "Revd Isaac M|Reeves",
+        "marginalia_raw": null,
+        "extra_notes_raw": "Revd"
+      },
+      "corrected": {
+        "entry_no_raw": "44",
+        "name_raw": "Mary Downey",
+        "abode_raw": "Cork",
+        "burial_date_raw": "March 21th 1845",
+        "age_raw": "54 years",
+        "officiant_raw": "Revd Isaac M|Reeves",
+        "marginalia_raw": null,
+        "extra_notes_raw": "Revd"
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 5,
+      "model_output": {
+        "entry_no_raw": "45",
+        "name_raw": "Edwd Allen",
+        "abode_raw": "Cork",
+        "burial_date_raw": "March 25th 1845",
+        "age_raw": "2 years",
+        "officiant_raw": "Revd|Minister",
+        "marginalia_raw": null,
+        "extra_notes_raw": "Revd"
+      },
+      "corrected": {
+        "entry_no_raw": "45",
+        "name_raw": "Edwd Allen",
+        "abode_raw": "Cork",
+        "burial_date_raw": "March 25th 1845",
+        "age_raw": "2 years",
+        "officiant_raw": "Revd|Minister",
+        "marginalia_raw": null,
+        "extra_notes_raw": "Revd"
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 6,
+      "model_output": {
+        "entry_no_raw": "46",
+        "name_raw": "Thomas Edward Beatty",
+        "abode_raw": "Ashton Place",
+        "burial_date_raw": "March 20th 1845",
+        "age_raw": "22",
+        "officiant_raw": "Without a publication",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "46",
+        "name_raw": "Thomas Edward Beatty",
+        "abode_raw": "Ashton Place",
+        "burial_date_raw": "March 20th 1845",
+        "age_raw": "22",
+        "officiant_raw": "Without a publication",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 7,
+      "model_output": {
+        "entry_no_raw": "47",
+        "name_raw": "Susan Reed",
+        "abode_raw": "Ballybrack",
+        "burial_date_raw": "April 26th 1845",
+        "age_raw": "72",
+        "officiant_raw": "Revd J Buttler|Rd Reeves",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrected": {
+        "entry_no_raw": "47",
+        "name_raw": "Susan Reed",
+        "abode_raw": "Ballybrack",
+        "burial_date_raw": "April 26th 1845",
+        "age_raw": "72",
+        "officiant_raw": "Revd J Buttler|Rd Reeves",
+        "marginalia_raw": null,
+        "extra_notes_raw": null
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    },
+    {
+      "row_index_on_page": 8,
+      "model_output": {
+        "entry_no_raw": "48",
+        "name_raw": "Anthony Power",
+        "abode_raw": "Cork",
+        "burial_date_raw": "April 28th 1845",
+        "age_raw": "75",
+        "officiant_raw": "Rev W C Williamson|Rev C Lester",
+        "marginalia_raw": null,
+        "extra_notes_raw": "Pott"
+      },
+      "corrected": {
+        "entry_no_raw": "48",
+        "name_raw": "Anthony Power",
+        "abode_raw": "Cork",
+        "burial_date_raw": "April 28th 1845",
+        "age_raw": "75",
+        "officiant_raw": "Rev W C Williamson|Rev C Lester",
+        "marginalia_raw": null,
+        "extra_notes_raw": "Pott"
+      },
+      "corrections_made": [],
+      "needs_review_model": false,
+      "needs_review_actual": false
+    }
+  ]
+}

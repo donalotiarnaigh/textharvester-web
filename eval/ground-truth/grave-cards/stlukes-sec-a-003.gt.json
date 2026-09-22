@@ -1,0 +1,213 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "grave_card",
+  "image_ref": "eval/source-images/grave-cards/stlukes-sec-a-003.pdf",
+  "annotator": "Daniel",
+  "annotation_date": "2026-04-17",
+  "blind_transcribed": false,
+  "difficulty": 3,
+  "annotator_notes": "Very info dense but no corrections made",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "model_output": {
+    "section": "A",
+    "grave_number": "3",
+    "data_json": {
+      "location": {
+        "section": "A",
+        "grave_number": "3",
+        "plot_identifier": "4"
+      },
+      "grave": {
+        "number_buried": 4,
+        "status": "occupied",
+        "description_of_grave": "RAILED IN & 2 HEADSTONES",
+        "dimensions": {
+          "raw_text": "14' x 12'",
+          "length_ft": 14,
+          "width_ft": 12,
+          "unit": "ft"
+        },
+        "plot_owned_by": "CAPTAIN R.T. GRAY",
+        "comments": "PLOT WAS BOUGHT IN 1879"
+      },
+      "interments": [
+        {
+          "sequence_number": 1,
+          "name": {
+            "surname": "GRAY",
+            "given_names": "CAPT. R.T.",
+            "full_name": "CAPT. R.T. GRAY"
+          },
+          "date_of_death": {
+            "iso": "1904-09-12",
+            "raw_text": "12TH SEPT. 1904",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1904-09-15",
+            "raw_text": "SEPTEMBER 15TH 1904"
+          },
+          "age_at_death": "46 YEARS",
+          "notes": "OF LOTA VILLE"
+        },
+        {
+          "sequence_number": 2,
+          "name": {
+            "surname": "GRAY",
+            "given_names": "JANE ALICIA",
+            "full_name": "JANE ALICIA GRAY"
+          },
+          "date_of_death": {
+            "iso": "1879-07-22",
+            "raw_text": "22ND JULY 1879",
+            "certainty": "certain"
+          },
+          "notes": "WIFE OF CAPT-N R.T. GRAY|LOTA VILLE|WHO DEPARTED THIS LIFE"
+        },
+        {
+          "sequence_number": 3,
+          "name": {
+            "surname": "GRAY",
+            "given_names": "RICHARD REEVES",
+            "full_name": "RICHARD REEVES GRAY"
+          },
+          "date_of_death": {
+            "iso": "1904-05-13",
+            "raw_text": "MAY 13TH 1904",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1904-05-20",
+            "raw_text": "MAY 20TH 1904"
+          }
+        },
+        {
+          "sequence_number": 4,
+          "name": {
+            "surname": "HOWARD",
+            "given_names": "ANNE",
+            "full_name": "ANNE HOWARD"
+          },
+          "date_of_death": {
+            "raw_text": "28TH Feb. 23 yrs",
+            "certainty": "uncertain"
+          },
+          "age_at_death": "23 yrs"
+        }
+      ],
+      "inscription": {
+        "text": "IN MEMORY OF|CAPTAIN R.T. GRAY|OF LOTA VILLE|DIED 12TH SEPT. 1904|AGED 46 YEARS|PEACE PERFECT PEACE|IN THIS DARK WORLD OF SIN|THE VOICE OF JESUS|WHISPERS PEACE WITHIN|JANE ALICIA GRAY|WIFE OF CAPT-N R.T. GRAY|LOTA VILLE|WHO DEPARTED THIS LIFE|JULY 22ND 1879|IN SURE AND CERTAIN HOPE OF|THE RESURRECTION TO ETERNAL LIFE|THROUGH OUR LORD JESUS CHRIST|\"AS FOR ME, I WILL BEHOLD THY|PRESENCE IN RIGHTEOUSNESS AND|WHEN I AWAKE UP AFTER THY|LIKENESS, I SHALL BE SATISFIED\"|PSALM XVII. 16|THIS MONUMENT WAS ERECTED|BY A FOND HUSBAND AND CHILDREN|IN LOVING REMEMBRANCE OF|A GOOD WIFE AND MOTHER",
+        "scripture_or_quote_refs": [
+          "PSALM XVII. 16"
+        ]
+      },
+      "sketch": {
+        "present": true,
+        "description": "Sketch of a headstone/monument."
+      }
+    }
+  },
+  "corrected": {
+    "section": "A",
+    "grave_number": "3",
+    "data_json": {
+      "location": {
+        "section": "A",
+        "grave_number": "3",
+        "plot_identifier": "4"
+      },
+      "grave": {
+        "number_buried": 4,
+        "status": "occupied",
+        "description_of_grave": "RAILED IN & 2 HEADSTONES",
+        "dimensions": {
+          "raw_text": "14' x 12'",
+          "length_ft": 14,
+          "width_ft": 12,
+          "unit": "ft"
+        },
+        "plot_owned_by": "CAPTAIN R.T. GRAY",
+        "comments": "PLOT WAS BOUGHT IN 1879"
+      },
+      "interments": [
+        {
+          "sequence_number": 1,
+          "name": {
+            "surname": "GRAY",
+            "given_names": "CAPT. R.T.",
+            "full_name": "CAPT. R.T. GRAY"
+          },
+          "date_of_death": {
+            "iso": "1904-09-12",
+            "raw_text": "12TH SEPT. 1904",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1904-09-15",
+            "raw_text": "SEPTEMBER 15TH 1904"
+          },
+          "age_at_death": "46 YEARS",
+          "notes": "OF LOTA VILLE"
+        },
+        {
+          "sequence_number": 2,
+          "name": {
+            "surname": "GRAY",
+            "given_names": "JANE ALICIA",
+            "full_name": "JANE ALICIA GRAY"
+          },
+          "date_of_death": {
+            "iso": "1879-07-22",
+            "raw_text": "22ND JULY 1879",
+            "certainty": "certain"
+          },
+          "notes": "WIFE OF CAPT-N R.T. GRAY|LOTA VILLE|WHO DEPARTED THIS LIFE"
+        },
+        {
+          "sequence_number": 3,
+          "name": {
+            "surname": "GRAY",
+            "given_names": "RICHARD REEVES",
+            "full_name": "RICHARD REEVES GRAY"
+          },
+          "date_of_death": {
+            "iso": "1904-05-13",
+            "raw_text": "MAY 13TH 1904",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1904-05-20",
+            "raw_text": "MAY 20TH 1904"
+          }
+        },
+        {
+          "sequence_number": 4,
+          "name": {
+            "surname": "HOWARD",
+            "given_names": "ANNE",
+            "full_name": "ANNE HOWARD"
+          },
+          "date_of_death": {
+            "raw_text": "28TH Feb. 23 yrs",
+            "certainty": "uncertain"
+          },
+          "age_at_death": "23 yrs"
+        }
+      ],
+      "inscription": {
+        "text": "IN MEMORY OF|CAPTAIN R.T. GRAY|OF LOTA VILLE|DIED 12TH SEPT. 1904|AGED 46 YEARS|PEACE PERFECT PEACE|IN THIS DARK WORLD OF SIN|THE VOICE OF JESUS|WHISPERS PEACE WITHIN|JANE ALICIA GRAY|WIFE OF CAPT-N R.T. GRAY|LOTA VILLE|WHO DEPARTED THIS LIFE|JULY 22ND 1879|IN SURE AND CERTAIN HOPE OF|THE RESURRECTION TO ETERNAL LIFE|THROUGH OUR LORD JESUS CHRIST|\"AS FOR ME, I WILL BEHOLD THY|PRESENCE IN RIGHTEOUSNESS AND|WHEN I AWAKE UP AFTER THY|LIKENESS, I SHALL BE SATISFIED\"|PSALM XVII. 16|THIS MONUMENT WAS ERECTED|BY A FOND HUSBAND AND CHILDREN|IN LOVING REMEMBRANCE OF|A GOOD WIFE AND MOTHER",
+        "scripture_or_quote_refs": [
+          "PSALM XVII. 16"
+        ]
+      },
+      "sketch": {
+        "present": true,
+        "description": "Sketch of a headstone/monument."
+      }
+    }
+  },
+  "corrections_made": [],
+  "needs_review_model": false,
+  "needs_review_actual": false
+}

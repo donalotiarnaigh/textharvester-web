@@ -1,0 +1,129 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "grave_card",
+  "image_ref": "eval/source-images/grave-cards-stitched/stlukes-sec-aws-003-stitched.jpg",
+  "annotator": "Daniel",
+  "annotation_date": "2026-04-17",
+  "blind_transcribed": false,
+  "difficulty": 3,
+  "annotator_notes": "Text is slightlysquashed in but no corrections ",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "model_output": {
+    "section": "A(walkside)",
+    "grave_number": "2",
+    "data_json": {
+      "location": {
+        "section": "A(walkside)",
+        "grave_number": "2"
+      },
+      "grave": {
+        "number_buried": "2",
+        "status": "occupied",
+        "description_of_grave": "Grass",
+        "plot_owned_by": "Jane Moore of Douglas",
+        "comments": "THIS GRAVE IS UNMARKED"
+      },
+      "interments": [
+        {
+          "sequence_number": 1,
+          "name": {
+            "surname": "GARLING",
+            "given_names": "WILLIAM",
+            "full_name": "WILLIAM GARLING"
+          },
+          "date_of_death": {
+            "iso": "1888-12-05",
+            "raw_text": "Dec 5th 1888",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1888-12-07",
+            "raw_text": "Dec 7th 1888"
+          },
+          "age_at_death": "Age 8 years & 9 months"
+        },
+        {
+          "sequence_number": 2,
+          "name": {
+            "surname": "DUCLAO",
+            "given_names": "JOHN",
+            "full_name": "JOHN DUCLAO"
+          },
+          "date_of_death": {
+            "iso": "1923-07-27",
+            "raw_text": "July 27th 1923",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1923-07-30",
+            "raw_text": "July 30th 1923"
+          }
+        }
+      ],
+      "sketch": {
+        "present": false
+      }
+    }
+  },
+  "corrected": {
+    "section": "A(walkside)",
+    "grave_number": "2",
+    "data_json": {
+      "location": {
+        "section": "A(walkside)",
+        "grave_number": "2"
+      },
+      "grave": {
+        "number_buried": "2",
+        "status": "occupied",
+        "description_of_grave": "Grass",
+        "plot_owned_by": "Jane Moore of Douglas",
+        "comments": "THIS GRAVE IS UNMARKED"
+      },
+      "interments": [
+        {
+          "sequence_number": 1,
+          "name": {
+            "surname": "GARLING",
+            "given_names": "WILLIAM",
+            "full_name": "WILLIAM GARLING"
+          },
+          "date_of_death": {
+            "iso": "1888-12-05",
+            "raw_text": "Dec 5th 1888",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1888-12-07",
+            "raw_text": "Dec 7th 1888"
+          },
+          "age_at_death": "Age 8 years & 9 months"
+        },
+        {
+          "sequence_number": 2,
+          "name": {
+            "surname": "DUCLAO",
+            "given_names": "JOHN",
+            "full_name": "JOHN DUCLAO"
+          },
+          "date_of_death": {
+            "iso": "1923-07-27",
+            "raw_text": "July 27th 1923",
+            "certainty": "certain"
+          },
+          "date_of_burial": {
+            "iso": "1923-07-30",
+            "raw_text": "July 30th 1923"
+          }
+        }
+      ],
+      "sketch": {
+        "present": false
+      }
+    }
+  },
+  "corrections_made": [],
+  "needs_review_model": false,
+  "needs_review_actual": false
+}

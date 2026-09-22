@@ -110,15 +110,13 @@ describe('MemorialOCRPrompt', () => {
     });
 
     it('should handle null values in required fields', () => {
-      // Test memorial_number null
+      // memorial_number is required for record sheets (it appears on the form)
       expect(() => prompt.validateAndConvert({
         memorial_number: null,
         first_name: 'JOHN',
         last_name: 'DOE'
       })).toThrow('memorial_number could not be found - please check if the field is present on the memorial');
 
-      // Test first_name null - but first_name is not required, so this test doesn't make sense
-      // Let's test with a missing memorial_number instead
       expect(() => prompt.validateAndConvert({
         first_name: 'JOHN',
         last_name: 'DOE'
@@ -162,7 +160,7 @@ describe('MemorialOCRPrompt', () => {
 
     it('should reject missing required fields', () => {
       const testData = {
-        // memorial_number missing
+        // memorial_number missing — required on record sheets
         first_name: 'JOHN',
         last_name: 'DOE',
         year_of_death: 1924

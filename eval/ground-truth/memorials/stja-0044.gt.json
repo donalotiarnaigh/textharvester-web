@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "memorial",
+  "image_ref": "eval/source-images/memorials/stja-0044.jpg",
+  "annotator": "Daniel",
+  "annotation_date": "2026-04-16",
+  "blind_transcribed": false,
+  "difficulty": 3,
+  "annotator_notes": "General gist correct with inaccuracies around names and dates. Also appeared to hallucinate a Ellen instead of recording 2 Marys",
+  "extraction_provider": "openai",
+  "extraction_model": "gpt-5.4",
+  "records": [
+    {
+      "record_index": 0,
+      "model_output": {
+        "memorial_number": null,
+        "first_name": "PETER",
+        "last_name": "BURKE",
+        "year_of_death": 1862,
+        "inscription": "In Memory of|PETER BURKE|Died Aug 26 1862|Aged 35 Years|ELLEN GORMAN|Died April 15, 1848|Aged 15 ----|MARY|Died May 6 1857|Aged 20 Y-"
+      },
+      "corrected": {
+        "memorial_number": null,
+        "first_name": "Patrick",
+        "last_name": "BURK",
+        "year_of_death": 1867,
+        "inscription": "In Memory of|PATRICK BURK|Died Nov 28 1867|Aged 85 Years|Also|MARY CONWAY|Died Apr. 15, 1868|Aged 75 Years|AND|MARY|their daughter| Died May 6 1857|Aged 20 Y-"
+      },
+      "corrections_made": ["first_name","last_name","year_of_death", "inscription"],
+      "needs_review_model": false,
+      "needs_review_actual": true
+    }
+  ]
+}
